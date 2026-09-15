@@ -1,10 +1,8 @@
-# NBO R2 replication and audit record
+# NBO R3 replication and audit record
 
-The authoritative manuscript is `ECTA_R2.tex`; the standalone supplement is `SUPP_R2.tex`. Historical `ECTA.tex` and `supp.tex` are preserved and are not the R2 manuscript.
+The authoritative sources are `ECTA_R2.tex` and `SUPP_R2.tex`, revised on branch `revision/econometrica-r3-2026-09-15`. Historical `ECTA.tex`, `supp.tex`, embedded arrays, and prior review folders are preserved for provenance. The R3 executable harness is a deterministic reference/grid audit. It is not a reconstructed neural training log; a neural result requires weights, a run log, and the same ledger fields.
 
 ## Build
-
-The source uses the Econometric Society class and the packages listed in `revisions/2026-09-15-r2/revision_manifest.json`. The current checkout was built with:
 
 ```sh
 pdflatex -interaction=nonstopmode -halt-on-error ECTA_R2.tex
@@ -15,21 +13,17 @@ pdflatex -interaction=nonstopmode -halt-on-error SUPP_R2.tex
 pdflatex -interaction=nonstopmode -halt-on-error SUPP_R2.tex
 ```
 
-The R2 source removes the unavailable `algorithm`, `algorithmicx`, `algpseudocode`, and `newpxtext` dependencies; pseudocode is written as mathematical update definitions. Build warnings about undefined references disappear after the final LaTeX pass except for historical appendix bookmark duplication and ordinary underfull boxes.
-
-## Verification available in this checkout
-
-The reviewer diagnostics are rerun from the historical script and written to `replication/reviewer_diagnostics.json`:
+## Executed R3 reference audit
 
 ```sh
-python3 reviews/2026-09-15-econometrica/verify_counterexamples.py \
-  --output replication/reviewer_diagnostics.json
+python3 replication/run_r3_diagnostics.py \
+  --code-commit "$(git rev-parse HEAD)" \
+  --output replication/r3_results.jsonl \
+  --raw-output replication/r3_raw_outputs.json
 ```
 
-The output reproduces all twelve arithmetic/counterexample checks in the R1 report. It is explicitly **not** an author training replication. No historical hand-entered curve is promoted to an R2 experiment without a run identifier, seed, configuration hash, source digest, and raw output.
+The script emits thirteen deterministic success records: corrected Merton/no-short anchors, a bounded NDU projected dynamic program, beta=.7 and beta=1 temporal-self recursions, player-specific Cournot best responses, Epstein--Zin domain checks, Hutchinson probes `K=1,2,8,64`, and coupled quadratic-resource audits at dimensions 4, 8, and 16. The coupled timings are local CPU measurements; no H100 timing is asserted. Applicable metrics are non-null; fields marked `null` in the schema are explicitly not applicable to that model's estimand.
 
-## Authoritative result schema
+Every result carries a run ID, seed, configuration digest, source commit, state/action domain, terminal and boundary specification, stopping rule, applicable error metrics, and raw-output digest. Failed pilots are retained when they occur. Each `raw_output_sha256` is the SHA-256 digest of the canonical raw payload for that run; the aggregate raw JSON file preserves those payloads for inspection.
 
-Every future solver result must be one JSON object per line in `results.jsonl`, conforming to `results_schema.json`. Required fields include the model, run ID, seed, configuration hash, code commit, state/action domains, horizon and boundary specification, optimizer and step sizes, Hessian mode and probe count, stopping rule, failure status, held-out distribution, and separate value/policy/boundary/improvement errors. Failed runs are retained. Figures and tables must be generated from this file, never from embedded TeX arrays.
-
-Historical arrays embedded in `ECTA.tex` are negative controls. They document the reviewed source and are deliberately not copied into `results.jsonl`.
+Historical arrays embedded in `ECTA.tex` are archival negative controls. They are not read by the R3 harness and cannot supply a current policy or economic claim. Figures and tables for current results must be generated from `r3_results.jsonl` or a future neural ledger with the same provenance fields.
