@@ -1,0 +1,260 @@
+\documentclass[ecta,draft]{econsocart}
+
+% --- PREAMBLE AND PACKAGES ---
+% Basic packages from the main paper for consistency
+\RequirePackage[colorlinks,citecolor=blue,linkcolor=blue,urlcolor=blue]{hyperref}
+\usepackage{setspace,amsmath,amsfonts,amssymb,amsthm}
+\usepackage{enumitem}
+\usepackage{bm}
+\usepackage{mathpazo,newpxtext}
+\usepackage[T1]{fontenc}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\usepackage{cleveref}
+
+% --- LOCAL DEFINITIONS ---
+\startlocaldefs
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{assumption}{Assumption}
+
+\theoremstyle{remark}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+\newtheorem{remark}{Remark}
+
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\hamiltonian}{\mathcal{H}}
+\newcommand{\diffop}{\mathcal{D}}
+
+\endlocaldefs
+
+% --- DOCUMENT START ---
+\begin{document}
+
+\begin{frontmatter}
+
+\title{Supplementary Material for: \\ Neural Bellman Operators}
+\runtitle{NBO Supplementary Material}
+
+\begin{aug}
+\author[id=au1,addressref={add1}]
+{\fnms{Qian}~\snm{QI}}
+\address[id=add1]{Peking University}
+\end{aug}
+
+\end{frontmatter}
+
+\section{Introduction}
+
+This supplementary document provides a detailed formalization of the extensions of the Neural Bellman Operators (NBO) method discussed in Section 8 of the main paper, ``Neural Bellman Operators.'' We present the precise mathematical formulation and the detailed algorithmic implementation for solving two classes of models that are central to modern economics but computationally challenging: (1) problems with time-inconsistent preferences, focusing on sophisticated quasi-hyperbolic agents, and (2) high-dimensional, continuous-time dynamic games, focusing on the computation of Markov Perfect Nash Equilibria (MPNE).
+
+For each case, we first define the economic problem and its equilibrium concept, characterized by a generalized or coupled system of Hamilton-Jacobi-Bellman (HJB) equations. We then present a step-by-step NBO algorithm designed to find the specific equilibrium structure of that problem. This includes the parameterization of policies and value functions with neural networks, the definition of the specialized loss functions, and the logic of the optimization procedure.
+
+\section{A Formal Framework for Time-Inconsistent Agents}
+\label{sec:supp_time_inconsistency}
+
+We formalize the NBO framework for finding the subgame-perfect equilibrium consumption plan for a sophisticated agent with quasi-hyperbolic preferences in continuous time. Such an agent understands their future selves will also be present-biased and acts accordingly. The equilibrium is an intra-personal Nash equilibrium between the agent's successive temporal selves.
+
+\subsection{The Model and the Generalized HJB Equation}
+
+Consider an agent with a time-inconsistent objective. From the perspective of time $t$, the agent's objective is to choose a consumption plan $\{c_s\}_{s \geq t}$ to maximize a utility functional that overweights the present. The behavior of a sophisticated agent is characterized by a time-consistent policy $c^*(t, S_t)$ that constitutes a subgame-perfect equilibrium. This equilibrium policy and its associated value function $V(t, S_t)$ must satisfy a \textit{generalized} HJB equation.
+
+Let the state vector $S_t \in \R^d$ evolve according to the SDE:
+\begin{equation}
+dS_t = \mu(t, S_t, c_t) dt + \sigma(t, S_t, c_t) dM_t,
+\end{equation}
+where $c_t$ is the control (e.g., consumption). The value function $V(t,S_t)$ of a sophisticated agent is the lifetime utility evaluated from that point forward, *given* that all future selves will follow the equilibrium policy $c^*(s, S_s)$ for $s > t$. The current self, however, gets to choose $c_t$ optimally, taking the future selves' actions as given.
+
+\begin{definition}[Generalized HJB for Sophisticated Agents]
+The value function $V(t,S)$ and the equilibrium policy $c^*(t,S)$ for a sophisticated agent solve the following fixed-point problem. The value function must satisfy the generalized HJB equation:
+\begin{equation} \label{eq:supp_ghjb}
+-\partial_t V(t,S) = \sup_{c \in \mathcal{A}} \left\{ u(c) - u(c^*(t,S)) \right\} + \left( u(c^*(t,S)) + \diffop^{c^*}V(t,S) \right),
+\end{equation}
+with terminal condition $V(T,S) = G(S)$. The operator $\diffop^{c^*}V$ is the standard It\^o differential operator for the value function $V$, evaluated at the equilibrium policy $c^*$:
+\begin{equation}
+\diffop^{c^*}V(t,S) = (\nabla_S V)^\top \mu(t,S,c^*) + \frac{1}{2}\text{Tr}\left(\sigma(t,S,c^*) Q_t \sigma(t,S,c^*)^\top \nabla_{SS}^2 V\right).
+\end{equation}
+The term $u(c) - u(c^*(t,S))$ represents the one-shot deviation incentive for the current self. The equilibrium condition is a fixed point: the policy that achieves the supremum in \eqref{eq:supp_ghjb} must be the equilibrium policy $c^*(t,S)$ itself. At equilibrium, the supremum term evaluates to zero, and the equation collapses to the standard HJB equation for the equilibrium policy.
+\end{definition}
+
+\subsection{The NBO Algorithm for Time-Inconsistency}
+
+To solve this fixed-point problem, we propose a "two-policy" NBO algorithm. This algorithm uses three neural networks to find the equilibrium by explicitly modeling the acting self and the anticipated future selves.
+
+\begin{enumerate}
+    \item \textbf{Acting Policy Network $\mathcal{C}_{\phi}(t,S)$:} Represents the current self's choice of consumption, $c_t$. Its parameters are $\phi$.
+    \item \textbf{Future Policy Network $\mathcal{C}_{\hat{\phi}}(t,S)$:} Represents the anticipated equilibrium policy of all future selves, $\hat{c}_t$. Its parameters are $\hat{\phi}$. This network acts as a "target" that evolves slowly.
+    \item \textbf{Value Network $V_{\xi}(t,S)$:} Approximates the equilibrium value function. Its parameters are $\xi$.
+\end{enumerate}
+
+The algorithm minimizes a composite loss function designed to drive the system to the equilibrium fixed point.
+
+\begin{definition}[NBO Loss for Time-Inconsistency]
+The total loss function is a weighted sum of three components:
+\begin{equation}
+\mathcal{L}(\phi, \hat{\phi}, \xi) = L_{\text{PERF}}(\phi, \xi) + \omega L_{\text{HJB}}(\phi, \hat{\phi}, \xi) + \lambda_{EQ} L_{\text{EQ}}(\phi, \hat{\phi}).
+\end{equation}
+The components are:
+\begin{enumerate}
+    \item \textbf{Performance Loss ($L_{\text{PERF}}$):} This is the standard actor loss for the acting policy network $\mathcal{C}_\phi$. It encourages the current self to maximize the total perceived utility, as evaluated by the critic $V_\xi$.
+    \begin{equation}
+    L_{\text{PERF}} = - \E \left[ \int_0^T u(\mathcal{C}_{\phi}(t,S_t)) dt + G(S_T) \right].
+    \end{equation}
+    
+    \item \textbf{Generalized HJB Loss ($L_{\text{HJB}}$):} This is the critic loss, which enforces the Bellman equation. Critically, the Hamiltonian is constructed using the anticipated \textit{future} policy $\mathcal{C}_{\hat{\phi}}$ for the dynamic terms.
+    \begin{equation}
+    L_{\text{HJB}} = \E \left[ \int_0^T \left( -\partial_t V_\xi - \left( u(\mathcal{C}_{\hat{\phi}}) + \diffop^{\mathcal{C}_{\hat{\phi}}}V_\xi \right) \right)^2 dt \right].
+    \end{equation}
+    This loss forces $V_\xi$ to be the correct value function for the policy $\mathcal{C}_{\hat{\phi}}$.
+    
+    \item \textbf{Equilibrium Consistency Loss ($L_{\text{EQ}}$):} This term enforces the fixed-point condition of the equilibrium by penalizing differences between the acting policy and the future policy.
+    \begin{equation}
+    L_{\text{EQ}} = \E \left[ \int_0^T \left\| \mathcal{C}_{\phi}(t,S_t) - \mathcal{C}_{\hat{\phi}}(t,S_t) \right\|^2 dt \right].
+    \end{equation}
+\end{enumerate}
+\end{definition}
+
+The full algorithm is detailed in Algorithm \ref{alg:ti}. A key feature is the slow update of the future policy network's parameters $\hat{\phi}$ using Polyak averaging. This stabilizes training by preventing the equilibrium target from moving too quickly.
+
+\begin{algorithm}[H]
+\caption{NBO Algorithm for Sophisticated Time-Inconsistent Agents}
+\label{alg:ti}
+\begin{algorithmic}[1]
+\State \textbf{Initialize} acting policy network $\mathcal{C}_{\phi}$, value network $V_{\xi}$.
+\State \textbf{Initialize} future policy network $\mathcal{C}_{\hat{\phi}}$ with same weights as $\mathcal{C}_{\phi}$ (i.e., $\hat{\phi} \leftarrow \phi$).
+\State \textbf{Initialize} hyperparameters: learning rate $\eta$, loss weights $\omega, \lambda_{EQ}$, Polyak averaging rate $\tau \in (0,1)$.
+
+\For{training iteration $k=1, 2, \dots$}
+    \State Sample a batch of initial states $\{S_0^{(i)}\}_{i=1}^M$.
+    \State Simulate state trajectories $\{S_t^{(i)}\}$ using a policy (e.g., from $\mathcal{C}_\phi$ with exploration noise).
+    \State Sample a batch of state-time points $\{(t_j, S_j)\}_{j=1}^B$ from the trajectories.
+    
+    \State \textbf{Compute Actions:}
+    \State $c_j \leftarrow \mathcal{C}_{\phi}(t_j, S_j)$
+    \State $\hat{c}_j \leftarrow \mathcal{C}_{\hat{\phi}}(t_j, S_j)$
+    
+    \State \textbf{Compute Derivatives:}
+    \State Compute $\partial_t V_\xi(t_j, S_j), \nabla_S V_\xi(t_j, S_j), \nabla_{SS}^2 V_\xi(t_j, S_j)$ via automatic differentiation.
+    
+    \State \textbf{Compute Loss Components:}
+    \State $L_{\text{PERF}} \leftarrow -\frac{1}{B}\sum_{j=1}^B \left( u(c_j) \Delta t + \dots \right)$ \Comment{Approximation of the integral performance loss}
+    \State $L_{\text{HJB}} \leftarrow \frac{1}{B}\sum_{j=1}^B \left( -\partial_t V_\xi - \left( u(\hat{c}_j) + \diffop^{\hat{c}_j}V_\xi \right) \right)^2$
+    \State $L_{\text{EQ}} \leftarrow \frac{1}{B}\sum_{j=1}^B \| c_j - \hat{c}_j \|^2$
+    
+    \State \textbf{Total Loss:} $\mathcal{L} \leftarrow L_{\text{PERF}} + \omega L_{\text{HJB}} + \lambda_{EQ} L_{\text{EQ}}$.
+    
+    \State \textbf{Update Acting and Critic Networks:}
+    \State Update $\phi$ and $\xi$ using one step of gradient descent on $\mathcal{L}$:
+    \State $(\phi, \xi) \leftarrow (\phi, \xi) - \eta \nabla_{(\phi, \xi)} \mathcal{L}$
+    
+    \State \textbf{Update Future Policy Network (Polyak Averaging):}
+    \State $\hat{\phi} \leftarrow \tau \phi + (1-\tau) \hat{\phi}$
+\EndFor
+\State \textbf{Return} trained networks $(\mathcal{C}_{\phi}, V_{\xi})$, which approximate $(c^*, V)$.
+\end{algorithmic}
+\end{algorithm}
+
+
+\section{A Formal Framework for Dynamic Games}
+\label{sec:supp_games}
+
+We now formalize the NBO framework for computing Markov Perfect Nash Equilibria (MPNE) in high-dimensional, continuous-time stochastic games with $N$ players.
+
+\subsection{The Model and the System of Coupled HJB Equations}
+
+Consider a game with $N$ players, indexed by $i \in \{1, \dots, N\}$. The state of the game is a vector $S_t \in \R^d$ that may include player-specific components, $S_t = (S_t^1, \dots, S_t^N)$. Player $i$ chooses an action $a_t^i \in \mathcal{A}^i$ to maximize their own objective functional, $V^i(t,S_t)$. The evolution of player $i$'s state can depend on their own actions and the actions of all other players, $a_t^{-i}$:
+\begin{equation}
+dS_t^i = \mu^i(t, S_t, a_t^i, a_t^{-i})dt + \sigma^i(t, S_t, a_t^i, a_t^{-i})dM_t^i.
+\end{equation}
+
+\begin{definition}[Markov Perfect Nash Equilibrium (MPNE)]
+An MPNE is a set of policy functions (strategies) $\{\alpha^{1,*}(t,S), \dots, \alpha^{N,*}(t,S)\}$ such that for each player $i$, the policy $\alpha^{i,*}$ is a best response to the other players' equilibrium policies $\{\alpha^{j,*}\}_{j \neq i}$. This means that no player has a unilateral incentive to deviate.
+\end{definition}
+
+The MPNE is characterized by a system of $N$ coupled HJB equations. Each player's value function must satisfy their own Bellman equation, taking the other players' strategies as given.
+
+\begin{definition}[System of Coupled HJB Equations]
+The set of value functions $\{V^1, \dots, V^N\}$ and policies $\{\alpha^{1,*}, \dots, \alpha^{N,*}\}$ at an MPNE must satisfy the following system of $N$ PDEs:
+\begin{equation} \label{eq:supp_hjb_game}
+-\partial_t V^i(t,S) = \sup_{a^i \in \mathcal{A}^i} \left\{ f^i(S, a^i, \alpha^{-i,*}(S)) + \diffop^{a^i, \alpha^{-i,*}}V^i(t,S) \right\},
+\end{equation}
+for each player $i=1, \dots, N$, with terminal conditions $V^i(T,S) = G^i(S)$. The It\^o operator for player $i$, $\diffop^{a^i, \alpha^{-i,*}}$, is evaluated using player $i$'s choice $a^i$ and the other players' equilibrium policies $\alpha^{-i,*}$. The system is coupled because the right-hand side of the HJB for player $i$ depends on the policies $\alpha^{j,*}$ of all other players $j \neq i$.
+\end{definition}
+
+\subsection{The NBO Algorithm for Dynamic Games}
+
+The NBO framework for games parameterizes the value function and policy function for each of the $N$ players with a dedicated pair of neural networks. The algorithm then simultaneously optimizes all network parameters to find a joint solution that constitutes a Nash equilibrium.
+
+The framework requires $2N$ neural networks:
+\begin{itemize}
+    \item \textbf{Policy Networks:} $\{\mathcal{A}_{\phi_i}^i(t,S)\}_{i=1}^N$, one for each player.
+    \item \textbf{Value Networks:} $\{V_{\xi_i}^i(t,S)\}_{i=1}^N$, one for each player.
+\end{itemize}
+The complete set of trainable parameters is $(\phi_1, \dots, \phi_N, \xi_1, \dots, \xi_N)$.
+
+\begin{definition}[NBO Loss for Dynamic Games]
+The global loss function is the sum of individual NBO loss functions for all players. Finding a Nash equilibrium corresponds to finding a parameter set that jointly minimizes this total loss.
+\begin{equation}
+\mathcal{L}_{\text{Game}}(\{\phi_i, \xi_i\}_{i=1}^N) = \sum_{i=1}^N \mathcal{L}^i(\{\phi_j\}_{j=1}^N, \xi_i) = \sum_{i=1}^N \left( L_{\text{PERF}}^i + \omega_i L_{\text{HJB}}^i \right).
+\end{equation}
+For each player $i$, the components are:
+\begin{enumerate}
+    \item \textbf{Player $i$'s Performance Loss ($L_{\text{PERF}}^i$):} The actor loss for player $i$, encouraging policy $\mathcal{A}_{\phi_i}^i$ to maximize player $i$'s own utility stream, evaluated by their own critic $V_{\xi_i}^i$.
+    \begin{equation}
+    L_{\text{PERF}}^i = - \E \left[ \int_0^T f^i(S_t, \mathcal{A}_{\phi_i}^i, \{\mathcal{A}_{\phi_j}^j\}_{j \neq i}) dt + G^i(S_T) \right].
+    \end{equation}
+
+    \item \textbf{Player $i$'s HJB Loss ($L_{\text{HJB}}^i$):} The critic loss for player $i$. It enforces player $i$'s HJB equation from the system \eqref{eq:supp_hjb_game}. The Hamiltonian is constructed using player $i$'s policy $\mathcal{A}_{\phi_i}^i$ and the \textit{current policies of all other players}, $\{\mathcal{A}_{\phi_j}^j\}_{j \neq i}$.
+    \begin{equation}
+    L_{\text{HJB}}^i = \E \left[ \left( -\partial_t V_{\xi_i}^i - \hamiltonian^i(\cdot, \mathcal{A}_{\phi_i}^i, \{\mathcal{A}_{\phi_j}^j\}_{j\neq i}, V_{\xi_i}^i) \right)^2 \right],
+    \end{equation}
+    where $\hamiltonian^i$ is the Hamiltonian for player $i$ from the RHS of \eqref{eq:supp_hjb_game}, evaluated with the current network policies.
+\end{enumerate}
+\end{definition}
+
+Minimizing this joint loss function drives the system to a fixed point where each player's policy is an approximate best response to the others. The full procedure is detailed in Algorithm \ref{alg:game}.
+
+\begin{algorithm}[H]
+\caption{NBO Algorithm for N-Player Dynamic Games}
+\label{alg:game}
+\begin{algorithmic}[1]
+\State \textbf{Initialize} $N$ policy networks $\{\mathcal{A}_{\phi_i}^i\}_{i=1}^N$ and $N$ value networks $\{V_{\xi_i}^i\}_{i=1}^N$.
+\State \textbf{Initialize} hyperparameters: learning rate $\eta$, loss weights $\{\omega_i\}_{i=1}^N$.
+
+\For{training iteration $k=1, 2, \dots$}
+    \State Sample a batch of state-time points $\{(t_j, S_j)\}_{j=1}^B$.
+    \State Let $\mathcal{L}_{\text{Game}} \leftarrow 0$.
+    
+    \For{each player $i=1, \dots, N$}
+        \State \textbf{Compute Policies for All Players:}
+        \State For $p=1,\dots,N$, compute $a_j^p \leftarrow \mathcal{A}_{\phi_p}^p(t_j, S_j)$. Let $\mathbf{a}_j = (a_j^1, \dots, a_j^N)$.
+        
+        \State \textbf{Compute Derivatives for Player $i$:}
+        \State Compute $\partial_t V_{\xi_i}^i, \nabla_S V_{\xi_i}^i, \nabla_{SS}^2 V_{\xi_i}^i$ via automatic differentiation.
+        
+        \State \textbf{Compute Player $i$'s Loss Components:}
+        \State $L_{\text{PERF}}^i \leftarrow -\frac{1}{B}\sum_{j=1}^B \left( f^i(S_j, a_j^i, a_j^{-i}) \Delta t + \dots \right)$
+        \State $L_{\text{HJB}}^i \leftarrow \frac{1}{B}\sum_{j=1}^B \left( -\partial_t V_{\xi_i}^i - \hamiltonian^i(S_j, a_j^i, a_j^{-i}, V_{\xi_i}^i) \right)^2$
+        
+        \State \textbf{Add to Total Loss:} $\mathcal{L}_{\text{Game}} \leftarrow \mathcal{L}_{\text{Game}} + L_{\text{PERF}}^i + \omega_i L_{\text{HJB}}^i$.
+    \EndFor
+    
+    \State \textbf{Update All Networks Simultaneously:}
+    \State Update all parameters $(\{\phi_i\}, \{\xi_i\})$ using one step of gradient descent on $\mathcal{L}_{\text{Game}}$:
+    \State $(\{\phi_i\}, \{\xi_i\}) \leftarrow (\{\phi_i\}, \{\xi_i\}) - \eta \nabla_{(\{\phi_i\}, \{\xi_i\})} \mathcal{L}_{\text{Game}}$
+\EndFor
+\State \textbf{Return} trained networks $(\{\mathcal{A}_{\phi_i}^i\}, \{V_{\xi_i}^i\})$, which approximate the MPNE.
+\end{algorithmic}
+\end{algorithm}
+
+
+
+\end{document}
