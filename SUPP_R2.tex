@@ -1,0 +1,57 @@
+\documentclass[ecta,draft]{econsocart}
+\RequirePackage[colorlinks,citecolor=blue,linkcolor=blue,urlcolor=blue]{hyperref}
+\usepackage{amsmath,amsfonts,amssymb,amsthm,enumitem,bm,mathpazo}
+\usepackage[T1]{fontenc}
+\usepackage{cleveref}
+\startlocaldefs
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\theoremstyle{remark}
+\newtheorem{definition}{Definition}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\newcommand{\diffop}{\mathcal{D}}
+\endlocaldefs
+\begin{document}
+\begin{frontmatter}
+\title{Supplementary Appendix to ``Neural Bellman Operators''}
+\end{frontmatter}
+\setcounter{equation}{0}\renewcommand{\theequation}{S\arabic{equation}}
+
+\section{Time-Inconsistent Agents: Extended-HJB Specification}
+A sophisticated temporal self chooses a one-shot action while taking the continuation policy of future selves as given. Let $\mathcal V$ denote the continuation value under that policy. The equilibrium condition is
+\begin{equation}
+ c^*(t,s)\in\argmax_{c\in\mathcal C(s)}\{\beta u(c)+\diffop^{c}\mathcal V(t,s)\},
+\qquad -\mathcal V_t=u(c^*)+\diffop^{c^*}\mathcal V,
+\label{eq:supp_r2_ehjb}
+\end{equation}
+with terminal and boundary data stated by the application. The policy-evaluation step uses the second equation with $c^*$ detached; the improvement step uses the first equation with $\mathcal V$ detached. The equilibrium residual is a one-shot deviation gain on a held-out grid, not a penalty that combines the two graphs. The no-present-bias limit $\beta=1$ is tested against the exponential-discount solution.
+
+\begin{definition}[Separated temporal-self iteration]
+At iteration $n$, solve the evaluation equation for $\mathcal V^n$ under the frozen continuation policy $\hat c^n$. Then update the acting policy by maximizing the first expression in \eqref{eq:supp_r2_ehjb} with $\mathcal V^n$ detached, and set the continuation policy equal to the updated policy (or use a declared target update only as a numerical accelerator). The reported equilibrium error is the maximum one-shot deviation gain.
+\end{definition}
+
+\section{Dynamic Games: Player-Specific Operator Iteration}
+For each player $i$, rivals $\pi_{-i}$ are detached during the improvement step:
+\begin{equation}
+\pi_i^{+}\in\argmax_{a_i\in\mathcal A_i}\{f_i(s,a_i,\pi_{-i})+\diffop^{a_i,\pi_{-i}}V_i\}.
+\label{eq:supp_r2_game}
+\end{equation}
+The evaluation equation is solved for $V_i$ at the frozen profile. The audit reports the unilateral gain from an independently computed best response and repeats the calculation from multiple initial profiles. In the static Cournot regression test, $q_i=1/3$ is the Nash quantity while $q_i=1/4$ is the joint-profit quantity; the latter therefore fails the unilateral test.
+
+\begin{definition}[Player-specific game update]
+For each $i$, minimize the evaluation residual for $V_i$ with all policies frozen. Holding $V_i$ and $\pi_{-i}$ fixed, maximize player $i$'s Hamiltonian over $\pi_i$. Update players sequentially or with explicitly detached simultaneous blocks. The scalar sum of all players' losses is not used as a Nash certificate.
+\end{definition}
+
+\section{Trace Estimation and Negative Controls}
+If $\widehat q$ is an unbiased estimator of a diffusion trace $q$, then
+\[
+\E(a-\widehat q/2)^2=(a-q/2)^2+\operatorname{Var}(\widehat q)/4.
+\]
+R2 therefore reports probe-count bias against exact derivatives on low-dimensional problems, applies probes to the symmetric part of the diffusion-weighted Hessian, and records the resulting value, policy, boundary, and runtime errors. Historical curves with no run-level provenance remain negative controls.
+
+\section{Evidence and Reproducibility}
+Every authoritative table row and plot curve carries a run identifier, seed, configuration hash, and source checksum in \texttt{replication/results.jsonl}. The source manifest records the environment, dependency versions, state and action domains, stopping criteria, failed pilots, and held-out distributions. Historical TeX arrays are retained for audit but are never treated as R2 experimental observations.
+\end{document}
