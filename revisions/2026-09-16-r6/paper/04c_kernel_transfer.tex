@@ -1,0 +1,116 @@
+\section{Policy Reuse When Transition Laws Change}
+\label{sec:kernel_transfer}
+Reward transfer holds the economic law of motion fixed. Changes in the frequency of a financial regime, the probability of a demand shock, or the survival of installed capacity do not satisfy this restriction. Even with a fixed policy, their repeated effects on future states need not be affine. This section supplies an upper correction for that nonlinearity and a feasible-policy representation with which to certify the resulting counterfactuals.
+
+\subsection{The Obstruction and an Endpoint Correction}
+Consider the finite-horizon additive problem, with a common finite state space and common feasible actions. At date $n$, write
+\begin{equation}
+ T_{n,\lambda}^a v=R_{n,\lambda}^a+K_{n,\lambda}^a v,
+ \qquad (R_{n,\lambda}^a,K_{n,\lambda}^a)
+ =(1-\lambda)(R_{n,0}^a,K_{n,0}^a)+\lambda(R_{n,1}^a,K_{n,1}^a).
+ \label{eq:kernel_mixture}
+\end{equation}
+Here $K$ is a positive discounted, possibly killed kernel with row mass at most $\gamma_n\leq1$. Exit payments are included in $R$; the terminal function $g$ is common. The parameter $\lambda$ is known when the policy is selected and is held fixed across dates. Equation \eqref{eq:kernel_mixture} can be interpreted as an independent regime draw at each date, not as advance information about future draws.
+
+In contrast to reward-affine transfer, $\lambda\mapsto V_{n,\lambda}$ need not be convex. A two-date uncontrolled chain that pays one only when the first regime is 1 and the second is 0 has value $\lambda(1-\lambda)$. Both endpoint values are zero and the midpoint value is $1/4$. Interpolating the endpoint optima therefore gives an invalid upper bound. The difficulty remains without a neural approximation, a numerical error, or policy switching.
+
+Fix an interval $[a,b]\subseteq[0,1]$, put $t=(\lambda-a)/(b-a)$, and let $v^a,v^b$ be endpoint supersolutions:
+\begin{equation}
+ v_n^j\geq\max_u T_{n,j}^u v_{n+1}^j,\qquad
+ v_N^j=g,\qquad j\in\{a,b\}.
+ \label{eq:endpoint_supersolutions}
+\end{equation}
+Exact endpoint optima are one admissible choice. Define, at every state and action,
+\begin{align}
+ D_n^u&=(K_{n,a}^u-K_{n,b}^u)(v_{n+1}^b-v_{n+1}^a),\\
+ M_N&=0,\\
+ M_n(s)&=\max\left\{0,\max_{u\in A_n(s)}
+ \left[D_n^u(s)+\max\{(K_{n,a}^uM_{n+1})(s),(K_{n,b}^uM_{n+1})(s)\}\right]\right\}.
+ \label{eq:kernel_correction}
+\end{align}
+The inner maximum over the two endpoints is taken for the same action $u$. It does not permit a different control after observing the current regime.
+
+\begin{theorem}[A corrected transition-law chord]
+\label{thm:corrected_chord}
+Under \eqref{eq:kernel_mixture}--\eqref{eq:endpoint_supersolutions},
+\begin{equation}
+ U_n(\lambda)=(1-t)v_n^a+tv_n^b+t(1-t)M_n
+ \label{eq:corrected_upper}
+\end{equation}
+is an upper bound on $V_{n,\lambda}$ simultaneously at every state, every date, and every $\lambda\in[a,b]$. If
+$\|K_{n,a}^u-K_{n,b}^u\|_{\infty\to\infty}\leq L_{K,n}|b-a|$ and
+$\|v_{n+1}^b-v_{n+1}^a\|_\infty\leq L_{v,n+1}|b-a|$, then
+\begin{equation}
+ \|M_n\|_\infty\leq (b-a)^2
+ \sum_{j=n}^{N-1}\Gamma_{n,j}L_{K,j}L_{v,j+1},
+ \qquad \Gamma_{n,j}=\prod_{r=n}^{j-1}\gamma_r.
+ \label{eq:kernel_second_order}
+\end{equation}
+\end{theorem}
+\begin{proof}
+Let $C_n=(1-t)v_n^a+tv_n^b$. Affinity of rewards and kernels gives the exact identity
+\begin{align*}
+ T_{n,\lambda}^u C_{n+1}-C_n
+ ={}&(1-t)(T_{n,a}^u v_{n+1}^a-v_n^a)
+       +t(T_{n,b}^u v_{n+1}^b-v_n^b)+t(1-t)D_n^u.
+\end{align*}
+The first two terms are nonpositive. Positivity and affinity of $K$ imply
+$K_{n,\lambda}^u M_{n+1}\leq
+\max\{K_{n,a}^uM_{n+1},K_{n,b}^uM_{n+1}\}$ pointwise.
+Consequently $T_{n,\lambda}^u U_{n+1}\leq U_n$ for every feasible $u$.
+Since $U_N=g$, backward comparison proves the first assertion. Taking sup norms in \eqref{eq:kernel_correction} gives
+$\|M_n\|_\infty\leq L_{K,n}L_{v,n+1}(b-a)^2+\gamma_n\|M_{n+1}\|_\infty$;
+backward iteration gives \eqref{eq:kernel_second_order}.
+\end{proof}
+
+The correction depends on the product of a change in the transition operator and a change in continuation value. It vanishes when the kernels are fixed, recovering the reward-transfer upper chord. It also vanishes when the relevant continuation functions do not change. These are economically distinct invariances. Equation \eqref{eq:kernel_second_order} concerns the additional upper correction, not the total loss of a policy library: a change in the optimal action can still generate a first-order bank-coverage error. No general square-root oracle-complexity conclusion follows from this equation alone.
+
+An endpoint neural approximation can be used without treating it as an exact optimum. Suppose $\widehat v_N=g$ and certified one-sided residual bounds satisfy
+$\max_u T_{n,j}^u\widehat v_{n+1}-\widehat v_n\leq r_n^j$.
+Set $e_N^j=0$ and $e_n^j=(r_n^j)_++\gamma_ne_{n+1}^j$. Then
+$v_n^j=\widehat v_n+e_n^j$ satisfies \eqref{eq:endpoint_supersolutions}, by positivity and the row-mass bound. Thus the theorem accommodates approximate neural endpoints and an explicit evaluation budget. A sampled training residual does not supply the required $r_n^j$. The numerical implementation below uses exact finite-model endpoints so that the transition-law correction, rather than endpoint estimation, is isolated.
+
+\subsection{Feasible Policy Values over the Entire Parameter Interval}
+Fix a deterministic Markov policy $p$ that does not observe future regimes. With $h=N-n$, its value is a polynomial of degree at most $h$:
+\begin{equation}
+ J_n^p(\lambda)=\sum_{j=0}^{h}{h\choose j}\lambda^j(1-\lambda)^{h-j}F_{n,j}^p.
+ \label{eq:bernstein_policy}
+\end{equation}
+The vector coefficients have a direct conditional-expectation interpretation. Imagine drawing all $h$ future regime labels before the experiment, but not revealing them to $p$. Conditional on exactly $j$ labels being 1, the current label is 1 with probability $j/h$. Hence $F_{N,0}^p=g$ and
+\begin{align}
+ F_{n,j}^p={}&\left(1-\frac jh\right)
+ \left[R_{n,0}^{p_n}+K_{n,0}^{p_n}F_{n+1,j}^p\right]
+ +\frac jh\left[R_{n,1}^{p_n}+K_{n,1}^{p_n}F_{n+1,j-1}^p\right].
+ \label{eq:bernstein_recursion}
+\end{align}
+A term with zero weight is omitted, so no nonexistent coefficient is used at $j=0$ or $j=h$. The recursion remains valid with killing: labels after exit can be drawn without changing the stopped payoff.
+
+The representation permits an operational continuum certificate. Restrict the polynomial coefficients to a closed parameter cell by de Casteljau subdivision. Express \eqref{eq:corrected_upper} at the same degree by degree elevation. For a library $\mathcal P$ and any cell $I$, let $U_{n,j}^I$ and $F_{n,j}^{p,I}$ denote these coefficients and put
+\begin{equation}
+ \epsilon_I=\max_{n,s}\left[\min_{p\in\mathcal P}
+             \max_{0\leq j\leq N-n}
+             \{U_{n,j}^I(s)-F_{n,j}^{p,I}(s)\}\right]_+.
+ \label{eq:bernstein_certificate}
+\end{equation}
+The order of the minimum and maximum deliberately gives an upper bound rather than an equality.
+
+\begin{corollary}[Transition-law policy reuse]
+\label{cor:kernel_reuse}
+Choose at each state and date an index attaining $\max_{p\in\mathcal P}J_n^p(\lambda)$ and use that policy's current action. The resulting feasible switching policy $p^{\rm sw}_\lambda$ satisfies
+\begin{equation}
+ 0\leq V_{n,\lambda}(s)-J_n^{p^{\rm sw}_\lambda}(s)
+ \leq\epsilon_I,\qquad \lambda\in I.
+ \label{eq:kernel_reuse_guarantee}
+\end{equation}
+The maximum of $\epsilon_I$ over a partition therefore certifies every parameter in the partition, every state, and every date, without interpreting parameter samples as a uniform test.
+\end{corollary}
+\begin{proof}
+The Bernstein basis is nonnegative and sums to one. For each fixed policy, the polynomial difference on $I$ is bounded above by its largest coefficient difference. Taking a minimum over policies proves
+$U_n-\max_pJ_n^p\leq\epsilon_I$. Backward induction and positivity give
+$J_n^{p^{\rm sw}}\geq\max_pJ_n^p$: after taking the selected policy's current action, subsequent switching cannot lower its continuation value. Theorem \ref{thm:corrected_chord} completes the proof.
+\end{proof}
+
+The same lower representation can be paired with a different upper oracle. For example, disclose to a relaxed controller the number of remaining regime-1 draws, and disclose each realized label afterward. Replace the fixed action in \eqref{eq:bernstein_recursion} by a maximum over a \emph{common} current action after combining the two weighted terms. Call the resulting vectors $W_{n,j}$. Then
+$\sum_j{h\choose j}\lambda^j(1-\lambda)^{h-j}W_{n,j}$ is an upper value: every original policy is feasible in the enlarged information structure. This is an explicit, zero-penalty information relaxation in the sense of \citet{brown2010}, not a new general duality principle. Its triangular count recursion requires $h+1$ coefficient vectors at a date with $h$ periods left, rather than enumeration of all $2^h$ label histories. We report its information premium separately from the corrected-chord certificate; a loose information bound is not evidence of a large policy loss.
+
+Changing transitions has long been a subject of parametric and robust dynamic programming. Our result does not claim that such counterfactuals were previously impossible. Its additional content relative to a reward-policy cache is the explicit cross-operator term in \eqref{eq:kernel_correction}, its second-order upper-error account, and its combination with feasible policy polynomials and switching. These objects retain the same scalar parameter across the horizon rather than allowing an adversary to reset it freely at each node. In the application, the certificate supplies a new, fully specified uncertainty counterfactual for the original stopped preference economy.

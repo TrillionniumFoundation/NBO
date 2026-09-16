@@ -1,0 +1,40 @@
+\section{Transition-Law Certificates and Mechanism Replication}
+\subsection{Coefficient Construction and Interval Bounds}
+For a fixed policy, pre-draw the $h$ remaining iid regime labels. Conditional on their count $j$, labels are exchangeable, the first label is 1 with probability $j/h$, and the remaining count is $j-1$ or $j$. Applying the same count-blind policy to these conditional paths gives the main coefficient recursion. Averaging over the binomial count distribution proves the polynomial representation. This is an evaluation identity, not a policy allowed to condition its action on the count.
+
+For the separate upper calculation the controller is allowed to observe the remaining count, and past labels are revealed after their transitions. Every original policy can ignore this extra information. Backward maximization of the weighted common-action criterion therefore gives an upper coefficient vector. Averaging over counts preserves the upper inequality. Optimizing the regime-0 and regime-1 actions separately \emph{before} taking their weighted mean would instead disclose the current label and define a different relaxation. The implementation takes the maximum after the mean.
+
+If $h\geq2$, the degree-$h$ Bernstein coefficients of the corrected upper value on a local interval are
+\[
+ U_{n,j}=\left(1-\frac jh\right)v_n^a+\frac jh v_n^b
+       +\frac{j(h-j)}{h(h-1)}M_n,\qquad j=0,\ldots,h.
+\]
+At $h=1$ the correction is zero because the common terminal payoff has zero endpoint difference; at $h=0$ the only coefficient is $g$. Degree elevation thus represents the quadratic upper function exactly. De Casteljau subdivision restricts both upper and lower coefficients to the same closed cell before taking their coefficient differences. The bound is conservative because
+$\sup_t\min_p f_p(t)\leq\min_p\sup_t f_p(t)$.
+The minimum is taken separately for each state and date, not before the statewise maximum.
+
+The stopping condition uses the maximum of these cell bounds, not the largest loss observed at replay parameters. The replay additionally checks the whole value vector, dominance by the upper function, and improvement from switching relative to the best stored fixed policy. The script stores each anchor policy, its independently evaluated polynomial coefficients, each interval's upper coefficients, cell bounds, and validation locations. The count-information and corrected-chord outputs remain separate so that a loose information bound cannot be substituted for the stopping certificate.
+
+\subsection{A Reusable QP with the Original Information Structure}
+At a tree node, write its state as $x_h=M_hx+S_hz+b_h$. Let
+$Q=I/d+0.2\mathbf1\mathbf1^{\mathsf T}/d^2$ and let $p_h$ be its probability. Expansion of all stage and terminal costs gives
+\[
+ H=2\sum_hp_hS_h^{\mathsf T}QS_h+2\operatorname{diag}_h(0.1p_hI/d),\quad
+ F=2\sum_hp_hS_h^{\mathsf T}QM_h,\quad
+ f_0=2\sum_hp_hS_h^{\mathsf T}Q(b_h-\mathbf1).
+\]
+The control diagonal includes decision nodes only. The sums over state costs include terminal nodes. Let $D$ repeat each decision node's probability across its $d$ controls. A Lipschitz constant for the transformed gradient is the largest eigenvalue of $D^{-1/2}HD^{-1/2}$. Each accelerated step is a nodewise simplex projection of $z-D^{-1}\nabla C_x(z)/L$. Every ten iterations we check the complete convex tangent gap; the final gap is independently recalculated by the original tree-gradient routine. The reported query time includes that evaluation. The structural setup and the learned training times are both included in their respective totals; the tighter deposited reference enters only the accuracy comparison.
+
+The assembly is a new source implementation of the structural comparison described in the fifth-round report, not an invention of parametric quadratic programming. All cold-start workloads use the same saved initial states. No array of known query solutions initializes a new query. Complete costs, gaps, timing samples, feasibility errors, and gradient comparisons are retained in the execution record.
+
+\subsection{Risk-Class Evaluation and Scope}
+For a given $(d,k)$, first solve the original finite problem backward. At the initial state, optimize the current action separately over positive and nonpositive portfolio positions using the same optimal continuation. Evaluate each resulting complete policy independently to obtain $(B,A,C)$. This computes first-risk-class values, not policies constrained to keep the same sign forever. Repeat the entire backward solve with $\theta=0$ at every state and date for the no-deliberate-adjustment model. Preference volatility remains present. The two risk-specific option values are nonnegative by set inclusion, and their difference is checked against the independently formed difference of risk advantages.
+
+Bisection starts only when the risk advantage has opposite endpoint signs. The output records both signs, the bracket, the active class features, and the ratio of their effort and duration differences. It does not assign a global uniqueness flag. A duration-gap lower bound valid throughout an interval would justify the main uniqueness result; the present numerical brackets do not assert that additional hypothesis. The portfolio-sign exclusions in the inherited reward experiment therefore retain their original independent status.
+
+\subsection{Evidence and Reproduction}
+The current source record is \texttt{ECTA\_R6.tex}, \texttt{SUPP\_R6.tex}, the sixth-revision section directory, and \texttt{replication/r6/}. Sections S.1--S.8 preserve earlier substantive proofs, specifications, and evidence with their historical identities. The new manifest pins the reachable source commit and hashes the executable sources, immutable input checkpoints, generated records, and tables. The public execution log distinguishes source preparation, experiments, validation, and document build.
+
+The support comparison uses \texttt{bank\_comparison.py}. Transition calculations use \texttt{transport.py} and \texttt{kernel\_certificate.py}. The remaining programs are \texttt{mechanism.py}, \texttt{structural\_qp.py}, and the independent small-model checks in \texttt{unit\_tests.py}. Numerical libraries are single-threaded for timing. Two developmental transition-certificate runs were stopped to eliminate repeated interval calculations and then to replace array multiplication by an equivalent CSR multiplication. The final runs use the cached intervals and verified CSR rows. This is an execution optimization, not a change in the state, action, transition, or welfare target. The all-state scalar-OLS comparison retains the inherited common oracle implementation for both objectives.
+
+The revised source does not reclassify the historical neural fits, exact grid repairs, or finite games. In particular, removal of neural proposals still meets the original reward-bank welfare target, and the reusable QP still supplies the relevant stronger resource comparator. A completed build or a passing finite-model validation does not establish journal acceptance, broad neural superiority, or a diffusion approximation theorem.

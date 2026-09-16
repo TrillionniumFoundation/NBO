@@ -1,0 +1,36 @@
+\section{Replication and Additional Results}
+This section retains the foundational neural experiments and their full checkpoint provenance. The fifth-revision additions and independent rechecks are described in S.7--S.8.
+
+\subsection{Source and Evidence Identities}
+The authoritative R4 source record consists of \texttt{ECTA\_R4.tex}, \texttt{SUPP\_R4.tex}, their explicitly included sections, and \texttt{replication/r4/}. The base review is pinned at commit \texttt{79a7d84}. The replication manifest records the reachable source commit, full SHA-256 digests of the source files, package versions, and output identities. Source files are committed before their authoritative execution. A later result commit can add generated outputs without changing that source anchor.
+
+Execution status, evidence class, and numerical-tolerance status are separate fields. A completed program is not automatically a solved control problem. The coupled resource runs have a specified held-out cost-loss target and independent reference gaps. The NDU comparison reports discrepancies and does not assign a passed uniform PDE certificate. Algebraic checks, domain tests, finite-state equilibria, and structured feature solvers each have their own evidence class. An unavailable continuous-time error bound or reflection regulator is null with an explanation, not a numerical zero.
+
+Scientific digests exclude elapsed time and hardware measurements. File digests still identify complete files, including timing records. Floating-point algorithms, package versions, and BLAS implementations can change last digits across platforms. The source and saved weights permit direct policy replay independently of retraining. Timings include neural fitting and full evaluation for the stated initial-state batch; they do not imply a universal hardware comparison or unmeasured amortization advantage.
+
+\subsection{Architectures and Optimization}
+For the stopped preference model the safeguarded neural run uses separate two-hidden-layer tanh actors of width 32 and critics of width 64 at each of eight decision dates. The actor has three bounded output coordinates. The critic writes the value as $G$ plus remaining time times a product vanishing on all spatial faces times its network output. The training sample contains 2,048 interior states. L-BFGS caps are 160 actor and 1,000 critic iterations with strong-Wolfe line search; actual function evaluations and iteration counts are recorded when produced by the optimizer. The implementation never trains on the independent grid reference's values or policies.
+
+The unsafeguarded pilot uses width-32 critics and 1,024 training states with a smaller critic budget. It is retained as a development baseline, not used as a matched causal ablation. The resource experiment supplies a matched ablation: the same fitted actor weights are evaluated with and without pointwise improvement at deployment. It holds training, initial states, shocks, and model primitives fixed.
+
+For resources the convex critic is
+\[
+ q(x)+\ell^\top(x-\mathbf1)+c_0+
+ \sum_{j=1}^{6d+102}\alpha_j[\max\{w_j^\top(x-\mathbf1)+b_j,0\}]^2,
+ \qquad\alpha_j\geq0.
+\]
+Directions consist of signed coordinate axes, signed aggregate directions, and 32 seeded Gaussian directions, each at offsets $-0.5,0,0.5$. The coefficients are fitted by bounded least squares with a $10^{-5}$ ridge term. The actor has one width-32 tanh layer and a slack-softmax output enforcing the common budget. Its 160-iteration L-BFGS fit distills feasible greedy actions. The convex pointwise improvement uses an explicit gradient-Lipschitz upper bound and checks its linear minimization gap rather than equating a stationary point with a maximum. All three seeds, 101, 202, and 303, are included at each dimension.
+
+\input{revisions/2026-09-16-r6/paper/table_resource_all}
+
+The independent scenario tree contains one root action, four next-date actions, and sixteen last-date actions for each tested initial state. Its objective sums all state and control costs and the 64 terminal costs with their probabilities. An independent backward adjoint computes the gradient. Reference optimization stops at a common-accuracy gap of $10^{-3}$ for timing and is separately continued to $10^{-7}$ for policy-cost auditing. Nonanticipativity is enforced by one action per information node, not one freely chosen action per complete shock path.
+
+\subsection{Reproduction Order}
+The repository README gives executable commands for the following sequence: generator, temporal, trace, utility, and game tests; stochastic grid refinements and re-solved adjustment-cost panels; the retained unsafeguarded neural pilot; all three safeguarded NDU runs; nine resource runs; independent frozen-policy and occupation analysis; computational-graph and checkpoint-replay tests; table generation; source/output manifest generation; and LaTeX builds. The table generator reads the deposited JSON records, so manually entered historical arrays cannot silently become current numerical evidence.
+
+The source snapshot also retains the previous manuscripts, supplements, reports, reviewer diagnostics, and arrays unchanged. The preservation map locates their substantive topics in the new manuscript or this supplement. Retention is not endorsement of earlier incorrect claims. The development log records the standard-library module-name collision discovered during implementation, the corrected execution, and the budget difference of the pilot. Failed commands are not relabeled as successful scientific experiments.
+
+\subsection{What Each Numerical Error Means}
+For NDU, a reference value difference compares two specified finite approximations or evaluates a neural policy against a specified finite reference. The actor discrepancy reports consumption, preference adjustment, and portfolio separately because they have different units. A feasible Bellman gain is measured in continuation-value units and uses an independently evaluated frozen continuation. It is a lower bound on the maximum profitable one-step deviation over a richer action set, not an upper bound on all deviations.
+
+For resources, the full stochastic tree gives the evaluated policy cost. The reference tangent gap bounds its unknown optimum on that same tree, resulting in the interval in S.1. The held-out initial states are explicitly stored, so the bound is not extrapolated to all states. The Merton and Epstein--Zin policy errors compare learned homothetic coefficients with analytical solutions, while LQR errors compare structured learned policies with an independent Riccati solution. Temporal and game exploitability use separate best-response calculations against the actual continuation being evaluated. Trace standard errors concern a repeated-batch scalar loss and are not policy errors.

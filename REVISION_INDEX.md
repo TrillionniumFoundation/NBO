@@ -1,3 +1,27 @@
+# Neural Bellman Operators — revision R6
+
+**Date:** 16 September 2026  
+**Revision branch:** `revision/econometrica-r6-2026-09-16`  
+**Review input:** R5 review at `0d0e79a52e540bd0647801ce316f051d667c6797`  
+**Previously reviewed manuscript:** R5 at `c9f71077cf6a339573ac07be55d7660797bcf6ea`
+
+## Authoritative R6 reading order
+
+1. `ECTA_R6.tex` and `revisions/2026-09-16-r6/ECTA_R6.pdf` — complete main manuscript.
+2. `SUPP_R6.tex` and `revisions/2026-09-16-r6/SUPP_R6.pdf` — standalone supplement.
+3. `revisions/2026-09-16-r6/response_to_referee.md` — R5-F1 through R5-F4 and presentation points.
+4. `revisions/2026-09-16-r6/execution_summary.md` — generated results, not a substitute for their source.
+5. `replication/r6/README.md`, source, arrays, logs, `output/validation.json` and `output/manifest.json` — reproduction and reachable source identities.
+6. `revisions/2026-09-16-r6/literature_comparison.md`, `preservation_map.md`, `development_notes.md`, and `build_report.json` — correspondence, history, development and actual build checks.
+
+R6 adds a corrected endpoint supersolution for transition-law counterfactuals, exact feasible-policy Bernstein evaluation and interval welfare bounds, risk-class duration/effort comparative statics and a preference-option decomposition. Executed controls include same-oracle scalar optimistic support, neural-free lower policies against the original target, and an exact reusable scenario-tree QP. Historical theory, experiments, adverse results, and reviews remain unchanged in their original paths.
+
+These are owner-commissioned advisory review materials, not a record of submission, appointment, or approval by Econometrica.
+
+---
+
+## Historical R5 index (preserved verbatim)
+
 # Neural Bellman Operators — revision R5
 
 **Date:** 16 September 2026  

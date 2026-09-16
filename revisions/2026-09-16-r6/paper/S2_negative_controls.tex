@@ -1,0 +1,54 @@
+\section{Counterexamples, Trace Estimation, and Differentiation}
+\subsection{Why a Joint Penalty Does Not Define the Economic Solution}
+Consider $-V'+V=0$ on $[0,1]$, $V(1)=1$. Its solution is $V^*(t)=e^{t-1}$. The historical composite objective was of the form
+\[
+ L(V)=\int_0^1\{V(t)+[-V'(t)+V(t)]^2\}\,dt.
+\]
+The feasible perturbation $V_\varepsilon(t)=V^*(t)-\varepsilon(1-t)$ preserves the terminal condition but has residual $-\varepsilon(2-t)$. Consequently
+\[
+ L(V_\varepsilon)-L(V^*)=-\frac{\varepsilon}{2}+\frac{7\varepsilon^2}{3}<0
+ \quad\text{for }0<\varepsilon<\frac{3}{14}.
+\]
+Thus the exact economic solution is not even a local minimizer of this penalty. Separate parameter blocks, objectives, and verification conditions are substantive changes, not a change of notation for that joint loss.
+
+\subsection{A Stable Actor Stationary Point Need Not Be Optimal}
+On $[-2,2]$, let $H(a)=-(a^2-1)^2+0.2a$. Its stationary equation is $4a^3-4a-0.2=0$. There are three real roots. At the negative local maximizer, approximately $-0.9739943532$, $H''(a)=4-12a^2<0$, so gradient ascent has a locally asymptotically stable equilibrium. The positive maximizer is approximately $1.0241203002$ and has higher payoff by approximately $0.3998745872$. Both are isolated. The example embeds into a finite-horizon control problem with flow $H(a)$ and exact evaluation $(T-t)H(a)$.
+
+Consequently, even exact fast evaluation, diminishing separated step sizes, bounded iterates, and zero noise do not turn isolated actor stationary points into policy-improvement fixed points. Under a suitable stochastic-approximation theorem the justified conclusion concerns the limiting invariant or stationary set. Global optimality additionally requires an argument excluding suboptimal attractors. Convex improvement in the resource example supplies such an argument for each surrogate action problem; it does not automatically eliminate critic approximation error. Constant-step Adam has no convergence theorem in this paper, and the executed neural runs use the explicitly recorded L-BFGS and constrained least-squares routines instead.
+
+\subsection{Small Strong Residuals Can Miss a Viscosity Solution}
+For the exit-time problem $dX_t=a_tdt$, $|a_t|\leq1$, with flow $-1$ and zero payoff on $\{-1,1\}$, the value is $V(x)=|x|-1$. The viscosity equation is $1-|V'|=0$. The smooth functions
+\[
+ W_\varepsilon(x)=\sqrt{1+\varepsilon^2}-\sqrt{x^2+\varepsilon^2}
+\]
+satisfy the boundary data, while their squared strong residual under the uniform distribution tends to zero:
+\[
+ \frac12\int_{-1}^1\left(1-\frac{|x|}{\sqrt{x^2+\varepsilon^2}}\right)^2dx
+ \sim\left(2-\frac\pi2\right)\varepsilon.
+\]
+Nevertheless $W_\varepsilon\to1-|x|$, which has the wrong sign and is not the desired viscosity solution. The asymptotic expression follows by $x=\varepsilon y$ and integration of the resulting integrable function on $[0,\infty)$. The code also evaluates the finite-$\varepsilon$ integral by independent adaptive quadrature.
+
+Monotonicity, stability, and consistency with an appropriate comparison principle are central to viscosity approximation; see \citet{barles1991}. Smooth network approximation of a function and its derivatives, as in \citet{hornik1990}, concerns a smooth target and does not approximate a derivative at a kink or replace a viscosity-selection argument. Historical kink and residual arrays remain available as archival material, not as evidence that an unregularized strong-residual loss selects the correct solution.
+
+\subsection{Probe Budget and the Squared-Loss Estimand}
+Let $A=B^\top\nabla^2v B$ be symmetric, $z_k$ independent standard Gaussian vectors, and $q_k=z_k^\top A z_k$. Gaussian fourth moments give $\E q_k=\tr A$ and $\operatorname{Var}(q_k)=2\norm{A}_F^2$. For deterministic $a$ and $\bar q_K=K^{-1}\sum_kq_k$,
+\[
+ \E\left(a-\frac12\bar q_K\right)^2
+ =\left(a-\frac12\tr A\right)^2+\frac{\norm{A}_F^2}{2K}.
+\]
+In contrast $K^{-1}\sum_k(a-q_k/2)^2$ has excess expectation $\norm{A}_F^2/2$, independent of $K$. For the regression matrix $\left(\begin{smallmatrix}2&1\\1&3\end{smallmatrix}\right)$, $\norm A_F^2=15$, $a=1.25$, and the exact-trace loss is $1.5625$. The population excess is $7.5/K$.
+
+An unbiased alternative for $K\geq2$ is the off-diagonal statistic
+\[
+ U_K=\frac{(\sum_kr_k)^2-\sum_kr_k^2}{K(K-1)},\qquad r_k=a-q_k/2.
+\]
+Independence implies $\E U_K=(\E r_k)^2$. Under an integrable derivative envelope, differentiating its expectation yields the gradient of the exact squared residual. The realized statistic can be negative; unbiasedness neither makes it a nonnegative sample loss nor guarantees optimizer stability. If the action or parameters are selected using the same probes, the fixed-parameter identity is not an adaptive generalization theorem. Independent held-out probes are needed to interpret such selection.
+
+\input{revisions/2026-09-16-r6/paper/table_trace}
+
+Each row averages 20,000 independent batches. The Monte Carlo standard error pertains to the repeated-batch mean, not to a single quadratic form or its within-batch variance. The numerical test checks the known expectation within six Monte Carlo standard errors and preserves the wrong mean-of-squares statistic as a negative control. It does not assign value or policy errors to this algebraic experiment.
+
+\subsection{Executable Computational-Graph Tests}
+The test suite forms a quadratic critic and a control-dependent diffusion loading, contracts its automatic Hessian with the covariance, and checks both parameter blocks. In the actor update, critic coefficients receive no gradient but the action-dependent covariance does. In the critic update, the policy output is detached while the critic coefficients receive gradients. A finite-transition actor derivative is also checked against central differences in all three controls. Freezing critic parameters does not detach the next-state input: the continuation gradient with respect to the action-induced state is retained.
+
+A separate test compares the resource critic's explicit gradient with PyTorch automatic differentiation. The convex squared-ReLU feature architecture is a transparent special case of the input-convex approach of \citet{amos2017}. Exact directional second derivatives or Hessian-vector products, following \citet{pearlmutter1994}, can avoid constructing a dense Hessian when the diffusion has low rank. The complete costs still depend on network size, diffusion multiplication, sample count, probe count, and optimization iterations.

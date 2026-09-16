@@ -1,0 +1,146 @@
+\section{Contract Changes and Certified Policy Reuse}
+\label{sec:contracts}
+\subsection{Operating Benefits and the Outside Option}
+The boundary contract permits a precise economic question: how do portfolio and preference choices respond when the benefit of remaining in the operating regime changes relative to the outside option? Add a constant flow benefit $m$ to the running objective and a constant $\ell$ to the liquidation payoff, holding the diffusion, feasible controls, stopping rule, and consumption units fixed. These are changes in contract primitives. They need not be changes in the representation of a fixed preference ordering.
+
+For a policy $p$, let $B_n^p$ be its expected baseline utility, including $G$ but excluding the adjustment charge. In addition to its discounted effort $C_n^p$, define
+\begin{equation}
+ A_n^p=\E^p\int_{t_n}^{\tau}e^{-\rho(v-t_n)}\,dv,
+ \qquad Z_n^p=\E^p e^{-\rho(\tau-t_n)}.
+ \label{eq:duration_exposure}
+\end{equation}
+All four functions depend on the initial state. The identity $\rho A_n^p+Z_n^p=1$ holds pathwise before taking expectations. Thus the same policy's payoff is
+\begin{equation}
+ J_n^p(m,k,\ell)=B_n^p+m A_n^p-kC_n^p+\ell Z_n^p
+ =\ell+B_n^p+dA_n^p-kC_n^p,\qquad d=m-\rho\ell.
+ \label{eq:contract_quotient}
+\end{equation}
+The interpretation of $d$ is the flow benefit of operation net of the annuity value of the liquidation increment. This is a comparison of two explicitly priced components of the contract. It does not require a preference-dependent normalization of consumption utility.
+
+\begin{proposition}[Contract contrast and economic moments]
+\label{thm:contract}
+Suppose the feasible policy class, transition law, and stopping rule do not depend directly on $(m,k,\ell)$, and the required values are finite. Then
+\begin{equation}
+ V_n(m,k,\ell)=\ell+W_n(d,k),\qquad
+ W_n(d,k)=\sup_p\{B_n^p+dA_n^p-kC_n^p\}.
+ \label{eq:contract_value}
+\end{equation}
+A joint change $(m,\ell)\mapsto(m+\rho h,\ell+h)$ leaves the entire optimal-policy correspondence unchanged and adds $h$ to value. The function $W_n$ is convex in $(d,k)$, increasing in $d$, and decreasing in $k$. If $p_i$ has value loss at most $e_i$ at $q_i=(d_i,k_i)$, then
+\begin{equation}
+ (d_2-d_1)(A^{p_2}_n-A^{p_1}_n)
+ -(k_2-k_1)(C^{p_2}_n-C^{p_1}_n)\geq-(e_1+e_2).
+ \label{eq:joint_moment}
+\end{equation}
+At points of differentiability, optimal duration and effort equal $\partial_dW_n$ and $-\partial_kW_n$, respectively.
+\end{proposition}
+
+\begin{proof}
+Equation \eqref{eq:contract_quotient} proves the first claim for each policy before optimization. The supremum of the displayed affine functions is convex; their slopes in $d$ and $k$ have the stated signs. Approximate optimality gives $J^{p_1}(q_1)\geq J^{p_2}(q_1)-e_1$ and $J^{p_2}(q_2)\geq J^{p_1}(q_2)-e_2$. Adding and cancelling the intercepts proves \eqref{eq:joint_moment}. The differentiability statement follows from the supporting affine function of any optimizer.
+\end{proof}
+
+Two implications sharpen the interpretation of the portfolio exercise. First, increasing running utility alone is not a harmless normalization: it changes $d$ and therefore the reward for discounted operating duration. Increasing the terminal payoff by the corresponding annuity value leaves $d$ unchanged and cannot cause a portfolio reversal. Second, observations of choices and state paths alone cannot separately identify $m$ and $\ell$ along this equivalence direction. This is an exact restriction on the optimal-policy correspondence, not a claim that $d$ itself is identified. Identification of $d$ still requires an observation model and economically informative variation. If the distribution of the termination time were independent of the policy, $A^p$ would be common to all policies and even $d$ would not change their rankings. Policy-dependent termination is therefore essential to the operating-benefit mechanism.
+
+The supersolution argument for $G$ in the baseline economy is not imposed on every changed contract: adding $(m,\ell)$ changes its flow--generator comparison by $d$. The identities above concern payoff functionals and do not require a classical boundary trace for every counterfactual.
+
+The coefficient-weighted charge is $kC^p$, whereas $C^p$ is an unweighted quantity of adjustment effort. Neither Proposition \ref{thm:contract} nor Theorem \ref{thm:k} makes $kC^{p_k}$ monotone. We report both objects. We also distinguish a change in $d$ from a change in correlation: the former changes the relative reward for remaining in operation, while the latter changes the state covariance and need not preserve the same policy-value features.
+
+\subsection{Value Envelopes on a Contract Interval}
+We next turn the economic decomposition into a computable decision rule. Consider a specified finite-horizon Markov model with positive continuation kernels. Its reward, including stopped payments, is affine in $q=(d,k)$; its action sets and transition kernels are fixed across $q$. A stored policy $p_i$ has independently evaluated features $(B^i,A^i,C^i)$ and hence value
+\begin{equation}
+ J^i_n(s;q)=B^i_n(s)+dA^i_n(s)-kC^i_n(s).
+ \label{eq:library_value}
+\end{equation}
+Neural actors can supply such policies, but their trained critics are not substituted for these evaluated features.
+
+Let $q_1,\ldots,q_M$ be anchor contracts. Suppose $\overline V^i_n$ bounds the optimal value above at $q_i$. For $q=\sum_i\lambda_iq_i$, $\lambda_i\geq0$, $\sum_i\lambda_i=1$, define
+\begin{equation}
+ L_n(s;q)=\max_i J^i_n(s;q),\qquad
+ U_n(s;q)=\sum_i\lambda_i\overline V^i_n(s).
+ \label{eq:envelopes}
+\end{equation}
+The weights may be selected to minimize the upper bound; in the one-dimensional contract experiment, adjacent anchors give a chord. The stored policy need not be optimal at its anchor for the lower bound to be valid. The upper bound, in contrast, requires genuine anchor information: an evaluated feasible policy by itself is a lower bound, not an upper one.
+
+\begin{theorem}[Uniformly certified policy reuse]
+\label{thm:reuse}
+Under the preceding hypotheses, $L_n(s;q)\leq V_n^*(s;q)\leq U_n(s;q)$. Define a feasible switching policy by
+\begin{equation}
+ i_n(s;q)\in\argmax_iJ^i_n(s;q),\qquad
+ p_n^{\rm sw}(s;q)=p_{i_n(s;q),n}(s).
+ \label{eq:switch}
+\end{equation}
+Then, at every date and state,
+\begin{equation}
+ 0\leq V_n^*(s;q)-J_n^{\rm sw}(s;q)
+ \leq U_n(s;q)-L_n(s;q).
+ \label{eq:reuse_bound}
+\end{equation}
+If the right-hand side is at most $\varepsilon$ on a parameter set, the same policy-construction rule is $\varepsilon$-optimal throughout that set. There is no additional horizon multiplier on this independently evaluated value envelope.
+\end{theorem}
+
+\begin{proof}
+Every $J^i$ is feasible, giving the lower bound. For any fixed policy $p$, affinity gives $J^p(q)=\sum_i\lambda_iJ^p(q_i)\leq\sum_i\lambda_i\overline V^i=U(q)$. Taking the supremum proves the upper bound. For switching, the terminal equality is common to all stored policies. If $J_{n+1}^{\rm sw}\geq L_{n+1}$, positivity of the continuation kernel implies
+\[
+ J_n^{\rm sw}=R_n^{p_{i_n}}+K_n^{p_{i_n}}J_{n+1}^{\rm sw}
+ \geq R_n^{p_{i_n}}+K_n^{p_{i_n}}J^{i_n}_{n+1}
+ =J^{i_n}_n=L_n.
+\]
+Backward induction and the upper bound finish the proof.
+\end{proof}
+
+The feasible-value maximum and switching arguments are established ideas in policy reuse; see \citet{barreto2017,chang2021}. The upper envelope is a convex-combination specialization of the policy-cache bound of \citet{nemecek2021}. Our use of these results is explicit: the stopped-contract identity identifies the economically relevant parameter, the interval construction below certifies every parameter rather than selected queries, and the action-separation result translates value information into portfolio conclusions. Neither successor features nor policy caching is claimed as a new neural architecture.
+
+The approximation theorem in Section \ref{sec:error} supplies one route to the required anchor upper bounds. If a feasible anchor policy has certified loss $e_i$, then $J^i(q_i)+e_i$ is an admissible $\overline V^i$. For the finite model executed here, backward maximization over an explicit action menu provides the anchor values and an independent feature recursion checks them. The target is this declared finite model: its operator discrepancy is zero relative to itself, not relative to Brownian first passage or to a continuum of actions. The latter approximation questions remain separate.
+
+For a scalar interval $[a,b]$ at fixed $k$, write the two endpoint-policy lines as $b_a(s)+d a_a(s)$ and $b_b(s)+d a_b(s)$. Their maximum is a feasible lower bound. The upper chord minus this maximum is concave and piecewise affine in $d$. Its maximum occurs at an endpoint or at the intersection
+\begin{equation}
+ d_\times(s)=\frac{b_b(s)-b_a(s)}{a_a(s)-a_b(s)},
+ \label{eq:intersection}
+\end{equation}
+when that intersection is defined and lies in $[a,b]$. The program checks these locations at every date and state. It inserts an anchor at a worst certified parameter and repeats until the maximum gap is below the stated tolerance. A denominator close to zero is handled as two effectively parallel lines, with an explicit numerical tolerance. This is a finite calculation of a continuum bound, not a dense parameter grid relabeled as uniform coverage. Supplement S.7 gives the error version and the numerical slack convention.
+
+\subsection{Certifying Economic Decisions, Not Just Values}
+A welfare bound need not determine a portfolio sign when two actions have nearly equal values. We therefore use a separate separation calculation. Partition the feasible first actions into a desired set $A^+$ and its complement $A^-$. For example, $A^+$ may contain strictly positive portfolio shares and $A^-$ all nonpositive shares. Fix one action $a\in A^+$ and one stored continuation policy $p_i$. Its one-step value followed by that policy is affine in $d$:
+\begin{equation}
+ Q^i_n(s,a;d)=R_n(s,a;d)+K_n^aJ^i_{n+1}(d).
+ \label{eq:tail_value}
+\end{equation}
+Let $\overline Q_n(s,b;d)=R_n(s,b;d)+K_n^bU_{n+1}(d)$, using the same upper chord throughout a contract interval.
+
+\begin{proposition}[Action separation over an interval]
+\label{thm:sign}
+If the same pair $(a,p_i)$ satisfies
+\begin{equation}
+ \min_{d\in\{a_0,b_0\}}
+ \left\{Q^i_n(s,a;d)-\sup_{b\in A^-}\overline Q_n(s,b;d)\right\}>0,
+ \label{eq:sign_margin}
+\end{equation}
+then every optimal first action belongs to $A^+$ for every $d\in[a_0,b_0]$.
+\end{proposition}
+
+\begin{proof}
+For every fixed $b\in A^-$, the difference between the feasible tail value and its upper continuation bound is affine on the interval. Positivity at both endpoints therefore implies positivity throughout. Taking the supremum over $A^-$ preserves the strict separation, while $Q^i(s,a;d)\leq Q^*(s,a;d)$ and $Q^*(s,b;d)\leq\overline Q(s,b;d)$. No action in $A^-$ can maximize the true finite-model criterion.
+\end{proof}
+
+The same desired action and continuation policy must be used at both endpoints of a test; selecting unrelated favorable endpoint actions would not prove \eqref{eq:sign_margin}. The implementation enumerates the feasible pairs and records the maximizing pair, both endpoint comparisons, and the resulting interval margin. An unresolved interval is distinguished from a zero effect. This permits a sharp portfolio conclusion away from a switching region while retaining an explicit uncertainty region where the sign is not separated.
+
+\subsection{The Exact Scalar-OLS Correspondence}
+\label{sec:ols_correspondence}
+The adaptive reward construction belongs to optimistic linear support \citep{alegre2022}. The following observation identifies its exact relation to the adjacent-policy implementation and prevents an implementation shortcut from being mistaken for a new policy-set principle.
+
+\begin{proposition}[Adjacent policies and the full policy envelope]
+\label{prop:ols_equivalence}
+Fix $k$, and suppose each distinct scalar anchor $d_i$ stores one policy that is optimal at every state and date at $d_i$. If $a<b$ are adjacent anchors, then, pointwise in state and date,
+\[
+ \max_iJ^i(d)=\max\{J^a(d),J^b(d)\},\qquad d\in[a,b].
+\]
+Consequently the full policy-line envelope and the adjacent-policy calculation have the same worst chord gap, including its possible corner location.
+\end{proposition}
+\begin{proof}
+Consider an earlier anchor $d_i<a$. Optimality implies
+$J^i(d_i)-J^a(d_i)\geq0$ and $J^i(a)-J^a(a)\leq0$.
+This difference is affine, so its slope is nonpositive and $J^i(d)\leq J^a(d)$ for all $d\geq a$.
+A later anchor $d_i>b$ is similarly dominated by $J^b$ for $d\leq b$.
+There are no other interior anchors. Taking the maximum proves the assertion.
+\end{proof}
+
+Dates can be incorporated in a finite state description, so simultaneous statewise coverage is not an obstruction beyond the reach of scalar OLS. It is nevertheless a different numerical objective from coverage at an initial distribution. We compare both objectives using the same exact full-menu oracle and the same $10^{-3}$ target. The independent full-envelope calculation verifies Proposition \ref{prop:ols_equivalence}; it is not reported as a separate trained implementation of SFOLS. Approximate anchor policies need not obey the adjacent-policy identity, in which case one must retain all feasible policy values or bound the omitted lines.

@@ -1,0 +1,119 @@
+\section{Computation and Independent Policy Evaluation}
+\label{sec:computation}
+\subsection{The Stochastic Transition and Its Boundary}
+For the portfolio economy we use four equiprobable weak-Euler branches. Independent signs $z_1,z_2\in\{-1,1\}$ generate
+\begin{equation}
+ \Delta u=\theta h+\sigma_u\sqrt h\,z_1,\qquad
+ \Delta X=[(r+\pi(\mu-r))X-c]h+
+ \pi X\sigma_X\sqrt h\{\varrho z_1+\sqrt{1-\varrho^2}z_2\}.
+ \label{eq:ndu_transition}
+\end{equation}
+Thus both variances and the cross covariance are present. On each branch we follow the line segment from $s$ to $s+\Delta s$ until its first boundary intersection, at fraction $\alpha\in[0,1]$ of the step. The branch contribution is
+\begin{equation}
+ r_k(s,a)\frac{1-e^{-\rho\alpha h}}{\rho}
+ +e^{-\rho\alpha h}\big\{
+     1_{\{\alpha=1\}}v_{n+1}(s+\Delta s)
+     +1_{\{\alpha<1\}}G(s+\alpha\Delta s)\big\}.
+ \label{eq:ndu_stopped_backup}
+\end{equation}
+An initial boundary state stops immediately and receives $G$. An interior step that hits the boundary exactly may equivalently use its boundary datum. No branch is returned to an interior state after an exit.
+
+This polygonal stopped random walk is an approximation to Brownian stopping, not an exact Brownian first-passage simulation. The reference operator uses positive bilinear interpolation for live continuations. The neural training operator evaluates its frozen continuation network at those same physical successor locations. Policy evaluation subsequently uses a separate NumPy implementation with positive interpolation. These two approximations are compared rather than assumed to be identical.
+
+Generator tests use $1,u,X,u^2,X^2,uX$. At an interior test point, their discrepancies have the expected drift-squared Euler remainder and recover the complete covariance matrix. A separate test verifies that opposite preference controls produce different conditional means even when the displacement is smaller than a grid cell. Interpolation preserves that difference; nearest-node rounding can erase it. The differential actor graph, finite-step actor graph, and immediate stopping boundary are also tested independently.
+
+Table \ref{tab:ndu_refine} reports a refinement sequence with $\max(\Delta u,\Delta X)^2/h$ decreasing from $0.04$ to $0.01$. This matters because interpolation error divided by the time step must be controlled in a generator approximation. The action mesh is held fixed in this sequence, and action refinement is assessed separately. These calculations diagnose discretization sensitivity; three meshes do not themselves constitute an error certificate for the continuous-time value.
+\input{revisions/2026-09-16-r6/paper/table_ndu_refinement}
+
+\subsection{Preference-Cost Comparisons}
+The cost panel solves the entire finite problem again at $k=0.5,2,8$, using a $25\times37$ state grid, eight dates, and $9\times9\times13$ controls. Consumption, preference adjustment, and portfolio share are all optimized. Discounted effort is evaluated under the resulting policy, including its effect on the exit time. Table \ref{tab:ndu_k} reports the initial state $(u,X)=(2,1.25)$.
+\input{revisions/2026-09-16-r6/paper/table_ndu_k}
+
+Discounted cumulative effort falls as $k$ increases, consistently with Theorem \ref{thm:k}. The portfolio and consumption coordinates at this initial state are at their bounds for all three displayed coefficients. This is not evidence for the interior formulas in \eqref{eq:ndu_controls}. In particular, a short portfolio position in this calibration should not be described as an unconditional preference-hedging effect. The liquidation contract, the level of the running utility, and the portfolio's effect on exit jointly determine the optimum. Occupation-weighted exit probabilities are computed by forward propagation of the interpolation-defined Markov chain; an unweighted fraction of exiting grid branches would measure a different object.
+
+\subsection{Neural Policies in the Preference Economy}
+The ordinary neural proposal has two tanh hidden layers of width 32 and three bounded outputs. The safeguarded critic has two tanh hidden layers of width 64. Its output is $G(s)+(1-t)m(s)N_\xi(s)$, where $m$ vanishes on every face of the rectangle. The implementation uses separate L-BFGS fits, 2,048 uniformly sampled training states per seed, eight dates, and a feasible $5\times5\times7$ comparison set containing the actor's proposal. No grid reference values or optimal reference policies enter these training targets.
+
+After training, the entire feedback sequence is frozen and evaluated on a $33\times49$ grid. The comparison reference uses the same number of dates and a finer $9\times9\times13$ action mesh. A separate $7\times7\times11$ deviation search uses the \emph{evaluated policy continuation}, not the learned critic, and includes the incumbent action. Consequently, a reported gain is a feasible payoff improvement. It is not a norm of the difference between two actions and is not an upper bound over the continuum of actions.
+
+Table \ref{tab:ndu_neural} reports all three safeguarded seeds and retains a lower-budget, unsafeguarded pilot. The pilot differs in width and optimization budget, so its comparison is a development diagnostic, not an isolated causal ablation. Table \ref{tab:ndu_policy} reports errors for the full control vector. A small error at the initial state does not imply a small maximum error near the boundary, and a policy coordinate can change substantially near a switch. The critic, policy value, and feasible-deviation columns therefore remain distinct.
+\input{revisions/2026-09-16-r6/paper/table_ndu_neural}
+\input{revisions/2026-09-16-r6/paper/table_ndu_policy}
+
+The hard boundary architecture attains the displayed boundary condition to numerical precision. It does not certify the interior value or the Brownian stopping approximation. The sizable worst-case diagnostics identify where additional computation is needed for a uniform guarantee; they are not suppressed by averaging across states or seeds. Conversely, the initial-state comparison and the re-solved cost panel provide economic information that is not captured by the largest training residual alone.
+
+\subsection{Repair and Contract Counterfactuals}
+The policy errors above can be repaired without treating the learned critic as a value certificate. We freeze the three neural policy arrays and form, at each date and state, the union of the $9\times9\times13$ reference mesh, the $7\times7\times11$ diagnostic mesh, and the three frozen proposals. The common mesh contains \NBOCommonActions{} distinct actions; the complete menu has \NBOActions{} entries per node. Including the original diagnostic mesh is important: two different action meshes need not be nested merely because one has more points. Every previously tested profitable deviation is feasible in the repair calculation.
+
+The target is now an explicit eight-date, $33\times49$ killed Markov chain. A branch's live interpolation weights are nonnegative; its stopped payoff, discounted duration, and adjustment effort are immediate rewards. Backward maximization uses the \emph{evaluated} next-date optimal continuation, and a separate fixed-policy recursion evaluates $(B,A,C)$. In this finite model, the incumbent proposals are feasible and the repaired policy weakly improves their values at every node. Table \ref{tab:r5_repair} gives the pre-repair errors. The post-repair Bellman gain over the entire stated menu, using independently evaluated policy continuations, is \NBORepairGain{}, below $10^{-10}$.
+\input{revisions/2026-09-16-r6/paper/table_r5_repair}
+
+The largest initial-fit gains occur near the low-risk-aversion and high-wealth portion of the rectangle. Their exact dates, states, and occupation masses are saved. Under both the focal state and the stated initial population, the single worst-gain nodes have zero occupation mass. This explains why a large all-state error can coexist with a much smaller initial welfare loss; it does not make the global error disappear. The population losses and the occupation-weighted gains are distinct calculations, and the latter are not used as upper bounds on optimal-policy loss. The repair addresses all states rather than discarding the low-occupation ones.
+
+At $k=2$, the adaptive construction uses \NBOAnchors{} anchors to cover every $d\in[0,1]$. Its maximum two-policy chord gap is \NBOCertificate{}, below $10^{-3}$ at every date and state. The library evaluation does not retrain an actor or solve a new control maximization at a counterfactual query. A direct comparison at 101 parameter values finds a maximum value loss of \NBOContractObservedLoss{}; this comparison validates the implementation but is not the source of the continuum claim. The latter follows from the complete breakpoint enumeration in Section \ref{sec:contracts}.
+
+Table \ref{tab:r5_contracts} reports five independently optimized initial-state counterfactuals. Applying Proposition \ref{thm:sign} to the full menu certifies a negative optimal initial share on $[0,\NBOSignLow]$ and a positive share on $[\NBOSignHigh,1]$, with inward-rounded displayed endpoints. The intervening band is unresolved by this certificate. The sign conclusion uses action-value separation and therefore does not confuse a $10^{-3}$ global welfare tolerance with a $10^{-3}$ tolerance on an action coordinate.
+\input{revisions/2026-09-16-r6/paper/table_r5_contracts}
+
+The contract mechanism is economically specific. Raising the operating benefit rewards longer discounted operation and changes the portfolio from a short position toward a long one in the displayed economy. Adding the corresponding annuity amount to liquidation leaves the full policy correspondence unchanged; an independently evaluated terminal-exposure recursion verifies the accounting identity. The endpoint reversal also occurs when the shock correlation is set to zero or to $0.25$. It is therefore not an unconditional sign prediction from negative preference correlation. The model does not claim that a unit operating benefit is empirically estimated or that this portfolio response holds under every liquidation contract.
+
+Supplement S.8 reports joint state, time, and action refinements. The two endpoint signs persist, while the portfolio at $d=0.5$ changes from negative on the coarsest economy to positive on the two finer ones. Value levels also move with resolution. This makes the location of a diffusion-model switch a separate approximation question; it does not invalidate the all-parameter statement for the specified finite target. The original continuous-time operator and its error-discrepancy term remain in the analysis.
+
+For an actual 101-query workload, full direct solutions take \NBOContractDirect{} seconds, compared with \NBOContractReuse{} seconds for library selection and complete policy evaluation. Building the library and common kernel takes \NBOContractPreparation{} seconds, including the interval-certificate calculation. These are incremental times given the same frozen proposals to both methods. The experiment measures a reusable family of complete policies and moments, rather than extrapolating from a single network forward pass. The stored library contains finite-state policy values; its construction does not establish a neural compression advantage in this low-dimensional economy.
+
+\subsection{Coupled Stochastic Resource Allocation}
+\label{sec:resource}
+To examine a genuinely dynamic shared constraint, let $x_n\in\R^d$ denote productive stocks and $a_n\in\R_+^d$ investment. The three-period model is
+\begin{equation}
+ x_{n+1}=A_dx_n+a_n+e_{n+1},\qquad
+ A_d=0.8I+0.04(I_{+1}+I_{-1}),\qquad
+ \sum_i a_{ni}\leq0.25d.
+ \label{eq:resource_state}
+\end{equation}
+Here $I_{+1},I_{-1}$ denote the adjacent off-diagonal matrices. The shock has four equally likely realizations,
+$e=z_1\ell_1+z_2\ell_2$, where $\ell_{1i}=0.06$ and $\ell_{2i}$ is evenly spaced from $-0.04$ to $0.04$. Its covariance is rank two and generally has nonzero cross-stock entries. Heterogeneous initial stocks, neighbor spillovers, a common budget, and the aggregate cost couple the state coordinates.
+
+The objective is expected total cost,
+\begin{equation}
+ \begin{aligned}
+ C^\pi(x)&=\E_x^\pi\left[
+ \sum_{n=0}^{2}\left\{q(x_n)+\frac{0.1}{d}\norm{a_n}^2\right\}+q(x_3)\right],
+ \\
+ q(x)&=\frac{\norm{x-\mathbf1}^2}{d}
+           +0.2\left(\frac{\mathbf1^{\mathsf T}(x-\mathbf1)}d\right)^2.
+ \end{aligned}
+ \label{eq:resource_cost}
+\end{equation}
+This is a finite stochastic economy, not a discretization claim about a different diffusion. All 64 terminal shock paths are used when a policy is evaluated. The independent reference optimizes a nonanticipative scenario tree with 21 decision nodes per initial state. Its objective is convex quadratic and its nodewise resource constraints are genuine restrictions on investment.
+
+The cost critic is
+\begin{equation}
+ \widehat C_n(x)=q(x)+b_n+\ell_n^{\mathsf T}(x-\mathbf1)
+     +\sum_{j=1}^{J}w_{nj}\,[h_j^{\mathsf T}(x-\mathbf1)+b_j]_+^2,
+ \qquad w_{nj}\geq0.
+ \label{eq:convex_critic}
+\end{equation}
+The fixed hidden features include coordinate, aggregate, and random directions; $J=6d+102$. Output coefficients are fitted by constrained least squares to the separated Bellman targets. A width-32 tanh proposal network uses a slack-softmax feasibility map and is trained against the improved controls. At deployment, projected convex improvement uses the analytic critic gradient, checked against automatic differentiation, and the gap \eqref{eq:fw}. Squared-ReLU features are suitable here because the finite-step operator needs a value and an action gradient, not a classical second-derivative residual.
+
+For each of $d=4,8,16$ and seeds 101, 202, and 303, training uses 1,024 draws from $[-0.25,1.65]^d$. Evaluation uses 32 fresh initial states from $[0,1.2]^d$ and their complete shock trees. The reference is solved both to the common cost tolerance $10^{-3}$ for timing and to a gap below $10^{-7}$ for independent validation. Formula \eqref{eq:tree_certificate} gives a numerical upper bound on each tested policy's cost loss. These are double-precision convexity certificates; recorded feasibility and gradient discrepancies accompany them, rather than an assertion of interval-arithmetic proof.
+\input{revisions/2026-09-16-r6/paper/table_resource}
+
+Every displayed run meets the common cost-error target at its tested initial states. The shared constraint binds frequently, including at most or all initial states depending on dimension and seed. Thus the experiment tests a dynamically consequential budget rather than an inactive constraint. The same trained proposal networks are also evaluated without the deployment safeguard. This matched ablation, reported in the supplement, isolates the effect of the improvement calculation without changing network weights or training data.
+
+At this query batch and tolerance, the specialized convex reference is faster end to end than training and evaluating the neural representation. The latter delivers a reusable feedback approximation, but a crossover in amortized cost requires a separate measurement. The experiment establishes accurate constrained neural control for this model and a transparent cost--accuracy comparison; it does not establish superiority over a solver that exploits the model's convex structure.
+
+\subsection{What the Actor and the Continuation Representation Contribute}
+The actor does not enter the resource experiment's critic targets: the target controls are computed before actor distillation. A same-weight comparison must therefore separate the value of continuation approximation from the value of actor initialization. We reload all nine checkpoints and solve the same convex improvements from either the actor output or zero. The largest complete-policy cost difference between these two arms is \NBOActorEquality{}. Both attain the stated $10^{-3}$ cost tolerance on every original held-out state. Actor initialization can save iterations, but those savings do not by themselves imply that its training cost is amortized.
+
+The nonneural comparator is a full convex quadratic, $q(x)+b+\ell^\mathsf T(x-\mathbf1)+(x-\mathbf1)^\mathsf TH(x-\mathbf1)$ with $H\succeq0$. It is fitted by projected least squares on the same training-state distribution and used in its own backward recursion. Unlike a diagonal quadratic, it permits every cross-state term. Its projected-gradient stopping diagnostic and Hessian eigenvalues are recorded. Table \ref{tab:r5_resource} shows that the richer squared-ReLU continuation class attains the common welfare target whereas these quadratic fits do not. This is evidence for the representational flexibility used here, not a theorem that a neural representation dominates all nonneural approximation classes.
+\input{revisions/2026-09-16-r6/paper/table_r5_resource}
+
+For comparison with the previous execution, we retain the fresh sequence of initial states at query volumes 32, 128, 512, and 2,048. No initial state is added to the training set. Each query includes the complete endogenous policy tree and its 64 terminal shock paths. Table \ref{tab:r5_workload} charges for critic training, zero-start online improvement, and policy evaluation, and compares that sum with the specialized scenario-tree solver at the same $10^{-3}$ cost tolerance. The independent tighter reference remains solely an accuracy check for both methods. At the largest workload the measured end-to-end cost ratio is \NBOResourceBigRatio{}, with a maximum policy-loss bound of \NBOResourceBigLoss{}. The intermediate workloads document that historical crossover against the original reference. They do not give the reference the reusable quadratic representation used below.
+\input{revisions/2026-09-16-r6/paper/table_r5_workload}
+
+The historical crossover does not identify nonlinear continuation as the preferred reusable object. All these queries share a quadratic objective Hessian and an affine map from initial state to its linear term. Section \ref{sec:structural_qp} gives the conventional solver that same opportunity for reuse and changes the computational conclusion. The actor's separate distillation time, initialization time, optimizer iterations, and projected break-even counts remain in Supplement S.8; the projections remain projections rather than new measurements. The original table is preserved as an executed comparison, not promoted into an advantage over the stronger reusable-QP baseline.
+
+\subsection{Smooth and High-Dimensional Controls}
+An additional stochastic LQR experiment uses correlated Gaussian shocks, neighbor coupling in the transition, and a rank-one cross-state cost at dimensions 4, 8, and 16. Its critic has quadratic features, its actor is linear, and its independent reference is Riccati recursion. This structured control checks backward evaluation, covariance contributions, actor coefficients, and full-policy values. It is not an experiment with a generic multilayer critic, nor a substitute for the constrained resource application.
+
+Computational cost depends on the operator and representation. For a differential critic and rank-$r$ loading $B$, the exact trace can be evaluated using $r$ directional Hessian contractions. A $K$-probe trace instead uses $K$ such contractions after forming the probe directions. Their total costs include network differentiation, loading multiplication, action optimization, sampling, and the iterations needed to achieve an error target. Per-iteration differentiation does not establish a polynomial solution-complexity theorem, and no threshold such as dimension 50 follows from that calculation. The semigroup experiments report their own costs without attributing them to unexecuted stochastic-Hessian acceleration.

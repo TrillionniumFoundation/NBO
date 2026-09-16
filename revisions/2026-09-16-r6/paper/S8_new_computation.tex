@@ -1,0 +1,49 @@
+\section{Additional Counterfactual and Equilibrium Computations}
+\subsection{Joint Refinement and Contract Sensitivity}
+The complete refinement panel is reported in Table \ref{tab:r5_joint}. Unlike refining time on a fixed interpolation grid, these calculations change state spacing, time spacing, and the action mesh together. They retain the consumption and preference controls as active optimization coordinates. The coarse, intermediate, and fine initial values at $d=0$ are different; the portfolio at the midpoint is also sensitive to the first refinement. The endpoint contract comparison is more stable than the estimated switching location. All entries remain evaluations of declared finite economies rather than upper and lower bounds on the stopped diffusion.
+\input{revisions/2026-09-16-r6/paper/table_r5_joint}
+
+The correlation panel in the machine-readable output independently resolves the intermediate economy at correlations $-0.25$, $0$, and $0.25$. For each, the initial share changes from $-0.5$ at $d=0$ to $0.8$ at $d=1$. We do not transfer the feature bank across these changes in transition law. Duration, values, and all controls are stored for each separate solve. The normalization comparison, by contrast, changes only the reward coefficients and retains the same transition and policy class.
+
+Table \ref{tab:r5_effort} distinguishes discounted adjustment effort from its coefficient-weighted charge. The same decomposition is evaluated at the original cost-panel grid and with the original complete control vector. The theorem applies to the first quantity; the middle coefficient produces the largest weighted charge in this panel.
+\input{revisions/2026-09-16-r6/paper/table_r5_effort}
+
+\subsection{Matched Actor-Free and Quadratic Comparisons}
+The nine actor-free comparisons reload the deposited nonlinear critic weights and the same initial states. Both actor-start and zero-start algorithms use the same projected convex improvement method, gradient, Lipschitz step bound, and stopping tolerance. The full policy is then evaluated through all 64 terminal shock paths. Saved output separates actor initialization, optimization time, iterations at each date, complete lifetime cost, and the reference gap. The original proposal-only ablation remains in S.6; removing the safeguard and removing the actor are different experiments.
+
+To isolate training costs, critic-only backward fits use the same training-state draws and feature construction as the original nonlinear critic. Actor distillation is timed separately against the same improved-action targets. Table \ref{tab:r5_actor_timing} reports the complete nine-case timing panel. A positive measured online saving is converted into a clearly labeled fixed-batch break-even projection. The separately executed fresh-state workloads in the main paper, not this projection, support the observed amortization comparison.
+\input{revisions/2026-09-16-r6/paper/table_r5_actor_timing}
+
+The quadratic comparator minimizes squared fitting error over
+\[
+ q(x)+b+\ell^\mathsf Tz+z^\mathsf THz,\qquad z=x-\mathbf1,\quad H\succeq0.
+\]
+The regression is convex in $(b,\ell,H)$. Its gradient is computed from the full quadratic design matrix. Projected accelerated gradient leaves $(b,\ell)$ unrestricted and projects the symmetric matrix onto the positive-semidefinite cone by clipping negative eigenvalues. A small ridge term stabilizes the design. The reported projected-gradient norm is below the declared $10^{-8}$ stopping threshold in the executed fits. At deployment the analytic gradient is $\nabla q(x)+\ell+2Hz$, and its Hessian bound is the largest eigenvalue of $\nabla^2q+2H$. The common investment projection and full scenario-tree cost calculation are unchanged. This comparison tests a genuinely coupled convex quadratic, rather than a separable or unoptimized baseline.
+
+The fresh-state workload charges only for the computations used by each competing method. The reusable policy's cost is critic training plus zero-start online improvement and full policy evaluation. The specialized solver's cost is a complete nonanticipative reference optimization at tolerance $10^{-3}$. A reference solved more tightly to gap below $10^{-7}$ supplies the accuracy upper bounds for both; it is not charged asymmetrically as part of one solver's online cost. Hardware, dependencies, seeds, and individual times accompany the outputs. A three-period, rank-two-shock experiment cannot establish dimension-independent performance, even when its measured query reuse is useful.
+
+\subsection{Persistent Capacity and All-Date Dynamic Deviations}
+Let $b_i=1-sK_i$, so that next-period capacity probability is $sK_i+b_i a_i$. Write $W_i(k'_1,k'_2)$ for player $i$'s continuation value after averaging over next demand. For player one the best response is
+\begin{equation}
+ a_1=\clip\left(
+ \frac{\delta b_1}{\kappa}
+ \left\{W_1(1,0)-W_1(0,0)+(sK_2+b_2a_2)\Delta W_1\right\},0,1\right),
+ \label{eq:game_persistent_br}
+\end{equation}
+where $\Delta W_1=W_1(1,1)-W_1(1,0)-W_1(0,1)+W_1(0,0)$. The corresponding formula holds for player two. The action criterion is strictly concave because the continuation is affine in the player's own probability and the action cost has curvature $\kappa>0$. Enumerating whether each clipped best response is at zero, interior, or one gives nine active-set combinations. Feasible candidates are checked against both original best-response equations.
+
+The product of the two affine slopes bounds the Lipschitz constant of the composed best response; clipping is nonexpansive. Its recorded maximum below one therefore provides a unique one-period fixed point for every continuation game. Backward induction supplies a finite-horizon Markov-perfect profile. This argument does not assume current-capacity independence and does not rely on convergence from a single initialization.
+
+For independent dynamic verification, let $J_{i,n}$ be the value of the frozen profile and define the full unilateral best-response value
+\[
+ B_{i,n}(s)=\max_{a_i}\{r_i(s,a_i,p_{-i,n}(s))+
+ \delta\E[B_{i,n+1}(s')\mid s,a_i,p_{-i,n}(s)]\}.
+\]
+At \emph{every} backward date, the code stores $B_{i,n}(s)-J_{i,n}(s)$ for both players and all eight states. It reports the largest positive gain, the signed maximum and minimum, and the attaining date, player, capacities, and demand. The historical code had placed the comparison after the date loop, which verified only date zero. The corrected scope is executed for both the renewal regression and the persistent economy.
+
+As a negative control, the final-period investment of player one at capacities $(1,1)$ and low demand is replaced by one. The independent routine recomputes the frozen-profile value and all best responses. It detects a gain exceeding $0.1$, at a recorded late-date node. This test would not be passed by a routine that merely reports convergence of the equilibrium solver. The reset case $s=0$, four dates, reproduces its early closed-form actions and terminal investment to numerical precision. Both examples remain exact finite-state references, not neural-equilibrium training results.
+
+\subsection{Executable Files and Preservation}
+The fifth-revision package is in \texttt{replication/r5}. It imports the unchanged fourth-revision transition, resource primitives, and saved neural checkpoints. The contract computations are in \texttt{contracts.py} and \texttt{economic\_robustness.py}. The remaining experiments are in \texttt{resource\_ablation.py} and \texttt{persistent\_game.py}. The table generator reads executed JSON; the validation script replays policy features, normalization identities, kernel comparisons, and certificate conditions. The build records input and output hashes and preserves the exact review-base commit.
+
+Earlier papers, theorem proofs, raw negative controls, referee reports, and neural checkpoints remain in their original paths. The new manuscript carries the original mathematical and economic extensions forward and adds the contract-reuse and persistent-capacity material. The accompanying response identifies where each issue in the fourth-revision report is treated. Build completion and numerical verification do not assert journal submission or editorial approval.
