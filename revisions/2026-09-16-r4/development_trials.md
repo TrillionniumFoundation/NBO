@@ -1,0 +1,11 @@
+# Development and execution record
+
+The authoritative rerun is identified by the committed source SHA in `replication/r4/output/manifest.json`. The following development events are disclosed separately from final scientific records.
+
+1. An unsafeguarded stopped-economy neural pilot (seed 101, width 32, 1,024 states, 260 critic-iteration cap) had substantial boundary-region and policy-evaluation errors. It is retained in the paper, raw records, and checkpoints. The safeguarded runs use a larger width-64 critic and 2,048 states. Their comparison is not represented as a one-factor causal ablation.
+2. The initial reference program completed its numerical arrays but failed when serializing process memory because a new module named `resource.py` shadowed Python's standard-library `resource`. It was renamed `coupled_resource.py`; the authoritative complete runner uses the corrected source. This exception was an execution failure, not a numerical success certificate. Early local records are not used as source-anchored final runs.
+3. Explicit immediate settlement at boundary-start nodes was added to both transition implementations and covered by a regression test. Neural training states are interior. All authoritative records are regenerated after this correction.
+4. A same-weight resource deployment ablation was added after initial implementation. It fixes model primitives, trained parameters, test states, and shocks, then removes only deployment improvement. The 10^-3 held-out cost criterion is an openly stated numerical reporting tolerance, not a claim of preregistration.
+5. The first local LaTeX pass exposed a back-reference parser requirement for blank paragraphs between explicit bibliography entries. The bibliography and two overfull passages were corrected, and final main/supplement builds were rerun. The source uses the inherited Econometric Society class without editing the historical class files.
+
+No empirical measurements were invented to fill missing fields. The manuscript explicitly reports large NDU uniform discrepancies instead of converting a small initial-state error or hard boundary identity into a global solution certificate. Every declared final neural dimension–seed combination is retained, irrespective of a later editorial judgment about the paper's contribution.

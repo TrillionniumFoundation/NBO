@@ -1,0 +1,79 @@
+\section{Economic Control and Separated Bellman Operators}
+\label{sec:operators}
+\subsection{The Controlled Problem}
+Let $S_t=(u_t,X_t)$ be a Markov state and let $a_t=(\theta_t,b_t)$ collect internal and external controls. On a specified domain $D$, the controlled state satisfies
+\begin{equation}
+ dS_t=\mu(t,S_t,a_t)\,dt+B(t,S_t,a_t)\,dW_t,
+ \qquad a_t\in A(t,S_t),
+ \label{eq:state}
+\end{equation}
+where $W$ is a vector of independent Brownian motions and $A(t,s)$ is the feasible correspondence. Correlation is represented in $B$. More generally, a continuous martingale with covariance density $Q(t,s,a)$ gives covariance $\sigma Q\sigma^{\mathsf T}$. A predictable covariance process not determined by the declared state does not, merely by notation, define the same Markov problem; the state must be augmented or the formulation changed.
+
+For additive preferences and stopping time $\tau\leq T$, policy evaluation is
+\begin{equation}
+ J^\pi(t,s)=\E_{t,s}^{\pi}\left[
+ \int_t^\tau e^{-\rho(v-t)}r(v,S_v,\pi_v)\,dv
+ +e^{-\rho(\tau-t)}g(\tau,S_\tau)\right].
+ \label{eq:additive}
+\end{equation}
+The stopping rule and payoff are economic primitives. In an exit problem, $\tau$ is the first exit or terminal date. Reflection instead requires a regulator and a boundary operator involving its direction; state constraints require viability. Neither interpretation is supplied by an unreported numerical projection.
+
+For recursive preferences, evaluation is first defined for each admissible policy by
+\begin{equation}
+ -dY_t^\pi=f(t,S_t,\pi_t,Y_t^\pi)\,dt-Z_t^\pi dW_t,
+ \qquad Y_\tau^\pi=g(\tau,S_\tau).
+ \label{eq:recursive}
+\end{equation}
+The driver may incorporate a preference-adjustment cost. Existence, integrability, comparison, and any domain restriction on its value argument are imposed before taking a supremum over policies. Lipschitz drivers on a finite horizon provide a standard admissible class; the Epstein--Zin specification below uses its own positive-domain and transversality conditions. Calling $Y$ an argument of utility does not itself establish well-posedness.
+
+When a classical Markov representation is available, write
+\begin{equation}
+ \cH^a[v]=f(t,s,a,v)+\mu(t,s,a)^{\mathsf T}\nabla v
+      +\tfrac12\tr\{B(t,s,a)B(t,s,a)^{\mathsf T}\nabla^2v\}.
+ \label{eq:hamiltonian}
+\end{equation}
+For additive utility, $f=r-\rho v$. The evaluation equation is $v_t+\cH^\pi[v]=0$ with the specified boundary operator, while the control equation replaces $\cH^\pi$ by $\sup_{a\in A}\cH^a$. Boundary data, admissibility, and comparison are part of these statements, not consequences of a neural parameterization.
+
+\subsection{Evaluation, Proposal, and Improvement}
+Let $v_\xi$ be a critic and $a_\omega$ a feasible actor. A differential evaluation step freezes the policy and minimizes
+\begin{equation}
+ L_E(\xi;\pi)=\E_\nu\left[(\partial_t v_\xi+\cH^\pi[v_\xi])^2\right]
+       +\lambda_B\E_{\nu_B}\left[|\mathcal Bv_\xi-g_B|^2\right].
+ \label{eq:critic}
+\end{equation}
+Here $\mathcal B$ is the actual boundary operator. A Dirichlet discrepancy is appropriate for the stopped problem used below, not for an unspecified reflected diffusion. Hard architectures can impose the boundary exactly, although they do not eliminate interior approximation error.
+
+The actor's Hamiltonian proposal solves, approximately,
+\begin{equation}
+ \max_\omega\ \E_{\nu_I}\left[
+ \cH^{a_\omega}\{\sg(v_\xi),\sg(\nabla v_\xi),\sg(\nabla^2v_\xi)\}\right].
+ \label{eq:actor}
+\end{equation}
+The notation $\sg$ freezes the critic's parameter block. Coefficients depending on the action, including diffusion loadings, retain their action derivatives. Evaluation does not update actor parameters, and actor improvement does not update critic parameters. For a game, rival controls are also frozen in a player's improvement step. These restrictions concern the computational graph, not just the labels attached to two loss functions.
+
+A bounded activation can enforce a box constraint. Shared resource constraints require a different map. For example, $a_i=B_0\exp(z_i)/(\sum_{j=1}^d\exp(z_j)+\exp(z_0))$ gives $a_i\geq0$ and $\sum_i a_i\leq B_0$, with $z_0$ representing slack. General convex sets can use projection; a penalty alone is an approximation whose violations must be measured. An arbitrary policy sampling measure does not turn \eqref{eq:actor} into the gradient of lifetime welfare. Such an interpretation requires occupancy or adjoint weighting and the relevant interchange conditions.
+
+For an implemented transition rule, it is often preferable to use a finite-step operator. At dates $n=0,\ldots,N-1$, define
+\begin{equation}
+ (\cT_n^a v)(s)=R_n(s,a)+\int v(s')\,K_n(ds'\mid s,a),
+ \qquad \cT_n v=\sup_{a\in A_n(s)}\cT_n^a v.
+ \label{eq:finite_operator}
+\end{equation}
+The nonnegative kernel includes discount and survival. A stopped payoff is included in $R_n$; it is not continued at a clipped interior state. The experiments with nonlinear critics proceed backward: improve the actor against the frozen next-date critic, then fit the current critic to the evaluated target of the selected action. This is a finite-horizon separated Bellman update, not a simulation of a joint scalar loss.
+
+In this semigroup implementation, freezing the continuation network's parameters must not remove its derivative with respect to the next state. The actor influences $s'$ through the transition, so the composition $v_{n+1}(F(s,a,\varepsilon))$ must retain that input derivative. Our tests compare this actor gradient with finite differences and separately check the differential Hamiltonian graph. The distinction prevents a stop-gradient convention appropriate for a Hamiltonian jet from being incorrectly imposed on a finite-step transition.
+
+\subsection{The Exact Policy-Improvement Benchmark}
+The following proposition states the exact object to which neural approximation is compared. Let $\mathcal V$ be a classical value space whose norm controls $v$, $v_t$, $\nabla v$, $\nabla^2v$, and the boundary traces required by $\mathcal B$. Including the time derivative is essential to pass the evaluation equation to a limit.
+
+\begin{assumption}[Exact evaluation and improvement]
+\label{ass:exact}
+The policy class $\Pi$ is compact in a stated uniform topology. Evaluation $E:\Pi\to\mathcal V$ is uniquely defined, continuous, and has precompact image. A selector $I$ attains the pointwise Hamiltonian supremum, maps $\Pi$ into itself, and is continuous at accumulation points of the policy sequence. Comparison and verification hold for the specified generator, recursive driver, boundary operator, and value class. Evaluated values are bounded above by the optimal value.
+\end{assumption}
+
+\begin{proposition}[Exact separated policy improvement]
+\label{thm:exact}
+Under Assumption \ref{ass:exact}, let $\pi_{j+1}=I(\pi_j)$ and $v_j=E(\pi_j)$. The evaluated values increase to a common limit in $\mathcal V$. Every accumulation policy $p$ satisfies $E(p)=E(I(p))=\bar v$, and $\bar v$ solves the maximized boundary-value problem. If comparison identifies the value, $p$ is optimal.
+\end{proposition}
+
+The important limit is equality of values, not equality of successive policies. Along $\pi_{j_k}\to p$, continuity gives $E(p)=\bar v$ and $E(I(p))=\bar v$ from the shifted sequence. The evaluation equation for $I(p)$ at that same value is the maximized equation. The supplement proves this step in detail. Compactness and closure under an exact selector are substantial hypotheses; they are not automatically properties of a finite neural class. Proposition \ref{thm:exact} is not an optimizer convergence theorem.

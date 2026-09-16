@@ -1,0 +1,71 @@
+\section{Recursive Utility, Temporal Selves, and Dynamic Games}
+\label{sec:extensions}
+\subsection{Merton and Epstein--Zin Policy Evaluation}
+The smooth portfolio benchmark uses stationary infinite-horizon CRRA utility with $\rho=0.04$, $\gamma=2$, $\mu=0.08$, $r=0.02$, and $\sigma=0.2$. With $c=mX$ and no terminal bequest, the optimal ratios are
+\begin{equation}
+ \pi^*=\frac{\mu-r}{\gamma\sigma^2}=0.75,\qquad
+ m^*=\frac{\rho+(\gamma-1)\{r+(\mu-r)^2/(2\gamma\sigma^2)\}}{\gamma}=0.04125.
+ \label{eq:merton_targets}
+\end{equation}
+These are stationary quantities, not finite-horizon policies with an arbitrary terminal condition. Under the displayed optimum, the discounted negative wealth moment in the verification argument decays at rate $m^*>0$.
+
+For recursive utility, put $a=1-1/\psi$ and $b=1-\gamma$. The difference-form Epstein--Zin driver on $c>0$, $bV>0$ is
+\begin{equation}
+ f_{EZ}(c,V)=\frac{\rho}{a}\{c^a(bV)^{1-a/b}-bV\}.
+ \label{eq:EZ}
+\end{equation}
+The logarithmic case requires a limit rather than substitution at $a=0$. In the numerical regime $\gamma=5$, $\psi=1.5$, with the same asset and discount parameters, homothetic optimization gives
+\begin{equation}
+ \pi^*=0.3,\qquad
+ m^*=\psi\rho+(1-\psi)\{r+(\mu-r)^2/(2\gamma\sigma^2)\}=0.0455.
+ \label{eq:EZ_targets}
+\end{equation}
+For $V=A X^b/b$, the coefficient is $A=(\rho(m^*)^{a-1})^{b/a}$. Consumption utility is increasing on the declared domain. A negative value when $b<0$ is required by that domain and is not a sign error.
+
+We execute fixed-policy evaluation for the unknown coefficient $A$ and separate automatic-differentiation updates for bounded consumption and portfolio parameters. The coefficient is represented by $A=\exp(q)$; it and the controls are learned, not set to their targets. The analytical ratios are used afterward for validation. Table \ref{tab:recursive} distinguishes these homothetic-feature solves from the ordinary neural networks used for endogenous preferences.
+\input{revisions/2026-09-16-r4/paper/table_recursive}
+
+Supplement S.4 derives the policy equations, the positive branch of the evaluation equation, and a verification class with the required transversality. For the displayed recursive optimum, the linearized discount rate is $0.1115$, the relevant wealth moment grows at rate $0.066$, and their difference is $0.0455>0$. A separate finite-horizon architecture test imposes $bV>0$ and an exact terminal sign by a transformed output. It is a domain test, not an additional solution of a finite-horizon Epstein--Zin problem.
+
+The role of these calculations is to test recursive value dependence and the evaluation graph. Neither a low residual nor the positivity transform is by itself a proof of recursive-utility existence for every policy. Equally, the fact that an argmax has no analytic formula does not define a fully nonlinear PDE. Semilinearity concerns dependence on the highest-order derivatives. Control of diffusion can make the HJB fully nonlinear, whereas a difficult drift-control maximization with a fixed diffusion need not do so. The FBSDE literature also contains value representations rather than exclusively Pontryagin adjoints \citep{han2018}; these methods should not be excluded by that distinction.
+
+\subsection{Sophisticated Temporal Selves}
+Let the state obey $s_{n+1}=F(s_n,c_n,\varepsilon_{n+1})$ and let $\delta=e^{-\rho\Delta}$. A sophisticated current self evaluates a one-period deviation using $\beta\delta$ on ordinary continuation utility. The equilibrium system is
+\begin{align}
+ c_n^*(s)&\in\argmax_{c\in\mathcal C(s)}
+ \{u(c)\Delta+\beta\delta\E[V_{n+1}(F(s,c,\varepsilon))]\},\label{eq:self_improve}\\
+ V_n(s)&=u(c_n^*(s))\Delta+\delta\E[V_{n+1}(F(s,c_n^*(s),\varepsilon))],
+ \qquad V_N=G.
+ \label{eq:self_evaluate}
+\end{align}
+The factor $\beta$ belongs in the current self's improvement criterion but not in each step of the ordinary continuation evaluation. Repeating it in \eqref{eq:self_evaluate} instead defines a different discount recursion. We use the same equations in the main text, supplement, and implementation.
+
+The executed example has four consumption dates, terminal log wealth, no interest, $w_{n+1}=w_n-c_n$, $0<c_n<w_n$, and $\Delta=1$. With $V_n(w)=A_n\log w+B_n$ and $A_N=1$, backward induction gives
+\begin{equation}
+ z_n\equiv\frac{c_n}{w_n}=\frac{1}{1+\beta\delta A_{n+1}},\quad
+ A_n=1+\delta A_{n+1},\quad
+ B_n=\log z_n+\delta\{A_{n+1}\log(1-z_n)+B_{n+1}\}.
+ \label{eq:self_closed_form}
+\end{equation}
+Strict concavity establishes the one-shot optimum. We compare it with independent bounded scalar optimization and evaluate the ordinary recursion at four wealth levels. All consumption columns are ratios, not levels. The no-present-bias case $\beta=1$ recovers exponential discounting.
+\input{revisions/2026-09-16-r4/paper/table_temporal}
+
+A two-consumption-date example with terminal log wealth and $\delta=1$ makes the distinction transparent: the sophisticated first ratio is $1/(1+2\beta)$, whereas the erroneous geometrically repeated-beta recursion gives $1/(1+\beta+\beta^2)$. They equal $0.416667$ and $0.456621$ at $\beta=0.7$. The discrepancy is economic, not a change of notation.
+
+\subsection{Stochastic Capacity Competition}
+For player $i$, evaluation freezes the policy profile, and improvement maximizes only player $i$'s criterion with rivals' controls detached. A dynamic equilibrium must also survive unilateral changes in the player's entire continuation policy. We therefore distinguish a one-period Hamiltonian gap from dynamic exploitability,
+\begin{equation}
+ \operatorname{Exploit}_i(s)=\sup_{\widetilde\pi_i}
+ J_i(\widetilde\pi_i,\pi_{-i};s)-J_i(\pi_i,\pi_{-i};s).
+ \label{eq:exploit}
+\end{equation}
+
+The executed game has two firms, binary capacities $K_i\in\{0,1\}$, and demand $D\in\{1,1.3\}$ with transition matrix
+$\left(\begin{smallmatrix}0.8&0.2\\0.2&0.8\end{smallmatrix}\right)$.
+Output is $q_i=K_i/3$, and revenue is $q_i(D-q_i-q_j)$. Investment $a_i\in[0,1]$ is the probability of capacity one next period, conditional on which the firms' capacity draws are independent. Its cost is $0.4a_i^2/2$. This includes the cost of maintaining capacity; it is not a free reset. The horizon is four dates, the discount factor is $0.95$, and terminal value is $0.05K_i$.
+
+For every date and all eight states, stage best responses are clipped affine functions of the rival's investment. Their composed contraction is checked, and iteration is repeated from three initial profiles. After the equilibrium profile is computed, a separate backward best-response program freezes the rival at every date and optimizes the deviating firm's continuation. The largest recorded dynamic gain is below the stated $10^{-10}$ tolerance. The saved policies and values cover the complete finite state space.
+
+This is an independent dynamic-game reference, not a trained high-dimensional game network. A separate automatic-differentiation test verifies that the own-action gradient is present and the rival gradient is absent. The static Cournot comparison, with Nash quantities $1/3$ and joint-profit quantities $1/4$, remains a diagnostic for the distinction between equilibrium and collusion, not a substitute for the dynamic check. Supplement S.5 sets out the equilibrium operator, resource normalization for larger markets, and a conditional small-player approximation bound. Symmetry of initialization is not used as an equilibrium certificate.
+
+The portfolio and recursive-utility benchmarks build on \citet{merton1971}, \citet{epstein1989}, and \citet{duffie1992}. The normalization and admissible comparison class used here are specified in Supplement S.4.

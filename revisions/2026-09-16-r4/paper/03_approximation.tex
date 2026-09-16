@@ -1,0 +1,122 @@
+\section{Approximation Error and Feasible Improvement}
+\label{sec:error}
+\subsection{An Error Account for Policy Value}
+Let $\cT_n^a$ be the target evaluation operator and $\widetilde\cT_n^a$ the implemented operator. For additive preferences, these have the form \eqref{eq:finite_operator}. For recursive preferences, the following result also permits nonlinear evaluation maps, provided they are order preserving and Lipschitz in the continuation value. We impose those properties on the relevant value domain rather than presume them for every recursive aggregator.
+
+\begin{assumption}[Finite-horizon operators]
+\label{ass:finite}
+For every feasible $a$, the target operator $\cT_n^a$ is order preserving and satisfies
+$\norm{\cT_n^a v-\cT_n^a w}_\infty\leq\gamma_n\norm{v-w}_\infty$.
+The same bound holds for $\cT_n=\sup_a\cT_n^a$; the supremum is well defined. Terminal values and the selected policy values exist and are bounded. The numerical errors defined below are finite. The constants $\gamma_n$ may exceed one for a finite-horizon recursive problem.
+\end{assumption}
+
+For learned values $\widehat v_n$ and a feasible policy $\pi_n$, define
+\begin{align}
+ \epsilon_n&=\norm{\widehat v_n-\widetilde\cT_n^{\pi_n}\widehat v_{n+1}}_\infty,
+ \label{eq:eps}\\
+ \delta_n&=\norm{\widetilde\cT_n\widehat v_{n+1}
+                  -\widetilde\cT_n^{\pi_n}\widehat v_{n+1}}_\infty,
+ \label{eq:delta}\\
+ \kappa_n&=\sup_{s,a}\left|\widetilde\cT_n^a\widehat v_{n+1}(s)
+                             -\cT_n^a\widehat v_{n+1}(s)\right|,
+ \qquad \eta=\norm{\widehat v_N-g_N}_\infty.
+ \label{eq:kappa}
+\end{align}
+The first quantity is evaluation error; the second is a payoff improvement gap, not an action distance. The third compares operators on the actual learned continuation. It includes transition, quadrature, interpolation, and stopped-payoff errors when those are present. Let $\Gamma_{n,j}=\prod_{i=n}^{j-1}\gamma_i$, with an empty product equal to one.
+
+\begin{theorem}[Policy-value error account]
+\label{thm:error}
+Under Assumption \ref{ass:finite}, the target policy value $J_n^\pi$ satisfies
+\begin{equation}
+ \norm{\widehat v_n-J_n^\pi}_\infty
+ \leq\sum_{j=n}^{N-1}\Gamma_{n,j}(\epsilon_j+\kappa_j)
+             +\Gamma_{n,N}\eta.
+ \label{eq:evaluation_bound}
+\end{equation}
+For the target optimal value $V_n^*$,
+\begin{equation}
+ 0\leq V_n^*(s)-J_n^\pi(s)
+ \leq\sum_{j=n}^{N-1}\Gamma_{n,j}
+       (2\epsilon_j+\delta_j+2\kappa_j)
+       +2\Gamma_{n,N}\eta.
+ \label{eq:value_bound}
+\end{equation}
+\end{theorem}
+
+The proof is backward error propagation, but the placement of the errors matters. The policy-evaluation recursion contributes $\epsilon_n+\kappa_n$. The optimized recursion contributes $\epsilon_n+\delta_n+\kappa_n$. Adding the resulting bounds yields \eqref{eq:value_bound}; separately inflating an actor gap by operator error would produce an unnecessarily loose coefficient. For additive stopped control with exact discount, $\gamma_n\leq e^{-\rho\Delta_n}$. A boundary-payoff error at an intermediate exit belongs in the relevant one-step operator error, not only in the terminal error at $N$.
+
+There is an analogous differential statement. If a classical candidate $v$ has boundary discrepancy at most $\eta$, fixed-policy residual at most $\epsilon(t)$, and Hamiltonian gap at most $\delta(t)$, It\^o's formula and verification give
+\begin{equation}
+ V^*(t,s)-J^\pi(t,s)
+ \leq 2\eta+\int_t^T e^{-\rho(q-t)}\{2\epsilon(q)+\delta(q)\}\,dq.
+ \label{eq:differential_bound}
+\end{equation}
+The stopped martingale and comparison conditions are stated in Supplement S.1. This is a quantitative link to a differential critic, not a claim that sampled residuals provide the required supremum bounds.
+
+A finite test set by itself provides a lower observation of a supremum, not an upper certificate. With a known Lipschitz constant $L$ and an $h$-cover, a residual's uniform magnitude is bounded by its largest tested magnitude plus $Lh$. Without such regularity and coverage information, we report held-out errors as diagnostics. The same distinction applies to critic derivatives, boundary layers, and off-policy states. Network approximation of a smooth function does not convert a sample average into a uniform error bound.
+
+\subsection{Two Improvement Safeguards}
+Let $Q_n(s,a)=\widetilde\cT_n^a\widehat v_{n+1}(s)$. For a finite feasible set $C_n(s)$ and neural proposal $a_\omega(s)$, the candidate safeguard selects
+\begin{equation}
+ \pi_n(s)\in\argmax_{a\in C_n(s)\cup\{a_\omega(s)\}}Q_n(s,a).
+ \label{eq:candidate}
+\end{equation}
+It weakly improves the proposal's evaluated target at every queried state. If $C_n(s)$ is an $h_a$-cover of the feasible set and $Q_n$ has a verified action-Lipschitz constant $L_a$, its remaining improvement gap is at most $L_a h_a$. Without that information, a finite comparison is not a continuum optimality certificate. In the portfolio computation we use the safeguard and report the remaining independently evaluated feasible deviations.
+
+For convex cost minimization, a stronger check is available. Let $F_s(a)$ be differentiable and convex on a compact convex feasible set $A(s)$. Define
+\begin{equation}
+ g_s(a)=\nabla F_s(a)^{\mathsf T}a
+        -\min_{b\in A(s)}\nabla F_s(a)^{\mathsf T}b.
+ \label{eq:fw}
+\end{equation}
+Convexity implies $0\leq F_s(a)-\min_bF_s(b)\leq g_s(a)$. For $A=\{a\geq0:\sum_i a_i\leq B_0\}$, the linear minimum is $B_0\min\{0,\min_i\partial_iF_s(a)\}$. The computation therefore obtains an improvement certificate without a global search over neural parameters. The actor is a proposal; projected improvement is stopped according to \eqref{eq:fw}.
+
+In the resource application, the continuation critic is convex by construction, so the one-period criterion is strongly convex in the action. Its neural representation uses nonnegative coefficients on squared-ReLU features together with a convex quadratic term and a free affine term. This architecture justifies the convex check for the \emph{learned} continuation criterion. It does not assume that its continuation value is exact. An independent scenario-tree calculation separately assesses the resulting policy's lifetime cost.
+
+\begin{proposition}[Finite stochastic-program policy certificate]
+\label{thm:convex_certificate}
+Let $C(u)$ be the convex cost of a nonanticipative finite scenario-tree control problem on a compact convex feasible set $\mathcal U$. Let $\widehat u$ be a feasible reference point, $G(\widehat u)$ its gap defined as in \eqref{eq:fw}, and $u^\pi$ the feasible tree induced by an evaluated feedback policy. Then
+\begin{equation}
+ C(u^\pi)-C(\widehat u)
+ \leq C(u^\pi)-C^*
+ \leq C(u^\pi)-C(\widehat u)+G(\widehat u).
+ \label{eq:tree_certificate}
+\end{equation}
+\end{proposition}
+
+This certificate is independent of the training residual. It applies at each initial state whose complete scenario tree is evaluated. It is not a bound for an untested continuum of initial conditions, nor does it cover a different shock distribution. The supplement gives the projected-simplex implementation and the independent tree gradient.
+
+\subsection{Stationarity and Nonsmooth Solutions}
+A smooth Hamiltonian can have a strictly suboptimal attracting stationary point. On $[-2,2]$, consider
+\begin{equation}
+ H(a)=-(a^2-1)^2+0.2a.
+ \label{eq:counterexample}
+\end{equation}
+Its negative local maximizer is approximately $-0.973994$, while its global maximizer is approximately $1.024120$. The former is locally attracting under gradient ascent and has an improvement gap of approximately $0.399875$. Exact evaluation of $V^a(t)=(T-t)H(a)$ does not change that fact. Isolation of stationary points cannot turn an actor-ODE limit into an optimal policy. An optimality conclusion needs, for example, a justified global concavity or gradient-dominance condition together with the necessary representation and evaluation assumptions. Constant-step Adam and finite-step L-BFGS are not covered by such a conclusion merely because they update separate parameter blocks.
+
+Nor does a small differential residual select a viscosity solution. For the exit equation $1-|v'|=0$ on $(-1,1)$ with zero boundary values, the relevant value is $|x|-1$. The functions
+\begin{equation}
+ w_\varepsilon(x)=\sqrt{1+\varepsilon^2}-\sqrt{x^2+\varepsilon^2}
+ \label{eq:viscosity_counter}
+\end{equation}
+have the same boundary values and squared residual tending to zero, but converge to the wrong function $1-|x|$. At zero, that function fails the viscosity subsolution inequality. Our regression suite retains this example and the biased composite-loss example in Supplement S.2. A convergent approximation of a nonsmooth control problem needs an appropriate mechanism, such as monotonicity, stability, consistency, boundary treatment, and comparison \citep{barles1991}; it is not supplied by smooth activation functions alone.
+
+\subsection{The Squared-Trace Objective}
+For a differential critic, let $A=B^{\mathsf T}\nabla^2v\,B$ and let $z_k$ be independent standard Gaussian probes. Conditional on a fixed state, action, and parameter vector, put $q_k=z_k^{\mathsf T}Az_k$, $\bar q=K^{-1}\sum_kq_k$, and $r_k=a-q_k/2$. Then
+\begin{equation}
+ \E(a-\bar q/2)^2=(a-\tr(A)/2)^2+\frac{\norm{A}_F^2}{2K}.
+ \label{eq:trace_bias}
+\end{equation}
+Averaging $r_k^2$ instead has an excess expectation independent of $K$. These are different objectives, even though each individual trace estimate is unbiased.
+
+\begin{proposition}[An unbiased squared-residual estimand]
+\label{thm:trace}
+For $K\geq2$, define
+\begin{equation}
+ U_K=\frac{(\sum_{k=1}^K r_k)^2-\sum_{k=1}^K r_k^2}{K(K-1)}.
+ \label{eq:ustat}
+\end{equation}
+Then $\E U_K=(a-\tr(A)/2)^2$. If differentiation and expectation can be interchanged, its parameter gradient is unbiased for the gradient of that squared residual.
+\end{proposition}
+
+The estimator can be negative in a batch. Unbiasedness does not establish low variance, stability of its minimization, or an accurate policy. Optimizing over actions using the same noisy probes also introduces a selection issue beyond the fixed-action identity. We therefore retain exact derivatives for the differential benchmark checks and assess the probe estimands with repeated independent batches. The executed high-dimensional resource solver uses a finite-step operator and a convex critic; its results are not attributed to Hutchinson acceleration.

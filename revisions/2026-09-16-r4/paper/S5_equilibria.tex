@@ -1,0 +1,33 @@
+\section{Temporal Selves and Dynamic Competition}
+\subsection{Sophisticated Consumption--Savings}
+Let one period have length $\Delta$, $\delta=e^{-\rho\Delta}$, and terminal payoff $G(w)=\log w$. The acting self chooses $c\in(0,w)$ to maximize $\Delta\log c+\beta\delta V_{n+1}(w-c)$, whereas ordinary continuation evaluates the chosen policy as
+\[
+ V_n(w)=\Delta\log c_n(w)+\delta V_{n+1}(w-c_n(w)).
+\]
+If $V_{n+1}=A_{n+1}\log w+B_{n+1}$, strict concavity gives
+\begin{align*}
+ z_n:=\frac{c_n(w)}w&=\frac{\Delta}{\Delta+\beta\delta A_{n+1}},\\
+ A_n&=\Delta+\delta A_{n+1},\\
+ B_n&=\Delta\log z_n+\delta A_{n+1}\log(1-z_n)+\delta B_{n+1}.
+\end{align*}
+Starting with $A_N=1,B_N=0$ yields an exact sophisticated equilibrium. The coefficient $A_n$ is independent of $\beta$, but the policy and the constant are not. The reference test uses $\Delta=1$, four consumption dates, $\rho=0.04$, and $\beta\in\{0.7,1\}$. At four wealth levels it separately solves the bounded one-shot consumption problem and checks the evaluation identity with the frozen continuation coefficients.
+
+For two consumption dates, $\delta=1$, the correct first-date ratio is $1/(1+2\beta)$. Reusing the acting self's maximand as its stored continuation would instead yield $1/(1+\beta+\beta^2)$. At $\beta=0.7$ the difference is $0.4166667$ versus $0.4566210$. The $\beta=1$ check alone cannot reveal this error. These checks implement the written temporal game rather than an ordinary geometric-discount control problem. They do not identify the finite-state reference as a trained neural solution.
+
+\subsection{A Stochastic Capacity Duopoly}
+There are four decision dates. Demand is $D\in\{1,1.3\}$ with probability $0.8$ of staying at its current value. Each firm's installed capacity $K_i\in\{0,1\}$ determines current output $q_i=K_i/3$. Current operating profit is $q_i(D-q_i-q_j)$. Firm $i$ chooses a maintenance or renewal intensity $a_i\in[0,1]$ at cost $0.4a_i^2/2$. Independently across firms conditional on actions, next-period capacity is one with probability $a_i$ and zero otherwise. The discount factor is $0.95$ and terminal value is $0.05K_i$. There are eight Markov states and four dates, so complete state enumeration is possible.
+
+For fixed rival intensity, the continuation value is affine in a firm's own intensity. Its best response is therefore the projection onto $[0,1]$ of its discounted marginal continuation gain divided by $0.4$. The joint map is affine before projection, with slope determined by the cross difference of the four next-capacity continuation values. The program checks the product of the two own best-response slopes, iterates from multiple initial profiles, and compares their limits. This finite example has a contraction bound below one. It does not establish uniqueness in arbitrary dynamic games.
+
+An independent backward best-response recursion freezes the rival's entire state-contingent policy at every subsequent date and allows the tested firm to deviate at all dates. Its difference from the profile value is dynamic exploitability. This is stronger than checking a single current Hamiltonian against an inconsistent continuation. The report records the maximum over all dates, states, and players, with a numerical tolerance of $10^{-10}$. A separate automatic-differentiation test confirms that a player's loss does not differentiate the rival's parameters.
+
+The static special case $q_i(1-q_i-q_j)$ remains a useful negative control. Symmetric Nash output is $1/3$, whereas joint-profit output is $1/4$. At the latter profile, changing one firm's quantity to its own best response is profitable. A symmetric or jointly optimal actor graph is therefore not a substitute for a Nash calculation. The dynamic capacity model is a finite-state equilibrium computation; no competitive limit or general neural-game convergence is inferred from it.
+
+\subsection{Market-Size Normalization and a Conditional Small-Player Bound}
+To retain the economically relevant many-firm extension without conflating different economies, consider per-firm normalized output $y_i$ and actual output $q_i=y_i/N$, with inverse demand $P=a-b\bar y$, $\bar y=N^{-1}\sum_i y_i$. Multiplying each firm's monetary payoff by $N$ gives normalized flow $y_iP-C(y_i)$ under consistently scaled costs. Its direct strategic price derivative is $-by_i/N$. Investment, depreciation, and state transitions must be scaled and retained as well; this current-flow derivative by itself does not establish convergence of dynamic equilibria.
+
+A precise conditional implication is available. Suppose that, against a fixed rival profile, the finite-$N$ player's transition operators and a price-taking comparison operator are monotone and $\gamma_n$-Lipschitz, have the same terminal payoff, and differ uniformly by at most $\eta_n/N$ on all policies and continuation values used in the comparison. Then a policy optimal for the price-taking problem loses at most
+\[
+ \frac2N\sum_{j=n}^{N-1}\Gamma_{n,j}\eta_j
+\]
+relative to the finite-$N$ best response. To prove it, backward iteration bounds the difference of the two optimal values by $N^{-1}\sum_j\Gamma_{n,j}\eta_j$, and bounds the two evaluations of that fixed policy by the same amount. Their sum gives the result. Uniform Lipschitz control of aggregate-state effects is one route to the operator hypothesis, but it must be checked in a specified model. This proposition concerns a unilateral deviation bound, not selection or convergence of a sequence of equilibria. It is theoretical extension material and is not recorded as an executed large-$N$ experiment.
