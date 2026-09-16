@@ -1,0 +1,106 @@
+name: Econometrica R7 matched oracles, economic certificates and complete manuscripts
+on:
+  push:
+    branches: ['revision/econometrica-r7-2026-09-16']
+    paths:
+      - '.github/workflows/revision-r7.yml'
+      - 'ECTA_R7.tex'
+      - 'SUPP_R7.tex'
+      - 'revisions/2026-09-16-r7/**'
+      - 'replication/r7/**'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: econometrica-r7-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  revision:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      BRANCH: revision/econometrica-r7-2026-09-16
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Materialize and verify readable source before execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$BRANCH"
+          git fetch origin "$BRANCH"
+          git checkout -B "$BRANCH" "origin/$BRANCH"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if ! test -f replication/r7/build_report.py; then
+            python3 - <<'PY'
+          import hashlib, io, json, tarfile
+          from pathlib import Path, PurePosixPath
+          root=Path('.')
+          parts=sorted(root.glob('revisions/2026-09-16-r7/_source_transport/*.part'))
+          assert [p.name for p in parts]==[f'{i:02d}.part' for i in range(8)]
+          data=b''.join(p.read_bytes() for p in parts)
+          assert hashlib.sha256(data).hexdigest()=='d9c278e72d7ac0281e8ef8353267c5173d2da0eb38b4d3796f4fcd21ac5794c5'
+          allowed={'ECTA_R7.tex','SUPP_R7.tex','REVISION_INDEX.md'}
+          with tarfile.open(fileobj=io.BytesIO(data),mode='r:xz') as archive:
+              members=archive.getmembers()
+              assert len(members)==28 and len({m.name for m in members})==len(members)
+              for m in members:
+                  p=PurePosixPath(m.name)
+                  assert m.isfile() and not p.is_absolute() and '..' not in p.parts and m.size<250000
+                  assert m.name in allowed or m.name.startswith(('replication/r7/','revisions/2026-09-16-r7/'))
+                  target=root/m.name;target.parent.mkdir(parents=True,exist_ok=True)
+                  target.write_bytes(archive.extractfile(m).read())
+          inventory=json.loads((root/'revisions/2026-09-16-r7/source_inventory.json').read_text())
+          for p,h in inventory.items():assert hashlib.sha256((root/p).read_bytes()).hexdigest()==h,p
+          print('Verified',len(inventory),'readable source inputs.')
+          PY
+            git add ECTA_R7.tex SUPP_R7.tex REVISION_INDEX.md replication/r7 revisions/2026-09-16-r7
+            git commit -m 'paper(r7): comparative oracle theory, primitive adjustment mechanism and joint-region certification'
+            git push origin "HEAD:refs/heads/$BRANCH"
+          fi
+          mkdir -p build-r7
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          echo "SOURCE_SHA=$SOURCE_SHA" >> "$GITHUB_ENV"
+          printf '%s\n' "$SOURCE_SHA" > build-r7/source_commit.txt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned scientific dependencies
+        run: |
+          python -m pip install -r replication/r7/requirements.txt
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Install manuscript toolchain
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended texlive-science latexmk poppler-utils
+      - name: Execute committed R7 comparisons and decision certificates
+        run: bash replication/r7/run_all.sh "$SOURCE_SHA"
+      - name: Compile complete manuscripts and verify protected history
+        run: |
+          latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build-r7 ECTA_R7.tex
+          latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build-r7 SUPP_R7.tex
+          python replication/r7/build_report.py --source-commit "$SOURCE_SHA"
+      - name: Deposit executed evidence and compiled review copies
+        run: |
+          set -euo pipefail
+          git add replication/r7/output replication/r7/logs revisions/2026-09-16-r7
+          git diff --cached --quiet || git commit -m 'evidence(r7): matched frontier, autonomous refinement, primitive and joint-region results, full PDFs'
+          git push origin "HEAD:refs/heads/$BRANCH"
+          git rev-parse HEAD > build-r7/final_commit.txt
+          git archive HEAD | gzip > build-r7/source.tar.gz
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: econometrica-r7-source-evidence-and-manuscripts
+          path: |
+            build-r7/
+            replication/r7/logs/
+            replication/r7/output/
+            revisions/2026-09-16-r7/
+          retention-days: 90
