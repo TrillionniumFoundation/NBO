@@ -1,0 +1,56 @@
+\section{Portfolio and Recursive-Utility Verification}
+\subsection{Stationary Merton Benchmark}
+Write $b=1-\gamma$, $V(X)=AX^b/b$, $c=mX$, and
+\[
+ g(m,\pi)=r+(\mu-r)\pi-m+\tfrac12(b-1)\sigma^2\pi^2.
+\]
+For exponential utility discount $\rho$, the fixed-policy stationary equation is
+\[
+ A=\frac{m^b}{\rho-bg(m,\pi)}
+\]
+on the positive branch $\rho-bg>0$. Optimization gives $\pi^*=(\mu-r)/(\gamma\sigma^2)$ and
+\[
+ m^*=\frac{\rho-(1-\gamma)[r+(\mu-r)^2/(2\gamma\sigma^2)]}{\gamma}.
+\]
+At $(\rho,\gamma,\mu,r,\sigma)=(0.04,2,0.08,0.02,0.2)$ the targets are $(m^*,\pi^*)=(0.04125,0.75)$. Wealth remains positive under this proportional policy. Its discounted terminal candidate expectation decays at rate $\rho-bg(m^*,\pi^*)=m^*>0$, verifying its own transversality condition. The usual verification comparison is made over policies for which the stopped local martingale and discounted terminal inequalities pass to the limit.
+
+The executed feature solver treats $q=\log A$, the consumption ratio, and the portfolio ratio as unknowns. It alternates the fixed-policy scalar evaluation root with an automatic-differentiation actor optimization, without feeding the analytical targets into the updates. Positivity is imposed by $A=e^q$. This is a learned homothetic feature model; the ratios alone would not be a neural-function benchmark on an unrestricted state space. The no-short regression at $\mu=0.01$ instead has unconstrained share $-0.125$ and constrained share zero at every positive wealth. It is not a wealth-dependent switching problem.
+
+\subsection{Epstein--Zin Driver and the Admissible Comparison Class}
+Use $a=1-1/\psi$, $b=1-\gamma$, with $a,b\ne0$, $c>0$ and $bV>0$. The driver is
+\[
+ f(c,V)=\frac\rho a\{c^a(bV)^{1-a/b}-bV\}.
+\]
+The log limits must be taken separately when a denominator vanishes. For a homothetic candidate $V=AX^b/b$, dividing the stationary HJB by $AX^b$ gives
+\[
+ \frac\rho a\{m^aA^{-a/b}-1\}+g(m,\pi)=0.
+\]
+Thus a fixed proportional policy has a unique positive homothetic coefficient whenever $1-ag/\rho>0$. Its consumption first-order condition is $\rho m^{a-1}A^{-a/b}=1$, and the portfolio first-order condition gives the same Merton share with risk aversion $\gamma$. Eliminating $A$ yields
+\begin{align*}
+ \pi^*&=\frac{\mu-r}{\gamma\sigma^2},\\
+ m^*&=\psi\rho+(1-\psi)\left[r+\frac{(\mu-r)^2}{2\gamma\sigma^2}\right],\\
+ A^*&=(\rho(m^*)^{a-1})^{b/a}.
+\end{align*}
+For $(\rho,\gamma,\psi,\mu,r,\sigma)=(0.04,5,1.5,0.08,0.02,0.2)$ this gives $m^*=0.0455$ and $\pi^*=0.3$. The normalized Hamiltonian is strictly concave in the consumption ratio and portfolio share on the specified positive domain. The selected ratios lie inside the implemented action bounds.
+
+For precision about infinite horizon, the verification class consists of policies for which the policy-wise recursive equation exists on the branch $bY>0$, its localized comparison argument is integrable, and the comparison-weighted terminal remainder vanishes. On compact subsets of $c>0,bY>0$ the driver is locally Lipschitz, but this does not imply a global Lipschitz constant on the entire half-line. One may first stop at compact localization sets, apply the mean-value linearization in the value argument, and then impose uniform integrability and the weighted terminal limit to remove localization. With $\Gamma_t=\exp(\int_0^t f_V(c_s,\zeta_s)ds)$ for the intermediate value $\zeta_s$, the required remainder is of the form $\E[\Gamma_T|V(X_T)-Y_T^p|]\to0$. The candidate HJB inequality and this comparison yield $Y_0^p\leq V(X_0)$, with equality for the maximizing policy.
+
+For the selected homothetic policy itself, $f_V=-0.1115$, while the growth exponent of $\E X_t^b$ is $bg=0.066$. The candidate comparison-weighted value therefore decays at rate $0.1115-0.066=0.0455>0$. The numerical record evaluates the fixed-policy equation and target errors, and the analytic calculation verifies this decay. This specifies a genuine stationary recursive benchmark with an explicit admissible verification class; it does not assert that all bounded controls satisfy the terminal condition automatically.
+
+The sign-enforcing architecture is actually executed: $V=e^qX^b/b$, hence $bV=e^qX^b>0$. A separate finite-horizon architecture test uses
+\[
+ V_\xi(t,X)=\frac1b\exp\{\log[bG(X)]+(T-t)N_\xi(t,X)\}
+\]
+for $bG>0$. It verifies the terminal identity and sign on test points. It is a domain test, not evidence that an additional finite-horizon recursive problem was trained. These distinctions follow the policy-wise recursive-utility formulation of \citet{duffie1992} rather than replacing recursion by a pointwise evaluation at $c=1,V=-1$.
+
+\subsection{A Structured Stochastic Dynamic Control Check}
+For $d\in\{4,8,16\}$, the additional six-period LQR problem uses
+\[
+ A=0.82I+0.07(J+J^\top),\quad B=0.2I,\quad
+ Q=I+0.3\mathbf1\mathbf1^\top/d,\quad R=0.15I,
+\]
+and Gaussian shock loading $\Sigma=0.08(I+0.3\mathbf1\mathbf1^\top/d)$, with terminal matrix $Q$. Here $J$ has ones on its upper adjacent diagonal. The linear neural actor and quadratic feature critic are trained by policy evaluation and improvement. The independent reference uses the finite-horizon Riccati recursion, including the noise contribution to the value constant. A second recursion evaluates the learned fixed policy rather than using its fitted critic as a performance score.
+
+\input{revisions/2026-09-16-r5/paper/table_lqr}
+
+The experiment has cross-state dynamics and non-diagonal stochastic covariance but no binding control constraints. It is retained as a structured dynamic regression test. The main shared-budget resource experiment supplies the separately executed constrained case; neither is relabeled as an adaptive sparse-grid comparison.

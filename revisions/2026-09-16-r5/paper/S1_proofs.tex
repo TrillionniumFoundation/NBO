@@ -1,0 +1,84 @@
+\section{Operator Proofs and Quantitative Approximation}
+\subsection{Exact Policy Improvement}
+We use the assumptions of the main paper's exact separated-operator proposition. In particular, $I(p)(t,s)$ is a selector maximizing $\mathcal H^a[E(p)](t,s)$, not a stationary point of a parameterized actor objective. Continuity of $E$ is in the norm controlling the value, time derivative, first spatial derivatives, second spatial derivatives, and the stated boundary traces. The admissible compact policy class is closed under $I$. These are assumptions on an exact boundary-value problem, not universal properties of neural policy classes.
+
+\begin{proof}[Proof of exact separated-operator consistency]
+Write $V_n=E(p_n)$ and $p_{n+1}=I(p_n)$. The evaluation equation gives $V_{n,t}+\mathcal H^{p_n}[V_n]=0$. Pointwise maximization implies
+\[
+ V_{n,t}+\mathcal H^{p_{n+1}}[V_n]\geq0.
+\]
+The assumed comparison and verification inequalities, with the same boundary operator for both policies, imply $V_{n+1}\geq V_n$. Precompactness of the evaluation image implies boundedness and hence a pointwise limit $\bar V$. Every subsequential limit in the declared strong topology has this same value component. Its derivative components are the derivatives of that value, because uniform convergence of the functions and their derivatives preserves differentiation. Consequently all strong accumulation points coincide and $V_n\to\bar V$ strongly.
+
+Let $p_{n_j}\to p$ be a policy subsequence, which exists by compactness. Continuity of evaluation gives $E(p)=\bar V$. Continuity of improvement at $p$ and continuity of evaluation give
+\[
+ E(I(p))=\lim_j E(I(p_{n_j}))
+       =\lim_j V_{n_j+1}=\bar V.
+\]
+Evaluating $I(p)$ at this common value yields
+\[
+ 0=\bar V_t+\mathcal H^{I(p)}[\bar V]
+  =\bar V_t+\sup_a\mathcal H^a[\bar V].
+\]
+The boundary traces also pass to the limit. Comparison identifies $\bar V$ with the optimal value, and verification identifies $p$ as optimal because $E(p)=\bar V$. This argument does not require $p=I(p)$ or convergence of the entire policy sequence. In the presence of tied maximizing actions, different optimal policies may share the same limiting value.
+\end{proof}
+
+The proof is an application of exact policy-improvement reasoning; it is not a claim of priority over \citet{jacka2015}. The assumption of a compact strongly regular evaluation image can fail at corners or under degenerate diffusions. The stopped application is therefore evaluated by its specified positive transition approximation rather than asserted to satisfy every classical hypothesis globally.
+
+\subsection{Finite-Horizon Value-Loss Bound}
+For clarity, put $\Gamma_{n,n}=1$ and $\Gamma_{n,j}=\prod_{\ell=n}^{j-1}\gamma_\ell$. Both $\mathcal T_n^a$ and its policy version are monotone and $\gamma_n$-Lipschitz in the sup norm. The implemented operator is $\widetilde{\mathcal T}_n^a$. The three nonnegative error bounds at $\hat v_{n+1}$ are
+\begin{align*}
+ \epsilon_n&\geq\norm{\hat v_n-\widetilde{\mathcal T}_n^{\hat p_n}\hat v_{n+1}}_\infty,\\
+ \delta_n&\geq\norm{\widetilde{\mathcal T}_n\hat v_{n+1}-\widetilde{\mathcal T}_n^{\hat p_n}\hat v_{n+1}}_\infty,\\
+ \kappa_n&\geq\sup_a\norm{(\widetilde{\mathcal T}_n^a-\mathcal T_n^a)\hat v_{n+1}}_\infty.
+\end{align*}
+Here $\widetilde{\mathcal T}_n=\sup_a\widetilde{\mathcal T}_n^a$, and $\norm{\hat v_N-G}_\infty\leq\eta$.
+
+\begin{proof}[Proof of the main value-loss theorem]
+Let $D_n=\norm{\hat v_n-J_n^{\hat p}}_\infty$. Inserting the implemented and target fixed-policy backups gives
+\[
+ D_n\leq\epsilon_n+\kappa_n+\gamma_nD_{n+1}.
+\]
+Let $R_n=\norm{\hat v_n-V_n^*}_\infty$. The supremum inequality $|\sup_a f_a-\sup_a g_a|\leq\sup_a|f_a-g_a|$ and the nonnegative improvement gap give
+\[
+ R_n\leq\epsilon_n+\delta_n+\kappa_n+\gamma_nR_{n+1}.
+\]
+Backward iteration, with $D_N,R_N\leq\eta$, proves
+\begin{align*}
+ D_n&\leq\sum_{j=n}^{N-1}\Gamma_{n,j}(\epsilon_j+\kappa_j)+\Gamma_{n,N}\eta,\\
+ R_n&\leq\sum_{j=n}^{N-1}\Gamma_{n,j}(\epsilon_j+\delta_j+\kappa_j)+\Gamma_{n,N}\eta.
+\end{align*}
+Feasibility implies $V_n^*\geq J_n^{\hat p}$. Combining the two inequalities proves the stated upper bound with coefficients $2\epsilon_j+\delta_j+2\kappa_j$ and terminal coefficient $2\eta$.
+\end{proof}
+
+The theorem is finite-horizon. It permits a recursive operator with $\gamma_n>1$ but then records amplification explicitly through $\Gamma_{n,j}$. It does not imply contraction for an arbitrary Epstein--Zin aggregator. Boundary killing can be included in the transition kernel by treating the boundary payoff as a known reward component; only continuation mass contributes to $\gamma_n$.
+
+\subsection{Differential Residual and Boundary Error}
+Let $v$ be a $C^{1,2}$ candidate for the additive, stopped, discounted problem. Define $R^a=v_t+\ell^a+\mathcal L^av-\rho v$. Suppose $|R^{\hat p}|\leq\epsilon(t)$, $\sup_a R^a-R^{\hat p}\leq\delta(t)$, and the payoff discrepancy at terminal time or exit is at most $\eta$. Assume the localized It\^o formula passes to expectations by uniform integrability.
+
+For every admissible $p$, stopped It\^o integration gives
+\[
+ J^p(t,s)-v(t,s)=\E_{t,s}^p\left[\int_t^\tau e^{-\rho(r-t)}R^{p_r}(r,S_r)\,dr
+ +e^{-\rho(\tau-t)}(G-v)(\tau,S_\tau)\right].
+\]
+The upper bound for an arbitrary policy is $\eta+\int_t^T e^{-\rho(r-t)}(\epsilon(r)+\delta(r))dr$. The absolute discrepancy for $\hat p$ is at most $\eta+\int_t^T e^{-\rho(r-t)}\epsilon(r)dr$. Taking a supremum over $p$ and adding proves the differential corollary. The argument is conditional on uniform residual and boundary bounds. Replacing these bounds by sampled root mean squared losses is not a valid proof step.
+
+\subsection{Feasible Candidates, Convex Gaps, and Reference Bounds}
+If $Q(s,a)$ is $L_a$-Lipschitz in $a$ and a feasible set $\mathcal C(s)$ is an $h_a$-net of the admissible actions, then a maximizer over $\mathcal C(s)$ is within $L_ah_a$ of the full supremum. Adding a neural proposal to $\mathcal C(s)$ cannot reduce its achieved backup value. Neither statement bounds the evaluation error of the critic that generated $Q$.
+
+For differentiable convex $F$ on a compact convex set $A$, its tangent inequality implies
+\[
+ F(a)-\inf_{b\in A}F(b)\leq\nabla F(a)^\top a-\min_{b\in A}\nabla F(a)^\top b=:g_F(a).
+\]
+For $A=\{a\geq0:\sum_i a_i\leq B\}$, the minimum is $B\min(0,\min_i\partial_iF(a))$. The same formula applies to a scenario tree with separate feasible actions at each information node: sum the node-specific linear minimization gaps, using the gradient of the complete probability-weighted objective. This gradient must include all descendant costs.
+
+If a feasible reference has objective $C_R$ and gap $G_R$, then $C_R-G_R\leq C^*\leq C_R$. Any other feasible policy, evaluated on the same tree, therefore satisfies
+\[
+ C_\pi-C_R\leq C_\pi-C^*\leq C_\pi-C_R+G_R.
+\]
+The program evaluates both objectives by all 64 terminal branches. It does not insert the neural critic as a substitute for policy cost. The reported interval is based on ordinary double-precision evaluation of these inequalities; it is not an interval-arithmetic enclosure of rounding error.
+
+A useful conditional policy bound also follows. If the optimal continuation backup $Q^*(s,\cdot)$ is $\mu$-strongly concave and the approximate continuation is within $e$ of the optimal one, an action whose approximate improvement gap is at most $\delta$ obeys
+\[
+ \norm{\hat a-a^*}^2\leq\frac{2}{\mu}(\delta+2\gamma e).
+\]
+Indeed the value of each action changes by at most $\gamma e$, and strong concavity bounds the resulting true suboptimality below by $\mu\norm{\hat a-a^*}^2/2$. This is not applied to a nonconcave NDU maximand. In the convex resource problem the immediate quadratic cost supplies strong convexity $0.2/d$ for minimization. Its deterioration with dimension is included in the conditioning discussion rather than hidden in a dimension-free speed claim.
