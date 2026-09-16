@@ -1,0 +1,38 @@
+name: Econometrica R4 source and manuscript
+on:
+  push:
+    branches: ['revision/econometrica-r4-2026-09-16']
+    paths:
+      - '.github/workflows/revision-r4.yml'
+      - 'ECTA_R4.tex'
+      - 'SUPP_R4.tex'
+      - 'revisions/2026-09-16-r4/**'
+      - 'replication/r4/**'
+permissions:
+  contents: read
+jobs:
+  source-and-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Immutable source snapshot
+        run: |
+          mkdir -p build-r4
+          git archive HEAD | gzip -n > build-r4/source.tar.gz
+          git rev-parse HEAD > build-r4/source_commit.txt
+      - name: Install TeX
+        if: hashFiles('ECTA_R4.tex') != ''
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended texlive-science latexmk
+      - name: Build current manuscripts
+        if: hashFiles('ECTA_R4.tex') != ''
+        run: |
+          latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build-r4 ECTA_R4.tex
+          if test -f SUPP_R4.tex; then latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build-r4 SUPP_R4.tex; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: econometrica-r4-${{ github.sha }}
+          path: build-r4/
+          retention-days: 30
+          if-no-files-found: error
