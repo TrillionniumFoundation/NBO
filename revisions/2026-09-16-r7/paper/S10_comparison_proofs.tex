@@ -1,0 +1,67 @@
+\section{Comparative Upper Oracles and Total Policy-Bank Error}
+This section supplies the additional proofs for the matched comparison and the finite-refinement result. All statements concern the same finite state/action target and a scalar affine mixture of positive substochastic operators. Approximation of a diffusion is a separate question.
+
+\subsection{Localized Count Dominance}
+Fix an interval $[a,b]$, let $h=N-n$, and suppress its superscript. Write
+$C_{n,j}=(1-j/h)v_n^a+(j/h)v_n^b$ and
+$f_{h,j}=j(h-j)/(h(h-1))$ for $h\geq2$.
+The corrected upper coefficients are $U_{n,j}=C_{n,j}+f_{h,j}M_n$.
+At $h=0$, both constructions equal $g$. At $h=1$, the correction is zero because both endpoint terminal functions are $g$, and the pure endpoint Bellman backups are no greater than their endpoint supersolutions.
+
+Suppose $W_{n+1,j}\leq U_{n+1,j}$. Positivity permits substitution of $U$ for $W$ in the count recursion. For an interior count, expanding the part containing $C$ gives
+\begin{align*}
+ &(1-j/h)T^u_{n,a}v^a_{n+1}+(j/h)T^u_{n,b}v^b_{n+1}\\
+ &\hspace{12mm}+f_{h,j}(K^u_{n,a}-K^u_{n,b})(v^b_{n+1}-v^a_{n+1})
+ \leq C_{n,j}+f_{h,j}D_n^u.
+\end{align*}
+This identity includes the reward terms, whose weights sum to one. For $h>2$, the propagated correction is
+\[
+ f_{h,j}\left\{\frac{h-j-1}{h-2}K^u_{n,a}M_{n+1}
+ +\frac{j-1}{h-2}K^u_{n,b}M_{n+1}\right\}.
+\]
+The two weights are nonnegative and sum to one. Keeping the current action $u$ fixed, the entire expression is at most
+\[
+ C_{n,j}+f_{h,j}\{D_n^u+\max(K^u_{n,a}M_{n+1},K^u_{n,b}M_{n+1})\}
+ \leq C_{n,j}+f_{h,j}M_n.
+\]
+For $h=2$ the next correction is zero and the same conclusion follows from $D_n^u$. Counts zero and $h$ use the endpoint supersolution inequalities directly. Maximization over the common action completes induction. This is the comparison identified in the R6 advisory report, including its same-action and short-horizon qualifications.
+
+For the rectangular comparison, induction gives $W_{n+1,j}\leq B_{n+1}$. Each count backup is then a convex combination of two quantities no greater than
+$\max_{u,e}T^u_{n,e}B_{n+1}=B_n$, so $W_{n,j}\leq B_n$.
+Each original policy can ignore count information, proving that the count polynomial itself is an upper value. Positive polynomial evaluation and positive de Casteljau subdivision preserve coefficient dominance. Subtracting the same lower coefficients, taking coefficient maxima, policy minima, positive parts, and state/date maxima preserves the ordering of the certificates. These statements do not establish that count is faster.
+
+\subsection{Operation Counts and Storage}
+With exact endpoint values shared, count coefficients $j=0,h$ need no additional Bellman solve. At remaining horizon $h\geq2$, all $h$ next-date coefficients require one multiplication by each base kernel. Neighboring results can be cached while looping through $j$. The total is
+$2\sum_{h=2}^Hh=H(H+1)-2$ action-wide kernel applications. The correction has one two-application nonzero layer at $h=2$ and four applications at each later layer, totaling $4H-6$ for $H\geq2$; it is zero for $H=1$. The rectangular recursion uses two applications per date. Reward combinations and maxima are additional vector operations. The production code's counts are checked by an instrumented dense backend at horizons $1,2,3,4,6,8,12,16$.
+
+For $S$ states, the correction stores $H-1$ nonzero state vectors; known zero vectors are not retained in its compact representation. The count method has $\sum_{h=1}^H(h-1)=H(H-1)/2$ interior coefficient vectors. Endpoint values are common inputs. The coefficient bank for one feasible policy contains $\sum_{h=0}^H(h+1)$ state vectors; across $m$ policies this is $O(mSH^2)$, in addition to $O(mSH)$ policy indices. The implementation expands the chord one date at a time during certification, and charges that expansion to certificate time. These persistent-array counts exclude action-wide work buffers and the sparse kernel, and are not claims about process peak resident memory. If a row has at most $z$ stored successors and $A$ actions, an action-wide application costs $O(SAz)$. Naive repeated de Casteljau restriction of $m_I$ local policy arrays to $B$ cells costs $O(Bm_ISH^3)$; it can dominate when action optimization is cheap.
+
+\subsection{Proof of the Total Coefficient-Error Bound}
+Let $V_n,L_n,Q_n$ be the primitive recursions in the main text. By backward induction, every fixed-policy value and every optimal value has absolute magnitude at most $V_n$. For any bounded continuation $f$ with $\|f\|_\infty\leq V_{n+1}$,
+\[
+ \|T^u_{n,\lambda}f-T^u_{n,\lambda'}f\|_\infty
+ \leq|\lambda-\lambda'|(\rho_n+\kappa_nV_{n+1}).
+\]
+Monotonicity and the row-mass bound give a Lipschitz constant $L_n$ for both optimal values and all fixed-policy values, whether or not the maximizing action changes.
+
+A coefficient bound is needed in addition to this pointwise result. Let $p^a$ be an endpoint-optimal Markov policy and let $F^{p^a,I}_{n,j}$ be its Bernstein coefficients on $I=[a,b]$. At date $n$, its conditional-count recursion is a convex combination of endpoint-$a$ and endpoint-$b$ backups of next-date coefficients. Relative to the pure-$a$ policy value, induction and the preceding inequality give
+\[
+ \|F^{p^a,I}_{n,j}-J^{p^a,a}_n\|_\infty
+ \leq\beta_nL_{n+1}w+(\rho_n+\kappa_nV_{n+1})w=L_nw.
+\]
+The same induction bounds the absolute coefficient magnitude by $V_n$. It is valid even though conditional counts change the regime probabilities: the current mixture weights are between zero and one, and the induction bound is uniform over the remaining count. Exact endpoint optimization gives $J^{p^a,a}_n=v^a_n$ at every state and date.
+
+Next, $\|v_n^b-v_n^a\|_\infty\leq L_nw$, while the signed cross term obeys
+$\|D_n^u\|_\infty\leq\kappa_nL_{n+1}w^2$.
+The correction recursion therefore implies $\|M_n\|_\infty\leq Q_nw^2$.
+For $h\geq2$, $0\leq f_{h,j}\leq1/2$. Consequently,
+\[
+ U^I_{n,j}-F^{p^a,I}_{n,j}
+ \leq2L_nw+\tfrac12Q_nw^2.
+\]
+For $h=1$ the correction is zero, and at the terminal date the difference is zero. Selecting this one feasible policy already establishes the claimed bound; taking the better endpoint policy can only tighten it. Subdivision is positive and cannot invalidate the coefficient bound. Count dominance transfers the bound to the local count construction.
+
+With $w\leq\epsilon/(4L_*)$ and $w\leq\sqrt{\epsilon/Q_*}$, the linear and quadratic terms are each at most $\epsilon/2$. A complete dyadic grid first reaching width $w_*$ has fewer than $2/w_*$ intervals and at most one more anchor. This proves finite termination and the worst-case $O(\epsilon^{-1})$ statement for fixed primitive constants. The result does not require second-order smoothness of optimal values. For nonexact endpoints, their independently certified one-sided residual and policy-evaluation errors must be added before this termination rule is used.
+
+\subsection{Scope of the Matched Frontier}
+The full experiment reoptimizes every original R6 transition anchor on the unchanged target and independently reevaluates its policy coefficients. It uses the same endpoint-policy pair and eight closed cells on every compared interval. For $d=0.5$, it also compares common coarser banks retaining every second or fourth original anchor, always including $1$. These locations are inherited computational design choices, not newly timed autonomous anchor searches. Setup, anchor optimization, policy evaluation, local coefficient restriction, upper construction, and cell certification are charged to each method's reconstructed total. Shared work is measured once and attributed identically. Numerical ordering checks and replay diagnostics are validation overhead, not part of any arm's deployment workload. The results are one complete serial, single-thread pass per row on one machine; no cross-machine historical time is used as a comparator. The raw stage times and every interval bound are deposited.

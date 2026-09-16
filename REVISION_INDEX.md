@@ -1,3 +1,13 @@
+# Current revision: R7 (16 September 2026)
+
+Branch: `revision/econometrica-r7-2026-09-16`, based on the R6 advisory report at `10a7cbee28de5126d844dea9eae8c36c5cda9e9b`.
+
+Read the complete [R7 main manuscript](revisions/2026-09-16-r7/ECTA_R7.pdf), [supplement](revisions/2026-09-16-r7/SUPP_R7.pdf), [response](revisions/2026-09-16-r7/response_to_referee.md), and [executed results](revisions/2026-09-16-r7/execution_summary.md). Build from `ECTA_R7.tex` and `SUPP_R7.tex`. The new comparison covers localized-count dominance, compressed work/storage, finite refinement, autonomous anchor demand, a primitive adjustment premium, and a joint-region class-value certificate. All original models and adverse baselines are retained.
+
+The earlier index is preserved below as historical documentation.
+
+---
+
 # Neural Bellman Operators — revision R6
 
 **Date:** 16 September 2026  
