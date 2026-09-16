@@ -1,0 +1,121 @@
+name: Econometrica R6 theory, countercomparators, replication and manuscripts
+on:
+  push:
+    branches: ['revision/econometrica-r6-2026-09-16']
+    paths:
+      - '.github/workflows/revision-r6.yml'
+      - 'ECTA_R6.tex'
+      - 'SUPP_R6.tex'
+      - 'revisions/2026-09-16-r6/**'
+      - 'replication/r6/**'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: econometrica-r6-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  revision:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      BRANCH: revision/econometrica-r6-2026-09-16
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Materialize and hash-verify readable source before execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$BRANCH"
+          git fetch origin "$BRANCH"
+          git checkout -B "$BRANCH" "origin/$BRANCH"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if ! test -f replication/r6/validate.py; then
+            python3 - <<'PY'
+          import hashlib, io, json, tarfile
+          from pathlib import Path, PurePosixPath
+          root=Path('.')
+          target=root/'revisions/2026-09-16-r6/paper'
+          target.mkdir(parents=True,exist_ok=True)
+          for source in (root/'revisions/2026-09-16-r5/paper').glob('*.tex'):
+              text=source.read_text().replace('revisions/2026-09-16-r5','revisions/2026-09-16-r6').replace('Revision R5','Revision R6')
+              (target/source.name).write_text(text)
+          parts=sorted(root.glob('revisions/2026-09-16-r6/_source_transport/*.part'))
+          assert [p.name for p in parts]==[f'{i:02d}.part' for i in range(8)]
+          data=b''.join(p.read_bytes() for p in parts)
+          assert hashlib.sha256(data).hexdigest()=='739720e773eb6d5dfa7a69eae6de8922910054e136ec29c115eeac70cf12444f'
+          allowed={'ECTA_R6.tex','SUPP_R6.tex','REVISION_INDEX.md'}
+          with tarfile.open(fileobj=io.BytesIO(data),mode='r:xz') as archive:
+              members=archive.getmembers()
+              assert len(members)==24 and len({m.name for m in members})==len(members)
+              for m in members:
+                  p=PurePosixPath(m.name)
+                  assert m.isfile() and not p.is_absolute() and '..' not in p.parts and m.size<250000
+                  assert m.name in allowed or m.name.startswith(('replication/r6/','revisions/2026-09-16-r6/'))
+                  out=root/m.name;out.parent.mkdir(parents=True,exist_ok=True)
+                  out.write_bytes(archive.extractfile(m).read())
+          edits=json.loads((root/'revisions/2026-09-16-r6/_source_transport/edits.json').read_text())
+          for record in edits:
+              p=PurePosixPath(record['path'])
+              assert not p.is_absolute() and '..' not in p.parts
+              assert record['path']=='REVISION_INDEX.md' or record['path'].startswith('revisions/2026-09-16-r6/paper/')
+              target=root/record['path'];base=target.read_bytes()
+              assert hashlib.sha256(base).hexdigest()==record['base_sha256']
+              lines=base.decode().splitlines(keepends=True)
+              for i,j,text in reversed(record['edits']):lines[i:j]=[text]
+              target.write_text(''.join(lines))
+          inv=json.loads((root/'revisions/2026-09-16-r6/source_inventory.json').read_text())
+          for p,h in inv.items():assert hashlib.sha256((root/p).read_bytes()).hexdigest()==h,p
+          print('Verified',len(inv),'readable source files.')
+          PY
+            git add ECTA_R6.tex SUPP_R6.tex REVISION_INDEX.md replication/r6 revisions/2026-09-16-r6
+            git commit -m 'paper(r6): transition-law certificates, risk mechanism, exact OLS and structural QP controls'
+            git push origin "HEAD:refs/heads/$BRANCH"
+          fi
+          mkdir -p build-r6
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          echo "SOURCE_SHA=$SOURCE_SHA" >> "$GITHUB_ENV"
+          printf '%s\n' "$SOURCE_SHA" > build-r6/source_commit.txt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned scientific dependencies
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Install manuscript toolchain
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended texlive-science latexmk poppler-utils
+      - name: Execute all committed R6 experiments and inherited read-only checks
+        run: bash replication/r6/run_all.sh "$SOURCE_SHA"
+      - name: Compile complete manuscript and supplement and verify history
+        run: |
+          latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build-r6 ECTA_R6.tex
+          latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build-r6 SUPP_R6.tex
+          python replication/r6/build_report.py --source-commit "$SOURCE_SHA"
+      - name: Deposit executed evidence and compiled review copies
+        run: |
+          set -euo pipefail
+          git add replication/r6/output replication/r6/logs revisions/2026-09-16-r6
+          git diff --cached --quiet || git commit -m 'evidence(r6): executed certificates, structural controls, mechanism results and compiled manuscripts'
+          git push origin "HEAD:refs/heads/$BRANCH"
+          git rev-parse HEAD > build-r6/final_commit.txt
+          git archive HEAD | gzip > build-r6/source.tar.gz
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: econometrica-r6-source-evidence-and-manuscripts
+          path: |
+            build-r6/
+            replication/r6/logs/
+            replication/r6/output/
+            revisions/2026-09-16-r6/
+          retention-days: 90
