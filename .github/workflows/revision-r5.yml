@@ -1,0 +1,120 @@
+name: Econometrica R5 source, replication, and manuscripts
+on:
+  push:
+    branches: ['revision/econometrica-r5-2026-09-16']
+    paths:
+      - '.github/workflows/revision-r5.yml'
+      - 'ECTA_R5.tex'
+      - 'SUPP_R5.tex'
+      - 'revisions/2026-09-16-r5/**'
+      - 'replication/r5/**'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: econometrica-r5-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  revision:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      BRANCH: revision/econometrica-r5-2026-09-16
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Materialize and hash-verify source on the isolated revision branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$BRANCH"
+          git fetch origin "$BRANCH"
+          git checkout -B "$BRANCH" "origin/$BRANCH"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if ! test -f replication/r5/validate.py; then
+            python3 - <<'PY'
+          import hashlib, io, json, tarfile
+          from pathlib import Path, PurePosixPath
+          root = Path('.')
+          target_paper = root / 'revisions/2026-09-16-r5/paper'
+          target_paper.mkdir(parents=True, exist_ok=True)
+          for source in (root / 'revisions/2026-09-16-r4/paper').glob('*.tex'):
+              text = source.read_text().replace('revisions/2026-09-16-r4', 'revisions/2026-09-16-r5').replace('Revision R4', 'Revision R5')
+              (target_paper / source.name).write_text(text)
+          parts = sorted(root.glob('revisions/2026-09-16-r5/_source_transport/*.part'))
+          assert [p.name for p in parts] == [f'{i:02d}.part' for i in range(10)]
+          data = b''.join(p.read_bytes() for p in parts)
+          assert hashlib.sha256(data).hexdigest() == 'de63e46373cd1967b58b4063d860e9ee0b29abbc66f5968d99b6504c1aa4c357'
+          allowed_root = {'ECTA_R5.tex', 'SUPP_R5.tex', 'REVISION_INDEX.md'}
+          with tarfile.open(fileobj=io.BytesIO(data), mode='r:xz') as archive:
+              members = archive.getmembers()
+              assert len(members) == 36
+              assert len({m.name for m in members}) == len(members)
+              for member in members:
+                  path = PurePosixPath(member.name)
+                  assert member.isfile() and not path.is_absolute() and '..' not in path.parts
+                  assert member.size <= 250000
+                  assert member.name in allowed_root or member.name.startswith(('replication/r5/', 'revisions/2026-09-16-r5/'))
+                  target = root / member.name
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_bytes(archive.extractfile(member).read())
+          manifest = json.loads((root / 'revisions/2026-09-16-r5/source_inventory.json').read_text())
+          assert len(manifest) == 53
+          for path, digest in manifest.items():
+              assert hashlib.sha256((root / path).read_bytes()).hexdigest() == digest, path
+          print('Materialized and verified all 53 declared source hashes.')
+          PY
+            git add ECTA_R5.tex SUPP_R5.tex REVISION_INDEX.md replication/r5 revisions/2026-09-16-r5
+            git commit -m 'paper(r5): contract-aware policy reuse, full proofs, substantive referee response and executable experiments'
+            git push origin "HEAD:refs/heads/$BRANCH"
+          fi
+          mkdir -p build-r5
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          echo "SOURCE_SHA=$SOURCE_SHA" >> "$GITHUB_ENV"
+          printf '%s\n' "$SOURCE_SHA" > build-r5/source_commit.txt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned scientific dependencies
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Install manuscript toolchain
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended texlive-science latexmk poppler-utils
+      - name: Execute contract certificates, matched ablations, persistent games and independent replays
+        run: bash replication/r5/run_all.sh "$SOURCE_SHA"
+      - name: Compile manuscripts and audit preservation of every historical file
+        run: |
+          latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build-r5 ECTA_R5.tex
+          latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build-r5 SUPP_R5.tex
+          python replication/r5/build_report.py --source-commit "$SOURCE_SHA"
+      - name: Commit executed evidence and reviewable PDFs
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$BRANCH"
+          git add replication/r5/output revisions/2026-09-16-r5/paper
+          git add revisions/2026-09-16-r5/ECTA_R5.pdf revisions/2026-09-16-r5/SUPP_R5.pdf
+          git add revisions/2026-09-16-r5/ECTA_R5_build.log revisions/2026-09-16-r5/SUPP_R5_build.log
+          git add revisions/2026-09-16-r5/build_report.json revisions/2026-09-16-r5/execution_summary.md
+          if ! git diff --cached --quiet; then
+            git commit -m "replication(r5): executed evidence and compiled manuscripts from $SOURCE_SHA"
+            git push origin "HEAD:refs/heads/$BRANCH"
+          fi
+          git rev-parse HEAD > build-r5/final_commit.txt
+          git archive HEAD | gzip -n > build-r5/source.tar.gz
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: econometrica-r5-${{ github.run_id }}
+          path: |
+            build-r5/
+            replication/r5/output/logs/
+          retention-days: 30
+          if-no-files-found: error
