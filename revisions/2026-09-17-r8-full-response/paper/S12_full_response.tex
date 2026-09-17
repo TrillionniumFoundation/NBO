@@ -1,0 +1,78 @@
+\section{Decision Primitives, Dynamic Mechanisms, and Streaming Replication}
+\label{sec:s12}
+\subsection{The Finite Transition Protocol}
+The stochastic state at a decision date is a node of the declared preference--wealth grid. Controls belong to the union of the meshes $(9,9,13)$ and $(7,7,11)$ in consumption, adjustment, and risky share, after removing exact duplicate actions. There are 1,565 common actions, including 185 with zero deliberate adjustment. Three frozen feasible proposals are appended at each state and date. On the 49-node wealth grid these are exactly the deposited proposals. On the 97- and 145-node grids we extend their three control coordinates linearly in wealth, separately at each preference node and date. The convex control box makes the extension feasible. The common-menu experiment excludes all three proposals at every date, keeping precisely the same 1,565 controls on every grid. It never invokes the historical shortcut that also removed one of the meshes.
+
+The conditional one-step law has four equiprobable sign pairs. Its candidate arrival is the current state plus the increment in the main text. The fraction $\alpha$ is the smallest positive fraction at which the straight segment meets the boundary, truncated above at one. For a current boundary node $\alpha=0$ and liquidation is immediate. A strictly earlier hit, $\alpha<1$, pays the discounted liquidation value at the actual hit point and contributes no live transition mass. An arrival at $\alpha=1$ is settled on neighboring nodes. If the arrival is a boundary node, the next decision has zero operating duration and immediately pays liquidation; this has the same calendar-time settlement value. At the terminal date all surviving nodes pay $G$. These conventions reproduce the inherited transition constructor; no reflected state, wealth injection, or additional independent exit draw is inserted.
+
+For an interior arrival coordinate $y\in[l,r]$, the settlement probabilities at $l$ and $r$ are $(r-y)/(r-l)$ and $(y-l)/(r-l)$. Their mean is $y$ and their variance is $(y-l)(r-y)$. Conditional coordinate independence makes the conditional covariance diagonal. Applying the law of total covariance proves the variance identity in the main text. The identity applies to the live settlement lottery; early-liquidation payoffs remain evaluated at their actual hit points. It supplies an economic reason for examining granularity rather than dismissing its effects as arithmetic noise.
+
+\subsection{Proof of the Uniform Cardinal-Tilt Bound}
+Write $F_\sigma(\theta)=\E[U(C_\sigma,u_0+\theta)]$. The original curvature proof gives $-M_\sigma\leq F_\sigma''\leq0$ on the adjustment interval. Adding $a\theta$ leaves the curvature unchanged and replaces $g_\sigma=F_\sigma'(0)$ by $g_\sigma+a$. Taylor's integral formula gives
+\[
+ (g_\sigma+a)\theta-\tfrac12(k+M_\sigma)\theta^2
+ \leq F_\sigma(\theta)-F_\sigma(0)+a\theta-\tfrac12k\theta^2
+ \leq(g_\sigma+a)\theta-\tfrac12k\theta^2.
+\]
+The positive-class lower quadratic is evaluated at $\theta=(g_++a)/(k+M_+)$. The negative-class upper quadratic is maximized without imposing the adjustment bound; relaxing that bound preserves the upper inequality. With $A=0.25$, the rounded constants from S.11 imply
+\[
+ |g_++a|\geq1.482-A,\quad |g_-+a|\leq0.6138+A,
+ \quad M_+<17.342.
+\]
+The trial is feasible because $(3.118+A)/20<0.2$. Thus, putting $P=(1.482-A)^2$, $N=(0.6138+A)^2$, and $M=17.342$,
+\[
+ \Omega_+(a)-\Omega_-(a)
+ \geq\frac1{2k}\left\{P\frac{k}{k+M}-N\right\}.
+\]
+The expression in braces increases with $k$. At $k=20$ it is strictly positive. It follows that the last display is bounded below by
+\[
+ \frac{P\,20/(20+M)-N}{2\cdot80}
+ =0.000417380273806974\ldots.
+\]
+All endpoint constants are rounded in the adverse direction. Their validity over the entire probability and preference ranges follows from the affine probability dependence and endpoint-curvature argument in S.11. The proof therefore does not rely on the 45 optimizer checks supplied with this revision. The positive root of $P\,20/(20+M)-N=0$, with $A$ variable, is about $0.2718421$; it is a sufficient-radius boundary for this bound, not the sharp economic threshold at every $(p,k)$.
+
+The unadjusted class difference is affine in the contract with slope $D_A=0.5$. Tilting by $a(u-u_0)$ leaves both unadjusted two-stage payoffs unchanged. The unique two-stage indifference therefore shifts by $-(\Omega_+(a)-\Omega_-(a))/D_A$. This proves the uniform contract shift. At $a=1$ the sign can reverse, as the retained counterexample shows. Neither baseline invariance nor this threshold direction is imposed on the dynamic economy, where $u$ continues to move when deliberate adjustment is prohibited.
+
+\subsection{Dynamic Feature Moments and the Transition-Law Experiment}
+The six features in the main text are evaluated by six separate selected-policy backward recursions. Flow features include the actual discount annuity on each branch. The liquidation feature includes both early exit and terminal liquidation. The reward representation is exact for the declared finite law. For every newly optimized class policy, a second evaluation reconstructs the candidate increment and its interpolation weights directly from the selected controls, rather than reading the stored sparse kernel. The feature-weighted objective is then compared with both the Bellman value and that direct replay at every state and date.
+
+For changes in $(s,a,d,k,z)$, the fixed-policy effect is a linear combination of unchanged feature moments. The reoptimization remainder follows by adding and subtracting the value of the baseline optimizer under the new reward. For a kernel change, let $V^p$ denote the old policy value and $\widetilde V^p$ its value under the new kernel and rewards. The difference obeys the exact recursion
+\[
+ \widetilde V_n^p-V_n^p
+ =\widetilde r_n^p-r_n^p
+ +(\widetilde K_n^p-K_n^p)V_{n+1}^p
+ +\widetilde K_n^p(\widetilde V_{n+1}^p-V_{n+1}^p),
+\]
+with the appropriate terminal difference. Backward substitution gives the fixed-policy transition effect. Adding the separately reoptimized value adds a nonnegative gain within each class. Taking a four-class contrast need not preserve that sign. The zero-covariance experiment sets both conditional laws' correlation to zero and rebuilds their kernels; it does not identify that law with an equal mixture of the two baseline endpoint laws.
+
+The mechanism program executes 36 specification--contract comparisons, each with all four class values, for 144 class solves. It preserves the original $k=2$, the eight-date calendar, and the complete action menu. The retained interventions comprise common cardinal tilts, the reference-state normalization multiplier, the liquidation multiplier, the operating-benefit contrast, the mixture weight, and the separate zero-covariance law. Tables select readable comparisons; the JSON retains every run, six moments per class, direct-replay discrepancies, baseline-policy counterfactuals, and reoptimization gains. No fitted data, identified causal shares, or two-stage calibration is inferred from these computations.
+
+\subsection{Streaming the Upper and Feasible Lower Recursions}
+The count recursion at a date uses only the coefficient array at the immediately following date. Its endpoint coefficients are shared with the endpoint optimal values. The first-date action restriction can be split into the positive and nonpositive classes after their common continuation has been computed. The same observation applies to the corrected chord: later-date corrections are common to the two first-action classes, and only the initial maximum is split. Thus sharing those continuations changes neither admissible actions nor information. The one-period case has only its two endpoint coefficients and is handled directly.
+
+For a degree-$h$ policy value, the coefficient at count $j$ uses only counts $j$ and $j-1$ at the next date. We therefore retain two adjacent date arrays and discard each completed later-date array. At the initial date, only the declared initial state's coefficients are retained. Two passes, at operating contrasts zero and one, yield the policy's intercept and duration coefficients. Once evaluated, a policy occupies $HN_S$ integer control indices and $2(H+1)$ floating-point focal coefficients. An $m$-policy bank therefore need not retain $m(H+1)(H+2)N_S/2$ value coefficients for this focal-state task. The rolling temporary coefficient storage is $O(HN_S)$; policy storage remains $O(mHN_S)$. These savings do not give all-state, all-date policy-value access for free. The inherited all-state certificate and its storage account remain separate results.
+
+For a common bank, replacing an upper coefficient array by a smaller valid one cannot worsen the certificate. The exact coefficientwise ordering from S.10 is unchanged by rolling storage or by splitting the first-action mask after common continuation. The new independent dense program tests the paired implementation for both adjustment regimes and both signs, including a one-date horizon. It implements the conditional-count mixture and admissible actions separately from the production routine. Its 60 random models give 240 class recursions and 720 point comparisons. Such checks test the implementation; the ordering theorem and induction establish the general result.
+
+The sparse transition implementation aggregates the same at-most-sixteen pre-aggregation entries per row as the inherited positive interpolation constructor. For large wealth grids it retains disjoint CSR blocks rather than allocating a second full concatenated matrix. This storage change preserves rows and rewards. Each block is checked against a separately computed weighted-gather product before use. The common and appended-action matrices, reward arrays, temporary action arrays, policy indices, and coefficient arrays have distinct roles; their costs are not conflated with the number of upper correction vectors.
+
+\subsection{Arithmetic and Target Error}
+The revised certificate uses a per-class allowance of $10^{-7}$, deliberately larger than the historical count allowance. As in S.11, its scope is floating-point evaluation relative to the stored finite transition and reward arrays, not errors in constructing a diffusion approximation. The code verifies nonnegative rows, bounded row mass, finite rewards, direct selected-policy replay, and coefficient replay. Supplementary evidence records the arithmetic assumptions and the construction checks. The allowance is not a directed-rounding interval enclosure of transcendental evaluations in the transition constructor.
+
+For completeness, let $\beta$ be the largest stored row mass enlarged by $10^{-12}$, let $R$ be twice the largest sum of absolute reward components over $|d|\leq1$, and let $G=2\|g\|_\infty$. Set $B_H=G$, $E_H=M_H=D_H=0$, and $\gamma_j=j\mathrm u/(1-j\mathrm u)$ for $\mathrm u=2^{-53}$. The audit uses
+\begin{align*}
+ B_n&=R+\beta B_{n+1},\\
+ E_n&=\beta E_{n+1}+\gamma_{4096}\{1+R+4\beta(B_{n+1}+E_{n+1})\},\\
+ M_n&=4w\beta B_{n+1}+\beta M_{n+1},\\
+ D_n&=\beta D_{n+1}+4w\beta E_{n+1}\\
+ &\quad+\gamma_{4096}\{1+8w\beta(B_{n+1}+E_{n+1})
+                         +4\beta(M_{n+1}+D_{n+1})\}.
+\end{align*}
+Here $w$ is the mixture interval width, and the last two quantities are zero at the last decision date, where the endpoint continuation values coincide. $B$ bounds exact endpoint magnitudes, $E$ bounds endpoint and selected-coefficient errors, $M$ bounds correction magnitudes, and $D$ bounds their errors. The term $4w\beta E_{n+1}$ charges the propagated difference of two imperfect endpoints. Nonnegative mixing, nonexpansiveness of maxima, and the absolute dot-product error bound justify the recursions. Each sparse row has at most sixteen original entries; aggregation, reward assembly, law mixing, coefficient mixing, and correction construction have substantially fewer than 4,096 serial scalar operations per date. Signed cancellation is bounded in absolute magnitude, not by a relative error in the final value.
+
+An upper coefficient error is bounded by $E_0+D_0/2+\gamma_{32}\{1+2(B_0+E_0)+M_0+D_0\}$. For the lower coefficients we use $3E_0+\gamma_{16}(1+4B_0)$, enlarged by $\gamma_{4096(H+1)}(1+4B_0)$ for the two restriction passes. A final $\gamma_{32}\{1+4(B_0+M_0/2)\}$ covers coefficient differences and extrema. The audit requires the larger resulting per-class bound to be below $10^{-7}$ before a certificate is accepted. An action maximum introduces no factor equal to the number of actions. These deliberately loose counts cover each contributing arithmetic path and do not replace a signed intermediate by its small realized final value.
+
+A conservative absolute arithmetic budget for the new recursions is provided by the audit routine deposited with the revision. It includes endpoint-value error propagated through the signed cross-operator correction, rather than treating that correction as exact. The coefficient inequalities are enlarged separately on their upper and lower sides. In particular, each difference bound includes $2\times10^{-7}$. The $10^{-3}$ generic welfare target is not used to certify the much smaller decision margins. An additional error for another economic target must enter the separate class-value transfer inequality in the main text. Observed wealth-grid movement is evidence about the importance of that additional component, not an upper bound on it.
+
+\subsection{Reproduction and Version Boundary}
+The full revision entry points are \texttt{ECTA\_R8.tex} and \texttt{SUPP\_R8.tex}. Run \texttt{bash replication/r8/run\_all.sh}, followed by the two documented \texttt{latexmk} commands. The readable source, generated tables, complete outputs, execution logs, response to the latest report, and preservation manifest are deposited together. The source manifest records hashes, and the workflow records the exact source commit. The historical main paper, all earlier appendices, numerical countercomparisons, and referee reports are retained. New interpretation and additional evidence are incorporated into the complete manuscript, not supplied only in an author-response file.

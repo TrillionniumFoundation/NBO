@@ -1,3 +1,15 @@
+# Current complete revision: R8 (17 September 2026)
+
+Branch: `revision/econometrica-r8-full-response-2026-09-17`. Review parent: `bb9144d3da7be059af7452dababb9fa5763b335c`.
+
+Read the complete [R8 main manuscript](revisions/2026-09-17-r8-full-response/ECTA_R8.pdf), [supplement](revisions/2026-09-17-r8-full-response/SUPP_R8.pdf), [point-by-point response](revisions/2026-09-17-r8-full-response/response_to_referee.md), and [executed evidence](revisions/2026-09-17-r8-full-response/execution_summary.md). Build from `ECTA_R8.tex` and `SUPP_R8.tex`.
+
+R8 adds explicit decision and cardinal primitives, two-regime settlement robustness, a uniform cardinal-tilt theorem, fully reoptimized dynamic mechanisms, a streamed same-target economic certificate comparison, and a mathematical correspondence with regional reward methods. The original rectangle and its adverse perturbations remain visible. All earlier theory, applications, evidence, and reviews are preserved.
+
+Earlier R8-named initializations are not complete manuscript versions. The prior complete revision is R7. Its index is retained verbatim below.
+
+---
+
 # Current revision: R7 (16 September 2026)
 
 Branch: `revision/econometrica-r7-2026-09-16`, based on the R6 advisory report at `10a7cbee28de5126d844dea9eae8c36c5cda9e9b`.

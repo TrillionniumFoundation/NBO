@@ -1,0 +1,69 @@
+\subsection{The Price of Compressing an Upper Oracle}
+\label{sec:r7_compression}
+An upper value can be valid without being the sharpest available upper value. This distinction matters when an interval is to be accepted at a prescribed welfare tolerance. The relevant comparison holds the interval, feasible policies, and subdivision cells fixed. Let $I=[a,b]$, $t=(\lambda-a)/(b-a)$, and $h=N-n$. A localized count-informed recursion has coefficients
+\begin{equation}
+ W^I_{n,j}=\max_u\left\{
+ (1-j/h)T^u_{n,a}W^I_{n+1,j}
+ +(j/h)T^u_{n,b}W^I_{n+1,j-1}\right\}.
+ \label{eq:r7_count}
+\end{equation}
+A term with zero weight is omitted. At the terminal date the coefficient is $g$. The maximization uses the \emph{same} action in the two branches. Conditional on the number of remaining draws from endpoint law $b$, a draw is from $b$ with probability $j/h$. The enlarged controller learns the remaining count, whereas an admissible policy in the original economy can ignore it. Thus the associated polynomial is an upper value, not a deployable anticipative policy.
+
+For comparison, write the degree-$h$ coefficients of the corrected chord as
+\begin{equation}
+ U^I_{n,j}=(1-j/h)v_n^a+(j/h)v_n^b+f_{h,j}M_n,
+ \qquad f_{h,j}=\frac{j(h-j)}{h(h-1)}\quad(h\geq2).
+ \label{eq:r7_compressed_coefficients}
+\end{equation}
+The correction is zero at a one-period horizon. A third upper recursion allows the endpoint law to be chosen afresh at every date and state:
+\begin{equation}
+ B^I_N=g,\qquad B^I_n=\max_{u,e\in\{a,b\}}T^u_{n,e}B^I_{n+1}.
+ \label{eq:r7_rectangular}
+\end{equation}
+This last recursion is a finite-horizon, reward-valued rectangular relaxation. It discards the common-parameter restriction more extensively than the count construction.
+
+\begin{proposition}[Matched upper-oracle ordering]
+\label{prop:r7_dominance}
+Under the hypotheses of Theorem \ref{thm:corrected_chord}, $W^I_{n,j}\leq U^I_{n,j}$ for every state, date, and coefficient. Moreover, $W^I_{n,j}\leq B^I_n$. Positive Bernstein subdivision preserves both orderings. With identical feasible-policy coefficients and cells, the localized count certificate is no greater than either comparator's certificate. No ordering between $U^I$ and $B^I$ is required.
+\end{proposition}
+
+We thank the advisory referee for identifying the first ordering. Its economic-computational implication is a tradeoff between upper precision and the work required to obtain it. The proof, including the endpoint and short-horizon cases, appears in Supplement S.10. A two-period example makes the difference strict: the original value is $\max(t,1-t)$, the chord coefficients are $(1,1,1)$, and the count coefficients are $(1,1/2,1)$. At $t=1/2$, their upper values are $1$ and $3/4$, respectively, against a true value of $1/2$.
+
+The correction compresses the count dependence. Its proof replaces a count-dependent convex combination of the two propagated corrections by their maximum and replaces endpoint action backups by endpoint supersolutions. It thereby trades precision for fewer action-wide kernel applications. With $H$ remaining dates and already available exact endpoint solutions, the implementation requires $4H-6$ such applications for the correction when $H\geq2$, versus $H(H+1)-2$ for the count recursion with cached neighboring continuations and shared endpoint coefficients. The rectangular recursion requires $2H$. These are operation counts for the specified recursions, not ratios of elapsed times.
+
+The nonzero correction stores $(H-1)S$ additional values for $S$ states, against $H(H-1)S/2$ interior count coefficients. Endpoint values are shared. The implementation expands one date's chord coefficients only when a certificate needs them. This saving does not remove the common feasible-policy bank: $m$ policies require order $mSH^2$ value coefficients and $mSH$ policy indices. Action-wide temporary arrays and the transition representation also remain. A comparison of total work must therefore include anchor optimization, policy evaluation, local restriction, and subdivision, not only the upper recursion.
+
+Regional bounds have a substantial verification literature. Parameter lifting in \citet{quatmann2016} relaxes repeated parameter dependence and refines regions; its two-toss example already exhibits the obstruction behind $t(1-t)$. That work principally treats probabilistic specifications in parametric Markov models, whereas here the target is a finite-horizon reward optimum together with an admissible policy lower value. Equation \eqref{eq:r7_rectangular} is our explicitly specified regional comparator, not an implementation or timing claim about their verification software. It allows datewise as well as statewise endpoint resets. The count construction retains a common count of the endpoint draws but reveals that count to the optimizing controller. Fixed-policy Bernstein coefficients retain the original repeated-parameter dependence without that information. The corrected chord retains its signed cross-operator term while compressing the propagation of the correction. These are different relaxations of dependence, not alternative names for the same algorithm.
+
+\subsection{Total Error and Finite Refinement}
+\label{sec:r7_total_error}
+The second-order correction in Theorem \ref{thm:corrected_chord} is not a second-order bound on the loss of an endpoint-policy bank. A bound on the latter must allow optimal actions to change. For a finite target, let $r_n$ bound the absolute reward, let $\beta_n\leq1$ bound every kernel row mass, and let
+\[
+ \rho_n=\max_u\|R^u_{n,1}-R^u_{n,0}\|_\infty,
+ \qquad \kappa_n=\max_u\|K^u_{n,1}-K^u_{n,0}\|_{\infty\to\infty}.
+\]
+Define nonnegative constants backward by
+\begin{align}
+ V_N&=\|g\|_\infty,& V_n&=r_n+\beta_nV_{n+1},\nonumber\\
+ L_N&=0,&L_n&=\rho_n+\kappa_nV_{n+1}+\beta_nL_{n+1},\label{eq:r7_constants}\\
+ Q_N&=0,&Q_n&=\kappa_nL_{n+1}+\beta_nQ_{n+1}.\nonumber
+\end{align}
+These constants depend on primitives of the stored finite model, not on a smooth optimal-policy correspondence.
+
+\begin{theorem}[A total coefficient-error bound]
+\label{thm:r7_total_error}
+Suppose the two endpoint policies are optimal at every state and date. On an interval of width $w$, the corrected-chord certificate with those policies satisfies
+\begin{equation}
+ \epsilon_I\leq\max_{0\leq n<N}\{2L_nw+\tfrac12Q_nw^2\}.
+ \label{eq:r7_total_bound}
+\end{equation}
+The same upper estimate applies to the localized count certificate. Put $L_* =\max_nL_n$ and $Q_* =\max_nQ_n$. For $\epsilon>0$, dyadic refinement terminates once
+\[
+ w\leq\min\{1,\epsilon/(4L_*),\sqrt{\epsilon/Q_*}\},
+\]
+where a quotient by a zero constant imposes no restriction. Thus, for fixed finite-model constants, the worst-case number of scalar intervals is $O(\epsilon^{-1})$; an $O(\epsilon^{-1/2})$ policy-bank claim does not follow from the correction alone.
+\end{theorem}
+
+The proof bounds optimal values and all fixed-policy values by the same Lipschitz recursion, and then bounds their \emph{coefficients}, not just sampled values. It is given in Supplement S.10. The result permits policy kinks. It does not remove dependence on the state/action target or furnish a high-dimensional parameter covering rate. Its practical use is to establish termination while allowing the realized coefficient certificate to be much tighter than a global Lipschitz estimate.
+
+A useful allocation rule follows from Proposition \ref{prop:r7_dominance}. On each dyadic interval, first compute the compressed certificate. If it fails the target, compute the local count certificate before buying another anchor. Split only when that second certificate fails. For exact endpoint oracles and the same local endpoint-policy rule, this cascade never requests an anchor outside the tree requested by chord-only refinement: every interval accepted by the chord is also accepted by count, and every failed count interval would have failed the chord. Extra count work can reduce anchor demand, but need not reduce elapsed time. Our matched frontier below compares each upper method on common banks. The separately executed autonomous experiment reports chord, count, and cascade refinement from fresh policy caches; its timing is not inferred from the common-bank frontier.
