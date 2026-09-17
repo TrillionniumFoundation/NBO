@@ -1,0 +1,116 @@
+name: Econometrica R9 participation, permissions and complete manuscripts
+on:
+  push:
+    branches: [revision/econometrica-r9-participation-permissions-2026-09-17]
+    paths:
+      - '.github/workflows/revision-r9-participation.yml'
+      - 'replication/r9/**'
+      - 'revisions/2026-09-17-r9-participation-permissions/**'
+      - 'ECTA_R9.tex'
+      - 'SUPP_R9.tex'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  research-and-manuscripts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      BRANCH: revision/econometrica-r9-participation-permissions-2026-09-17
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Materialize the authored revision and verify its source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$BRANCH"
+          mkdir -p build-r9
+          python - <<'PY'
+          from pathlib import Path, PurePosixPath
+          import io, tarfile, hashlib, json
+          rev = Path('revisions/2026-09-17-r9-participation-permissions')
+          transport = rev / '_source_transport'
+          if transport.exists():
+              meta = json.loads((transport/'manifest.json').read_text())
+              data = b''.join((transport/f'{i:02d}.part').read_bytes() for i in range(meta['parts']))
+              assert hashlib.sha256(data).hexdigest() == meta['sha256']
+              with tarfile.open(fileobj=io.BytesIO(data), mode='r:xz') as archive:
+                  members = archive.getmembers()
+                  assert len(members) == meta['files'] and len({m.name for m in members}) == len(members)
+                  for member in members:
+                      p = PurePosixPath(member.name)
+                      assert member.isfile() and not p.is_absolute() and '..' not in p.parts and member.size < 300000
+                      assert str(p) in ('ECTA_R9.tex','SUPP_R9.tex','REVISION_INDEX.md') or str(p).startswith(('replication/r9/','revisions/2026-09-17-r9-participation-permissions/'))
+                      target = Path(p)
+                      target.parent.mkdir(parents=True, exist_ok=True)
+                      target.write_bytes(archive.extractfile(member).read())
+              import shutil
+              shutil.rmtree(transport)
+          inventory = json.loads((rev/'source_inventory.json').read_text())
+          for p, digest in inventory.items():
+              assert hashlib.sha256(Path(p).read_bytes()).hexdigest() == digest, p
+          print('Verified authored source entries:', len(inventory))
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ECTA_R9.tex SUPP_R9.tex REVISION_INDEX.md replication/r9 revisions/2026-09-17-r9-participation-permissions
+          if ! git diff --cached --quiet; then
+            git commit -m 'revision(r9): deposit complete participation and permissions manuscript, proofs, response and research source'
+            git push origin "HEAD:refs/heads/$BRANCH"
+          fi
+          git rev-parse HEAD > build-r9/source_commit.txt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install numerical and manuscript dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r replication/r9/requirements.txt
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends latexmk texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
+      - name: Reoptimize contracts, map permission frontiers and certify original region
+        shell: bash
+        run: |
+          set -euo pipefail
+          python replication/r9/run.py --mode all 2>&1 | tee build-r9/research_transcript.txt
+          python replication/r9/validate.py 2>&1 | tee build-r9/validation_transcript.txt
+          python replication/r9/tables.py
+      - name: Compile and audit both complete manuscripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build-r9 ECTA_R9.tex 2>&1 | tee build-r9/main_build.txt
+          latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build-r9 SUPP_R9.tex 2>&1 | tee build-r9/supplement_build.txt
+          python replication/r9/package.py --build build-r9 | tee build-r9/package_audit.txt
+      - name: Deposit executed evidence and compiled manuscripts on the revision branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$BRANCH"
+          git add replication/r9/output revisions/2026-09-17-r9-participation-permissions
+          if ! git diff --cached --quiet; then
+            git commit -m 'revision(r9): deposit reoptimized economic evidence, validated fee certificates and complete compiled manuscripts'
+            git push origin "HEAD:refs/heads/$BRANCH"
+          fi
+          git rev-parse HEAD > build-r9/final_commit.txt
+      - name: Preserve source, execution records and complete manuscripts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: econometrica-r9-participation-permissions
+          retention-days: 90
+          path: |
+            build-r9/
+            replication/r9/
+            revisions/2026-09-17-r9-participation-permissions/
+            ECTA_R9.tex
+            SUPP_R9.tex
+            REVISION_INDEX.md
