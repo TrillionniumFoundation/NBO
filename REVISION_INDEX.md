@@ -1,3 +1,17 @@
+# Current complete revision: R9 (17 September 2026)
+
+Branch: `revision/econometrica-r9-participation-permissions-2026-09-17`. Review parent: `8c20474bca5b7388f5ba4640ec165f1ad8f5e91a`; reviewed complete R8: `be77b2a81b4d3a68806c534c1e892d2eb4b1230d`.
+
+Read the complete [R9 main manuscript](revisions/2026-09-17-r9-participation-permissions/ECTA_R9.pdf), [supplement](revisions/2026-09-17-r9-participation-permissions/SUPP_R9.pdf), [point-by-point response](revisions/2026-09-17-r9-participation-permissions/response_to_referee.md), and [executed evidence](revisions/2026-09-17-r9-participation-permissions/execution_summary.md). Build from `ECTA_R9.tex` and `SUPP_R9.tex`.
+
+R9 addresses R8-E1 and R8-E2 with voluntary participation, service procurement, a finite enforcement/commitment frontier, surrender-sensitive policy envelopes, and exact first-date risky-share breakpoint reduction. It maps both regime-specific permission and benefit boundaries and certifies the original law/benefit rectangle for surrender charges throughout [0.85, 0.90]. Free surrender, the negative intermediate-fee relative option, the adverse fee-0.80 corner, and both adverse permission extensions remain explicit.
+
+All earlier core theory, models, original and adverse comparisons, complete manuscripts, and advisory reports are preserved. The main and supplement use the Econometric Society class. The fee certificate applies to the original finite menu plus surrender; the permission analysis has a separately stated continuous first-date risky-share target. Stored-array arithmetic, constructor error, root brackets, and diffusion targets are not conflated. See `replication/r9/README.md` for reproduction and `preservation_map.md` for the content map.
+
+The previous index is retained verbatim below as historical documentation.
+
+---
+
 # Current complete revision: R8 (17 September 2026)
 
 Branch: `revision/econometrica-r8-full-response-2026-09-17`. Review parent: `bb9144d3da7be059af7452dababb9fa5763b335c`.
