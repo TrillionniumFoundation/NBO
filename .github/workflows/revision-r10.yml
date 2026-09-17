@@ -1,0 +1,65 @@
+name: Econometrica R10 mechanism and commitment revision
+on:
+  push:
+    branches: [revision/econometrica-r10-dynamic-mechanism-2026-09-17]
+    paths:
+      - '.github/workflows/revision-r10.yml'
+      - 'replication/r10/**'
+      - 'revisions/2026-09-17-r10-dynamic-mechanism/**'
+      - 'ECTA_R10.tex'
+      - 'SUPP_R10.tex'
+permissions:
+  contents: write
+jobs:
+  revision:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Preserve exact research inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build-r10
+          git rev-parse HEAD > build-r10/source_commit.txt
+          git archive --format=tar HEAD | xz -T2 > build-r10/source.tar.xz
+      - name: Execute substantive revision when source is present
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f replication/r10/run.py; then
+            python -m pip install numpy scipy
+            python replication/r10/run.py 2>&1 | tee build-r10/research_transcript.txt
+            python replication/r10/validate.py 2>&1 | tee build-r10/validation_transcript.txt
+          fi
+          if test -f ECTA_R10.tex; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends latexmk texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
+            latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build-r10 ECTA_R10.tex > build-r10/main_build.txt 2>&1
+            latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build-r10 SUPP_R10.tex > build-r10/supplement_build.txt 2>&1
+            python replication/r10/package.py
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add replication/r10/output revisions/2026-09-17-r10-dynamic-mechanism
+            if ! git diff --cached --quiet; then
+              git commit -m 'revision(r10): deposit executed mechanism evidence and complete manuscripts'
+              git push origin HEAD:refs/heads/revision/econometrica-r10-dynamic-mechanism-2026-09-17
+            fi
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: econometrica-r10-source-and-evidence
+          retention-days: 30
+          path: |
+            build-r10/
+            replication/r10/
+            revisions/2026-09-17-r10-dynamic-mechanism/
