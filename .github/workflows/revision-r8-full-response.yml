@@ -1,0 +1,113 @@
+name: Econometrica R8 complete response, decision evidence and manuscripts
+on:
+  push:
+    branches: [revision/econometrica-r8-full-response-2026-09-17]
+    paths:
+      - '.github/workflows/revision-r8-full-response.yml'
+      - 'replication/r8/**'
+      - 'revisions/2026-09-17-r8-full-response/**'
+      - 'ECTA_R8.tex'
+      - 'SUPP_R8.tex'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  research-and-manuscripts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      BRANCH: revision/econometrica-r8-full-response-2026-09-17
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Materialize and pin the complete authored revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$BRANCH"
+          mkdir -p build-r8
+          python - <<'PY'
+          from pathlib import Path, PurePosixPath
+          import io, tarfile, hashlib, json
+          rev = Path('revisions/2026-09-17-r8-full-response')
+          if not Path('replication/r8/build_report.py').exists():
+              data = b''.join((rev / '_source_transport' / f'{i:02d}.part').read_bytes() for i in range(12))
+              assert hashlib.sha256(data).hexdigest() == '7b9f9b992f8da422c384aef52d9482c00260b1d9cbd7bfeefc5a4a097a66e6ce'
+              with tarfile.open(fileobj=io.BytesIO(data), mode='r:xz') as archive:
+                  members = archive.getmembers()
+                  assert len(members) == 32 and len({m.name for m in members}) == 32
+                  for member in members:
+                      p = PurePosixPath(member.name)
+                      assert member.isfile() and not p.is_absolute() and '..' not in p.parts and member.size < 250000
+                      assert str(p) in ('ECTA_R8.tex', 'SUPP_R8.tex', 'REVISION_INDEX.md') or str(p).startswith(('replication/r8/', 'revisions/2026-09-17-r8-full-response/'))
+                      target = Path(p)
+                      target.parent.mkdir(parents=True, exist_ok=True)
+                      target.write_bytes(archive.extractfile(member).read())
+          inventory = json.loads((rev / 'source_inventory.json').read_text())
+          for p, digest in inventory.items():
+              assert hashlib.sha256(Path(p).read_bytes()).hexdigest() == digest, p
+          print('Complete authored revision verified:', len(inventory), 'source entries plus inventory.')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ECTA_R8.tex SUPP_R8.tex REVISION_INDEX.md replication/r8 revisions/2026-09-17-r8-full-response
+          if ! git diff --cached --quiet; then
+            git commit -m 'revision(r8): deposit complete Econometrica manuscript, supplement, substantive response and executable research source'
+            git push origin "HEAD:refs/heads/$BRANCH"
+          fi
+          git rev-parse HEAD > build-r8/source_commit.txt
+          echo "NBO_SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install numerical and manuscript dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r replication/r8/requirements.txt
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends latexmk texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
+          free -h > build-r8/runner_memory.txt
+      - name: Execute paired decisions, cardinal robustness, dynamic mechanisms and all spatial protocols
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash replication/r8/run_all.sh 2>&1 | tee build-r8/research_transcript.txt
+      - name: Compile the complete main paper and supplement
+        shell: bash
+        run: |
+          set -euo pipefail
+          latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build-r8 ECTA_R8.tex 2>&1 | tee build-r8/main_build.txt
+          latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build-r8 SUPP_R8.tex 2>&1 | tee build-r8/supplement_build.txt
+          python replication/r8/build_report.py | tee build-r8/audit.txt
+      - name: Deposit actual executed evidence and complete PDFs on the revision branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$BRANCH"
+          git add replication/r8/output replication/r8/logs revisions/2026-09-17-r8-full-response
+          if ! git diff --cached --quiet; then
+            git commit -m 'revision(r8): deposit executed both-regime robustness, paired economic certificates, source audit and complete compiled manuscripts'
+            git push origin "HEAD:refs/heads/$BRANCH"
+          fi
+          git rev-parse HEAD > build-r8/final_commit.txt
+          git diff --stat "$NBO_SOURCE_SHA" HEAD > build-r8/executed_evidence_diff.txt
+      - name: Preserve source, diagnostics and complete manuscript artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: econometrica-r8-full-response
+          retention-days: 90
+          path: |
+            build-r8/
+            replication/r8/
+            revisions/2026-09-17-r8-full-response/
+            ECTA_R8.tex
+            SUPP_R8.tex
+            REVISION_INDEX.md
