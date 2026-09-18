@@ -1,0 +1,29 @@
+name: R13 pinned review snapshot
+on:
+  push:
+    branches: [revision/econometrica-r13-independent-response-2026-09-18]
+    paths: [.github/workflows/r13-review-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 49b919b7083470772c1149e2f158b8a08964b7fa
+          persist-credentials: false
+      - name: Archive exact reviewed tree
+        run: |
+          git rev-parse HEAD > /tmp/review-input-sha.txt
+          git archive --format=tar HEAD | gzip -n > /tmp/nbo-reviewed-tree.tar.gz
+          sha256sum /tmp/nbo-reviewed-tree.tar.gz > /tmp/review-input-archive.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r13-pinned-review-input
+          path: |
+            /tmp/nbo-reviewed-tree.tar.gz
+            /tmp/review-input-sha.txt
+            /tmp/review-input-archive.sha256
+          retention-days: 7
