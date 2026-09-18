@@ -1,0 +1,118 @@
+name: Econometrica R11 complete dynamic and contractual revision
+on:
+  push:
+    branches: [revision/econometrica-r11-dynamic-contract-response-2026-09-18]
+    paths:
+      - '.github/workflows/revision-r11-dynamic-contract.yml'
+      - 'replication/r11/**'
+      - 'revisions/2026-09-18-r11-dynamic-contract/**'
+      - 'ECTA_R11.tex'
+      - 'SUPP_R11.tex'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  research-and-manuscripts:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      BRANCH: revision/econometrica-r11-dynamic-contract-response-2026-09-18
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Deposit the complete authored source, not a revision label
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$BRANCH"
+          mkdir -p build-r11
+          python - <<'PY'
+          from pathlib import Path, PurePosixPath
+          import io, tarfile, hashlib
+          folder = Path('replication/r11/source-parts')
+          parts = sorted(folder.glob('part-*.bin'))
+          assert len(parts) == 5
+          data = b''.join(p.read_bytes() for p in parts)
+          assert len(data) == 40088
+          assert hashlib.sha256(data).hexdigest() == 'ae634aea4ae2d207a058fb8f13c88a78d3555263773750bb4bb4e2bfe631ccf8'
+          # The transport is immutable. On subsequent source edits use the
+          # already materialized, reviewable sources rather than reverting them.
+          if not Path('replication/r11/run.py').exists():
+              with tarfile.open(fileobj=io.BytesIO(data), mode='r:xz') as archive:
+                  members = archive.getmembers()
+                  assert len(members) == 16 and len({m.name for m in members}) == 16
+                  for member in members:
+                      p = PurePosixPath(member.name)
+                      assert member.isfile() and not p.is_absolute() and '..' not in p.parts and member.size < 300000
+                      assert str(p) in ('ECTA_R11.tex', 'SUPP_R11.tex', 'REVISION_INDEX.md') or str(p).startswith(('replication/r11/', 'revisions/2026-09-18-r11-dynamic-contract/'))
+                      target = Path(p)
+                      target.parent.mkdir(parents=True, exist_ok=True)
+                      target.write_bytes(archive.extractfile(member).read())
+          for p in ('ECTA_R11.tex','SUPP_R11.tex','replication/r11/core.py','replication/r11/run.py','replication/r11/validate.py','replication/r11/package.py','revisions/2026-09-18-r11-dynamic-contract/response_to_referee.md'):
+              assert Path(p).is_file() and Path(p).stat().st_size > 1000, p
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ECTA_R11.tex SUPP_R11.tex REVISION_INDEX.md replication/r11 revisions/2026-09-18-r11-dynamic-contract
+          if ! git diff --cached --quiet; then
+            git commit -m 'revision(r11): deposit complete dynamic proofs, joint contract manuscript and referee response'
+            git push origin "HEAD:refs/heads/$BRANCH"
+          fi
+          git rev-parse HEAD > build-r11/source_commit.txt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install numerical and manuscript dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq latexmk texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
+      - name: Fresh recomputation of every R11 scientific check
+        shell: bash
+        run: |
+          set -euo pipefail
+          GITHUB_SHA="$(cat build-r11/source_commit.txt)" python -u replication/r11/run.py 2>&1 | tee build-r11/research_transcript.txt
+          cp build-r11/research_transcript.txt replication/r11/output/execution.log
+          python replication/r11/validate.py 2>&1 | tee build-r11/validation_transcript.txt
+      - name: Build complete main paper and supplement
+        shell: bash
+        run: |
+          set -euo pipefail
+          latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build-r11 ECTA_R11.tex 2>&1 | tee build-r11/main_compilation.txt
+          latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build-r11 SUPP_R11.tex 2>&1 | tee build-r11/supplement_compilation.txt
+          GITHUB_SHA="$(cat build-r11/source_commit.txt)" python replication/r11/package.py --build build-r11 2>&1 | tee build-r11/package_transcript.txt
+      - name: Commit actual PDFs, numerical results and verified provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "$BRANCH"
+          test -s revisions/2026-09-18-r11-dynamic-contract/ECTA_R11.pdf
+          test -s revisions/2026-09-18-r11-dynamic-contract/SUPP_R11.pdf
+          find replication/r11 -type d -name __pycache__ -prune -exec rm -rf {} +
+          git add ECTA_R11.tex SUPP_R11.tex REVISION_INDEX.md replication/r11 revisions/2026-09-18-r11-dynamic-contract
+          if ! git diff --cached --quiet; then
+            git commit -m 'revision(r11): deposit executed regional certificates, institutional comparisons and complete built manuscripts'
+            git push origin "HEAD:refs/heads/$BRANCH"
+          fi
+          git rev-parse HEAD > build-r11/final_commit.txt
+      - name: Preserve the complete executed review package
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: econometrica-r11-dynamic-contract
+          retention-days: 90
+          path: |
+            build-r11/
+            replication/r11/
+            revisions/2026-09-18-r11-dynamic-contract/
+            ECTA_R11.tex
+            SUPP_R11.tex
+            REVISION_INDEX.md
