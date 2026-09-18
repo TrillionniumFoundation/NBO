@@ -4,7 +4,8 @@ import argparse,gc,itertools,json,os,time,resource
 from pathlib import Path
 import numpy as np
 from canonical import ROOT,core,freeze,load,dump,digest
-from engine import EPS,restrict
+EPS=core.EPS
+restrict=core.r7.restrict
 from contracts import arithmetic_audit,Contract
 SIGNS=core.SIGNS; ETA=1e-8; H=.01
 
