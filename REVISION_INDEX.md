@@ -1,3 +1,17 @@
+# Current complete revision: R11 (18 September 2026)
+
+Branch: `revision/econometrica-r11-dynamic-contract-response-2026-09-18`. Latest review parent: `30548ad06852cc0a447dedf1e63cc9e7f79f6c06`. Prior complete science: R9 at `8c1e0472279fb66a2419b63b3e35df028ecfdd78`.
+
+Read the [complete R11 main paper](revisions/2026-09-18-r11-dynamic-contract/ECTA_R11.pdf), [complete supplement](revisions/2026-09-18-r11-dynamic-contract/SUPP_R11.pdf), [point-by-point response](revisions/2026-09-18-r11-dynamic-contract/response_to_referee.md), and [executed evidence](revisions/2026-09-18-r11-dynamic-contract/execution_summary.md). Build from `ECTA_R11.tex` and `SUPP_R11.tex`; reproduce with `replication/r11/README.md`.
+
+R11 adds a dynamic signed-transport theorem and a complete feasible-support certificate, a joint five-dimensional adjustment/surrender/permission theorem with a strictly valuable counterfactual surrender option, and an endogenous implementation frontier pricing both compulsory terms and guarantee capacity. It decomposes the actual dynamic class differential and preserves the low-preference downward-adjustment witness and all adverse financial interventions. Both changing-law upper methods are executed at the same economic target and precision.
+
+The finite-array target, first-date continuous-share scope, arithmetic allowance, and unestimated constructor/diffusion transfer budget remain explicit. All historical scientific material and reviews are preserved. These advisory materials do not assert official Econometrica submission or approval.
+
+The earlier index is retained verbatim below.
+
+---
+
 # Current complete revision: R9 (17 September 2026)
 
 Branch: `revision/econometrica-r9-participation-permissions-2026-09-17`. Review parent: `8c20474bca5b7388f5ba4640ec165f1ad8f5e91a`; reviewed complete R8: `be77b2a81b4d3a68806c534c1e892d2eb4b1230d`.
