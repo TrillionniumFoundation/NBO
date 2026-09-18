@@ -1,0 +1,107 @@
+name: R12 procurement and witness deposit
+
+on:
+  push:
+    branches:
+      - revision/econometrica-r12-procurement-witness-response-2026-09-18
+    paths:
+      - '.github/workflows/r12-procurement-witness.yml'
+      - 'replication/r12/*.py'
+      - 'revisions/2026-09-18-r12-procurement-witness/paper/main.tex'
+      - 'revisions/2026-09-18-r12-procurement-witness/paper/S15_proofs.tex'
+      - 'revisions/2026-09-18-r12-procurement-witness/response_to_referee.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: r12-procurement-witness-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  reproduce-and-deposit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install scientific and journal build dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5 scipy==1.17.0 pymupdf
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends latexmk texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Materialize and identify complete scientific source
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = 'revision/econometrica-r12-procurement-witness-response-2026-09-18'
+          git fetch --no-tags origin 442b009379402df7da354eacb4ff8f82d44cdce7
+          python replication/r12/materialize.py
+          python -m py_compile replication/r12/*.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add replication/r12/science.py ECTA_R12.tex SUPP_R12.tex COMPENDIUM_R12.tex revisions/2026-09-18-r12-procurement-witness/paper/references.tex
+          if ! git diff --cached --quiet; then
+            git commit -m 'revision(r12): materialize complete manuscript sources before scientific execution [skip ci]'
+            git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
+          fi
+          echo "R12_SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Generate witnesses on immutable complete canonical arrays
+        run: |
+          set -euo pipefail
+          mkdir -p revisions/2026-09-18-r12-procurement-witness/logs
+          if test -f replication/r12/output/expected.json; then
+            echo 'Existing committed target and witness seal retained; verification will not rebuild them.'
+          elif test -f replication/r12/canonical/manifest.json; then
+            python -u replication/r12/science.py 2>&1 | tee revisions/2026-09-18-r12-procurement-witness/logs/generation.log
+          else
+            python -u replication/r12/science.py --build-target 2>&1 | tee revisions/2026-09-18-r12-procurement-witness/logs/generation.log
+          fi
+      - name: Independently reconstruct witnesses and execute rejection tests
+        run: |
+          set -euo pipefail
+          python -u replication/r12/verify.py 2>&1 | tee revisions/2026-09-18-r12-procurement-witness/logs/verification.log
+      - name: Compile complete manuscripts and verify preservation
+        run: |
+          set -euo pipefail
+          python -u replication/r12/build.py 2>&1 | tee revisions/2026-09-18-r12-procurement-witness/logs/build.log
+      - name: Commit canonical inputs, checked results and manuscripts to the new revision only
+        run: |
+          set -euo pipefail
+          git add -f replication/r12/canonical replication/r12/output
+          git add revisions/2026-09-18-r12-procurement-witness REVISION_INDEX.md ECTA_R12.tex SUPP_R12.tex COMPENDIUM_R12.tex
+          if ! git diff --cached --quiet; then
+            git commit -m 'revision(r12): deposit canonical primitives, independent witnesses and complete Econometrica-style manuscripts [skip ci]'
+            git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
+          fi
+          git rev-parse HEAD | tee /tmp/r12-final-deposit-sha.txt
+          git diff --exit-code -- replication/r12 ECTA_R12.tex SUPP_R12.tex COMPENDIUM_R12.tex REVISION_INDEX.md revisions/2026-09-18-r12-procurement-witness
+      - name: Retain referee package and execution diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r12-referee-package
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            ECTA_R12.tex
+            SUPP_R12.tex
+            COMPENDIUM_R12.tex
+            revisions/2026-09-18-r12-procurement-witness/
+            replication/r12/*.py
+            replication/r12/README.md
+            replication/r12/output/
+            replication/r12/canonical/manifest.json
+            replication/r12/canonical/metadata.json
+            /tmp/r12-final-deposit-sha.txt

@@ -1,0 +1,256 @@
+\section{Introduction}
+An operating commitment changes both the payoff to an agent and the service delivered to a purchaser. These two effects need not favor the same financial position. A surrender charge can increase service while reducing private value; a longer compulsory term can replace a financial guarantee, but is not costless to enforce. Preference adjustment changes the continuation values that govern these responses. An economic assessment must therefore compare contracts before selecting the operating allocation, and must distinguish the agent's investment ranking from the purchaser's choice.
+
+This paper develops a computational framework for making these comparisons with verifiable error bounds. Neural Bellman Operators separate the proposal of a policy from its evaluation, improvement, and certification. The framework accommodates a common parameter that changes the transition law at every date. Feasible-policy values retain that common parameter through polynomial representations. On the upper side, a count-information relaxation and a signed endpoint correction provide two distinct bounds. Neither an accurate neural fit nor a successful optimizer is itself the numerical certificate.
+
+Our central application is a finite-menu procurement problem in a stochastic settlement economy. A purchaser chooses an initial financial mandate, a surrender-charge capacity, a compulsory term, and a participation payment. Consumption, subsequent investment, deliberate preference adjustment, and elective surrender remain the agent's decisions. Financial capacity and compulsory terms are both priced; not procuring service is an available choice. A publicly specified adjustment technology is held fixed when comparing contracts. This is an institutional-choice problem within an explicit, contractible menu, not the implementation of an allocation selected beforehand.
+
+Three results link this economic problem to the computational framework. First, perturbing the agent's operating benefit bounds the service delivered by \emph{every} sufficiently near-optimal response, including responses at a tie. This converts value enclosures into procurement-surplus enclosures without differentiability or an assumed selection rule. Strict interval separation then identifies the winning contract even when rivals receive their most favorable admissible responses. Second, a signed transport comparison eliminates downward adjustment on a complete feasible-support tube, while a separate opportunity-exposure decomposition explains why this elimination alone does not determine the difference between financial classes. Third, policy-polynomial and upper-recursion witnesses establish regional financial and surrender comparisons under a changing law. The procurement and regional calculations share the complete, immutable finite-array economy.
+
+At the central economy, with service price one and the specified enforcement costs, the purchaser selects a positive initial mandate in both adjustment regimes. With adjustment, the selected contract has capacity $0.6$ and three compulsory intervals; without adjustment it has the same capacity and four intervals. These choices are certified jointly against all 95 other offers in the respective menu and the outside option. They remain the same over a rectangle of service prices and term costs. The result does not follow from the agent's class ranking: the unadjusted agent can prefer the nonpositive class under a common grant even when the purchaser optimally procures the positive mandate. Participation compensation and delivered service account for the difference.
+
+The computational increment is also evaluated on a common target. The signed correction is indispensable to the validity of the endpoint theorem, but need not be large in every application. We therefore report both the narrow economic region and broader law intervals, with matched endpoints, lower policies, error levels, and work accounts. Historical precision frontiers, neural-free controls, unfavorable permission interventions, alternative initial states, and the recursive-utility and competition extensions remain part of the complete research record. They are organized in the accompanying theoretical and computational compendium rather than interleaved with the procurement argument.
+
+\paragraph{Related work.} The reward-transfer component is related to successor features and optimistic linear support: \citet{alegre2022} study policy transfer when rewards are linear in known features. Our fixed-policy reward moments have that structure; changing the transition law requires additional arguments. Parametric Markov-model methods already study regional verification and reward properties. \citet{quatmann2016} develop parameter lifting, and \citet{junges2019} analyze region construction for parametric chains and decision processes. We do not claim that regional expected-reward control originates here. The specific upper component is a signed compression of a count-information relaxation that retains a common action before the next endpoint draw. It is paired with genuinely feasible lower policies. The service comparison below uses elementary convexity of a supremum of affine payoffs, rather than an unverified numerical envelope derivative. General envelope arguments are discussed by \citet{milgrom2002}. The inherited operator, policy-improvement, approximation, and equilibrium results and their full literature discussion are preserved in the compendium and supplement.
+
+\paragraph{Reading order.} Sections 2--4 specify the economic decision, establish its service certificate, and give the procurement results. Sections 5--6 explain the dynamic mechanism and the changing-law bounds. Section 7 records the target and verification chain. All new proofs are in Supplement S.15. Supplement S.1--S.14 and the complete R11 compendium retain the earlier results without deleting or rewriting their statements. Their historical numerical targets are distinguished from the newly identified target used here.
+
+\section{The Economy and Contractible Institutions}
+\label{sec:r12_economy}
+\subsection{Operating payoffs and information}
+Time is $n=0,\ldots,N$, with $N=8$ and interval length $1/8$. A live state is $x=(u,X)$, where $u$ is a preference index and $X$ is managed wealth. An operating action is $a=(c,\theta,\pi)$: consumption, deliberate preference drift, and the risky share. Regime $r=\mathrm{adj}$ admits the specified adjustment menu; regime $r=0$ imposes $\theta=0$ but does not remove stochastic preference variation. The public regime is not chosen by the purchaser in the experiment.
+
+For each date, state, and feasible action, the canonical economy specifies rewards $R_{n,k}(x,a;d)$ and nonnegative discounted live-state kernels $K_{n,k}(x,a,\cdot)$, $k=0,1$. Their mixture is
+\begin{equation}
+ R_n^\lambda=(1-\lambda)R_{n,0}+\lambda R_{n,1},\qquad
+ K_n^\lambda=(1-\lambda)K_{n,0}+\lambda K_{n,1}.
+ \label{eq:r12_mixture}
+\end{equation}
+The same $\lambda$ applies at every date. The agent selects the current action before the endpoint-law draw. Boundary discharge rewards are already included in $R$; missing live-state mass must not receive those rewards a second time. The coefficient of $d$ in the current reward is discounted operating duration. It is nonnegative. Total discounted duration $A(\pi)$ of a feasible operating and stopping policy satisfies $0\leq A(\pi)\leq1$.
+
+The original settlement construction uses the cardinal flow primitive, adjustment cost, boundary rule, and terminal payoff documented in the compendium. The terminal payoff is
+\begin{equation}
+ G(u,X)=-0.02(u-2)^2+0.1\log X,
+\end{equation}
+and the initial state is $x_0=(2,1.25)$. The finite target has 1,617 states. Its common consumption--adjustment--investment menu and three date- and state-specific frozen proposals are retained. At date zero, conditional on the finite consumption--adjustment pairs, the risky share is evaluated by the stored piecewise-affine breakpoint operator. This is continuous optimization of that operator on each permitted share interval, not optimization over continuous consumption and adjustment controls. Subsequent menus are unchanged. The mathematical object for the new numerical results is the deposited array system, not an unstated diffusion approximation.
+
+A mandate $\sigma=+$ requires $0<\pi_0\leq L$ for the whole first interval; $\sigma=-$ requires $-S\leq\pi_0\leq0$. The closure at zero may be used to bound a supremum for the positive class. A lower policy used to establish an attained positive-class value must have a strictly positive first share. There is no claim that the sign constraint restricts all later financial positions.
+
+A contract specifies a compulsory term $m\in\{1,\ldots,8\}$ and charge $F\geq0$. At a live, nonboundary date $n\geq m$, the agent may surrender for $G(x)-F$. Surrender is unavailable before $m$, and forced discharge still pays $G(x)$. Thus $m=8$ is noncancellable within the operating horizon. For a fixed feasible policy $\pi$, write
+\begin{equation}
+ J^r_j(\pi;d)=B^r_j(\pi)+dA^r_j(\pi)-F H^r_j(\pi),\qquad
+ W^r_j(d)=\sup_{\pi\in\mathcal P^r_j}J^r_j(\pi;d),
+ \label{eq:r12_policy}
+\end{equation}
+where $H$ is discounted elective-surrender incidence. It is not an undiscounted probability or a diffusion hitting probability. Adjustment expenditure and discharge rewards enter $B$. The menu item $j$ collects the enforceable financial mandate and stopping terms. The feasible set is unchanged when $d$ is perturbed for the service calculation.
+
+\subsection{Procurement timing and instruments}
+The purchaser values one unit of discounted service at $b\geq0$. This service price is distinct from the operating-benefit parameter $d$ in the agent's preferences. Public permissions are fixed at $L=0.8$ and $S=0.5$ in the procurement experiment. They represent the ex ante risk standard under which all offers are compared. The purchaser does not optimize over that standard or over an unrestricted mechanism space.
+
+The contractible menu is
+\begin{equation}
+ \mathcal J=\{+,-\}\times\{0,0.2,0.4,0.6,0.8,1.0\}\times\{1,\ldots,8\}.
+ \label{eq:r12_menu}
+\end{equation}
+The second coordinate is guarantee capacity $E$, and the surrender charge is $F=E$. These six capacities are the available standardized enforcement products; the eight terms are the available settlement dates. The finite instrument restriction is part of the institutional environment, not an assertion that these points approximate every feasible continuous contract without error. Each publicly known adjustment regime has 96 offers.
+
+At date zero the purchaser chooses an offer $j=(\sigma,E,m)$ and a nonnegative signing payment $q$, or makes no offer. The agent accepts or takes outside value $G(x_0)$. Capacity costs the agent $C(E)=0.02E^2$ in a separate utility numeraire. The purchaser pays $D_\kappa(m)=\kappa(m-1)/8$ for the compulsory term. Surrender charges accrue to an external enforcement sector and are not purchaser revenue. Neither the signing payment nor capacity enters managed wealth or changes the operating feasible set. After acceptance, the agent chooses all noncontracted controls and stopping decisions to maximize \eqref{eq:r12_policy}. There is no report of private type and no adverse-selection incentive constraint hidden in this complete-information timing.
+
+With an exact optimal response and value $W^r_j$, the infimum signing payment is
+\begin{equation}
+ q^r_j=[G(x_0)-W^r_j+C(E)]_+.
+ \label{eq:r12_grant}
+\end{equation}
+The positive part is retained even when participation happens to bind in the reported comparison. With a response delivering $A$, purchaser surplus is $bA-q-D_\kappa(m)$. Weak participation is resolved by acceptance; any required strictly positive acceptance margin is an additional payment and must fit inside the certified surplus gap. When the agent has multiple best responses, the service comparison in the next section covers all of them. This removes the need to select a favorable optimal policy before evaluating procurement.
+
+Under a common enforcement instrument and binding participation, comparing two mandates gives
+\begin{equation}
+ \Pi^r_+(b)-\Pi^r_-(b)
+   =(W^r_+-W^r_-)+b(A^r_+-A^r_-).
+ \label{eq:r12_accounting}
+\end{equation}
+This is payoff accounting, not a new theorem. Its significance is that certifying the first difference does not certify procurement. When instruments differ, their capacity and term costs must also be charged; when participation is slack, \eqref{eq:r12_grant}, rather than the linear simplification, applies.
+
+\section{From Value Enclosures to a Procurement Decision}
+\label{sec:r12_service}
+Let $\eta\geq0$. A response is $\eta$-optimal if its payoff is at least $W_j(d)-\eta$. Exact best responses are included. The following result does not assume uniqueness, smoothness in $d$, or coincidence of policies at nearby benefits.
+
+\begin{proposition}[Service of all near-optimal responses]
+\label{prop:r12_service}
+Suppose $J_j(\pi;d+t)=J_j(\pi;d)+tA_j(\pi)$ for every feasible policy and $0\leq A_j(\pi)\leq\bar A$. Let $h>0$, and suppose
+$\ell_t\leq W_j(d+t)\leq u_t$ for $t\in\{-h,0,h\}$. Every $\eta$-optimal response at $d$ satisfies
+\begin{equation}
+ \underline A_j=\max\left\{0,\frac{\ell_0-\eta-u_{-h}}h\right\}
+ \leq A_j(\pi)\leq
+ \min\left\{\bar A,\frac{u_h-\ell_0+\eta}h\right\}
+ =\overline A_j.
+ \label{eq:r12_service_bounds}
+\end{equation}
+The conclusion holds for randomized responses as well. A positive-class supremum need not be attained for the inequalities to apply to any existing $\eta$-optimal feasible response.
+\end{proposition}
+
+A smaller $h$ does not automatically sharpen the certificate. It reduces the change in optimal policy but magnifies value-evaluation error by $1/h$. With certified value error $\epsilon$, the two error contributions in a secant can total $2\epsilon/h$. A larger $h$ can instead include a change in stopping behavior and widen the economic secant. We use $h=0.01$, $\eta=10^{-8}$, and $\epsilon=10^{-7}$ per value, and report the resulting intervals rather than interpreting the secants as exact derivatives.
+
+Define an executable participation payment and a lower bound on any feasible payment by
+\begin{equation}
+ \overline q_j=[G(x_0)-\ell_0+C(E)+\eta]_+,
+ \qquad \underline q_j=[G(x_0)-u_0+C(E)]_+.
+ \label{eq:r12_payment_bounds}
+\end{equation}
+The first payment secures weak participation for every $\eta$-optimal response. The second bounds from below the payment of any participating response, since its operating payoff cannot exceed $u_0$. For $b\geq0$, put
+\begin{equation}
+ \underline\Pi_j=b\underline A_j-\overline q_j-D_\kappa(m),\qquad
+ \overline\Pi_j=b\overline A_j-\underline q_j-D_\kappa(m).
+ \label{eq:r12_surplus_bounds}
+\end{equation}
+
+\begin{theorem}[Selection from a contractible menu]
+\label{thm:r12_selection}
+Suppose the enclosures in Proposition \ref{prop:r12_service} hold for every menu item. If an item $j^*$ satisfies
+\begin{equation}
+ \underline\Pi_{j^*}>\max\{0,\max_{j\ne j^*}\overline\Pi_j\},
+ \label{eq:r12_separation}
+\end{equation}
+then offering $(j^*,\overline q_{j^*})$ guarantees strictly greater purchaser surplus than no procurement or any other menu item with any participating $\eta$-optimal response. The result allows the selected item its least favorable admissible response and each rival its most favorable one. Consequently the discrete instrument choice is the same under every selection among exact best responses. The executable payment is not asserted to equal the exact minimum grant.
+
+If $D_\kappa(m)$ is affine in $\kappa$ and the same item satisfies \eqref{eq:r12_separation} at every vertex of a rectangle in $(b,\kappa)$ with $b\geq0$, it satisfies it throughout the rectangle.
+\end{theorem}
+
+The rectangle assertion uses affine differences of fixed enclosure endpoints; it does not infer a continuum theorem from interior solutions. There are finitely many competitors, including the zero-profit outside option. No differentiation of an optimized policy is required. The result compares allocation and institution jointly, unlike an enforcement threshold evaluated after fixing a noncancellable allocation.
+
+\section{Financial Mandates and the Chosen Operating Term}
+\label{sec:r12_results}
+The procurement experiment uses $\lambda=0.125$, $d=0.42425$, and the permissions specified above. The two extra service evaluations occur at $d\pm0.01$ on the same complete canonical target. They are not assumed to lie within the narrower regional financial-reversal box in Section 6. We solve 96 operating/stopping problems per regime at each of these three benefits, sharing continuation calculations between the two initial mandates. Thus there are 192 offers and 288 distinct continuation-parameter queries, each with two first-date class comparisons.
+
+\input{revisions/2026-09-18-r12-procurement-witness/paper/procurement_table}
+
+Table \ref{tab:r12_procurement} reports the winning contracts at $(b,\kappa)=(1,0.02)$. The quoted payment includes the value allowance and response tolerance in \eqref{eq:r12_payment_bounds}. The nominal service and surrender moments in the replication record are policy diagnostics; the instrument comparison uses the wider all-response service intervals, not those point values. The selected positive first shares are strictly feasible. All fee levels, terms, and signs, including active-surrender offers, enter the comparison. Compulsory service is not assumed to persist after the minimum term: subsequent surrender remains an optimized choice.
+
+\begin{theorem}[Procurement in the canonical settlement economy]
+\label{thm:r12_numerical}
+For the deposited R12 target, menu \eqref{eq:r12_menu}, and the stated value allowances, the unique discrete procurement choice is $(+,0.6,3)$ under adjustment and $(+,0.6,4)$ without adjustment, uniformly for
+\begin{equation}
+ b\in[0.998,1.02],\qquad\kappa\in[0.0198,0.0202].
+ \label{eq:r12_pricebox}
+\end{equation}
+The inequalities hold for every $10^{-8}$-optimal response to the quoted contract and against every participating $10^{-8}$-optimal response to every competing item, as well as no procurement. The signing grants follow \eqref{eq:r12_payment_bounds}. The certificate does not assert uniformity over additional values of $\lambda,d,L,S$ or over unlisted enforcement products.
+\end{theorem}
+
+The economic effect of adjustment is a change in the chosen commitment term, not an inevitable reversal of the purchaser's financial mandate. Improving the agent's continuation opportunity changes the compensation and enforcement needed to deliver service. Under the standardized capacity menu, adjustment makes the three-interval contract preferable; without adjustment, four intervals are preferable at the same capacity. This is a jointly optimized comparison. It is distinct from the earlier continuously chosen capacity threshold for implementing a previously selected noncancellable allocation, which remains a valid conditional result in the compendium.
+
+The distinction from private investment ranking is essential. At a common grant, the unadjusted agent can prefer the nonpositive class. With individualized participation payments, a purchaser may compensate a lower private value and obtain enough additional service to prefer the positive mandate. Equation \eqref{eq:r12_accounting} identifies that margin. Conversely, at the active-surrender midpoint contract with $E=0.8$ and $m=1$, the unadjusted positive class can deliver less service; fixing that institution is not innocuous. Allowing the purchaser to choose $E$ and $m$ prevents either conditional comparison from being substituted for the menu optimum.
+
+\input{revisions/2026-09-18-r12-procurement-witness/paper/price_table}
+
+The price variation in Table \ref{tab:r12_prices} makes the service margin economically visible. Offers that permit more surrender can be attractive when service is less valuable, because they reduce the participation payment. Higher service prices can justify additional compulsory operation. These are certified point comparisons where the reported strict gap is positive; the rectangle in \eqref{eq:r12_pricebox} is the separate uniform statement. No interpolation of the point choices is used to claim a complete phase diagram. Nor is the selected contract called optimal outside the stated menu.
+
+\section{Adjustment Direction and Class-Specific Opportunity Exposure}
+\label{sec:r12_mechanism}
+A result eliminating negative preference drift in both classes does not explain which class gains more from adjustment. We separate these questions. Write $W^r_\sigma$ for class values under a fixed contract and $\Omega_\sigma=W^{\mathrm{adj}}_\sigma-W^0_\sigma$. Let $a_\sigma$ be an adjusted optimal first action and let $a_\sigma^0$ set its drift to zero while preserving its consumption and financial control. Suppose this counterpart is feasible. Let $O_1=V^{\mathrm{adj}}_1-V^0_1$, and let $K_\sigma$ be the first-date kernel of $a_\sigma^0$.
+
+\begin{proposition}[Opportunity exposure and financial replacement]
+\label{prop:r12_exposure}
+With $Q^r(a)=R(a)+K(a)V^r_1$, define
+\begin{align}
+ g_\sigma&=Q^{\mathrm{adj}}(a_\sigma)-Q^{\mathrm{adj}}(a_\sigma^0),\\
+ B_\sigma&=Q^0(a_\sigma^0)-W^0_\sigma\leq0.
+\end{align}
+Then
+\begin{equation}
+ \Omega_+-\Omega_-=(g_+-g_-)+(K_+-K_-)O_1+(B_+-B_-).
+ \label{eq:r12_exposure}
+\end{equation}
+For any certified $\underline O\leq O_1\leq\overline O$, writing $D=K_+-K_-=D^+-D^-$ gives
+\begin{equation}
+ D^+\underline O-D^-\overline O\leq DO_1
+ \leq D^+\overline O-D^-\underline O.
+ \label{eq:r12_signed_exposure}
+\end{equation}
+In particular, $O_1\geq0$ does not determine the sign of $DO_1$.
+\end{proposition}
+
+The first term is the relative gain from current deliberate drift at the selected financial controls. The second measures different exposure to future adjustment opportunities. The last is financial replacement: adjusted financial controls need not solve the unadjusted problem. Dropping that last term without checking its premise can give a false mechanism. Since each $B_\sigma$ is nonpositive, their difference has no predetermined sign.
+
+An interpretable sufficient condition can be stated as an opportunity-tail comparison. Order live and cemetery states by a specified opportunity index, and suppose $O_1(x_i)=o_i$ is nondecreasing in that order. If the two augmented kernels have equal mass and $T_i=\sum_{j=i}^M D_j\geq0$ for every $i\geq2$, then
+\begin{equation}
+ DO_1=\sum_{i=2}^M T_i(o_i-o_{i-1})\geq0.
+ \label{eq:r12_tail}
+\end{equation}
+The cemetery has zero future option; its inclusion accounts for different live-state survival masses. More generally, bounds on the increments of $o_i$ and signed tail masses give lower and upper exposure bounds by assigning adverse endpoints to each signed product. This identifies what a monotone opportunity explanation requires: both a ranking of future opportunities and an ordering of class exposure. Neither follows from downward-drift elimination. The numerical application uses \eqref{eq:r12_signed_exposure}; it does not assert an unverified monotone wealth ordering.
+
+\input{revisions/2026-09-18-r12-procurement-witness/paper/exposure_table}
+
+Table \ref{tab:r12_exposure} evaluates the components at the actual benefit midpoint and at two additional law--benefit points, separating active surrender from a noncancellable contract. The signed exposure bounds allow uncertainty in both continuation arrays. Wealth-bin contributions are also deposited so that the continuation contribution can be localized rather than inferred from a favorable aggregate. These are pointwise mechanism accounts, not a uniform decomposition over the five-dimensional box.
+
+For the direction of drift, let $\mathcal R_n$ contain the support of every feasible initial action under the largest permissions and be closed under every feasible subsequent live transition. For each negative-drift action $a$, compare a feasible zero-drift action $a^0$ with the same financial and consumption controls. If $\ell\leq V^\uparrow_{n+1}\leq h$ on this support, a valid upper bound on its advantage is the maximum over endpoint laws and benefits of
+\begin{equation}
+ R^a-R^{a^0}+(K^a-K^{a^0})\frac{h+\ell}{2}
+       +|K^a-K^{a^0}|\frac{h-\ell}{2}+\varepsilon.
+ \label{eq:r12_transport}
+\end{equation}
+Strict negativity for every such pair gives, by backward induction, $V^{\mathrm{adj}}=V^\uparrow$ throughout the support. Frozen proposals must also be feasible and accounted for. Our checker reconstructs the entire feasible-support tube and the statewise enclosures before testing these inequalities. The support is not selected after observing an optimal policy.
+
+This direction result is local to the specified initial state and parameter region. The preserved alternative-initial-state experiment demonstrates substantial value from downward adjustment near a preference-discharge boundary. That experiment is economically informative: access to discharge changes the continuation tradeoff. It is not suppressed to create a global monotonicity claim. Likewise, nearby long- and short-permission interventions can remove the class reversal. These adverse cases delimit the mechanism rather than invalidate a correctly localized theorem.
+
+\section{Changing-Law Bounds and Regional Economic Comparisons}
+\label{sec:r12_bounds}
+\subsection{Policy lower bounds and two upper constructions}
+For a fixed feasible Markov policy, a common law parameter produces a polynomial value over the remaining dates. Let $B_i^H(t)=\binom Hi t^i(1-t)^{H-i}$ denote Bernstein basis functions. On $\lambda\in[a,b]$, $t=(\lambda-a)/(b-a)$, a feasible policy has representation $J^\pi(\lambda)=\sum_i\beta_i^\pi B_i^H(t)$. Its minimum coefficient bounds its value from below. Reward and charge dependence is affine for that fixed policy, so reward corners can be considered jointly before optimizing across policies. In particular, the valid order is
+\begin{equation}
+ \max_{\pi\in\mathcal B}\ \min_{\text{reward corners},i}\beta_i^\pi,
+ \label{eq:r12_order}
+\end{equation}
+not a choice of a different policy inside each coefficient minimum. Each policy must be feasible under the smallest permissions used for the lower bound.
+
+Endpoint optimal values do not in general form an upper chord when a parameter changes the law at every date. The count-information recursion supplies an upper relaxation by conditioning on the number of endpoint draws remaining, while preserving one common action before the next draw. Its interior recursion maximizes the conditional mixture of two endpoint backups, not two separately optimized actions selected after the draw. Feasible policies retain the common-parameter dependency on the lower side.
+
+The signed chord compresses that upper information. Put $\delta V_{n+1}=V^b_{n+1}-V^a_{n+1}$. A nonnegative correction can be propagated using
+\begin{equation}
+ M_n=\left[\max_{a_n}\left\{(K_n^a-K_n^b)\delta V_{n+1}
+        +\max(K_n^aM_{n+1},K_n^bM_{n+1})\right\}\right]_+.
+ \label{eq:r12_correction}
+\end{equation}
+Here the superscripts $a,b$ on kernels denote parameter endpoints, not actions; the maximization is over feasible controls. Over $H$ remaining dates, the coefficient correction is $i(H-i)M_n/[H(H-1)]$ for $H\geq2$, added to the endpoint coefficient chord. The one-interval value uses its endpoint chord without that term. Supplement S.10 preserves the full ordering and induction proof. The checker independently reconstructs both upper recursions on all states and dates. A coefficient array is not accepted because its file name or JSON summary says ``upper.''
+
+The signed cross term can have either sign before positive majorization. It cannot be removed because a particular numerical example happens to make it small. Conversely, a theorem requiring the term does not establish that it gives a material advantage on every workload. Policy proposal can be neural or nonneural without changing the validity of these witnesses.
+
+\subsection{The joint financial and surrender region}
+For the new canonical target, feasible lower policies and both upper constructions certify a common box
+\begin{equation}
+\begin{split}
+\lambda&\in[0.12,0.13],\quad d\in[0.424,0.4245],\quad F\in[0.7999,0.8001],\\
+L&\in[0.7999,0.8001],\qquad S\in[0.4999,0.5001],\qquad m=1.
+\end{split}
+\label{eq:r12_jointbox}
+\end{equation}
+Permissions are handled monotonically: lower policies use the smaller feasible sets, upper values the larger ones. Reward and charge corners are treated with a fixed lower policy before taking coefficient minima. Bernstein restriction deals with the law continuum. These operations certify a region; finite interior solutions are only cross-checks.
+
+\input{revisions/2026-09-18-r12-procurement-witness/paper/region_table}
+
+The adjusted agent prefers the positive financial class, the unadjusted agent prefers the nonpositive class, and the unadjusted positive class has a strictly valuable surrender option relative to its noncancellable value. The third comparison concerns a counterfactual class: it does not say that the unconstrained unadjusted agent selects that class and surrenders. Dynamic downward-drift elimination holds on the independently reconstructed feasible-support tube. This joint statement is retained alongside, not substituted for, the procurement result. The menu optimum chooses a different institution; a single conditional sign comparison cannot settle that choice.
+
+\subsection{What broader law variation changes}
+\input{revisions/2026-09-18-r12-procurement-witness/paper/broader_table}
+
+Table \ref{tab:r12_broader} compares the two upper components at the same benefit, fee, permissions, endpoint solutions, and two-endpoint lower-policy bank. It reports the maximum correction above an uncorrected endpoint chord, the difference between upper coefficient arrays, and a common eight-subcell bound on the per-value upper--lower gap. The broader intervals are computational stress tests, not assertions that the financial-reversal box extends to those intervals. Both methods receive the same endpoint and lower-policy costs; nonendpoint work is recorded separately. Canonical loading and full witness validation are reported at package level and cannot be silently excluded from total reproduction cost.
+
+The narrow economic region is not presented as a demanding demonstration of the correction's magnitude. The broader runs identify how law uncertainty changes certificate width, the correction, and upper-construction work. Earlier controlled comparisons of precision, policy-bank enrichment, neural-free proposal, and structural quadratic cases remain in the compendium with their original target identities. They are not falsely reported as freshly retrained experiments. No comparison here is a benchmark against an entire external parameter-synthesis software system, and no claim of universal wall-time superiority follows from a single horizon or machine.
+
+\section{Target Identity, Arithmetic, and Witness Verification}
+\label{sec:r12_verification}
+The new numerical theorems concern one completely deposited array target. Its inputs include every common and frozen-proposal kernel at every date, all reward, duration, adjustment, discharge and exit-discount arrays, terminal and state arrays, and the entire first-date breakpoint operator. Large archives are split into hash-identified parts for repository storage. A manifest records archive and array identities. The read path verifies these identities and never invokes the reward or transition constructor. The expected manifest is not overwritten during a check.
+
+This is a newly identified R12 target. It is not described as a bit-identical reproduction of the earlier R11 target merely because numerical differences are small. The previous expected manifest remains unmodified, and a separate comparison lists any differing primitive identities. No unmeasured R11-to-R12 transfer enclosure is used. Instead, the new economic and regional witnesses are generated and checked directly on the new canonical inputs. The general operator-transfer results remain available for other target comparisons, including diffusion approximation, but their assumptions are not automatically discharged by array agreement.
+
+The arithmetic audit bounds round-to-nearest evaluation of the stored system. Its derived per-value bound is below the charged $10^{-7}$ allowance; all displayed class-difference bounds charge twice that allowance. Service secants additionally charge the value allowances divided by $h$ and the response tolerance. The independent checker is a separate binary64 reconstruction of the relevant recursions, not a second real-interval implementation. The claim combines this reconstruction with the stated analytic arithmetic account. It does not certify the transcendental construction of a different model.
+
+Verification has three distinguishable layers. First, immutable identities reject a changed input or witness. Second, semantic checks reconstruct lower-policy feasibility and polynomial coefficients, all-state upper recursions, signed transport comparisons, and the full procurement value and service calculations. Third, reported economic summaries must agree with those reconstructed witnesses. The checker does not import the generator's Bellman solver, upper-certificate functions, or region reducer. Shared canonical data and mathematical definitions are explicit; software independence is not called independence of the mathematical proof.
+
+The negative tests are executed on disposable fixtures. They replace the referee's specified upper array by $-10^6$, introduce an infeasible policy index, corrupt a transition weight or row mass, alter a continuation enclosure, supply a stale favorable summary, and change the expected target identity. Hash checks reject changed files; semantic tests also reject the destroyed certificate and infeasible mathematical witnesses without relying on their original hashes. Passing these tests is evidence about verifier scope, not proof that every conceivable software defect has been excluded.
+
+The complete execution receipt reports source and deposit identities separately, actual timings, peak memory, and the precise checks run. A workflow success at a scientific-source commit is not silently attributed to a later deposit commit. Reproduction uses the committed canonical inputs by default; creation of a new target is an explicit, separate operation which refuses to overwrite an existing one.
+
+\section{Conclusion}
+A computational statement about an agent's preferred financial class is not yet a procurement result. The purchaser values delivered service and must compensate participation while paying for enforcement. Once these margins are evaluated within a common contractible menu, preference adjustment changes the chosen compulsory term even when both regimes favor the same purchased financial mandate. Value perturbations make that comparison robust to ties and near-optimal responses, without an assumed service derivative or an advantageous optimal-policy selection.
+
+The same separation of objects disciplines numerical certification. Policy proposals, primitive arrays, lower policies, upper recursions, and economic summaries perform different roles. Signed compression addresses the changing-law upper problem; fixed-policy polynomials and explicit service enclosures convert its output into decisions. A hash-enforcing canonical target and witness-driven checker connect the reported inequalities to the mathematical objects they purport to bound. The preserved adverse cases and broader-law comparisons show where local mechanisms and computational increments are consequential and where they are not. This combination yields an auditable institutional-choice result while retaining the broader operator and economic theory.

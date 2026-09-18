@@ -1,0 +1,110 @@
+\section{Service, Procurement, Exposure, and Witness Reconstruction}
+\label{sec:r12_supp}
+This section supplies the additional arguments used by the R12 main paper. Sections S.1--S.14 above are retained in full. Their references to earlier main-paper statements refer to the accompanying complete theoretical and computational compendium. References with the R12 labels below refer to the new main paper. The numerical target for this section is the canonical R12 array system; identities of historical targets are not silently reassigned.
+
+\subsection{Service bounds without differentiability}
+Fix an item $j$, an adjustment regime, and a feasible policy $\pi$. The definition of operating duration gives
+\begin{equation}
+ J_j(\pi;d+h)=J_j(\pi;d)+hA_j(\pi),\qquad
+ J_j(\pi;d-h)=J_j(\pi;d)-hA_j(\pi).
+\end{equation}
+These equalities hold with surrender, forced discharge, deliberate adjustment, and stochastic kernels. The benefit parameter changes only the reward coefficient, not a kernel, feasible set, capacity cost, term cost, or stopping charge. This is why the two perturbed problems can identify service. Varying a primitive that also changes the transition or stopping technology would not justify the same argument.
+
+\begin{proof}[Proof of Proposition \ref{prop:r12_service}]
+Let $\pi$ be $\eta$-optimal at $d$. Optimality of the perturbed value and near-optimality at the center imply
+\begin{align}
+ W_j(d+h)&\geq J_j(\pi;d+h)\geq W_j(d)-\eta+hA_j(\pi),\\
+ W_j(d-h)&\geq J_j(\pi;d-h)\geq W_j(d)-\eta-hA_j(\pi).
+\end{align}
+The first inequality yields $hA_j(\pi)\leq W_j(d+h)-W_j(d)+\eta$; the second yields $hA_j(\pi)\geq W_j(d)-W_j(d-h)-\eta$. Substituting the adverse endpoints of the three certified intervals proves \eqref{eq:r12_service_bounds}. Intersecting with $[0,\bar A]$ preserves validity. Randomization preserves the two affine identities after expectation, and the same inequalities follow. No limiting derivative or stable optimizer has been assumed. If the positive-class supremum is not attained, every existing feasible near-optimal policy still obeys the displayed inequalities; the proof does not use an exact maximizing selector.
+\end{proof}
+
+The exact value function is convex and nondecreasing in $d$, as a supremum of affine functions with nonnegative slopes. This observation helps interpret the secants but is not an additional assumption needed in the proof. At a kink, distinct optimal policies may have different service. The finite interval covers that set of service responses; it is not a standard error for a unique derivative.
+
+The numerical queries have error allowance $\epsilon=10^{-7}$, so the implemented endpoints are $\ell_t=\widehat W(d+t)-\epsilon$ and $u_t=\widehat W(d+t)+\epsilon$. The response tolerance is $\eta=10^{-8}$ and $h=0.01$. Thus each untruncated service secant charges $(2\epsilon+\eta)/h=2.1\times10^{-5}$, in addition to economic curvature or policy switching between the queried benefits. The checker reconstructs the values at all three benefits; it does not read a favorable service interval from the generator's summary and call that a proof.
+
+\subsection{Participation and robust comparison of discrete instruments}
+\begin{proof}[Proof of Theorem \ref{thm:r12_selection}]
+For a $\eta$-optimal response to item $j$, operating payoff is at least $W_j(d)-\eta\geq\ell_0-\eta$. Under payment $\overline q_j$ its participation payoff is therefore at least
+\begin{equation}
+ \ell_0-\eta+[G(x_0)-\ell_0+C(E)+\eta]_+-C(E)\geq G(x_0).
+\end{equation}
+Thus the quoted payment is feasible, including when its positive part is zero. Conversely, any participating response under nonnegative payment $q$ has operating payoff no greater than $W_j(d)\leq u_0$. Therefore
+$q\geq[G(x_0)-u_0+C(E)]_+=\underline q_j$.
+
+Proposition \ref{prop:r12_service} and $b\geq0$ now imply that the selected item's surplus under its executable payment is at least $\underline\Pi_j$. Every participating near-optimal response to every item, with any feasible payment, yields surplus at most $\overline\Pi_j$. In particular, these upper bounds allow a rival both the smallest potentially feasible payment and the most favorable potentially feasible service; their joint attainability is not required for a valid upper bound. Strict separation against those bounds proves the first assertion. The no-procurement alternative has value zero and is explicitly included.
+
+For the uniform assertion, fix a candidate and a competitor. Their lower-minus-upper difference is affine in $(b,\kappa)$ because all service and payment interval endpoints are fixed and $D_\kappa(m)$ is affine. Each point of the price rectangle is a convex combination of its vertices; the affine difference is the same convex combination of its vertex values. Positivity at every vertex implies positivity throughout. The selected candidate's lower surplus relative to zero has the same property. There are finitely many competitors, so the argument applies simultaneously to all of them.
+\end{proof}
+
+The theorem identifies the optimal discrete instrument, not the exact minimum signing payment within that item. Its executable grant includes numerical and response slack. If an application requires strict participation with an additional grant $\delta>0$, the same proof works whenever $\delta$ is smaller than the minimum certified separation. If exact best responses are imposed, they form a subset of the certified response class. No type-reporting or truth-telling constraint is implied by the complete-information menu.
+
+The fee recipient matters. In this environment the fee is paid to an external enforcement sector; no term $F H$ is added to purchaser revenue. A different institutional recipient changes the purchaser's objective and requires a new comparison. Capacity cost is paid in the separate numeraire, while term enforcement cost is paid directly by the purchaser. Payments do not alter managed wealth, so the service bounds obtained before setting the grant remain applicable after the grant is quoted.
+
+\subsection{Verification of the procurement theorem}
+For each regime, the menu has $2\cdot6\cdot8=96$ items. The generator and independent checker solve the continuation problem for two regimes, six capacities, eight terms and three benefits, or 288 parameter queries. Each query supplies both initial class values. The checker independently optimizes every later-date action backup on every state, verifies the supplied later policy is feasible and value-attaining to its numerical tolerance, verifies the first action and its value, and compares the entire stored continuation-value array, not only the initial scalar.
+
+The first-date action pairs are finite and the risky-share operator is affine between stored knots. Its maximum on a closed permission interval is at a knot or permission endpoint. All permission endpoints used in this numerical theorem are canonical knots for every admissible consumption--adjustment pair; the checker tests this property rather than rounding a requested permission. The positive class is treated by its closure for upper optimization. Feasible strictly positive first actions are retained in the chosen positive contracts and the regional lower witnesses.
+
+The three reconstructed value intervals yield service and payment intervals through the proved formulas. At each of the four $(b,\kappa)$ vertices and in each regime, the checker compares the candidate's lower surplus to the upper surplus of every other item and to zero. It also checks that the same candidate wins at all four vertices. The exact generated gaps and input identities are deposited in \texttt{independent\_validation.json}; outward-displayed bounds in the main tables are computed from that record. This finite arithmetic certificate, the analytic error allowance, and Theorem \ref{thm:r12_selection} establish Theorem \ref{thm:r12_numerical}. Center-point reoptimization alone would not establish the rectangle.
+
+Nominal policy moments give a separate accounting check. With the stored selected policy, the generator evaluates $(B,A,H)$ by policy-specific recursions and checks $W=B+dA-FH$. These moments explain the chosen operating allocation but are not substituted for the all-response service enclosure in the decision certificate. The response tolerance in the theorem concerns the economic agent's response class; the theorem does not infer that every numerical maximizing policy is itself $10^{-8}$-optimal merely because a floating-point argmax was returned.
+
+\subsection{Class-specific exposure and its tail representation}
+\begin{proof}[Proof of Proposition \ref{prop:r12_exposure}]
+Add and subtract $Q^{\mathrm{adj}}(a_\sigma^0)$ and $Q^0(a_\sigma^0)$ from $W^{\mathrm{adj}}_\sigma-W^0_\sigma$. Since $a_\sigma$ is an adjusted optimum,
+\begin{align}
+\Omega_\sigma
+ &=Q^{\mathrm{adj}}(a_\sigma)-Q^{\mathrm{adj}}(a_\sigma^0)
+   +Q^{\mathrm{adj}}(a_\sigma^0)-Q^0(a_\sigma^0)
+   +Q^0(a_\sigma^0)-W^0_\sigma\\
+ &=g_\sigma+K_\sigma O_1+B_\sigma.
+\end{align}
+The reward of the fixed zero-drift action is unchanged between the two regimes, so the middle difference is precisely $K_\sigma O_1$. Feasibility of that action for the zero-adjustment class gives $B_\sigma\leq0$. Subtracting the two class identities proves \eqref{eq:r12_exposure}. Decomposing a signed row as $D^+-D^-$ and using positivity separately on each part proves \eqref{eq:r12_signed_exposure}.
+\end{proof}
+
+For completeness, let ordered state values be $o_1,\ldots,o_M$ and let $D_j$ be a signed kernel difference with total mass zero. Define $T_i=\sum_{j=i}^M D_j$. Since
+$o_j=o_1+\sum_{i=2}^j(o_i-o_{i-1})$, interchanging finite sums gives
+\begin{equation}
+ \sum_{j=1}^M D_jo_j
+ =o_1\sum_{j=1}^M D_j+\sum_{i=2}^M(o_i-o_{i-1})\sum_{j=i}^M D_j
+ =\sum_{i=2}^M T_i(o_i-o_{i-1}).
+\end{equation}
+This proves the sufficient opportunity-tail condition in the main paper. Without equal masses the first term must be retained. Substochastic live kernels can be augmented by a zero-option cemetery state to obtain equal total mass; the position of that zero option in an asserted monotone ordering must be valid. This transformation does not add a discharge reward, which is already accounted for in the current payoff.
+
+If $\underline\delta_i\leq o_i-o_{i-1}\leq\overline\delta_i$, a lower bound is
+$\sum_i(T_i^+\underline\delta_i-T_i^-\overline\delta_i)$, with an analogous upper bound. Consequently a sufficient class reversal is obtained when a lower bound on the relative local gain, signed future exposure, and financial-replacement difference exceeds $-\Delta^0$. This is a transferable restriction on the mechanism. The application does not assert that primitive wealth ordering alone proves the required ordering of future adjustment values.
+
+At the reported point solutions the zero-drift financial counterpart is also a zero-adjustment optimizer, and both financial-replacement terms reconstruct as zero to numerical tolerance. Their presence in the proposition remains necessary. A different parameter or permission can change financial controls, so this pointwise observation cannot authorize their removal from the general formula. The signed exposure is localized by wealth bins in the deposited diagnostic record; negative and positive contributions can be much larger in absolute value than their net difference. This is the economic reason to retain signed transport rather than replace it by unrelated worst-case value errors.
+
+\subsection{Regional lower witnesses and upper recursions}
+For a fixed feasible policy, write a value at date $n+1$ in degree $H-1$ Bernstein form on the common law parameter. Affineness of the one-period reward and kernel in that parameter gives the degree-$H$ coefficient recursion
+\begin{equation}
+ \beta_{n,i}^\pi=
+ \left(1-\frac iH\right)\{R_{n,0}^\pi+K_{n,0}^\pi\beta_{n+1,i}^\pi\}
+ +\frac iH\{R_{n,1}^\pi+K_{n,1}^\pi\beta_{n+1,i-1}^\pi\},
+\end{equation}
+with missing endpoint terms omitted. Reward coefficients multiply the degree-elevation weights in the same way as continuation coefficients. A stopping action has zero live-state kernel and current payoff $G-F$. The terminal condition is the stored terminal array. The checker implements this selected-policy recursion directly on the primitive rows, including the first-date action.
+
+For a law subinterval, de Casteljau restriction transforms the global coefficients without changing the polynomial. At any fixed reward corner, nonnegativity and partition of unity of the Bernstein basis imply that the minimum coefficient is a lower bound and the maximum coefficient an upper bound. A policy feasible under the smaller permissions remains feasible at every larger permission in the box. Its reward/fee dependence is affine while that policy remains fixed. Thus the minimum over all corner coefficients is a valid uniform lower bound for that single policy, and the maximum over the policy bank may be taken only \emph{after} this minimum. The proof never chooses a different policy for each coefficient.
+
+For a difference of two optimized values, let $L_{j}^{\pi}$ be the restricted coefficient vector of a feasible policy for target $j$ and let $U_k$ be upper coefficients for target $k$. Then
+\begin{equation}
+ \max_\pi\min_{\text{corners},i}(L_{j,i}^{\pi}-U_{k,i})-2\epsilon
+ \leq W_j-W_k
+ \leq\min_\pi\max_{\text{corners},i}(U_{j,i}-L_{k,i}^{\pi})+2\epsilon.
+\end{equation}
+The two minima/maxima across policies need not use the same policy, but each policy must be held fixed within its corner-and-coefficient operation. This proves the reduction used for the adjusted spread, unadjusted spread, and surrender gain. The independent checker first reconstructs the lower and upper coefficients from primitive arrays and then repeats this reduction; it does not accept their roles on trust.
+
+The count-information and signed-compression induction is retained in Supplement S.10. In the new implementation the endpoint optimizations, count interior maximizations, and signed majorant propagation are separately recoded. Each is tested over the full state space and all relevant reward corners. The claimed regional scope is one complete law cell and the displayed permission/reward box; selected-policy checks at a few interior points are not used as a substitute.
+
+For downward-drift elimination, the independently constructed support starts with all feasible first-date transition rows and repeatedly includes every successor of every available later row. The upward-only continuation intervals use adverse benefit/fee endpoints and endpoint-law mixtures under positive kernels. The signed difference bound in the main paper then dominates every omitted negative-drift action by its feasible zero-drift counterpart. Backward induction from terminal values gives equality of full and upward-only optima on each reachable set. Date- and state-specific frozen actions are checked for unpaired negative drifts. This recreates the valid R11 reasoning on the separately identified R12 target.
+
+\subsection{Immutable inputs and the scope of independent checking}
+The canonical manifest names every logical input archive, every physical archive part, its byte hash, and every array's shape, dtype and content hash. The first-date operator and all later operators are loadable without constructor calls. The archive format allows only nonobject numeric arrays. The loader checks array inventory, finiteness, sorted sparse indices, nonnegative transitions, and the stated subprobability mass bound. Witness identities refer to the expected canonical-manifest hash, so changing a manifest along with its arrays does not pass the original witness check.
+
+The explicit new-target command refuses an existing target directory. The generation command similarly refuses an existing witness-output directory. Reproduction reads committed canonical inputs by default. A separately identified target can be generated in another directory, but its result is not silently attributed to the original target. The original R11 expected manifest and all inherited results remain intact. The R12 comparison file records primitive differences without treating small floating-point differences as an operator-transfer proof.
+
+The independent verifier uses the deposited identities as the initial anchor, then applies semantic tests to the mathematical witnesses. Its region reducer rejects the referee's destroyed upper array even when the original file hash is not consulted. A separate disposable-file test rejects that mutation by archive identity. Other fixtures test infeasible policies, negative transition weights, excess row mass, altered continuation enclosures, stale favorable summaries, and an incorrect canonical identity. These are actual execution tests; no original witness or remote historical file is modified.
+
+Numerical tolerance for comparing two binary64 reconstructions is not itself the economic error bound. The analytic arithmetic audit supplies a per-value bound, and the larger advertised allowance is charged in the economic intervals. The audit explicitly excludes construction and diffusion error. Agreement between two implementations is supporting evidence against coding mistakes, not a theorem that the underlying real-arithmetic construction is identical to another platform's constructor. Source commit, target identity, witness identity, verification result, and final deposit commit are recorded as different objects.
