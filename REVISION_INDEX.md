@@ -116,3 +116,8 @@ The advisory reports and revisions do not imply journal submission or editorial 
 R4 contains new approximate-operator bounds, an economic cumulative-adjustment theorem, a coherent stopped preference economy, actual neural actors and critics, independent policy evaluation, a constrained coupled stochastic resource experiment, and an isolated same-weight deployment ablation. Analytical feature solves, finite-state games, domain tests, and full neural runs remain separate evidence classes. Earlier manuscripts and all review materials are preserved unchanged; their filenames do not make them authoritative for R4.
 
 The reports are owner-commissioned advisory reviews. This repository does not imply an appointment by Econometrica, submission to the journal, or an editorial decision.
+
+
+## R12 — Procurement, service, and witness reconstruction (2026-09-18)
+
+Authoritative main: `ECTA_R12.tex`; complete proofs: `SUPP_R12.tex`; preserved full development: `COMPENDIUM_R12.tex`. PDFs, response and receipts: `revisions/2026-09-18-r12-procurement-witness/`. Reproduction: `replication/r12/README.md`. Scientific-source identity is in the execution receipt; the final deposit is the branch head containing these outputs. This is a substantive revision, not an alias of a review branch.
