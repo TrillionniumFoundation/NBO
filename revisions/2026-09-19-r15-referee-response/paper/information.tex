@@ -1,0 +1,109 @@
+\subsection{What dynamic structure adds to value information}
+\label{sec:informationhierarchy}
+The identified object depends on what the purchaser is allowed to learn. Consider first a fixed finite dynamic model, with a compact action representation and randomization. Write its discounted occupancy polytope as
+\[
+ \mathcal X_M=\{x\geq0:D_Mx=\mu\}.
+\]
+An occupancy records the expected discounted number of uses of each date--state--action pair. The flow equations include the initial distribution, live transitions, discharge, and the terminal reward. Let $r^\top x$ be private payoff at the contract under consideration and $Z^\top x$ its response vector. Terminal rewards can be absorbed in $r$. Denote its value by $W_M$. This representation is applied to a closed policy class; the open positive mandate is treated separately below.
+
+\begin{theorem}[Dynamic response information]
+\label{thm:occupancy}
+In a fixed finite model with randomized policies,
+\begin{equation}
+ \mathcal R^M_\eta
+ =\{Z^\top x:x\in\mathcal X_M,\ r^\top x\geq W_M-\eta\}.
+ \label{eq:occupancyresponse}
+\end{equation}
+Let $V$ be the exact Bellman value, and let
+$\ell_n(s,a)=V_n(s)-r_n(s,a)-K_{n,a}V_{n+1}$ be its nonnegative Bellman loss, with the appropriate terminal convention. Then the payoff restriction in \eqref{eq:occupancyresponse} is equivalent to
+\begin{equation}
+ \sum_{n,s,a}x_n(s,a)\ell_n(s,a)\leq\eta.
+ \label{eq:globalloss}
+\end{equation}
+Consequently, the equality graph describes the exact-response face when $\eta=0$. A local loss cutoff at each state does not in general describe the global $\eta$-response set.
+
+For a collection $\mathfrak M(\mathcal I)$ of dynamic models consistent with information $\mathcal I$, containing the true model and respecting the same feature bounds and value intervals,
+\begin{equation}
+ \mathcal R^M_\eta\ \subseteq\
+ \bigcup_{M'\in\mathfrak M(\mathcal I)}\mathcal R^{M'}_\eta
+ \ \subseteq\ \mathcal Z_\eta(L,U).
+ \label{eq:informationnesting}
+\end{equation}
+The second inclusion can be strict even with exact queried values.
+\end{theorem}
+
+The distinction is economic, not just computational. Full transition and reward information restricts which output vectors a policy can deliver. Value messages suppress some of that information. For example, two mutually exclusive service opportunities can imply $A+H=1$ for every response. Observing only the coordinate support values $\max A=\max H=1$ is also consistent with an unobserved joint opportunity $(A,H)=(1,1)$. Thus a value-message identified set can have support two in direction $(1,1)$ when the known dynamic model has support one. Sharpness relative to messages is not sharpness relative to a specified transition system.
+
+Equation~\eqref{eq:globalloss} also fixes the interpretation of numerical near-optimality. In a two-period example, taking an action with loss $0.06$ at both dates passes a local $0.1$ cutoff twice but loses $0.12$ initially. Conversely, a globally near-optimal policy can incur a large conditional loss at a rare state. The exact rational fixtures in the supplement check both the occupancy identity and the local-cutoff counterexample. The large-state calculation does not enumerate all policies.
+
+\subsection{Designed value queries and the neural operator interface}
+\label{sec:directedqueries}
+Suppose a purchaser needs support in one direction $w$, rather than every coordinate of the response vector. Define the perturbed dynamic value
+\[
+ W_M(t)=\max_{x\in\mathcal X_M}\{r^\top x+t^\top Z^\top x\}.
+\]
+The perturbation changes the reward, not the laws or feasible policies. A value operator evaluated at a designed reward can then supply the economically relevant response bound directly.
+
+\begin{theorem}[Directed-query representation]
+\label{thm:directed}
+Under the fixed-model hypotheses of Theorem~\ref{thm:occupancy},
+\begin{align}
+ h_{\mathcal R^M_\eta}(w)
+ &=\min_{\lambda\geq0}\left\{
+     \max_{x\in\mathcal X_M}
+       [w^\top Z^\top x+\lambda r^\top x]
+       -\lambda(W_M-\eta)\right\},\label{eq:directeddual}\\
+ &=\inf_{\lambda>0}\lambda\{W_M(w/\lambda)-W_M(0)+\eta\},
+ \label{eq:querydual}
+\end{align}
+where the limit at $\lambda=0$ is the support over all feasible occupancies. If $\eta=0$, the suboptimal vertices have private-value gap at least $\delta>0$, and the range of $w^\top Z^\top x$ over vertices is at most $R_w$, every $\lambda\geq R_w/\delta$ in \eqref{eq:querydual} gives exact optimal-response support. If there are no suboptimal vertices, every positive $\lambda$ suffices.
+
+Without knowledge of $\delta$, each admissible queried $\lambda>0$ still gives the independently checkable bound
+\begin{equation}
+ h_{\mathcal R^M_\eta}(w)
+ \leq\lambda\{U(w/\lambda)-L(0)+\eta\}.
+ \label{eq:directedinterval}
+\end{equation}
+Its value-error allowance is $\lambda(\varepsilon_w+\varepsilon_0)$ when the two queried values have respective absolute error bounds $\varepsilon_w$ and $\varepsilon_0$.
+\end{theorem}
+
+The same device applied to $-w$ gives the adverse lower response. A purchaser valuing $A+FH$ at a fixed fee therefore queries $d+h$ and $F(1-h)$ together, rather than treating the largest duration and surrender incidence as jointly attainable. The continuous-instrument algorithm uses these directed probes and then checks a full fee cover. The running record retains the much weaker coordinate-query trial; a favorable final bound is not presented without its information-acquisition cost.
+
+The theorem does not make query design free. Its equality is the Lagrange representation of a fixed dynamic response face, not a claim that an unknown multiplier can be identified from one arbitrary observation. A finite parameter domain can restrict which multipliers are queried; unqueried values are not available to the computation. The vertex-gap statement explains when one additional, appropriately small perturbation is sufficient. Otherwise the search is adaptive and the guarantee is ex post: every accepted query must be evaluated with a valid value enclosure, and every final upper bound must pass weak duality. No dimension-free bound on the number of search queries is asserted.
+
+This is the interface at which Neural Bellman Operators enter the argument. A learned operator proposes values or policies across reward perturbations. Independent evaluation turns proposals into value intervals; \eqref{eq:directedinterval} turns those intervals into adverse-response statements; procurement compares the resulting statements. Occupancy duality, inverse optimization, and convex support geometry are established methods. The contribution here is to organize their information requirements and approximation errors around the response of a dynamic contract, including a globally near-optimal agent and a continuous enforcement choice.
+
+\subsection{One behavioral convention for open mandates}
+\label{sec:globalbehavior}
+Let $\mathcal C$ be the stated contract continuum and let $\mathcal P_c$ be its actual policy class. For exact behavior the feasible contract set is
+\[
+ \mathcal C_0=\{c\in\mathcal C:\argmax_{p\in\mathcal P_c}J_c(p)\ne\varnothing\}.
+\]
+The purchaser compares participating offers in $\mathcal C_0$, and takes a supremum over offers when an optimal offer is not attained. A contract outside $\mathcal C_0$ has no exact agent response and is not an executable exact offer. For every stated $\eta>0$, the behavioral set is instead
+$\mathcal P_c(\eta)=\{p\in\mathcal P_c:J_c(p)\geq\sup J_c-\eta\}$.
+It is nonempty whenever the actual class is nonempty and has finite value. The purchaser's lower bound concerns every policy in this global set, not a selected numerical policy.
+
+The closure of $0<\pi_0\leq L$ may be used to enlarge a rival's response set and hence its upper bound. It is never substituted for the actual behavior of an executable candidate. The closed occupancy theorem applies directly to the closed representation; an open-class exact claim additionally requires actual attainment. The positive-$\eta$ statements use the value inequalities for actual policies, so do not require falsely identifying the closed occupancy boundary with an open-class maximizer. The reported exact incumbents have strictly positive attaining actions. The positive-tolerance experiment is a separate calculation, with its tolerance, grant, response allowance, and regret all reported together.
+
+\subsection{A response graph for an interval of fees}
+\label{sec:intervalgraph}
+The dynamic model can also strengthen the value-message calculation before a fee interval has been reduced to a point. Let $a<b$ be the endpoints. At a state and date, an action value $Q(F)$ is convex in $F$, so its endpoint chord $\bar Q(F)$ is an upper bound. Feasible optimal endpoint policies with surrender moments $H_a,H_b$ imply the lower planes
+\[
+ P_a(F)=V(a)-(F-a)H_a,\qquad
+ P_b(F)=V(b)+(b-F)H_b.
+\]
+A necessary condition for the action to be optimal at some fee in $[a,b]$ is
+$\bar Q(F)-P_a(F)\geq0$ and $\bar Q(F)-P_b(F)\geq0$ at a common fee. For any proposed $\omega\in[0,1]$, a sufficient condition for exclusion on the entire interval is
+\begin{equation}
+ \max_{F\in\{a,b\}}
+ \{\bar Q(F)-\omega P_a(F)-(1-\omega)P_b(F)\}<0.
+ \label{eq:graphexclusion}
+\end{equation}
+The endpoint test is valid because the tested expression is affine. Intervals for values and surrender moments, together with a checked arithmetic allowance, replace the exact quantities in the computation. An inaccurate proposed weight can make the graph larger, but cannot invalidate an exclusion whose two endpoint majorants are verified negative.
+
+\begin{proposition}[Whole-interval response graph]
+\label{prop:intervalgraph}
+Keep every admissible action not excluded by \eqref{eq:graphexclusion}. This graph contains a realization of every exact response payoff for every common fee in $[a,b]$. Maximizing a purchaser's reward on the graph gives a valid upper bound, even though the graph may also combine actions that require different fees to be privately optimal. In particular, with $0\leq\rho_F\leq1$ and nondecreasing capacity cost, maximize the dynamic reward $B+bA-(1-\rho_F)aH$ on this graph and subtract $G_0+C(a/\zeta)+D(m)$. The result is an upper purchaser bound for the whole cell, with binding or slack participation.
+\end{proposition}
+
+This additional graph uses transition information; it is not an improvement of the oracle-only sharpness claim under unchanged information. It also uses exact response optimality. A positive-$\eta$ certificate continues to use the global loss or value-query restrictions, not this graph with a local tolerance added. The deposited continuum certificate takes the smaller of the independently checked value-message bound and the whole-interval graph bound, and records which one determines each cell.

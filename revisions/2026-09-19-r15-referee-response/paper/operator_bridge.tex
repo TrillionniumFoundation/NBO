@@ -1,0 +1,76 @@
+\subsection{From operator approximation to directed economic messages}
+\label{sec:operatorbridge}
+The operator architecture is useful only when its approximation errors can be carried through to the economic comparison. Let $T_{n,t}$ be a Bellman operator at a reward query $t$, with nonnegative live-state kernel of maximal row mass $\beta_n\leq1$. A neural operator supplies trial values $v_{n,t}$ and a feasible policy. For the value proposal, suppose an independent calculation bounds
+\[
+ -e^-_{n,t}\leq T_{n,t}v_{n+1,t}-v_{n,t}\leq e^+_{n,t}
+\]
+uniformly over the actual state and action domain. A lower policy uses its own selected-policy operator and its own residual bound. Training loss alone is not such a uniform bound.
+
+\begin{proposition}[Operator-to-response certificate]
+\label{prop:operatorresponse}
+Let the terminal error be bounded by $E_{N,t}$. Recursively define
+\[
+ E^+_{n,t}=e^+_{n,t}+\beta_nE^+_{n+1,t},\qquad
+ E^-_{n,t}=e^-_{n,t}+\beta_nE^-_{n+1,t}.
+\]
+Bellman monotonicity yields $W_{n,t}\leq v_{n,t}+E^+_{n,t}$ and the analogous lower bound. A feasible selected-policy lower bound remains valid even when its neural proposal is suboptimal. Applying these value intervals at the center and one designed query gives \eqref{eq:directedinterval}, with error charge
+$\lambda(E^+_{0,w/\lambda}+E^-_{0,0})$.
+Thus one can certify an adverse-response or procurement conclusion without requiring that the network itself select the economically relevant tie-breaking rule.
+\end{proposition}
+
+The neural approximation and recursive-utility operator results in the preserved compendium remain part of the framework. The proposition specifies their interface to the present economic problem: an approximation theorem supplies an operator error under its own assumptions; a checked feasible policy supplies a lower witness; the directed query supplies the response direction. Neither universal approximation nor a small average residual supplies the displayed uniform errors without the necessary regularity and verification step. The history of the network architecture is not used as a substitute for this step.
+
+\subsection{Repeated proposals and end-to-end costs}
+\label{sec:newcomputations}
+The repeated experiment varies the number of common actions and the operating horizon while keeping the state variables and canonical transition rows explicit. The four families have 45, 175, or 1,565 common later-date actions and four or eight operating intervals; every family retains the three recorded state-dependent proposal actions. Four intervals mean a half-year horizon with the original $1/8$ calendar, not a rescaling of the original transition law. The first-date piecewise-affine action representation is retained. All families have 1,617 states and two state variables; they are not a state-dimension experiment.
+
+Each regime uses twelve teacher parameter points and nine evaluation points spanning interpolation, a wider law interval, and a joint stress point. Neural fits use three recorded seeds. Controls are a nearest-parameter anchor, a quadratic classifier, the best evaluated policy among all twelve teacher policies, and the exact dynamic program. The last control matters: when an exact upper program has already produced an optimal policy, its policy is available at no additional training cost. Omitting it would create a fictitious neural advantage.
+
+\input{revisions/2026-09-19-r15-referee-response/paper/table_repeated_proposals}
+
+The accounts separate target loading and restriction, teacher solves, fitting, proposal construction, feasible-policy evaluation, upper calculation, and independent selected-policy verification. Training is amortized over the stated nine-query workload, not over an unspecified future deployment. The target-construction account records that these are restrictions of stored canonical rows; reconstructing a new continuous model or extending its state grid is not a free operation. Memory records are process peaks and are not attributed exclusively to a network.
+
+The three-seed experiment contains isolated improvements over all cached-policy controls as well as substantial neural failures. The exact dynamic-program control remains decisive at these sizes. These outcomes distinguish the approximation problem from the certification problem without declaring either universal neural success or universal neural failure. A demonstrated state-dimension or end-to-end neural computational advantage would require a further resource-matched experiment; it is not inferred from the validity of the certificates reported here.
+
+\subsection{Decision-directed rather than independent error charges}
+\label{sec:correlatederrors}
+Uniform value errors remain useful, but the economically relevant error is often a signed combination of queries. Suppose the rational upper program has constraints $Ax\leq b$ and a fixed box, and a model-to-target error changes the right side to $b+D\xi$, where $\xi$ belongs to a specified uncertainty set $\Xi$. For a checked multiplier $\mu\geq0$, let $U_0$ include its exact box-residual charge.
+
+\begin{proposition}[A decision-directed error budget]
+\label{prop:directederror}
+Every feasible point in every perturbed program satisfies
+\begin{equation}
+ c^\top x\leq U_0+h_\Xi(D^\top\mu).
+ \label{eq:directederror}
+\end{equation}
+For a difference of two certified bounds, the same conclusion applies to the combined signed coefficient of a shared error vector. Independent coordinate error bounds give the corresponding weighted absolute-sum allowance. A common additive error cancels only when its combined coefficient is zero.
+\end{proposition}
+
+The proposition is a means of accounting for a proved dependence structure, not permission to assume favorable correlation between constructor errors. The exact rational fixture with coefficients $(3,-2,-1)$ checks that a shared scalar shift cancels whereas independent errors of size $10^{-3}$ require allowance $0.006$. The finite-query dual identifies which approximation directions need to be controlled; a constructor or continuous-model argument must still establish the set $\Xi$.
+
+\subsection{A direct continuous-model verification route}
+\label{sec:continuousbarriers}
+A continuous-state claim can also be checked without transferring a coarse interpolation error. Consider a stopped controlled diffusion with generator $\mathcal L^a$, discount rate $\rho\geq0$, operating payoff $f^a$, and the specified terminal, elective-stop, and forced-discharge payoffs. Fixed first-interval controls can be included as public state parameters. Let a bounded $C^{1,2}$ neural or other candidate $u$ satisfy the terminal, boundary, and available-obstacle upper conditions up to $B^+\geq0$, and suppose
+\[
+ \partial_tu+\sup_a\{\mathcal L^au+f^a-\rho u\}\leq\epsilon^+(t)
+\]
+throughout the actual continuous state--action domain. For an admissible operating and stopping policy, let a bounded $C^{1,2}$ candidate $v$ satisfy the payoff condition at its stopping locations up to $B^-\geq0$ and
+\[
+ \partial_tv+\mathcal L^{a}v+f^{a}-\rho v\geq-\epsilon^-(t).
+\]
+The errors are nonnegative, integrable, and verified uniformly; localized versions require the corresponding integrability and boundary argument.
+
+\begin{proposition}[Continuous Bellman barriers]
+\label{prop:continuousbarrier}
+Under these conditions and the stopped diffusion's dynamic-programming or verification hypotheses,
+\begin{align}
+ W(t,x)&\leq u(t,x)+B^++\int_t^T e^{-\rho(s-t)}\epsilon^+(s)\,ds,\label{eq:continuousupper}\\
+ W(t,x)&\geq J(a,\tau;t,x)
+ \geq v(t,x)-B^--\int_t^T e^{-\rho(s-t)}\epsilon^-(s)\,ds.
+ \label{eq:continuouslower}
+\end{align}
+These bounds can be used as the value intervals in Theorems~\ref{thm:oracle} and~\ref{thm:directed}. If a continuous interval $[L^c,U^c]$ and a target interval $[L^h,U^h]$ are both available at a query, their discrepancy is bounded by
+$\max\{U^c-L^h,U^h-L^c\}$.
+\end{proposition}
+
+This is a constructive certificate specification: it identifies the action supremum, derivatives, obstacles, and stopping conditions that must be bounded, and proves how their residuals reach the purchaser's comparison. It is not a claim that a sampled PDE residual verifies those conditions. The deposited settlement results do not yet include numerical continuous barriers satisfying a decision-separating budget. The larger no-surrender private-value gain has a less restrictive direct difference budget than the smallest term margin, but this does not transfer an exact zero-surrender event. In particular, a diffusion can assign positive probability to states outside the finite walk's reachable graph. A zero-stop graph certificate and a small weak value error are distinct pieces of information.
