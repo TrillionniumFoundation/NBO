@@ -7,8 +7,8 @@ permissions:
   contents: read
 jobs:
   archive:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,9 +29,19 @@ jobs:
                   manifest[name]=hashlib.sha256(data).hexdigest()
               z.writestr('SOURCE_EXPORT_MANIFEST.json',json.dumps({'source_commit':subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),'review_parent':'7f58e7c80e78b0220a7f4c84655c5012f10bc43b','files':manifest},indent=2))
           print('Archived',len(manifest),'tracked text files. No numerical arrays changed.')
+          with zipfile.ZipFile('/tmp/nbo-r15-immutable-inputs.zip','w',zipfile.ZIP_STORED) as z:
+              for name in paths:
+                  p=pathlib.Path(name)
+                  if not name or not p.is_file(): continue
+                  if name.startswith('replication/r13/canonical/') or name=='replication/r14/output/continuum_witness.npz': z.write(p,name)
           PY
       - uses: actions/upload-artifact@v4
         with:
           name: nbo-r15-reviewed-sources
           path: /tmp/nbo-r15-reviewed-sources.zip
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r15-immutable-inputs
+          path: /tmp/nbo-r15-immutable-inputs.zip
           retention-days: 14
