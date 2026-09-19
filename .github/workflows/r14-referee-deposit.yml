@@ -1,0 +1,137 @@
+name: R14 manuscript and independently verified referee deposit
+on:
+  push:
+    branches: [revision/econometrica-r14-development-2026-09-19]
+    paths: [.github/workflows/r14-referee-deposit.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: r14-referee-deposit
+  cancel-in-progress: false
+jobs:
+  reproduce-and-publish:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      REL: revisions/2026-09-19-r14-referee-response
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install numpy==2.3.5 scipy==1.17.0 PyMuPDF==1.26.7
+      - name: Materialize checksummed final readable manuscript and source
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = revision/econometrica-r14-development-2026-09-19
+          python - <<'PY'
+          import base64,hashlib,io,lzma,tarfile
+          from pathlib import Path
+          pieces=sorted(Path('replication/r14/paper_payload').glob('part*.b64'))
+          if len(pieces)!=11: raise ValueError('incomplete manuscript source transfer')
+          data=base64.b64decode(''.join(p.read_text().strip() for p in pieces),validate=True)
+          if hashlib.sha256(data).hexdigest()!='c71f5a6562b6636bd22503a8d164d6f3278725b5aa2423a047abf72a568c5019': raise ValueError('manuscript source transfer hash mismatch')
+          roots={'ECTA_R14.tex','SUPP_R14.tex','RESPONSE_R14.tex','COMPENDIUM_R14.tex','README.md','REVISION_INDEX.md'}
+          with tarfile.open(fileobj=io.BytesIO(lzma.decompress(data))) as archive:
+              for entry in archive.getmembers():
+                  path=Path(entry.name)
+                  allowed=entry.name in roots or entry.name.startswith('replication/r14/') or entry.name.startswith('revisions/2026-09-19-r14-referee-response/')
+                  if not entry.isfile() or path.is_absolute() or '..' in path.parts or not allowed: raise ValueError('unsafe manuscript source path')
+                  path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(archive.extractfile(entry).read())
+          PY
+      - name: Preserve complete historical manuscripts byte for byte
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh run download 35321946562 --name nbo-r12-referee-package --dir /tmp/r14-historical-package
+          python - <<'PY'
+          import hashlib,json,shutil
+          from pathlib import Path
+          dest=Path('revisions/2026-09-19-r14-referee-response/historical')
+          catalog=json.loads((dest/'provenance.json').read_text())
+          for name,meta in catalog['files'].items():
+              if name.endswith('.pdf'):
+                  matches=[p for p in Path('/tmp/r14-historical-package').rglob(name) if hashlib.sha256(p.read_bytes()).hexdigest()==meta['sha256']]
+                  if not matches: raise ValueError('historical PDF absent or changed: '+name)
+                  shutil.copyfile(matches[0],dest/name)
+              if hashlib.sha256((dest/name).read_bytes()).hexdigest()!=meta['sha256']: raise ValueError('historical preservation mismatch: '+name)
+          PY
+          python -m py_compile replication/r14/*.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add README.md REVISION_INDEX.md ECTA_R14.tex SUPP_R14.tex RESPONSE_R14.tex COMPENDIUM_R14.tex replication/r14/*.py replication/r14/blueprint.json "$REL/README.md" "$REL/paper" "$REL/historical"
+          git add -f "$REL/historical/ECTA_R12.pdf" "$REL/historical/SUPP_R12.pdf" "$REL/historical/COMPENDIUM_R12.pdf"
+          git commit -m 'revision(r14): deposit Econometrica manuscript, full proofs, response and preserved historical sources [skip ci]'
+          git fetch origin "$GITHUB_REF_NAME"
+          git rebase "origin/$GITHUB_REF_NAME"
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
+          mkdir -p "$REL/logs"
+          git rev-parse HEAD > "$REL/logs/scientific-source-sha.txt"
+          python -m pip freeze > "$REL/logs/python-environment.txt"
+          lscpu > "$REL/logs/hardware.txt"
+      - name: Install manuscript compilation dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq latexmk texlive-latex-extra texlive-fonts-recommended
+      - name: Reconstruct all continuous-fee and economic evidence from fixed primitives
+        run: |
+          set -euo pipefail
+          python -u replication/r14/replay.py 2>&1 | tee "$REL/logs/scientific-replay.log"
+          python -u replication/r14/economic_extensions.py 2>&1 | tee "$REL/logs/economic-extensions.log"
+          python replication/r14/finalize_accounting.py 2>&1 | tee "$REL/logs/accounting.log"
+      - name: Independent read-only scientific verification and negative fixtures
+        run: |
+          set -euo pipefail
+          find replication/r13/canonical replication/r13/output replication/r13/extensions replication/r14/output -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/r14-before.sha256
+          python -u replication/r14/verify.py --receipt /tmp/r14-independent-validation.json 2>&1 | tee "$REL/logs/independent-verification.log"
+          python -O replication/r14/verify.py --fixtures-only 2>&1 | tee "$REL/logs/optimized-negative-tests.log"
+          sha256sum -c /tmp/r14-before.sha256 > "$REL/logs/read-only-hash-check.log"
+      - name: Build current papers and seal sources, receipts and historical manuscripts
+        run: |
+          set -euo pipefail
+          python -u replication/r14/publish.py --receipt /tmp/r14-independent-validation.json --source-commit "$(cat "$REL/logs/scientific-source-sha.txt")" 2>&1 | tee /tmp/r14-publication.log
+          python -u replication/r14/review.py --compile-only --receipt /tmp/r14-release-review.json 2>&1 | tee /tmp/r14-release-review.log
+      - name: Deposit verified scientific objects and compiled revision manuscripts
+        run: |
+          set -euo pipefail
+          git add README.md REVISION_INDEX.md ECTA_R14.tex SUPP_R14.tex RESPONSE_R14.tex COMPENDIUM_R14.tex replication/r14/*.py replication/r14/blueprint.json "$REL/README.md" "$REL/paper" "$REL/historical" "$REL/release_manifest.json"
+          git add -f replication/r14/output/continuum_certificate.json replication/r14/output/continuum_witness.npz replication/r14/output/economic_extensions.json replication/r14/output/mechanism_values.npz
+          git add -f "$REL/ECTA_R14.pdf" "$REL/SUPP_R14.pdf" "$REL/RESPONSE_R14.pdf" "$REL/COMPENDIUM_R14.pdf" "$REL/logs"
+          git commit -m 'revision(r14): seal independently verified continuous contracts and complete compiled referee revision [skip ci]'
+          git fetch origin "$GITHUB_REF_NAME"
+          git rebase "origin/$GITHUB_REF_NAME"
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
+          git rev-parse HEAD > /tmp/r14-final-deposit-sha.txt
+          python replication/r14/review.py --integrity-only --receipt /tmp/r14-post-commit-review.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r14-referee-package
+          retention-days: 30
+          path: |
+            revisions/2026-09-19-r14-referee-response/README.md
+            revisions/2026-09-19-r14-referee-response/release_manifest.json
+            revisions/2026-09-19-r14-referee-response/paper
+            revisions/2026-09-19-r14-referee-response/historical
+            revisions/2026-09-19-r14-referee-response/logs
+            revisions/2026-09-19-r14-referee-response/ECTA_R14.pdf
+            revisions/2026-09-19-r14-referee-response/SUPP_R14.pdf
+            revisions/2026-09-19-r14-referee-response/RESPONSE_R14.pdf
+            revisions/2026-09-19-r14-referee-response/COMPENDIUM_R14.pdf
+            replication/r14/*.py
+            replication/r14/blueprint.json
+            /tmp/r14-final-deposit-sha.txt
+            /tmp/r14-release-review.json
+            /tmp/r14-release-review.log
+            /tmp/r14-publication.log
+            /tmp/r14-post-commit-review.json
