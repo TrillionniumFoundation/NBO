@@ -1,7 +1,7 @@
 """Idempotent release corrections identified during independent review.
 
 Restrict receipts to their actual inputs, require current mathematical fixtures,
-and include the general institutional query-complexity result in the publication.
+and preserve source-sized pages in the complete publication.
 """
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
@@ -23,7 +23,7 @@ def main():
     replace(p,"('inherited_validation.json','all_passed')):","('inherited_validation.json','all_passed'),('auxiliary_validation.json','passed'),('complexity_validation.json','passed')):")
     p=ROOT/'replication/r19/polish.py'
     old="    print('Current-source notation and signed-error scope reconciled; exact auxiliary examples passed.')"
-    new="    for readme in (ROOT/'README.md',ROOT/'revisions/2026-09-20-r19/README.md'):\n      s=readme.read_text().replace('python replication/r19/assemble.py\\npython replication/r19/publish.py','python replication/r19/assemble.py\\npython replication/r19/polish.py\\npython replication/r19/publish.py')\n      readme.write_text(s)\n    import runpy\n    runpy.run_path(str(ROOT/'replication/r19/complexity_extension.py'),run_name='__main__')\n    print('Current-source notation and signed-error scope reconciled; exact auxiliary examples passed.')"
+    new="    for readme in (ROOT/'README.md',ROOT/'revisions/2026-09-20-r19/README.md'):\n      s=readme.read_text().replace('python replication/r19/assemble.py\\npython replication/r19/publish.py','python replication/r19/assemble.py\\npython replication/r19/polish.py\\npython replication/r19/publish.py')\n      readme.write_text(s)\n    import runpy\n    runpy.run_path(str(ROOT/'replication/r19/complexity_extension.py'),run_name='__main__')\n    runpy.run_path(str(ROOT/'replication/r19/compendium_layout.py'),run_name='__main__')\n    print('Current-source notation and signed-error scope reconciled; exact auxiliary examples passed.')"
     replace(p,old,new)
-    print('Receipts bind actual checked inputs; publication includes the general information theorem and its checks.')
+    print('Receipts bind actual checked inputs; current information theorems and source-sized compendium pages are included.')
 if __name__=='__main__':main()
