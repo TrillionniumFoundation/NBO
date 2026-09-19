@@ -1,0 +1,37 @@
+name: R15 reviewed-source audit
+on:
+  push:
+    branches: ['revision/econometrica-r15-development-2026-09-19']
+    paths: ['.github/workflows/r15-source-audit.yml']
+permissions:
+  contents: read
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Export tracked text without altering scientific inputs
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib,subprocess,zipfile
+          paths=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          suffixes={'.tex','.cls','.cfg','.bst','.bib','.py','.md','.yml','.yaml','.json','.sh'}
+          manifest={}
+          with zipfile.ZipFile('/tmp/nbo-r15-reviewed-sources.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for name in paths:
+                  p=pathlib.Path(name)
+                  if not name or not p.is_file() or p.suffix not in suffixes: continue
+                  if p.stat().st_size>16000000: continue
+                  data=p.read_bytes(); z.writestr(name,data)
+                  manifest[name]=hashlib.sha256(data).hexdigest()
+              z.writestr('SOURCE_EXPORT_MANIFEST.json',json.dumps({'source_commit':subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),'review_parent':'7f58e7c80e78b0220a7f4c84655c5012f10bc43b','files':manifest},indent=2))
+          print('Archived',len(manifest),'tracked text files. No numerical arrays changed.')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r15-reviewed-sources
+          path: /tmp/nbo-r15-reviewed-sources.zip
+          retention-days: 14
