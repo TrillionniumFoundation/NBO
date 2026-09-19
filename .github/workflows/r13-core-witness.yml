@@ -1,0 +1,82 @@
+name: R13 core witness deposit
+on:
+  push:
+    branches: [revision/econometrica-r13-certified-response-2026-09-19]
+    paths: [.github/workflows/r13-core-witness.yml, replication/r13/bootstrap_core.py]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: r13-core-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  reproduce:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 40
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned numerical dependencies
+        run: python -m pip install numpy==2.3.5 scipy==1.17.0
+      - name: Materialize checked readable source
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = revision/econometrica-r13-certified-response-2026-09-19
+          python replication/r13/bootstrap_core.py
+          python -m py_compile replication/r13/*.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add replication/r13/*.py
+          if ! git diff --cached --quiet; then
+            git commit -m 'revision(r13): materialize independently audited scientific source [skip ci]'
+            git fetch origin "$GITHUB_REF_NAME"
+            git rebase "origin/$GITHUB_REF_NAME"
+            git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
+          fi
+          echo "R13_SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Freeze canonical target and generate witnesses
+        run: |
+          set -euo pipefail
+          mkdir -p revisions/2026-09-19-r13-certified-response/logs
+          if test -f replication/r13/output/expected.json; then
+            echo 'Retaining sealed committed target and witnesses.'
+          elif test -f replication/r13/canonical/manifest.json; then
+            python -u replication/r13/science.py 2>&1 | tee revisions/2026-09-19-r13-certified-response/logs/core-generation.log
+          else
+            python -u replication/r13/science.py --build-target 2>&1 | tee revisions/2026-09-19-r13-certified-response/logs/core-generation.log
+          fi
+      - name: Independently verify all core witnesses and negative fixtures
+        run: |
+          set -euo pipefail
+          python -u replication/r13/verify.py 2>&1 | tee revisions/2026-09-19-r13-certified-response/logs/core-verification.log
+      - name: Deposit executed core without changing historical material
+        run: |
+          set -euo pipefail
+          git add -f replication/r13/canonical replication/r13/output
+          git add revisions/2026-09-19-r13-certified-response/logs
+          if ! git diff --cached --quiet; then
+            git commit -m 'revision(r13): deposit canonical target, witnesses and passed independent validation [skip ci]'
+            git fetch origin "$GITHUB_REF_NAME"
+            git rebase "origin/$GITHUB_REF_NAME"
+            git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
+          fi
+          git rev-parse HEAD > revisions/2026-09-19-r13-certified-response/logs/core-deposit-sha.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r13-executed-core
+          retention-days: 30
+          path: |
+            replication/r13/output
+            replication/r13/canonical/manifest.json
+            replication/r13/canonical/metadata.json
+            revisions/2026-09-19-r13-certified-response/logs
