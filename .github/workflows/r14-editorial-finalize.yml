@@ -64,7 +64,8 @@ jobs:
       - name: Recompile, reseal and independently rebuild final manuscripts
         run: |
           set -euo pipefail
-          python -u replication/r14/publish.py --receipt "$REL/logs/independent-validation.json" --source-commit "$(cat /tmp/r14-editorial-source-sha.txt)" 2>&1 | tee /tmp/r14-final-publication.log
+          cp "$REL/logs/independent-validation.json" /tmp/r14-preserved-independent-validation.json
+          python -u replication/r14/publish.py --receipt /tmp/r14-preserved-independent-validation.json --source-commit "$(cat /tmp/r14-editorial-source-sha.txt)" 2>&1 | tee /tmp/r14-final-publication.log
           python -u replication/r14/review.py --compile-only --receipt /tmp/r14-final-review.json 2>&1 | tee /tmp/r14-final-review.log
           git add "$REL/paper" "$REL/release_manifest.json"
           git add -f "$REL/ECTA_R14.pdf" "$REL/SUPP_R14.pdf" "$REL/RESPONSE_R14.pdf" "$REL/COMPENDIUM_R14.pdf" "$REL/logs/manuscripts.json"
