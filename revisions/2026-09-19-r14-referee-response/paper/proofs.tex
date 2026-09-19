@@ -1,0 +1,203 @@
+\section{Finite Value Queries and Joint Response Information}
+The section numbering continues the historical supplement: S.1--S.15 are retained in the accompanying R12 supplement and complete compendium. The present sections prove the current manuscript's additional results. Their numerical target is the R13 canonical settlement array system identified in the replication appendix, not a reassignment of the identity of any earlier computation. References prefixed ``paper'' point to the current main manuscript.
+
+\subsection{Proof of the finite-query characterization}
+\begin{proof}[Proof of Theorem~\ref{paper-thm:oracle}]
+Let an affine-response economy have payoffs $J(p;t)=\alpha(p)+t\cdot z(p)$ with $z(p)\in K$. For an attained $\eta$-response $p$, put $v=W(0)$, $a=\alpha(p)$, and $z=z(p)$. The inequalities $v-\eta\leq a\leq v$ follow from the definition of response tolerance. Since every fixed policy is feasible at every queried perturbation, $a+t_j\cdot z\leq W(t_j)\leq U_j$.
+
+At each query $i$, choose a maximizing response $p_i$ in the stated economy or its closure, and put $(\beta_i,z_i)=(\alpha(p_i),z(p_i))$. Its center payoff cannot exceed $v$, and none of its queried payoffs can exceed the respective $U_j$. At its own query it attains $W(t_i)\geq L_i$. At query zero choose $\beta_0=v$. These choices establish every lifted inequality. The intercept box does not truncate them: from $\beta_i+t_i\cdot z_i\geq L_i$ and $t_i\cdot z_i\leq h_K(t_i)$, it follows that $\beta_i\geq L_i-h_K(t_i)$.
+
+Conversely, take any feasible lifted point. Form a finite economy whose response menu consists of the candidate affine payoff $a+t\cdot z$ and the query-supporting payoffs $\beta_i+t\cdot z_i$, for $i=0,\ldots,M$. All these feature vectors lie in $K$. At zero their maximum is $v$, because all intercepts are at most $v$ and $\beta_0=v$. The candidate's intercept is at least $v-\eta$, so it is an $\eta$-response in this constructed economy. At query $j$, every menu payoff is at most $U_j$, while its designated support payoff is at least $L_j$. The constructed value therefore satisfies every original interval observation.
+
+The construction proves attainability of each feasible lifted feature vector across compatible finite economies. It establishes the asserted sharpness, not a claim that a fixed dynamic transition system can implement every affine menu. If an application supplies additional linear restrictions on feature vectors, they must be imposed on the candidate \emph{and} on each supporting response. Otherwise the sufficiency construction would use features outside the asserted economic class.
+\end{proof}
+
+For a genuinely open policy set, necessity can be interpreted on a specified compact closure of achievable payoff--feature pairs. If no such closure or attainment argument is available, approximate query maximizers can be used after an additional lower-query slack, followed by a limit when justified. The main theorem states its attainment or closure assumption explicitly. In the settlement application the first financial operator is piecewise affine on a compact closure, later-date menus are finite, and limits of its payoff--feature pairs are available. A closure support function is valid as an outer bound for the positive mandate, but is not an executable positive policy.
+
+\subsection{Secants, a sharp example, and rational duals}
+For duration, a fixed $\eta$-response obeys
+\[
+ W(d+h)\geq J(p;d+h)=J(p;d)+hA(p)\geq W(d)-\eta+hA(p).
+\]
+The analogous inequality at $d-h$ gives the lower bound. Substitution of the adverse interval endpoints and intersection with $[0,1]$ gives equation~\eqref{paper-eq:secants}. Randomization changes none of these affine identities. Neither the proof nor the implemented bound takes a limit as $h$ tends to zero.
+
+The example $W(t)=\max\{t_1,t_2\}$ illustrates the importance of a joint query. At zero and the four coordinate points $\pm he_1,\pm he_2$, the candidate affine response $t_1+t_2$ never exceeds the observed values. Adding it to the two original responses therefore yields a compatible economy with feature vector $(1,1)$ at zero. At $(h,h)$, however, that candidate pays $2h$ and the original value is $h$. The additional query excludes it. In the exact oracle, a candidate optimal at zero has intercept zero, so this diagonal query gives $z_1+z_2\leq1$. The feasible vector $(1,0)$ attains that bound. The deposited rational examples extend this construction to interval errors and response tolerances; the verifier checks both the compatible affine menus and the primal and dual inequalities.
+
+For completeness, let $x$ satisfy $Ax\leq b$ and $\ell\leq x\leq u$, and take any $\mu\geq0$. Then
+\[
+ c^\top x=\mu^\top Ax+(c-A^\top\mu)^\top x
+ \leq\mu^\top b+\sum_j\max\{r_j\ell_j,r_ju_j\},\quad r=c-A^\top\mu.
+\]
+This proves equation~\eqref{paper-eq:dual}. The residual term cannot be dropped merely because a floating solver reports approximate stationarity. In the deposited certificate all input coefficients, proposed multipliers, products, and sums in this inequality are interpreted as exact rational numbers. The displayed floating upper endpoint is rounded outward from the resulting fraction. Zero-multiplier rows can be removed exactly without changing the bound or the residual; this is the basis of the compact continuum witness. Nonzero rows are never removed by a numerical threshold.
+
+\subsection{Fixed-economy response supports}
+The lifted query set does not use all of the dynamic economy's restrictions. When an all-state Bellman value is available, we also compute support bounds on an enlarged equality graph. Let $V_n(x)$ be the exact value, $Q_n(x,a)$ its exact action value, and suppose computed values and action values have audited errors. An action used with positive conditional probability by an exact optimal policy at a reachable state must satisfy $Q_n(x,a)=V_n(x)$. Otherwise replacing it by an optimal continuation would strictly improve the initial policy on a positive-probability event.
+
+The implementation retains every feasible action whose computed action value is within eight audited Bellman-error bounds of the computed value. Under the stated arithmetic envelope this contains every exact optimal action. Retaining extra actions cannot invalidate an upper support bound. For a direction $w$ in the space of moments, run a separate dynamic program maximizing $w\cdot z$ over the retained actions. The corresponding program for $-w$ supplies a lower bound. The reward is the desired moment increment, not the agent's utility reward; surrender contributes to $H$ and operating intervals contribute to $A$ and $Q$. Discounted live-state kernels propagate the future moments, with no additional fee for forced discharge.
+
+The first-date financial rule is affine within each stored segment. An optimal interior financial point lies in a segment whose endpoint values support its optimum; feature values for a fixed continuation are affine on that segment as well. Endpoint feature supports consequently enclose every interior exact response. On the positive open class the graph is an outer graph on the closure. Exact-response lower statements additionally establish that a positive feasible maximizer exists; otherwise only near-optimal positive witnesses are admitted. This procedure encloses all exact history-dependent and randomized optimal responses, not merely the selected deterministic optimizer.
+
+It does not enclose all $\eta$-responses by default. An initially $\eta$-optimal policy can tolerate a much larger conditional Bellman loss at a rarely visited state. Expanding every local mask by a single unqualified $\eta$ would not prove a global statement. The paper therefore uses the finite-query theorem or the continuous-cell incentive inequalities for the explicit near-optimal response results, and labels the exact equality-graph results separately.
+
+\section{Procurement, Enforcement Capacity, and Transfer Incidence}
+\begin{proof}[Proof of Theorem~\ref{paper-thm:procurement}]
+A feasible $\eta$-response has private value at least $W_j-\eta\geq L_j-\eta$. With grant $\overline q_j$, its participation payoff is at least $G_0$ after its capacity expenditure. Thus $\overline q_j$ is a common executable grant for all admitted responses. Every participating response to an arbitrary offer has private value at most $W_j\leq U_j$ and must consequently be paid at least $\underline q_j$. Both conclusions retain the positive part and apply when participation is slack.
+
+By the response-set inclusion, every admitted candidate response supplies operating output worth at least $\inf_{z\in\mathcal Z_j}s_j(z)$, and every rival response supplies at most its corresponding supremum. Subtract the appropriate grant and remaining costs to obtain the lower and upper purchaser bounds. The upper calculation can give a rival two advantages which no single response attains together; that only makes it more conservative. Comparing the candidate lower bound against all rival upper bounds and zero proves strict selection. Replacing strict separation by an upper difference of $\varepsilon$ proves the regret statement. The argument does not require a particular optimal-policy selection or a differentiable private value.
+\end{proof}
+
+When acceptance at indifference is not the institution's convention, add a positive premium $\xi$ to the candidate grant. Its guaranteed surplus falls by exactly $\xi$. Any $\xi$ smaller than a strict margin preserves the comparison. A closure witness with no attained exact response cannot be made exact merely by increasing the transfer, because a numeraire grant does not change operating incentives. That case requires an explicit feasible $\eta$-response or an attainment argument.
+
+\begin{proof}[Proof of Proposition~\ref{paper-prop:capacity}]
+Fix $F$, the term, and the mandate. Under the assumptions, private value and the response set are independent of $E$ once $F\leq\zeta E$. Write $a=G_0-W$ and $c=C(E)$. Total participation and capacity expenditure is
+\[
+ \Phi(c)=[a+\alpha_C c]_++(1-\alpha_C)c.
+\]
+If $a+\alpha_Cc<0$, its slope where defined is $1-\alpha_C\geq0$; if $a+\alpha_Cc>0$, the slope is one. Continuity at the kink proves that $\Phi$ is nondecreasing on its entire domain, including $\alpha_C=0$ and $\alpha_C=1$. Reducing $E$ to $F/\zeta$ therefore weakly increases purchaser payoff for every operating response. Under binding participation, $\Phi(c)=a+c$, so changing $\alpha_C$ leaves total expenditure unchanged. A change in fee recipient instead changes the purchaser's operating payoff by $\Delta\rho_F\,FH$ and need not preserve a response ranking.
+\end{proof}
+
+The charge ceiling in the application is $\bar F=1$. Under an efficiency intervention the feasible charge interval is held fixed and the efficient capacity is $F/\zeta$; for $\zeta<1$ it may exceed one. A fixed capacity ceiling would create a different feasible charge interval and is not silently imposed in the reported counterfactuals. Similarly, moving a capacity payment into the wealth state invalidates the hypothesis that the operating problem is independent of its incidence. That experiment must change the initial state or transition and then repeat the value calculations.
+
+If service price and compulsory-term cost vary over a rectangle while operating rewards and response sets are unchanged, every displayed purchaser lower or upper bound is affine in those prices apart from fixed, already evaluated participation terms. Pairwise differences are affine. The minimum of each difference over the rectangle occurs at a vertex, so checking every candidate--rival comparison at all vertices establishes the full price rectangle. This argument underlies the retained original-menu regional certificate. It does not apply to a primitive which changes the policy response itself unless new response bounds cover that change.
+
+\section{The Continuous-Fee Certificate}
+\subsection{Incentive inequalities across fees}
+Fix a term and mandate. Write a fixed policy's central-benefit payoff as $B-FH$. Every shifted query satisfies
+$B+\delta A-F_iH\leq W(d+\delta,F_i)\leq U_i$, proving the query rows used by the upper program. Let $p_i$ be an exact response at a center-benefit query fee $F_i$, with moment $H_i$. Its payoff at $F$ is $W(d,F_i)-(F-F_i)H_i$. This is a lower bound on $W(d,F)$, and replacing $W(d,F_i)$ by $L_i$ and $H_i$ by the adverse endpoint proves equation~\eqref{paper-eq:feesupport}. An $\eta$-response at $F$ has payoff at least this quantity minus $\eta$.
+
+For the moment restriction, let $p$ be an $\eta$-response at $F$. Optimality at $F_i$ and near-optimality at $F$ give
+\begin{align*}
+ J(p;F_i)&\leq J(p_i;F_i),\\
+ J(p;F)&\geq J(p_i;F)-\eta.
+\end{align*}
+Subtracting, and using the affine fee identities, yields
+$(F-F_i)(H(p)-H_i)\leq\eta$. If $F_i<a\leq F$, this gives
+$H(p)\leq\overline H_i+\eta/(a-F_i)$; if $F\leq b<F_i$, it gives
+$H(p)\geq\underline H_i-\eta/(F_i-b)$. For $\eta=0$, the weak endpoint inequalities follow by taking the exact-response inequality at an endpoint and the graph's bounds there. At positive $\eta$, dividing by a zero endpoint distance would be invalid, which is why the general formula uses strictly exterior queries.
+
+All these comparisons involve one fixed policy's moments. They do not replace the common fee by a separately chosen fee at each state, and they do not use the coordinate-wise extremes of different responses as if jointly attained. For an open initial mandate the closure policy class has the same continuous affine payoff limit; its supporting planes remain valid outer information. An executable exact candidate is checked separately for positive attainment.
+
+\subsection{Product, cost, and participation relaxations}
+Let $F\in[a,b]$ and $H\in[\ell,h]$. The nonnegative products
+$(F-a)(H-\ell)$ and $(b-F)(h-H)$ yield the two lower inequalities in equation~\eqref{paper-eq:product}. The products $(b-F)(H-\ell)$ and $(F-a)(h-H)$ yield its two upper inequalities. Every true product $T=FH$ satisfies them, even though a relaxed point need not. The box $a\ell\leq T\leq bh$ is also valid because the variables are nonnegative. For quadratic capacity cost, the identity
+\[
+ cF^2-c(2vF-v^2)=c(F-v)^2\geq0
+\]
+proves the cell-wide tangent bound. Lowering capacity expenditure in the participation constraint can only increase the optimistic purchaser objective.
+
+The implementation uses variables $(B,A,H,F,T,q)$ and the baseline objective $A-q-D(m)$. It imposes the queried payoff upper inequalities, the central response lower planes with $B-T$, the four product inequalities, and
+\[
+ q\geq G_0-B+T+c(2vF-v^2),\qquad q\geq0.
+\]
+The fee-receiving generalization adds $\rho_F T$ to the objective. The deposited baseline continuum calculation has $\rho_F=0$; fee-recipient sensitivity on the finite refined menu is separately executed and is not called a continuous-fee sensitivity result.
+
+Every true response has $0\leq A,H\leq1$. The all-horizon norm audit gives a payoff envelope below 200, so the box $-200\leq B\leq200$ covers every policy's central-benefit, zero-fee payoff. The grant box deserves a separate argument. An arbitrarily large grant is feasible but never improves purchaser surplus. Every participating offer is weakly dominated, at its same response, by a minimally sufficient grant. Since $W(d,F)\geq W(d,1)$ for $F\leq1$, an $\eta$-response's minimal grant is no greater than
+$[G_0-L(d,1)+0.02+\eta]_+$ in the baseline. A fee-one value query for every term and mandate checks that this is below 20. Thus restricting the optimistic search to $0\leq q\leq20$ loses no purchaser supremum; it is not an assertion that the institution forbids larger transfers. Every payoff, moment, fee, product, and grant box has a stated economic justification.
+
+\begin{proof}[Proof of Theorem~\ref{paper-thm:continuous}]
+Take any feasible fee and the corresponding term and mandate. At least one deposited cell contains it by the exact rational coverage check. Any admitted response satisfies all that cell's query and response inequalities. Its true product satisfies the product relaxation and its capacity cost exceeds the tangent. Replace any excess grant by the minimally sufficient grant as just explained. This produces a feasible point of the cell's optimistic program whose objective is at least the original purchaser payoff. Rational weak duality bounds that objective by the deposited $U_I$. Taking the supremum over fees, mandates, terms, and responses proves the global upper bound. Subtracting the executable candidate lower bound yields equation~\eqref{paper-eq:continuumregret}. Applying the same argument only to cells with a different term proves term identification.
+\end{proof}
+
+This proof is unaffected by a failure of fee-optimum attainment. It bounds a supremum. The candidate is a concrete binary64 fee interpreted as its exact rational number, with an attained positive first mandate, a separately enclosed all-response service level, and an outward sufficient grant. Its displayed regret is rounded upward. The proof also makes clear why a finite set of successful grid evaluations cannot replace the cell cover.
+
+\subsection{Search and independent verification}
+The search starts from the deposited R13 queries and may add central fees and benefit perturbations. Local benefit shifts constrain service near a contract; wider shifts can exclude fictitious high-duration responses left in the local oracle set. The query policy is a computational choice, not an economic restriction. The final compact certificate retains every nonzero dual constraint and every query defining a variable bound. Its reduced constraint system produces exactly the same rational weak-duality bound because removed rows have zero multiplier.
+
+The checker does not call the search's cell-construction function. It reconstructs each retained row from its economic role and query identifier, verifies every box source, recomputes the dual residual, and checks all fee intervals as exact fractions. For each of the eight terms and both mandates, sorted intervals must start at zero, end at one, and join without a gap. Candidate lower payoffs are recomputed from private value, all-response duration, actual charge, and the positive-part grant. Every table's global and other-term bounds are reductions of those verified cell inequalities.
+
+A successful search is not itself the independent check. Conversely, the checker need not rerun the adaptive search sequence to establish the final inequalities. It reads the already deposited witness and independently reconstructs its mathematical content. Search timings, including exploratory queries that do not survive compaction, are recorded separately from check-only timings. The initial loose search is not presented as a successful regret certificate.
+
+\input{revisions/2026-09-19-r14-referee-response/paper/table_term_bounds}
+
+\section{Opportunity Exposure and Primitive Ordering}
+\subsection{The exact decomposition and its signed enclosure}
+Add and subtract the zero-drift counterfactual payoff with adjusted continuation, and then the same payoff with no-adjustment continuation. The first difference is $g_\sigma$. The immediate reward of the fixed counterfactual is unchanged between the two regimes, so the second difference is exactly $K_\sigma(V^a-V^0)$. The third difference is $B_\sigma$. Its nonpositivity follows from feasibility of the counterfactual in the no-adjustment problem. Subtracting the two classes proves equation~\eqref{paper-eq:exposure}.
+
+For the signed row $D=D^+-D^-$, positivity gives $D^+\ell\leq D^+O\leq D^+u$ and $D^-\ell\leq D^-O\leq D^-u$. Subtract the adverse endpoints to obtain equation~\eqref{paper-eq:signedexposure}. These bounds are sharp for a box restriction on $O$: choose its lower or upper endpoint at each state according to the sign of $D$. With two independently enclosed continuation values of radius $\epsilon$, the opportunity radius is $2\epsilon$ and the signed exposure uncertainty is at most $2\epsilon\|D\|_1$, plus a separate arithmetic charge. The reported map adds $8\epsilon$ for the row mixtures, opportunity subtraction, two sparse products, and final difference; each is dominated by the audited operation envelope. The charge is additional to, and not a replacement for, the value-error term.
+
+\begin{proof}[Proof of Proposition~\ref{paper-prop:primitive}]
+For $u'>u$ and $0<c\leq1$,
+\[
+ \frac{\partial}{\partial c}\left(\frac{c^{1-u'}}{1-u'}-\frac{c^{1-u}}{1-u}\right)
+ =c^{-u'}-c^{-u}\geq0.
+\]
+Composition with nondecreasing consumption makes the upgrade's flow increment nondecreasing in wealth. Its terminal increment is nondecreasing by assumption. The wealth transition preserves the order of increasing functions, and survival and discounting multiply expectations by common nonnegative scalars. Backward induction therefore makes the payoff of exercising the irreversible upgrade immediately nondecreasing in wealth.
+
+The option to wait has continuation equal to the expectation of next period's option value, multiplied by the common survival and discount factor. Starting from the nondecreasing terminal exercise payoff (and the option not to exercise), induction shows that both immediate exercise and waiting have nondecreasing values. Their maximum is nondecreasing. The wealth-independent exercise cost does not change this ordering. This proves the opportunity-value statement.
+
+First-order stochastic dominance with equal total discounted mass orders the expectation of every nondecreasing function, including this opportunity value. Hence the future exposure under the positive initial transition is at least that under the nonpositive transition. Equality of the current gains and replacement terms then makes equation~\eqref{paper-eq:exposure} yield the option comparison. If the dominance puts strictly more weight across a region on which the opportunity value strictly increases, the expectation inequality is strict, giving the final assertion.
+\end{proof}
+
+The proposition is deliberately a primitive result for a specified subclass, not a theorem that $O$ increases with wealth in every endogenous-preference model. State-dependent killing can reverse the expectation ordering; endogenous consumption can violate the assumed monotone consumption rule; a wealth-dependent surrender payoff adds a different stopping option; and repeated preference adjustment changes the exercise structure. The 54-point settlement map keeps these richer features and records their actual signed consequences. All points, including negative differences and zero replacement terms, appear in the deposited table and are independently recomputed from their full continuation arrays.
+
+\section{Arithmetic, Open-Class Witnesses, and Target Transfer}
+\subsection{The data-dependent arithmetic account}
+The numerical target is the exact rational interpretation of stored binary64 entries. Its construction history is separately identified. The arithmetic model assumes round-to-nearest correctly rounded basic operations, gradual underflow, no overflow, and a sparse reduction respecting the recorded maximum operation count. Let $u=2^{-53}$ and $\mathrm{sub}=2^{-1074}$. For $ku<1$, put $\gamma_k=ku/(1-ku)$. Bounds below treat every resulting binary64 scalar in the audit as an exact rational number before the outward conversion used for display.
+
+Every nonnegative sparse row with at most $s$ entries has true mass bounded above by
+\[
+ \frac{\widehat m+(s+1)\mathrm{sub}}{1-\gamma_{\max(1,s)}},
+\]
+where $\widehat m$ is its computed row sum. The audit scans all rows, checks nonnegativity and finiteness, and uses the largest computed row sum together with the largest row length. Thus it bounds the largest true row mass without assuming that the floating maximum identifies the exact maximizing row. Stored duplicate summation has already been incorporated into the target entries. The largest bound is below one. First-date matrices are included, not treated as an uncharged initialization.
+
+Let $R$ bound the absolute reward over $d\in[-2,2]$, $F\in[0,2]$, and adjustment-cost coefficient at most two. Let $M$ bound discounted mass. With terminal bound $B_0=\|G\|_\infty$, define $B_h=\max\{\|G\|_\infty+2,R+MB_{h-1}\}$. The operation counts for Bellman evaluation, policy Bernstein coefficients, count-information upper recursion, signed-majorant propagation, and polynomial restriction are respectively
+\[
+ 2s+20,\quad2s+28,\quad2s+40,\quad2s+30,\quad6N^2+12.
+\]
+For the deposited target $s=16$ and $N=8$, giving 52, 60, 72, 62, and 396. Maximization selects an operand and is nonexpansive in its input error. Multiplication by a nonnegative kernel propagates continuation error by at most $M$. Reward formation, mixture weights, and the recorded sums are bounded by the corresponding $\gamma_k$ term and subnormal absolute charge. This gives the Bellman, policy, and count recurrences of the form in equation~\eqref{paper-eq:roundoff}.
+
+For the signed-majorant calculation, $\|(K_b-K_a)(V_b-V_a)\|\leq4M\|V\|$. Its error recursion also charges the two endpoint-value errors before propagating the previous majorant error. The chord combination and its Bernstein restriction have additional operation envelopes. Signed transport has a separate charge from the width of the continuation enclosure. Taking the maximum over these derived recurrences gives the advertised-operation ceiling test; the allowance is a number to be checked, not an input premise from which the bound is inferred.
+
+\input{revisions/2026-09-19-r14-referee-response/paper/table_arithmetic}
+
+The global value norm reaches approximately 108.03 under the deliberately broad audit parameter box. It is not replaced by a convenient but unjustified bound such as ten. The largest derived arithmetic bound is less than $7.057\times10^{-11}$. Original R13 procurement and extension records charge $10^{-7}$ per value. New R14 value queries charge $10^{-10}$ after checking the same operation envelope. Graph support arithmetic is derived separately and enclosed with $10^{-9}$. Parameter additions used to describe a joint query are charged when their binary64 result differs from the nominal perturbation; the bound on the resulting reward discrepancy is added before accepting the value-query allowance.
+
+The audit is conditional on its arithmetic and reduction conventions. It is not a proof of the sparse-library binary, the processor, or arbitrary compiler transformations. An implementation using a different reduction graph, flush-to-zero, an unbounded approximate primitive, or overflow must supply a compatible bound or fail the check. The independent reconstruction tests consistency with the recorded graph and primitives; it does not turn an untested software convention into a machine-checked theorem.
+
+\subsection{Strictly positive lower policies}
+At a fixed first consumption--adjustment pair, suppose the positive closure optimum occurs at the zero-share knot $i$, with adjacent strictly positive knot $k\leq L$. Let $q_i,q_k$ be their action values under the same continuation policy. For $t\in(0,1)$, the interpolated action has positive share $t\pi_k$ and payoff $(1-t)q_i+tq_k$. Its closure loss is $t(q_i-q_k)$ when that difference is nonnegative. Choosing $t$ so that this loss is no more than a specified slack gives a feasible positive lower policy, while the closure optimum remains an upper bound on the positive supremum.
+
+The record includes the two knot identifiers, nonnegative weights summing to one, the interpolated action, its positive share, its value, and the charged closure gap. The checker verifies adjacency, identical consumption--adjustment pairs, the weighted action, permissions, and value reconstruction. If the closure optimizer is already strictly positive, a one-knot witness establishes attainment. A zero action is never accepted merely because its computed value equals the positive supremum. In the current exact-response incumbent certificates, the independently computed positive optimum is strictly separated from the zero boundary, so the grant is attached to an attained class.
+
+\subsection{Proof of model-to-decision transfer}
+\begin{proof}[Proof of Theorem~\ref{paper-thm:transfer}]
+Suppose at date $n+1$ the intended value differs from the lifted numerical value by at most $\Delta_{n+1}$. Add and subtract the intended operator applied to that lifted value. Lipschitz continuity of $T_n$ bounds the first difference by $M_n\Delta_{n+1}$; the stipulated operator residual bounds the second by $\delta_n$. Terminal initialization and backward induction yield equation~\eqref{paper-eq:transferrecursion}. The lifting norm is part of the residual construction and any transition between numerical and model norms; it is not silently set to one when an interpolation can amplify error.
+
+Apply this value bound at each reward query. The enlarged intervals contain the intended values. If the reward perturbation changes the same affine features without changing feasible policies, the necessity argument for the response-set theorem applies directly to intended-model responses. The procurement theorem then uses their enlarged set. No mapping of a selected numerical optimizer is needed for this route.
+
+For the policy-correspondence route, suppose all corresponding policy payoffs differ by at most $\Delta$ in both directions and that the correspondence covers all competitors needed for the two suprema. The two optimal values differ by at most $\Delta$. If intended policy $p$ is $\eta$-optimal, its target counterpart has target payoff at least $W-\eta-\Delta$, and the target optimum is at most $W+\Delta$. The target regret is therefore at most $\eta+2\Delta$. A separate feature discrepancy changes purchaser output and must be added to the economic bound. This proves the stated alternative and explains the need for two-sided coverage.
+\end{proof}
+
+For the one-dimensional secant, increasing the adverse value difference by $2\Delta$ widens service by $2\Delta/h$. The positive-part transfer map is one-Lipschitz in private value, adding at most $\Delta$. A candidate--rival difference can therefore require the sum of both contracts' charges, $2(2b\Delta/h+\Delta)$, before any fee, quality, or direct feature error. Multivariate query supports should instead be recomputed with the widened oracle intervals; summing separately optimized coordinates may be unnecessarily conservative.
+
+\subsection{The constructor diagnostic and a usable approximation norm}
+For the drift-free preference action at an interior node, the unprojected one-step increment in the constructor is $\pm a$, where $a=\sigma_u\sqrt{\Delta t}<\Delta u$. Linear interpolation onto the preference grid leaves mass at the current node and moves total mass $a/\Delta u$ to its two neighbors. Its mean increment is zero and its variance is
+$(a/\Delta u)(\Delta u)^2=\Delta u\,a$. The unprojected increment and matching drift-free diffusion have variance $a^2=\sigma_u^2\Delta t$. At the stated mesh and time step this gives the two quantities in equation~\eqref{paper-eq:variance}. The checker also computes the stored row's variance directly as its exact second moment minus the squared exact first moment after normalization, rather than relying on this derivation alone.
+
+A moment discrepancy by itself does not give the sign of the value or purchaser error. A usable transfer estimate can instead compare lifted continuation values. For a Lipschitz continuation $v$ with constant $L$, a coupling of the intended and numerical next states gives
+\[
+ |\E v(X)-\E v(\widehat X)|\leq L\E\|X-\widehat X\|.
+\]
+For a twice differentiable continuation and centered projection, a Hessian envelope bounds the second-order contribution by one half the envelope times the projection's second moment. Neither condition is automatic for a stopping value across exercise and forced-discharge boundaries. Boundary hitting, terminal interpolation, action maximization, and the interpolation's domain must each be covered in the residual chain. A bound on an interior smooth test function cannot be extended across a discontinuous stopping boundary without argument.
+
+The numerical diagnostic is therefore deposited as a constructor test, not as a small-error certificate. The inherited operator-neighborhood stress calculation is retained with its exact conditional interpretation. It supplies a sufficient decision budget for a model known to lie in that neighborhood; it does not verify the original diffusion's membership. The current main paper retains the full continuous-state theory while separating this outstanding quantitative inclusion from the completed continuous-\emph{fee} result on the stored settlement economy.
+
+\section{Computation, Replication, and Preservation}
+\subsection{Work accounts and unfavorable controls}
+The R13 proposal experiment actually trains the neural network and deposits its weights, class inventory, polynomial coefficients, anchor policies, and every test policy. Teacher solves, fitting, proposal time, fixed-policy evaluation, exact upper reference, and policy verification are recorded separately. The network's unfavorable outcomes are retained. A near-zero time for a nearest-anchor lookup is not a zero-cost end-to-end certificate; its teacher and upper-reference work remain charged. The memory fields distinguish model parameters from process peak resident memory. A cumulative process maximum is not a per-query allocation measurement.
+
+The common-law and rectangular-lifting comparisons use the same immutable arrays. The latter is this repository's implementation of a standard optimistic relaxation, not a benchmark run of an external package. The tables below retain broader law intervals rather than extrapolating the small correction on a narrow economic region.
+\input{revisions/2026-09-19-r14-referee-response/paper/table_computational}
+\input{revisions/2026-09-19-r14-referee-response/paper/table_lifting}
+
+The new continuous-fee search has a different purpose and is not added to neural fitting time as though it were neural training. Its query acquisition, rational bound construction, cell subdivision, and independent verification are recorded separately. The search does not exploit a claimed neural error guarantee. No unmeasured high-dimensional scaling advantage, random-seed success rate, or asymptotic superiority is inferred from these small finite-state experiments.
+
+\subsection{Source identities and a check-only entry point}
+The reviewed report is pinned to the R13 science snapshot it actually assessed. The later completed R13 extension deposit is identified separately and is not retroactively described as evidence available to that referee. R14 uses the unchanged canonical manifest, imports the completed extension witnesses, and adds current source, new value arrays, response queries, rational continuum cells, mechanism arrays, generated tables, and manuscripts. The release manifest hashes the scientific inputs, the checking code, tables, and PDFs; the final Git commit identifies the resulting tree without a self-referential commit hash embedded in its own payload.
+
+The primary review command is \texttt{python replication/r14/review.py}; its scientific checking component is \texttt{python replication/r14/verify.py}. It reads existing science, reconstructs dynamic values through the independently recoded Engine, independently reconstructs equality-graph supports, rebuilds economic LP rows and exact weak-duality bounds, checks fee coverage, and redoes the institutional accounting and mechanism map. It does not call the producer's Bellman solver or continuous-cell builder, and it does not regenerate the numerical target or witness files. An optional receipt path writes only a validation report outside the scientific output directory. Each full receipt records hashes of its actual inputs and checks that those files did not change during verification. The executable transfer is rounded upward and then charged at its stored value in the purchaser lower bound. A replay may reuse nonnegative dual proposals, but recomputes all inequality coefficients and residual charges from current value queries; a floating-point infeasibility or success flag does not replace this calculation. The primary command checks the deposited tables and rebuilds the PDFs in a temporary directory; a newly generated target must never replace the canonical target during a check-only run.
+
+All current validation predicates use explicit exceptions and remain active under optimized Python. Destructive fixtures include a negative rational multiplier, an altered constraint, a destroyed upper summary, an out-of-cell fee box, missing interval coverage, a zero-share positive-witness claim, an insufficient participation transfer, and failure to charge the implemented transfer. These tests specify what the checker rejects. They are not a proof that every software defect has been excluded. The supplementary release receipt identifies the exact checks actually executed and their independence boundaries.
+
+\subsection{No-content-loss preservation}
+The new manuscript reorganizes the argument around the economic response set and continuous institution. It does not overwrite the historical R11 or R12 manuscripts, their references, the S.1--S.15 proofs, the original approximation and operator results, the recursive-utility and equilibrium extensions, the negative controls, or the review reports. A preservation inventory records their original and final identities. The complete historical main compendium, R12 main paper, and R12 supplement are included unchanged in the review package, with a cover explaining their target and date. Statements preserved in those historical documents are not silently endorsed as statements about a later numerical target. The new main manuscript and these new proof sections give the current theorem and evidence chain.

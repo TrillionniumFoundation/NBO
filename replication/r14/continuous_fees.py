@@ -109,6 +109,8 @@ class Research:
                 alow=max(Q(0),max((frac(r['value'])-frac(q['value'])-2*frac(EPS)-frac(eta))/(frac(D0)-frac(q['d'])) for q in vals))
             else:alow=frac(r['A'][0])
             grant=max(Q(0),frac(r['G'])-frac(r['value'])+frac(EPS)+frac(COST)*frac(r['F'])**2+frac(eta))
+            # Charge the implemented outward-rounded transfer, not its unrounded ideal.
+            grant=frac(upward(grant))
             profit=alow-grant-frac(KAPPA)*Q(r['term']-1,8)
             if best is None or profit>best[0]:best=(profit,r,alow,grant)
         if best is None:raise ValueError('no executable incumbent')

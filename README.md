@@ -1,41 +1,28 @@
-# texsupport.econometricsociety-ecta
+# Neural Bellman Operators — Revision R14
 
-LaTeX author support files for the Econometric Society journal 
-[Econometrica (ECTA)](https://www.econometricsociety.org/publications/econometrica/browse)
+**Current paper:** *Neural Bellman Operators: Certified Response Sets and Operating Commitments* (September 19, 2026).
 
-## Before beginning
+This revision responds to the [frozen R13 referee report](reviews/2026-09-19-econometrica-r13-certified-harsh/referee_report.md). That owner-commissioned advisory report is not an official Econometrica editorial decision.
 
-`econsocart` LaTeX package is the updated version of now obsolete `ectaart`.
+## Read the paper
 
-## Contents
+[Main manuscript](revisions/2026-09-19-r14-referee-response/ECTA_R14.pdf) · [Current proof supplement](revisions/2026-09-19-r14-referee-response/SUPP_R14.pdf) · [Point-by-point response](revisions/2026-09-19-r14-referee-response/RESPONSE_R14.pdf) · [Complete preserved compendium](revisions/2026-09-19-r14-referee-response/COMPENDIUM_R14.pdf)
 
-The following files are given in the repository (or directly in `.zip` archive):
+Editable entry points are `ECTA_R14.tex`, `SUPP_R14.tex`, `RESPONSE_R14.tex`, and `COMPENDIUM_R14.tex`. Detailed [reading order, scope, and reproduction instructions](revisions/2026-09-19-r14-referee-response/README.md) identify the current evidence. Root **`ECTA.tex` is historical**, not the current paper. No old manuscript, review branch, or theoretical section is deleted by R14.
 
--   `econsocart.cls`, `econsocart.cfg` - LaTeX style files designed for articles of the Econometric Society journals. 
-    (See also [QE](https://github.com/vtex-soft/texsupport.econometricsociety-qe) and [TE](https://github.com/vtex-soft/texsupport.econometricsociety-te).)
-    Please do not change them. These files are already loaded in the respective template files;
--   `ecta_template.tex` - the main template file should be used for article preparation;
--   `ecta_sample.pdf` - sample file and instructions for the preparation of a
-    camera-ready paper in LaTeX. This document contains useful information regarding the structure 
-    of your document, proper tagging style, layout features, etc;
--   `ecta_sample_final.pdf` - sample file with `final` option for prepublication;
--   `ecta_sample.tex` - source file for the instructions paper `ecta_sample.pdf`;
--   `figure_sample.eps`, `figure_sample.pdf` - sample figures for `ecta_sample.pdf`.
--   `ecta-fullname.bst` - BibTeX styles to prepare bibliography file.
-    More information can be found [here](http://www.bibtex.org/Using/) 
-    or [here](https://www.latex-tutorial.com/tutorials/bibtex/).
+## Central result
 
-## Setup
+Finite value queries constrain joint dynamic response moments. The response-set theorem, robust procurement theorem, efficient-capacity result, and continuous-fee certificate form one economic argument. On the unchanged stored settlement economy, the original enforcement menu gives compulsory terms 3 versus 4; a 0.05 menu gives 2 versus 4; continuous fees identify term 1 in both regimes, with lower enforcement needed by the adjusted executable contract. The current paper retains all three findings and their distinct institutions.
 
--   Clone the repository or download the `.zip` archive;
--   Install LaTeX style files (`econsocart.cls`, `econsocart.cfg`) in your TeX system or 
-    place them in the same directory where your `*.tex` file is;
--   Read the instructions (`ecta_sample.pdf`) for the preparation of your LaTeX document;
--   Use the template file `ecta_template.tex` to prepare your manuscript.
+The verification covers fixed-array arithmetic and all exact responses for the continuous calculation. It is **not** a quantitative diffusion-to-array inclusion result, a formal machine proof, or a demonstration of neural scaling superiority. The adverse neural benchmark and constructor variance diagnostic are retained.
 
-## Bug reports
+## Review the frozen objects
 
-Please submit bug reports and/or feature requests
-at [GitHub page](https://github.com/vtex-soft/texsupport.econometricsociety-ecta/issues) or 
-[latex-support@vtex.lt](mailto:latex-support@vtex.lt).
+```bash
+python -m pip install numpy==2.3.5 scipy==1.17.0 pymupdf
+python replication/r14/review.py
+```
 
+The authoritative command verifies the release hashes, reconstructs the deposited scientific witness independently, checks table identities, and builds the manuscripts in a temporary directory. It does not regenerate scientific results onto the branch. TeX Live with `latexmk`, the standard recommended fonts, and `texlive-latex-extra` is required for compilation.
+
+The [release manifest](revisions/2026-09-19-r14-referee-response/release_manifest.json) and [independent validation](revisions/2026-09-19-r14-referee-response/logs/independent-validation.json) identify inputs, statements, checking scope, and output. Generation is separate from review. [Revision index](REVISION_INDEX.md) and [historical preservation record](revisions/2026-09-19-r14-referee-response/historical/provenance.json) retain the earlier chronology. The original template README remains [here](revisions/2026-09-19-r14-referee-response/historical/ROOT_README.md).

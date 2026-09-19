@@ -1,23 +1,3 @@
-# Revision Index
-
-## Current referee-facing revision: R14 — September 19, 2026
-
-**Title:** Neural Bellman Operators: Certified Response Sets and Operating Commitments.
-
-The current [main manuscript](revisions/2026-09-19-r14-referee-response/ECTA_R14.pdf), [proof supplement](revisions/2026-09-19-r14-referee-response/SUPP_R14.pdf), [response letter](revisions/2026-09-19-r14-referee-response/RESPONSE_R14.pdf), and [complete compendium](revisions/2026-09-19-r14-referee-response/COMPENDIUM_R14.pdf) replace the stale *entry point*, not the historical papers. [Release manifest](revisions/2026-09-19-r14-referee-response/release_manifest.json).
-
-Reviewed science: `dd9e0c755b743efdea2a7637f7620bb8ebc3b3c6`. Report branch snapshot: `13c946c4e9a352612647cd75a6930c5d86d7a564`. Completed post-review extension origin: `59024a9bccfcc71feecec310b690fb181da44386`. These are different objects and are not interchangeable.
-
-Development branch: `revision/econometrica-r14-development-2026-09-19`. The separately frozen referee branch is `revision/econometrica-r14-referee-response-2026-09-19`; its commit is resolved by Git, not embedded self-referentially into this file. No main-branch merge is implied.
-
-R14 adds current manuscript text, full new proofs, continuous-instrument certificates on the same settlement target, sharp joint-response applications, institutional results, an adverse mechanism map, and a constructor diagnostic. Unestablished diffusion inclusion and neural scaling advantage are explicitly separated from executed findings. Exact responses and numerical near-optimality are not conflated.
-
-## Historical index (verbatim)
-
-The following is the prior index, retained for chronology. Any statement below naming an earlier revision as “current” describes that historical snapshot only. Root `ECTA.tex` is historical.
-
----
-
 # Current complete revision: R11 (18 September 2026)
 
 Branch: `revision/econometrica-r11-dynamic-contract-response-2026-09-18`. Latest review parent: `30548ad06852cc0a447dedf1e63cc9e7f79f6c06`. Prior complete science: R9 at `8c1e0472279fb66a2419b63b3e35df028ecfdd78`.

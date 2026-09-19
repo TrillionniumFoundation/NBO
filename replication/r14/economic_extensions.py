@@ -73,7 +73,7 @@ def mechanisms(b,j):
         signed=kernels['positive']-kernels['nonpositive'];dif={k:classes['positive'][k]-classes['nonpositive'][k] for k in ('local','future','replacement','option')}
         residual=dif['option']-sum(dif[k] for k in ('local','future','replacement'))
         if abs(residual)>2e-11:raise ValueError('mechanism identity failed')
-        er=2*EPS*float(abs(signed).sum());wealth=b.e[0].states[:,1]
+        er=2*EPS*float(abs(signed).sum())+8*EPS;wealth=b.e[0].states[:,1]
         bins=[float((signed@(O*mask)).item()) for mask in (wealth<1.25,wealth>=1.25)]
         rows.append(dict(id=tag,law=lam,d=d,fee=F,term=m,classes=classes,difference=dif,future_interval=[dif['future']-er,dif['future']+er],wealth_contributions=bins,identity_residual=residual))
         j.cache.clear();print('MECHANISM',tag,lam,d,F,m,dif,flush=True)
@@ -83,5 +83,5 @@ if __name__=='__main__':
     t=time.perf_counter();b,j=load(ROOT/'replication/r13/canonical');audit=derive(b,j,EPS);out=HERE/'output'
     diagnostic=moment(b,j);joint=oracle(j);mech,archive=mechanisms(b,j)
     np.savez_compressed(out/'mechanism_values.npz',**archive)
-    dump(out/'economic_extensions.json',dict(schema='nbo-r14-economic-extensions-v1',canonical_manifest_sha256=digest(ROOT/'replication/r13/canonical/manifest.json'),arithmetic=audit,projection_diagnostic=diagnostic,joint_oracle=joint,mechanisms=mech,mechanism_values_sha256=digest(out/'mechanism_values.npz'),elapsed_seconds=time.perf_counter()-t,peak_rss_kib=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
+    dump(out/'economic_extensions.json',dict(schema='nbo-r14-economic-extensions-v1',mechanism_arithmetic_allowance=8*EPS,canonical_manifest_sha256=digest(ROOT/'replication/r13/canonical/manifest.json'),arithmetic=audit,projection_diagnostic=diagnostic,joint_oracle=joint,mechanisms=mech,mechanism_values_sha256=digest(out/'mechanism_values.npz'),elapsed_seconds=time.perf_counter()-t,peak_rss_kib=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
     print('ECONOMIC EXTENSIONS DONE',flush=True)

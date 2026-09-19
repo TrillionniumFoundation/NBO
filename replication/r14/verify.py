@@ -14,6 +14,7 @@ from fractions import Fraction as Q
 import numpy as np
 HERE=Path(__file__).resolve().parent;ROOT=HERE.parents[1];sys.path.insert(0,str(ROOT/'replication/r13'))
 from canonical import load,digest
+sys.dont_write_bytecode=True
 from engine import Engine,SIGNS
 from certified_arithmetic import derive
 from verify_extensions import independent_support,verify_lp,verify_primitive
@@ -96,6 +97,16 @@ def independent_oracle(offsets,values,eta):
     add({4:1,0:-1},0);add({4:-1,0:1},0)
     return dict(A=A,b=b,box=box)
 
+def incumbent_account(r,G,inc):
+    required=max(Q(0),G-q(r['value'])+q(EPS)+q(.02)*q(r['F'])**2)
+    implemented=q(inc['grant'])
+    require(implemented>=required,'implemented grant underpays participation')
+    lower=q(r['A'][0])-implemented-q(.02)*Q(r['term']-1,8)
+    require(q(inc['lower'])<=lower,'executable payoff does not charge stored grant')
+
+def positive_attainment(sign,action,attained):
+    if sign=='positive' and attained:require(action[2]>0,'zero action presented as an attained positive witness')
+
 def fixtures(sample,bank,G):
     tested={}
     def reject(name,fn):
@@ -111,7 +122,10 @@ def fixtures(sample,bank,G):
     c=copy.deepcopy(sample);c['lp']['box'][3]=['-1/1','1/1']
     reject('fee_outside_declared_cell',lambda:row_semantics(c,bank,True,Q(0),G))
     reject('missing_coverage',lambda:coverage([sample]))
-    reject('wrong_positive_attainment',lambda:require(0.>0,'zero is not a positive lower witness'))
+    reject('wrong_positive_attainment',lambda:positive_attainment('positive',[.05,0.,0.],True))
+    r=dict(value=-1.,F=0.,term=1,A=[1.,1.])
+    reject('underpaid_participation',lambda:incumbent_account(r,Q(0),dict(grant=0.,lower=0.)))
+    reject('uncharged_implemented_transfer',lambda:incumbent_account(r,Q(0),dict(grant=2.,lower=0.)))
     return tested
 
 def main():
@@ -126,6 +140,12 @@ def main():
     require(z['inherited_procurement_sha256']==digest(ROOT/'replication/r13/output/procurement.json'),'procurement input hash')
     extmanifest=json.loads((ROOT/'replication/r13/extensions/manifest.json').read_text())
     for name,sha in extmanifest['files'].items():require(digest(ROOT/'replication/r13/extensions'/name)==sha,'inherited extension hash '+name)
+    checkpaths=set((ROOT/'replication/r13').glob('*.py'))
+    for dirname in ('replication/r13/canonical','replication/r13/output','replication/r13/extensions'):
+        checkpaths.update(p for p in (ROOT/dirname).rglob('*') if p.is_file() and '__pycache__' not in p.parts)
+    checkpaths.add(Path(__file__).resolve())
+    for name in ('continuum_certificate.json','continuum_witness.npz','economic_extensions.json','mechanism_values.npz'):checkpaths.add(HERE/'output'/name)
+    checked_inputs={str(p.relative_to(ROOT)):digest(p) for p in sorted(checkpaths)}
     b,j=load(ROOT/'replication/r13/canonical');e=Engine(b,j);audit=derive(b,j,EPS);G=q(float(b.terminal[b.center]));require(audit['derived_maximum']<EPS,'value allowance too small')
     # Every stored target value has absolute envelope <200, including at F=0.
     require(max(audit['value_norm_by_horizon'])<200,'payoff box audit')
@@ -148,7 +168,7 @@ def main():
                     for n in range(1,8):require(np.all((pp[n-1]>=0)&(pp[n-1]<=e.stop)) and np.all(e.mask(n,adj,m)[e.ix,pp[n-1]]),'infeasible continuation policy')
                     act=np.asarray(r['first_action']);ids=np.flatnonzero(np.all(abs(e.fm.actions-act)<1e-14,axis=1));require(len(ids)==1,'first action not a canonical knot')
                     require(e.first_mask(adj,sg,.8,.5)[ids[0]],'first action permission');fq=.875*e.fq(0,v[1],d)+.125*e.fq(1,v[1],d);same(fq[ids[0]],r['value'],'recorded first action value')
-                    if sg=='positive' and r.get('attained'):require(act[2]>0,'zero action presented as an attained positive witness')
+                    positive_attainment(sg,act,r.get('attained',False))
                 if d==D0:
                     same(r['H'],[supp[sg][0][1],supp[sg][1][1]],'surrender support');same(r['A'],[supp[sg][0][0],supp[sg][1][0]],'duration support')
                     if sg=='positive' and r.get('attained'):require(bgap>4*audit['bounds']['bellman_value'],'positive attainment not separated from closure')
@@ -161,8 +181,7 @@ def main():
         adj=result['adjustment'];eta=q(result['eta']);require(eta==0,'exact-response compact certificate has nonzero eta');coverage(result['leaves'])
         for cell in result['leaves']:row_semantics(cell,bank,adj,eta,G)
         inc=result['incumbent'];r=bank[inc['id']];require(r['attained'] and r['sign']=='positive','no attained executable candidate');require((r['F'],r['term'],r['sign'])==(inc['F'],inc['term'],inc['sign']),'candidate identity')
-        grant=max(Q(0),G-q(r['value'])+q(EPS)+q(.02)*q(r['F'])**2);lower=q(r['A'][0])-grant-q(.02)*Q(r['term']-1,8)
-        require(q(inc['grant'])>=grant and q(inc['lower'])<=lower,'inward incumbent bound');same(inc['A_lower'],r['A'][0],'candidate service')
+        incumbent_account(r,G,inc);same(inc['A_lower'],r['A'][0],'candidate service')
         upper=max(q(c['upper']) for c in result['leaves']);require(q(result['global_upper'])>=upper,'incorrect global upper');require(q(result['regret_upper'])>=upper-q(inc['lower']),'regret understated')
         require((result['regret_upper']<=result['tolerance'])==result['tolerance_met'],'tolerance flag')
         termmax={m:max(c['upper'] for c in result['leaves'] if c['term']==m) for m in range(1,9)}
@@ -201,7 +220,7 @@ def main():
             act=e.fm.actions[fa[sg][1]].copy();act[1]=0.;ix=np.flatnonzero(np.all(abs(e.fm.actions-act)<1e-14,axis=1));require(len(ix)==1,'mechanism counterfactual missing');i=int(ix[0]);K=(1-lam)*e.fm.rows[0].getrow(i)+lam*e.fm.rows[1].getrow(i);kernels[sg]=K
             qa=float(((1-lam)*e.fq(0,va[1],d)+lam*e.fq(1,va[1],d))[i]);qq=float(((1-lam)*e.fq(0,v0[1],d)+lam*e.fq(1,v0[1],d))[i]);cc=dict(local=fa[sg][0]-qa,future=float((K@O).item()),replacement=qq-f0[sg][0],option=fa[sg][0]-f0[sg][0]);classes[sg]=cc
             for k,x in cc.items():same(x,r['classes'][sg][k],'mechanism '+k)
-        DD=kernels['positive']-kernels['nonpositive'];err=2*EPS*float(abs(DD).sum());future=classes['positive']['future']-classes['nonpositive']['future'];same([future-err,future+err],r['future_interval'],'mechanism error interval')
+        DD=kernels['positive']-kernels['nonpositive'];err=2*EPS*float(abs(DD).sum())+8*EPS;future=classes['positive']['future']-classes['nonpositive']['future'];same([future-err,future+err],r['future_interval'],'mechanism error interval')
         for k in ('local','future','replacement','option'):same(classes['positive'][k]-classes['nonpositive'][k],r['difference'][k],'class difference')
         wealth=b.e[0].states[:,1];bins=[float((DD@(O*mask)).item()) for mask in (wealth<1.25,wealth>=1.25)];same(bins,r['wealth_contributions'],'wealth contributions');mechanism_count+=1;e.cache.clear()
     archive.close();diag=econ['projection_diagnostic'];act=np.asarray(diag['action']);ids=np.flatnonzero(np.all(abs(e.fm.actions-act)<1e-14,axis=1));require(len(ids)==1,'diagnostic action missing')
@@ -210,7 +229,8 @@ def main():
         require(variance==Q(rowinfo['variance']) and mass==Q(rowinfo['mass']) and mean==Q(rowinfo['mean']),'projection exact moment')
     require(Q(diag['diffusion_variance'])==Q(1,3200),'diffusion variance primitive')
     negative=fixtures(z['results'][0]['leaves'][0],bank,G)
-    report=dict(schema='nbo-r14-independent-validation-v1',canonical_manifest_sha256=z['canonical_manifest_sha256'],arithmetic_bound=audit['derived_maximum'],checked_dynamic_problems=len(problems),checked_response_graphs=graphs,maximum_value_discrepancy=maxerr,minimum_positive_boundary_gap=min(attainment),continuum=continuum,institutional_comparisons=len(choices),joint_oracle_cases=oracle_count,mechanism_points=mechanism_count,projection_rows=2,inherited_exact_oracle=verify_lp(),inherited_primitive=verify_primitive(),negative_tests=negative,optimized_python=not __debug__,elapsed_seconds=time.perf_counter()-start,peak_rss_kib=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,all_passed=True,scope='Read-only independent dynamic recursion, enlarged equality-graph supports, economic accounting, semantic LP reconstruction, rational weak duality and complete fee coverage. Neural training timings and continuous-state diffusion inclusion are not certified by this checker.')
+    for name,sha in checked_inputs.items():require(digest(ROOT/name)==sha,'checked input changed during verification: '+name)
+    report=dict(schema='nbo-r14-independent-validation-v1',checked_input_hashes=checked_inputs,canonical_manifest_sha256=z['canonical_manifest_sha256'],arithmetic_bound=audit['derived_maximum'],checked_dynamic_problems=len(problems),checked_response_graphs=graphs,maximum_value_discrepancy=maxerr,minimum_positive_boundary_gap=min(attainment),continuum=continuum,institutional_comparisons=len(choices),joint_oracle_cases=oracle_count,mechanism_points=mechanism_count,projection_rows=2,inherited_exact_oracle=verify_lp(),inherited_primitive=verify_primitive(),negative_tests=negative,optimized_python=not __debug__,elapsed_seconds=time.perf_counter()-start,peak_rss_kib=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,all_passed=True,scope='Read-only independent dynamic recursion, enlarged equality-graph supports, economic accounting, semantic LP reconstruction, rational weak duality and complete fee coverage. Neural training timings and continuous-state diffusion inclusion are not certified by this checker.')
     if args.receipt:
         require(args.receipt.resolve().parent!=HERE/'output','read-only checker cannot overwrite scientific output');args.receipt.parent.mkdir(parents=True,exist_ok=True);args.receipt.write_text(json.dumps(report,indent=2,sort_keys=True)+'\n')
     print(json.dumps(report,indent=2,sort_keys=True),flush=True)
