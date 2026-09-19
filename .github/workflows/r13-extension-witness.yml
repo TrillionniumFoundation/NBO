@@ -1,0 +1,83 @@
+name: R13 extended theory and contract witnesses
+on:
+  push:
+    branches: [revision/econometrica-r13-certified-response-2026-09-19]
+    paths: [.github/workflows/r13-extension-witness.yml, replication/r13/bootstrap_extensions.py]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: r13-extensions-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  reproduce:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install numpy==2.3.5 scipy==1.17.0
+      - name: Materialize readable hash-checked sources
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = revision/econometrica-r13-certified-response-2026-09-19
+          python replication/r13/bootstrap_extensions.py
+          python -m py_compile replication/r13/*.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add replication/r13/*.py
+          if ! git diff --cached --quiet; then
+            git commit -m 'revision(r13): materialize sharp-response, continuous-contract and independent extension source [skip ci]'
+            git fetch origin "$GITHUB_REF_NAME"
+            git rebase "origin/$GITHUB_REF_NAME"
+            git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
+          fi
+          git fetch origin "$GITHUB_REF_NAME"
+          git merge --ff-only "origin/$GITHUB_REF_NAME"
+          test -f replication/r13/output/independent_validation.json
+          echo "R13_SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Exact theory witnesses and refined all-response menus
+        run: |
+          set -euo pipefail
+          mkdir -p revisions/2026-09-19-r13-certified-response/logs
+          python -u replication/r13/primitive_contract.py 2>&1 | tee revisions/2026-09-19-r13-certified-response/logs/primitive.log
+          python -u replication/r13/theory_tests.py 2>&1 | tee revisions/2026-09-19-r13-certified-response/logs/oracle.log
+          python -u replication/r13/refinement.py 2>&1 | tee revisions/2026-09-19-r13-certified-response/logs/refinement.log
+      - name: Higher-precision checks and matched standard and neural baselines
+        run: |
+          set -euo pipefail
+          python -u replication/r13/stress_checks.py 2>&1 | tee revisions/2026-09-19-r13-certified-response/logs/stress.log
+          python -u replication/r13/proposal_benchmark.py 2>&1 | tee revisions/2026-09-19-r13-certified-response/logs/proposals.log
+      - name: Independently reconstruct response supports, economics and rational witnesses
+        run: |
+          set -euo pipefail
+          python -u replication/r13/verify_extensions.py --seal 2>&1 | tee revisions/2026-09-19-r13-certified-response/logs/extension-verification.log
+      - name: Commit executed extension deposit
+        run: |
+          set -euo pipefail
+          git add -f replication/r13/extensions
+          git add revisions/2026-09-19-r13-certified-response/logs
+          if ! git diff --cached --quiet; then
+            git commit -m 'revision(r13): deposit independently checked theory, refined procurement and matched baselines [skip ci]'
+            git fetch origin "$GITHUB_REF_NAME"
+            git rebase "origin/$GITHUB_REF_NAME"
+            git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
+          fi
+          git rev-parse HEAD > revisions/2026-09-19-r13-certified-response/logs/extension-deposit-sha.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r13-executed-extensions
+          retention-days: 30
+          path: |
+            replication/r13/extensions
+            revisions/2026-09-19-r13-certified-response/logs
