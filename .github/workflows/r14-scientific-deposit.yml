@@ -1,0 +1,94 @@
+name: R14 continuous-contract scientific deposit
+on:
+  push:
+    branches: [revision/econometrica-r14-development-2026-09-19]
+    paths: [.github/workflows/r14-scientific-deposit.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: r14-scientific-deposit
+  cancel-in-progress: false
+jobs:
+  reproduce:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install numpy==2.3.5 scipy==1.17.0
+      - name: Materialize checked readable research source and fixed post-review inputs
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = revision/econometrica-r14-development-2026-09-19
+          python - <<'PY'
+          import base64,hashlib,io,lzma,tarfile
+          from pathlib import Path
+          pieces=sorted(Path('replication/r14/source_payload').glob('part*.b64'))
+          if len(pieces)!=4: raise ValueError('incomplete source transfer')
+          data=base64.b64decode(''.join(p.read_text().strip() for p in pieces),validate=True)
+          if hashlib.sha256(data).hexdigest()!='9fd83efe33f46936796487191e36daf7f5feeac34f792c9c7ceb77075bec4c00': raise ValueError('source transfer hash mismatch')
+          with tarfile.open(fileobj=io.BytesIO(lzma.decompress(data))) as archive:
+              for entry in archive.getmembers():
+                  if not entry.isfile() or not entry.name.startswith('replication/r14/') or '..' in Path(entry.name).parts: raise ValueError('unexpected source path')
+                  target=Path(entry.name);target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(archive.extractfile(entry).read())
+          PY
+          git archive 59024a9bccfcc71feecec310b690fb181da44386 replication/r13/extensions | tar -xf -
+          git ls-tree -r --name-only 59024a9bccfcc71feecec310b690fb181da44386 replication/r13 | grep '\.py$' | while read -r path; do git show "59024a9bccfcc71feecec310b690fb181da44386:$path" > "$path"; done
+          python -m py_compile replication/r14/*.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add replication/r14/*.py replication/r14/blueprint.json replication/r13
+          git commit -m 'revision(r14): materialize readable research and pin completed R13 extension inputs [skip ci]'
+          git fetch origin "$GITHUB_REF_NAME"
+          git rebase "origin/$GITHUB_REF_NAME"
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
+          mkdir -p revisions/2026-09-19-r14-referee-response/logs
+          git rev-parse HEAD > revisions/2026-09-19-r14-referee-response/logs/scientific-source-sha.txt
+          python -m pip freeze > revisions/2026-09-19-r14-referee-response/logs/python-environment.txt
+          lscpu > revisions/2026-09-19-r14-referee-response/logs/hardware.txt
+      - name: Recompute continuous-contract cells, joint queries and mechanism map
+        run: |
+          set -euo pipefail
+          python -u replication/r14/replay.py 2>&1 | tee revisions/2026-09-19-r14-referee-response/logs/scientific-replay.log
+          python -u replication/r14/economic_extensions.py 2>&1 | tee revisions/2026-09-19-r14-referee-response/logs/economic-extensions.log
+      - name: Independent read-only numerical and economic verification
+        run: |
+          set -euo pipefail
+          find replication/r13/canonical replication/r13/output replication/r13/extensions replication/r14/output -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/r14-before.sha256
+          python -u replication/r14/verify.py --receipt /tmp/r14-independent-validation.json 2>&1 | tee revisions/2026-09-19-r14-referee-response/logs/independent-verification.log
+          python -O replication/r14/verify.py --fixtures-only 2>&1 | tee revisions/2026-09-19-r14-referee-response/logs/optimized-negative-tests.log
+          sha256sum -c /tmp/r14-before.sha256 > revisions/2026-09-19-r14-referee-response/logs/read-only-hash-check.log
+          cp /tmp/r14-independent-validation.json revisions/2026-09-19-r14-referee-response/logs/independent-validation.json
+      - name: Commit independently verified scientific objects
+        run: |
+          set -euo pipefail
+          git add replication/r14/*.py replication/r14/blueprint.json
+          git add -f replication/r14/output/continuum_certificate.json replication/r14/output/continuum_witness.npz replication/r14/output/economic_extensions.json replication/r14/output/mechanism_values.npz
+          git add revisions/2026-09-19-r14-referee-response/logs
+          git commit -m 'revision(r14): deposit verified continuous procurement, sharp joint-response bounds and adverse mechanism map [skip ci]'
+          git fetch origin "$GITHUB_REF_NAME"
+          git rebase "origin/$GITHUB_REF_NAME"
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
+          git rev-parse HEAD > /tmp/r14-scientific-deposit-sha.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r14-scientific-deposit
+          retention-days: 30
+          path: |
+            replication/r14/output/continuum_certificate.json
+            replication/r14/output/continuum_witness.npz
+            replication/r14/output/economic_extensions.json
+            replication/r14/output/mechanism_values.npz
+            revisions/2026-09-19-r14-referee-response/logs
+            /tmp/r14-scientific-deposit-sha.txt
