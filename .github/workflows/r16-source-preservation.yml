@@ -1,0 +1,31 @@
+name: R16 source preservation (not scientific validation)
+on:
+  push:
+    branches: ['revision/econometrica-r16-development-2026-09-19']
+    paths: ['.github/workflows/r16-source-preservation.yml']
+permissions:
+  contents: read
+jobs:
+  preserve:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Export review and historical text without altering inputs
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib,subprocess,zipfile
+          names=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          records={}
+          with zipfile.ZipFile('/tmp/r16-review-inputs.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for name in names:
+                  p=pathlib.Path(name)
+                  if not name or not p.is_file() or p.suffix not in {'.tex','.cls','.cfg','.bst','.bib','.py','.md','.yml','.yaml','.json','.sh'} or p.stat().st_size>16000000: continue
+                  data=p.read_bytes(); z.writestr(name,data);records[name]=hashlib.sha256(data).hexdigest()
+              z.writestr('SOURCE_EXPORT_MANIFEST.json',json.dumps({'source_commit':subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),'review_parent':'23d42ca6d41ef3e1552327c60f8d29c0bbc6495a','purpose':'preservation only; no scientific validation claimed','files':records},indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r16-review-inputs
+          path: /tmp/r16-review-inputs.zip
+          retention-days: 14
