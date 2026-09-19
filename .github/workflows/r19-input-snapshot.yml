@@ -1,0 +1,30 @@
+name: R19 immutable numerical inputs
+on:
+  push:
+    branches: [revision/econometrica-r19-development-2026-09-20]
+    paths: [.github/workflows/r19-input-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: d15591aff0bed68334cbb205294edfb04297427c
+          persist-credentials: false
+      - name: Export unchanged numerical inputs and prior witnesses
+        run: |
+          set -euo pipefail
+          git archive --format=tar HEAD replication/r13/canonical replication/r13/output replication/r13/extensions replication/r14/output | gzip -n > /tmp/nbo-r19-immutable-inputs.tar.gz
+          sha256sum /tmp/nbo-r19-immutable-inputs.tar.gz > /tmp/nbo-r19-immutable-inputs.sha256
+          printf '%s\n' d15591aff0bed68334cbb205294edfb04297427c > /tmp/nbo-r19-reviewed-source.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r19-immutable-inputs
+          retention-days: 30
+          path: |
+            /tmp/nbo-r19-immutable-inputs.tar.gz
+            /tmp/nbo-r19-immutable-inputs.sha256
+            /tmp/nbo-r19-reviewed-source.txt
