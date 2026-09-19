@@ -1,0 +1,22 @@
+name: R16 historical PDF preservation
+on:
+  push:
+    branches: ['revision/econometrica-r16-development-2026-09-19']
+    paths: ['.github/workflows/r16-historical-pdfs.yml']
+permissions:
+  contents: read
+jobs:
+  historical-pdf:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm unchanged historical input
+        run: |
+          test -s revisions/2026-09-19-r14-referee-response/COMPENDIUM_R14.pdf
+          sha256sum revisions/2026-09-19-r14-referee-response/COMPENDIUM_R14.pdf
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r16-unchanged-r14-compendium
+          path: revisions/2026-09-19-r14-referee-response/COMPENDIUM_R14.pdf
+          retention-days: 14
