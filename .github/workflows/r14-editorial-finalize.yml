@@ -69,13 +69,14 @@ jobs:
           python -u replication/r14/publish.py --receipt /tmp/r14-preserved-independent-validation.json --source-commit "$(cat /tmp/r14-editorial-source-sha.txt)" 2>&1 | tee /tmp/r14-final-publication.log
           python -u replication/r14/review.py --compile-only --receipt /tmp/r14-final-review.json 2>&1 | tee /tmp/r14-final-review.log
           git add "$REL/paper" "$REL/release_manifest.json"
-          git add -f "$REL/ECTA_R14.pdf" "$REL/SUPP_R14.pdf" "$REL/RESPONSE_R14.pdf" "$REL/COMPENDIUM_R14.pdf" "$REL/logs/manuscripts.json"
+          git add -f "$REL/ECTA_R14.pdf" "$REL/SUPP_R14.pdf" "$REL/RESPONSE_R14.pdf" "$REL/COMPENDIUM_R14.pdf" "$REL/logs"
           git commit -m 'revision(r14): deposit final typeset and independently rebuilt referee manuscripts [skip ci]'
           git fetch origin revision/econometrica-r14-development-2026-09-19
           git rebase origin/revision/econometrica-r14-development-2026-09-19
           git push origin HEAD:refs/heads/revision/econometrica-r14-development-2026-09-19
           git rev-parse HEAD > /tmp/r14-final-deposit-sha.txt
           python replication/r14/review.py --integrity-only --receipt /tmp/r14-final-post-commit-review.json
+          git diff --exit-code -- "$REL/paper" "$REL/logs" "$REL/release_manifest.json"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
