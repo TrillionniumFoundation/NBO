@@ -1,0 +1,29 @@
+name: R14 pinned research inputs
+on:
+  push:
+    branches: [revision/econometrica-r14-development-2026-09-19]
+    paths: [.github/workflows/r14-input-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 13c946c4e9a352612647cd75a6930c5d86d7a564
+          persist-credentials: false
+      - name: Export frozen reviewed science and manuscript inputs
+        run: |
+          git rev-parse HEAD > /tmp/r14-input-sha.txt
+          git archive --format=tar HEAD replication/r13 revisions/2026-09-19-r13-certified-response reviews/2026-09-19-econometrica-r13-certified-harsh .github/workflows/r13-core-witness.yml .github/workflows/r13-extension-witness.yml | gzip -n > /tmp/r14-latest-inputs.tar.gz
+          sha256sum /tmp/r14-latest-inputs.tar.gz > /tmp/r14-input.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r14-frozen-latest-inputs
+          path: |
+            /tmp/r14-latest-inputs.tar.gz
+            /tmp/r14-input-sha.txt
+            /tmp/r14-input.sha256
+          retention-days: 7
