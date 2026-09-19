@@ -1,0 +1,59 @@
+\section{Whole-Interval Responses with a Global Loss Budget}
+\label{sec:r19-interval}
+The charge is one common scalar chosen at the beginning of the contract. An interval relaxation must not silently let different states choose different charges. We therefore distinguish inclusion in an outer set from membership in the actual common-charge response correspondence.
+
+Fix a known finite-horizon model whose actions and nonnegative discounted transition kernels do not vary with $F\in[a,b]\subset[0,\infty)$. Rewards depend affinely on $F$. Let $V_n(s;F)$ denote its Bellman value and
+\begin{equation}
+ Q_n(s,j;F)=r_n(s,j;F)+K_n(s,j)V_{n+1}(F)
+ \label{eq:r19-action-value}
+\end{equation}
+its action value. Every policy has affine payoff in $F$, so $V_n$ is convex. Nonnegativity of $K_n$ implies convexity of $Q_n$ as well. With outward endpoint upper bounds $U^Q_a,U^Q_b$, its chord majorant is
+\[
+ C_{n,s,j}(F)=\frac{b-F}{b-a}U^Q_a+\frac{F-a}{b-a}U^Q_b.
+\]
+At each state, evaluate two fixed feasible continuation policies, selected at endpoints $a$ and $b$. Suppose their endpoint payoffs have lower bounds $L_a,L_b$ and their discounted surrender moments lie in $[\underline H_a,\overline H_a]$ and $[\underline H_b,\overline H_b]$. Throughout the cell,
+\begin{equation}
+ P_a(F)=L_a-(F-a)\overline H_a,
+ \qquad P_b(F)=L_b+(b-F)\underline H_b
+ \label{eq:r19-policy-planes}
+\end{equation}
+are valid lower planes. The policies must actually be feasible, including any open first-date mandate; a closure optimizer with zero risky share is not such a policy.
+
+For each state-action pair define the certified exclusion margin
+\begin{equation}
+ \delta_{n,s,j}=\left[\max_{0\leq\omega\leq1}
+ \min_{f\in\{a,b\}}
+ \{\omega P_a(f)+(1-\omega)P_b(f)-C_{n,s,j}(f)\}\right]_+.
+ \label{eq:r19-cell-loss}
+\end{equation}
+Only two affine inequalities in $\omega$ are involved. It is enough to deposit any feasible $\omega$ and a nonnegative lower bound on the displayed minimum. Rational endpoint bounds and rational $\omega$ make this a rational certificate; no optimality claim about the maximizing $\omega$ is needed.
+
+\begin{theorem}[Whole-cell loss certificate]
+\label{thm:r19-cell}
+At every fee in $[a,b]$, the Bellman loss $V_n(s;F)-Q_n(s,j;F)$ is at least $\delta_{n,s,j}$. If $x^p$ is the discounted occupancy vector of a global $\eta$-response under that one fee, then
+\begin{equation}
+ \sum_{n,s,j}\delta_{n,s,j}x^p_{n,s,j}\leq\eta.
+ \label{eq:r19-global-cell-budget}
+\end{equation}
+Consequently, maximizing a purchaser's linear response functional over
+\begin{equation}
+ X_M\cap\{x:\delta^\top x\leq\eta\}
+ \label{eq:r19-cell-outer}
+\end{equation}
+gives a valid response upper bound simultaneously for the entire fee cell. At $\eta=0$ this reduces to excluding all actions with strictly positive margins. At $\eta>0$ those actions cannot simply be deleted: their total occupancy-weighted loss, not their separate local losses, is constrained.
+\end{theorem}
+\begin{proof}
+Convexity of $Q$ implies $Q(F)\leq C(F)$. Each fixed policy is feasible for every fee in the cell and its payoff is affine, giving $P_a(F),P_b(F)\leq V(F)$. Thus $V(F)-Q(F)$ is at least the affine difference between any convex combination of these lower planes and $C(F)$. Its minimum on the cell is at an endpoint. A feasible $\omega$ therefore certifies \eqref{eq:r19-cell-loss} at every common fee.
+
+For a fixed fee, multiply the Bellman identity by the policy's discounted occupation measures and telescope the flow equations. Terminal values cancel, leaving
+\[
+ W(F)-J(p;F)=\sum_{n,s,j}x^p_{n,s,j}\{V_n(s;F)-Q_n(s,j;F)\}.
+\]
+Occupancies and the true Bellman losses are nonnegative. Substitution of their lower bounds and the global $\eta$-optimality restriction proves \eqref{eq:r19-global-cell-budget}. Inclusion in \eqref{eq:r19-cell-outer} proves the response bound. This proof uses the same fee throughout the performance-difference identity.
+\end{proof}
+
+The outer set need not characterize actual responses. For example, an action at one decision can be optimal only above a charge threshold, and an action at another decision only below a lower threshold. Both actions may survive separate whole-cell tests although no single charge supports their combination. The resulting overstatement of purchaser value is conservative. It is never evidence of implementability. The joint fee--surrender product in purchaser revenue still requires its common-fee restriction, or the stated McCormick outer inequalities; the occupancy loss budget does not eliminate that product.
+
+Two examples show why the global budget matters. With two certain decisions, choosing a loss-$\eta$ action at each incurs total loss $2\eta$ and is not a global $\eta$-response. Conversely, an action of loss $\eta/p$ reached with probability $p$ incurs total loss only $\eta$; deleting it because its local loss exceeds $\eta$ would discard an admissible response. The verification fixtures test both cases. Endpoint interval uncertainty enters through $U^Q$, $L$, and the bounds on $H$ before margins are computed. Floating-point sign tests without these allowances are not substitutes for \eqref{eq:r19-cell-loss}.
+
+The deposited settlement comparison continues to use its independently checked value-message and continuous-fee certificates. Theorem~\ref{thm:r19-cell} adds a globally valid refinement for approximate behavior; it does not retroactively relabel an exact-response graph as a positive-$\eta$ calculation. The release records which empirical inequalities were regenerated and which established tables are preserved from the frozen certificate.
