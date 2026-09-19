@@ -2,7 +2,6 @@
 from __future__ import annotations
 import json,sys,time
 from fractions import Fraction as Q
-from pathlib import Path
 import numpy as np
 from verify import Checker,ROOT,OUT,require,close,read,EPS
 sys.path.insert(0,str(ROOT/'replication/r13'))
@@ -15,8 +14,7 @@ def main():
     for adj in (True,False):
       for F,m,label in ((0.,8,'no_surrender'),(.765,1,'common_fee')):
         v,q=c.solve(.125,.42425,F,adj,m);pos=c.fm_mask(adj,'positive');zero=pos&(c.fm.actions[:,2]==0)
-        strict=pos&(c.fm.actions[:,2]>0)
-        margin=float(q[strict].max()-q[zero].max())
+        strict=pos&(c.fm.actions[:,2]>0);margin=float(q[strict].max()-q[zero].max())
         require(margin>4*EPS,'positive-mandate attainment is not separated from zero')
         att.append(dict(adjustment=adj,problem=label,zero_exclusion_margin=margin-4*EPS))
     for r in en['rows']:
@@ -54,13 +52,21 @@ def main():
         for sign in ('positive','nonpositive'):
           mask=c.fm_mask(adj,sign)
           if sign=='positive':mask &= c.fm.actions[:,2]>0
-          best=max(float(qq[mask].max()) for qq in qs)
-          close(best,row['lower_witnesses'][sign]['value'],'evaluated bank envelope')
+          best=max(float(qq[mask].max()) for qq in qs);close(best,row['lower_witnesses'][sign]['value'],'evaluated bank envelope')
+      elif method=='exact':
+        v,q=c.solve(lam,.42425,.85,adj,1)
+        for sign in ('positive','nonpositive'):
+          p=z[row['id']+'.policy.'+sign]
+          for n in range(1,8):
+            qq=c.q(n,v[n+1],lam,.42425,.85);mx=np.where(c.mask(n,adj,1),qq,-np.inf).max(1)
+            require(np.all(mx-qq[c.ix,p[n]]<4*EPS),'exact control is not Bellman-greedy')
+          actual=c.evaluate(p,lam,.42425,.85,adj,1)
+          c.witness(actual,row['lower_witnesses'][sign],adj,sign)
       else:raise ValueError('unknown method')
       inference+=1
     out=dict(schema='nbo-r19-final-checks-v1',passed=True,positive_attainment=att,
       rational_bounds=bounds,proposal_inference_rows=inference,
       elapsed_seconds=time.perf_counter()-start,
-      scope='Attainment from strict zero-knot exclusion; exact rational display bounds; inference recomputed from stored weights and identical features. Training is reproducible from the producer but no independent optimizer implementation is claimed.')
+      scope='Attainment from strict zero-knot exclusion; exact rational display bounds; inference recomputed from stored weights and identical features; exact-control Bellman greediness. Training is reproducible from the producer but no independent optimizer implementation is claimed.')
     (OUT/'final_checks.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n');print(json.dumps(out,indent=2),flush=True)
 if __name__=='__main__':main()
