@@ -41,7 +41,7 @@ jobs:
           if d.get('all_passed') is not True or d.get('checked_dynamic_problems')!=583: raise ValueError('completed scientific validation required')
           if len(d.get('negative_tests',{}))!=8 or not all(d['negative_tests'].values()): raise ValueError('all negative fixtures required')
           PY
-      - name: Correct participation typography and bind the publisher to the explicit receipt count
+      - name: Correct participation-subscript typography without changing the theorem
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -49,14 +49,11 @@ jobs:
           s=p.read_text();old='\\sup_{j,p,q\\ {'+'\n'+'m participating}}';new='\\sup_{j,p,q\\;\\mathrm{participating}}'
           if s.count(old)!=1: raise ValueError('unexpected source for typography correction')
           p.write_text(s.replace(old,new))
-          p=Path('replication/r14/publish.py');s=p.read_text();old="receipt.get('dynamic_programs_recomputed',583)";new="receipt.get('checked_dynamic_problems')"
-          if s.count(old)!=1: raise ValueError('unexpected publication receipt guard')
-          p.write_text(s.replace(old,new))
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add "$REL/paper/main.tex" replication/r14/publish.py
-          git commit -m 'revision(r14): correct participation subscript and require explicit verified problem count [skip ci]'
+          git add "$REL/paper/main.tex"
+          git commit -m 'revision(r14): correct participation subscript in continuum theorem [skip ci]'
           git fetch origin revision/econometrica-r14-development-2026-09-19
           git rebase origin/revision/econometrica-r14-development-2026-09-19
           git push origin HEAD:refs/heads/revision/econometrica-r14-development-2026-09-19
