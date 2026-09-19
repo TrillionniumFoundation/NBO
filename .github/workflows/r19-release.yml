@@ -1,0 +1,113 @@
+name: R19 checked referee release
+on:
+  push:
+    branches: [revision/econometrica-r19-development-2026-09-20]
+    paths:
+      - .github/workflows/r19-release.yml
+      - replication/r19/compendium_layout.py
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: r19-complete-publication
+  cancel-in-progress: true
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: revision/econometrica-r19-development-2026-09-20
+          fetch-depth: 0
+      - run: echo "R19_SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Retrieve the fully generated scientific witnesses
+        uses: actions/download-artifact@v4
+        with:
+          name: nbo-r19-final-publication
+          run-id: 35465627625
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: /tmp/r19-checked-evidence
+      - name: Install fixed calculation and publication dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5 scipy==1.17.0 sympy==1.14.0 pymupdf==1.26.6
+          sudo apt-get update -qq > /tmp/r19-release-apt.log 2>&1
+          sudo apt-get install -y -qq --no-install-recommends latexmk texlive-latex-extra texlive-fonts-recommended texlive-science >> /tmp/r19-release-apt.log 2>&1 || { tail -100 /tmp/r19-release-apt.log; exit 1; }
+          echo "TEXINPUTS=$PWD//:" >> "$GITHUB_ENV"
+      - name: Restore only hash-bound evidence from the unchanged scientific generator
+        run: |
+          set -euo pipefail
+          test -z "$(git diff --name-only d67d9968f0a7ce7b5677314116d8e48c6ce08364 -- replication/r19/generate.py replication/r19/replicate.py replication/r13 replication/r14)"
+          python - <<'PY'
+          import hashlib,json,shutil
+          from pathlib import Path
+          files=list(Path('/tmp/r19-checked-evidence').rglob('generation.json'))
+          if len(files)!=1:raise RuntimeError('ambiguous generated evidence')
+          src=files[0].parent;receipt=json.loads((src/'validation.json').read_text())
+          if receipt.get('passed') is not True:raise RuntimeError('source evidence not verified')
+          for name,digest in receipt['checked_sha256'].items():
+              if hashlib.sha256((src/name).read_bytes()).hexdigest()!=digest:raise RuntimeError('changed evidence '+name)
+          dst=Path('replication/r19/output');dst.mkdir(parents=True,exist_ok=True)
+          for p in src.iterdir():
+              if p.is_file():shutil.copyfile(p,dst/p.name)
+          (dst/'evidence_restore.json').write_text(json.dumps({'schema':'nbo-r19-evidence-restore-v1','passed':True,'generation_run':35465627625,'generation_source':'d67d9968f0a7ce7b5677314116d8e48c6ce08364','generator_and_original_model_sources_unchanged':True,'checked_input_hashes':receipt['checked_sha256'],'scope':'Publication geometry retry uses unchanged generated witnesses, then independently rechecks them. Original generation and timing identity is retained.'},indent=2)+'\n')
+          PY
+          python replication/r19/prepare_release.py
+          python replication/r19/release_fixes.py
+      - name: Independently recheck actual release witnesses and inference
+        run: |
+          python -O -u replication/r19/verify.py
+          python -O -u replication/r19/final_checks.py
+          python -u replication/r19/reuse_continuum.py --artifact-root /tmp/r19-checked-evidence
+      - name: Assemble and compile the complete publication with source-page restoration
+        run: |
+          python -u replication/r19/assemble.py
+          python -u replication/r19/polish.py
+          python -u replication/r19/publish.py
+      - name: Deposit the complete checked author revision
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = 'revision/econometrica-r19-development-2026-09-20'
+          git config user.name 'NBO Scientific Publication'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          selected=[]
+          for base in ('replication/r19','revisions/2026-09-20-r19'):
+              selected += [str(p) for p in Path(base).rglob('*') if p.is_file() and p.suffix in ('.py','.tex','.pdf','.json','.md','.png','.txt','.npz') and '__pycache__' not in str(p)]
+          selected += ['README.md','REVISION_INDEX.md','ECTA_R19.tex','SUPP_R19.tex','RESPONSE_R19.tex','COMPENDIUM_R19.tex']
+          subprocess.run(['git','add','-f','--',*selected],check=True)
+          PY
+          if ! git diff --cached --quiet; then
+            git commit -m 'publication(r19): complete checked manuscript, proofs, referee response, and all preserved research pages'
+            git fetch origin "$GITHUB_REF_NAME"
+            git rebase "origin/$GITHUB_REF_NAME"
+            git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
+          fi
+          git log -1 --format='%H %s'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r19-referee-release
+          if-no-files-found: warn
+          retention-days: 30
+          path: |
+            revisions/2026-09-20-r19/ECTA_R19.pdf
+            revisions/2026-09-20-r19/SUPP_R19.pdf
+            revisions/2026-09-20-r19/RESPONSE_R19.pdf
+            revisions/2026-09-20-r19/COMPENDIUM_R19.pdf
+            revisions/2026-09-20-r19/build_report.json
+            revisions/2026-09-20-r19/release_manifest.json
+            revisions/2026-09-20-r19/compendium_input_layout.json
+            revisions/2026-09-20-r19/build_logs
+            revisions/2026-09-20-r19/preview
+            replication/r19/output
