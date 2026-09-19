@@ -27,6 +27,7 @@ This checks the immutable release inventory, checks deterministic table content 
 ```bash
 python replication/r14/replay.py
 python replication/r14/economic_extensions.py
+python replication/r14/finalize_accounting.py
 python replication/r14/verify.py --receipt /tmp/r14-validation.json
 python replication/r14/build_tables.py
 ```
