@@ -41,7 +41,7 @@ jobs:
           if d.get('all_passed') is not True or d.get('checked_dynamic_problems')!=583: raise ValueError('completed scientific validation required')
           if len(d.get('negative_tests',{}))!=8 or not all(d['negative_tests'].values()): raise ValueError('all negative fixtures required')
           PY
-      - name: Correct participation-subscript typography without changing the theorem
+      - name: Correct participation typography and complete the regeneration command sequence
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -49,11 +49,16 @@ jobs:
           s=p.read_text();old='\\sup_{j,p,q\\ {'+'\n'+'m participating}}';new='\\sup_{j,p,q\\;\\mathrm{participating}}'
           if s.count(old)!=1: raise ValueError('unexpected source for typography correction')
           p.write_text(s.replace(old,new))
+          p=Path('revisions/2026-09-19-r14-referee-response/README.md');s=p.read_text()
+          old='python replication/r14/economic_extensions.py\npython replication/r14/verify.py'
+          new='python replication/r14/economic_extensions.py\npython replication/r14/finalize_accounting.py\npython replication/r14/verify.py'
+          if s.count(old)!=1: raise ValueError('unexpected scientific regeneration instructions')
+          p.write_text(s.replace(old,new))
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add "$REL/paper/main.tex"
-          git commit -m 'revision(r14): correct participation subscript in continuum theorem [skip ci]'
+          git add "$REL/paper/main.tex" "$REL/README.md"
+          git commit -m 'revision(r14): correct participation subscript and document explicit transfer accounting [skip ci]'
           git fetch origin revision/econometrica-r14-development-2026-09-19
           git rebase origin/revision/econometrica-r14-development-2026-09-19
           git push origin HEAD:refs/heads/revision/econometrica-r14-development-2026-09-19
@@ -68,7 +73,7 @@ jobs:
           cp "$REL/logs/independent-validation.json" /tmp/r14-preserved-independent-validation.json
           python -u replication/r14/publish.py --receipt /tmp/r14-preserved-independent-validation.json --source-commit "$(cat /tmp/r14-editorial-source-sha.txt)" 2>&1 | tee /tmp/r14-final-publication.log
           python -u replication/r14/review.py --compile-only --receipt /tmp/r14-final-review.json 2>&1 | tee /tmp/r14-final-review.log
-          git add "$REL/paper" "$REL/release_manifest.json"
+          git add "$REL/paper" "$REL/README.md" "$REL/release_manifest.json"
           git add -f "$REL/ECTA_R14.pdf" "$REL/SUPP_R14.pdf" "$REL/RESPONSE_R14.pdf" "$REL/COMPENDIUM_R14.pdf" "$REL/logs"
           git commit -m 'revision(r14): deposit final typeset and independently rebuilt referee manuscripts [skip ci]'
           git fetch origin revision/econometrica-r14-development-2026-09-19
@@ -76,7 +81,7 @@ jobs:
           git push origin HEAD:refs/heads/revision/econometrica-r14-development-2026-09-19
           git rev-parse HEAD > /tmp/r14-final-deposit-sha.txt
           python replication/r14/review.py --integrity-only --receipt /tmp/r14-final-post-commit-review.json
-          git diff --exit-code -- "$REL/paper" "$REL/logs" "$REL/release_manifest.json"
+          git diff --exit-code -- "$REL/paper" "$REL/README.md" "$REL/logs" "$REL/release_manifest.json"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
