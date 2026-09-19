@@ -1,0 +1,97 @@
+name: R19 complete scientific publication
+on:
+  push:
+    branches: [revision/econometrica-r19-development-2026-09-20]
+    paths:
+      - .github/workflows/r19-publish.yml
+      - replication/r19/assemble.py
+      - replication/r19/publish.py
+      - replication/r19/prepare_release.py
+      - replication/r19/replicate.py
+permissions:
+  contents: write
+concurrency:
+  group: r19-complete-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      R19_SOURCE_COMMIT: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install scientific and publication dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5 scipy==1.17.0 sympy==1.14.0 pymupdf==1.26.6
+          sudo apt-get update -qq > /tmp/r19-apt.log 2>&1
+          sudo apt-get install -y -qq --no-install-recommends latexmk texlive-latex-extra texlive-fonts-recommended texlive-science >> /tmp/r19-apt.log 2>&1 || { tail -100 /tmp/r19-apt.log; exit 1; }
+          echo "TEXINPUTS=$PWD//:" >> "$GITHUB_ENV"
+      - name: Correct the independently discovered checker indexing bug
+        run: python replication/r19/prepare_release.py
+      - name: Regenerate every R19 scientific witness including exact-policy controls
+        run: python -u replication/r19/replicate.py
+      - name: Independent rational, Bellman, response, and policy checks
+        run: python -O -u replication/r19/verify.py
+      - name: Independent attainment, inference, and exact-control checks
+        run: python -O -u replication/r19/final_checks.py
+      - name: Recheck retained continuum economics without modifying its inputs
+        run: |
+          set -euo pipefail
+          python -O -u replication/r14/verify.py --receipt replication/r19/output/inherited_validation.json > /tmp/r19-inherited-check.txt 2>&1 || { tail -120 /tmp/r19-inherited-check.txt; exit 1; }
+          tail -12 /tmp/r19-inherited-check.txt
+      - name: Assemble all main, supplementary, response, and preservation sources
+        run: python -u replication/r19/assemble.py
+      - name: Compile every publication and check complete dependencies and PDF layouts
+        run: python -u replication/r19/publish.py
+      - name: Deposit the complete checked author package on its isolated branch
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = 'revision/econometrica-r19-development-2026-09-20'
+          git config user.name 'NBO Scientific Publication'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          selected=[]
+          for base in ('replication/r19','revisions/2026-09-20-r19'):
+              for p in Path(base).rglob('*'):
+                  if p.is_file() and p.suffix in ('.py','.tex','.pdf','.json','.md','.png','.txt','.npz') and '__pycache__' not in str(p):
+                      selected.append(str(p))
+          selected += ['README.md','REVISION_INDEX.md','ECTA_R19.tex','SUPP_R19.tex','RESPONSE_R19.tex','COMPENDIUM_R19.tex']
+          subprocess.run(['git','add','-f','--',*selected],check=True)
+          PY
+          if ! git diff --cached --quiet; then
+            git commit -m 'publication(r19): deposit complete independently checked manuscript, proofs, response, PDFs, and evidence'
+            git fetch origin "$GITHUB_REF_NAME"
+            git rebase "origin/$GITHUB_REF_NAME"
+            git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
+          fi
+          git log -1 --format='%H %s'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r19-current-publication
+          if-no-files-found: warn
+          retention-days: 30
+          path: |
+            revisions/2026-09-20-r19/ECTA_R19.pdf
+            revisions/2026-09-20-r19/SUPP_R19.pdf
+            revisions/2026-09-20-r19/RESPONSE_R19.pdf
+            revisions/2026-09-20-r19/COMPENDIUM_R19.pdf
+            revisions/2026-09-20-r19/build_report.json
+            revisions/2026-09-20-r19/release_manifest.json
+            revisions/2026-09-20-r19/build_logs
+            revisions/2026-09-20-r19/preview
+            replication/r19/output/validation.json
+            replication/r19/output/final_checks.json
+            replication/r19/output/inherited_validation.json
