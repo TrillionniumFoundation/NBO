@@ -1,0 +1,37 @@
+name: R6 exact-source review
+on:
+  push:
+    branches: [revision/econometrica-r6-continuum-2026-09-21]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record exact source and preserve readable history
+        run: |
+          mkdir -p /tmp/r6-artifact
+          git rev-parse HEAD > /tmp/r6-artifact/source_commit.txt
+          git archive --format=tar.gz HEAD > /tmp/r6-artifact/source.tar.gz
+      - name: Install review dependencies
+        if: hashFiles('revisions/2026-09-21-r6/build_review.sh') != ''
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended latexmk
+          python -m pip install numpy scipy torch
+      - name: Reproduce R6 review package
+        if: hashFiles('revisions/2026-09-21-r6/build_review.sh') != ''
+        run: bash revisions/2026-09-21-r6/build_review.sh
+      - name: Archive review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r6-review-${{ github.sha }}
+          path: |
+            /tmp/r6-artifact/*
+            revisions/2026-09-21-r6/build/**
+          if-no-files-found: error
+          retention-days: 30
