@@ -1,0 +1,27 @@
+name: R6 pinned external source
+on:
+  push:
+    branches: [revision/econometrica-r6-continuum-2026-09-21]
+    paths: [.github/workflows/r6-external-source.yml]
+permissions:
+  contents: read
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: sx-fang/MartNet
+          ref: 991ea8dde5bad6ba912eb8cc48b0cb48dbdd6c2a
+          persist-credentials: false
+      - run: |
+          mkdir -p /tmp/external-source
+          git rev-parse HEAD > /tmp/external-source/martnet_commit.txt
+          git archive --format=tar.gz HEAD > /tmp/external-source/martnet.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r6-pinned-martnet-source
+          path: /tmp/external-source/*
+          if-no-files-found: error
+          retention-days: 30
