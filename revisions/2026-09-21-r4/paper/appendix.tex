@@ -1,0 +1,222 @@
+\section{Proofs and the scope of the value certificates}
+\label{app:proofs}
+\subsection{Proof of Proposition~\ref{prop:exact}}
+Write $V_j=E(\pi_j)$. The pointwise selector inequality is
+$\mathcal H^{I(\pi_j)}[V_j]\geq\mathcal H^{\pi_j}[V_j]$. Comparison and the assumed verification inequality imply $V_{j+1}\geq V_j$. Precompactness of the evaluation image implies boundedness. Therefore at each state-time point the monotone sequence has a limit $\bar V$.
+
+Every subsequence of $V_j$ has a further convergent subsequence in the declared strong norm. Its uniform function limit must be $\bar V$, by monotonicity and pointwise uniqueness of the limit. Consequently the whole sequence converges uniformly to $\bar V$; in fact it converges in the declared strong norm because otherwise a subsequence separated from its unique possible strong cluster point would contradict precompactness. Derivatives of any strong cluster point are the derivatives of its function limit. This observation includes the time derivative, which must be controlled when passing an evaluation equation to the limit.
+
+Let $\pi_{j_m}\to p$ along a policy subsequence. Continuity of evaluation gives $E(p)=\bar V$. Continuity of $I$ at $p$ and of $E$ gives
+\[
+E(I(p))=\lim_m E(I(\pi_{j_m}))=\lim_m V_{j_m+1}=\bar V.
+\]
+The policy $I(p)$ attains the Hamiltonian maximum evaluated at $E(p)=\bar V$. Its evaluation at this same value therefore gives
+\[
+-\bar V_t=\mathcal H^{I(p)}[\bar V]=\sup_{a\in A}\mathcal H^a[\bar V].
+\]
+The boundary condition passes to the limit in the declared topology. Comparison identifies the value, and verification gives optimality. In particular $E(p)=V^*$, even if $p$ and $I(p)$ differ on ties. No step identifies successive limiting \emph{policies} merely from a small difference of their values.
+
+This proposition concerns an exact operator on a compact, selector-closed policy class. Neither a finite tanh network nor a finite-sample optimizer automatically meets those assumptions. The implemented finite policy is instead assessed by Theorem~\ref{thm:finite}. For recursive drivers the comparison assumptions have to be supplied for that driver and value domain; the proof does not obtain comparison from the word ``recursive.''
+
+\subsection{Proof of Theorem~\ref{thm:continuous}}
+Apply discounted It\^o's formula to the test function under any feasible policy $a$ and stop at $\tau$. Taking expectations yields the identity
+\begin{equation}
+J^a(t,s)-v(t,s)=\mathbb E_{t,s}\left[e^{-\rho(\tau-t)}(g-v)(\tau,S_\tau)
++\int_t^\tau e^{-\rho(r-t)}R_a(v)(r,S_r)\,dr\right].
+\label{eq:ito-identity}
+\end{equation}
+If necessary, localization followed by the integrability hypothesis justifies removal of the localizing sequence. For the enacted policy, $R_\pi(v)\geq-\epsilon$ and the boundary difference is at least $-b$. Hence
+$J^\pi\geq v-b-C_\rho(T-t)\epsilon$. For every feasible alternative,
+$R_a(v)\leq R_\pi(v)+\eta\leq\epsilon+\eta$ and the boundary difference is at most $b$. Thus
+$J^a\leq v+b+C_\rho(T-t)(\epsilon+\eta)$. Taking a supremum over alternatives and subtracting proves \eqref{eq:continuous-bound}. Attainment of that supremum is not required.
+
+The proof does not need differentiability of the true value or differentiability of the policy with respect to its parameters. It does need a legitimate test function, a legitimate stopped process, and bounds valid wherever any competing policy can travel. A residual measured under the actor's occupancy alone need not control an alternative policy. This is why an off-policy uniform audit, or an explicitly proved change-of-measure bound, is essential for the displayed worst-case guarantee.
+
+\paragraph{Boundary and domain qualifications.}
+The theorem bounds the stopped payoff as defined, even when the optimal value lacks a classical extension to every boundary face. The NDU diffusion can be degenerate in wealth under $\pi=0$. We do not assert that all boundary points are regular for every controlled diffusion, or that the continuous NDU value belongs to $C^{1,2}$ up to all faces. The scalar payoff at a boundary starting state is settlement by definition; an interior limiting value may require a generalized viscosity boundary interpretation. The theorem's test-function and residual hypotheses would still have to be verified before numerical use. The finite boundary-switched critic is not used to bypass this requirement.
+
+\paragraph{Sampling and covering errors.}
+Suppose a residual $R$ is known to be $L_R$-Lipschitz on a compact set and audit nodes form a $d_h$-net. Then
+\[
+\|R\|_\infty\leq\max_j|R(s_j)|+L_Rd_h.
+\]
+The same argument applies to a feasible improvement gap if its Lipschitz constant is established. Finite action coverage gives an additional $L_A h_A$ term only when a uniform action Lipschitz bound $L_A$ is known. These inequalities are deterministic covering statements, not consequences of a large sample size. No such global constants have been computed for the NDU neural critic, and no continuum certificate is reported for it.
+
+\subsection{Proof of Theorem~\ref{thm:finite}}
+Positivity and row sums at most one imply that $T_n^\pi$ and $T_n$ are monotone and $\delta$-Lipschitz in the sup norm. Let $d_n^\pi=\|\widehat v_n-V_n^\pi\|_\infty$. The evaluation defect gives
+$d_n^\pi\leq e_n+\delta d_{n+1}^\pi$, and hence
+\[
+d_n^\pi\leq\delta^{N-n}b+\sum_{j=n}^{N-1}\delta^{j-n}e_j.
+\]
+For the optimal value, the residual with respect to $T_n$ is at most $e_n+\eta_n$ in absolute value, because
+$\widehat v_n-T_n\widehat v_{n+1}=(\widehat v_n-T_n^\pi\widehat v_{n+1})-(T_n\widehat v_{n+1}-T_n^\pi\widehat v_{n+1})$.
+The same backward estimate gives
+\[
+\|\widehat v_n-V_n^*\|_\infty\leq\delta^{N-n}b+
+\sum_{j=n}^{N-1}\delta^{j-n}(e_j+\eta_j).
+\]
+The triangle inequality proves the result. For exact re-evaluation, both $e$ and $b$ vanish; the code computes each date's maximum feasible gain and accumulates it with the factor $\delta$.
+
+Early liquidation creates no additional continuation coefficient: its payoff, including the fractional-step discount, is already in $r_n^a$. The substochastic surviving row sums remain at most one. Boundary nodes are replaced by their immediate settlement operator in both the optimizer and policy evaluator. The theorem therefore applies to the finite model even though its boundary policy outputs are not economically enacted.
+
+\paragraph{Adding a verified numerical-economy error.}
+Suppose, for the same policies and initial states, an independent argument establishes $|J^\pi-J_h^\pi|\leq\zeta$ uniformly and $|V^*-V_h^*|\leq\zeta_*$. Then
+$V^*-J^\pi\leq\zeta_*+(V_h^*-J_h^\pi)+\zeta$. This decomposition identifies the missing bridge without assigning it a zero. In particular, a coarse--fine value difference is neither $\zeta$ nor $\zeta_*$ without a further error argument.
+
+\subsection{Proof of Theorem~\ref{thm:cost}}
+For each admissible policy, $J_k(\pi)=A(\pi)-kB(\pi)$ is affine and nonincreasing in $k$, since $B\geq0$. The supremum of these affine functions is convex; the pointwise supremum of nonincreasing functions is nonincreasing. At an initial state where optimizers exist, their optimality gives
+\begin{align*}
+A(\pi_1)-k_1B(\pi_1)&\geq A(\pi_2)-k_1B(\pi_2),\\
+A(\pi_2)-k_2B(\pi_2)&\geq A(\pi_1)-k_2B(\pi_1).
+\end{align*}
+Adding gives $(k_2-k_1)[B(\pi_1)-B(\pi_2)]\geq0$. This holds for any choices of the two optimizers, including multiple optimal policies. Moreover $-B(\pi_k)$ is a subgradient of $V$ at $k$ because
+$V(\widetilde k)\geq V(k)-(\widetilde k-k)B(\pi_k)$. At a differentiability point this subgradient equals $V'(k)$. Finally the unrestricted feasible policy set contains the set with $\theta=0$, so its supremum is no smaller.
+
+The argument survives the killed finite approximation because its transition, discounting, and settlement do not depend on $k$, while the per-action cost remains exactly $k$ times its discounted adjustment exposure. It would not apply without modification if changing $k$ also changed the liquidation fee, the feasible action set, the utility normalization, or the law of preference shocks. It says nothing about a pointwise ordering of $\theta$, a portfolio-share ordering, or identification of the model from observed data.
+
+\section{Global action selection and the NDU stochastic operator}
+\label{app:ndu}
+\subsection{Constrained Hamiltonian maximization}
+At a fixed critic jet, the NDU maximand separates across $c,\theta,\pi$. Let their bounds be $(c_-,c_+)$, $(\theta_-,\theta_+)$, and $(\pi_-,\pi_+)$. Consumption maximizes $c^{1-u}/(1-u)-V_X c$, whose second derivative is $-u c^{-u-1}<0$. If $V_X>0$, its optimum is the projection of $V_X^{-1/u}$ onto $[c_-,c_+]$. If $V_X\leq0$, the objective is increasing and the optimum is $c_+$. Adjustment maximizes $V_u\theta-k\theta^2/2$ and therefore selects the projection of $V_u/k$.
+
+Write the portfolio objective as $a_1\pi+a_2\pi^2/2$, where
+\[
+a_1=.06XV_X+.2(.05)(-.25)XV_{uX},\qquad a_2=.2^2X^2V_{XX}.
+\]
+If $a_2<0$, select the projected value $-a_1/a_2$. If $a_2>0$, compare the two endpoints. If $a_2=0$, choose the endpoint indicated by the sign of $a_1$, with any feasible action optimal when $a_1=0$. Thus a nonconcave portfolio slice need not create an inaccessible local search problem in this particular model. The finite algorithm instead enumerates its declared action grid; it never labels a stationary neural parameter as a global action optimum.
+
+For a general differentiable concave maximand, concavity gives
+$H(a)\leq H(a_0)+\langle\nabla H(a_0),a-a_0\rangle$. Taking a supremum proves \eqref{eq:fwgap}. If an interior maximizer and an $m$-strongly concave objective are known, the familiar gradient-square bound $H^*-H(a_0)\leq\|\nabla H(a_0)\|^2/(2m)$ follows by completing the square. The supporting-hyperplane formulation is preferable at constrained optima. Neither argument transfers concavity from actions to shared network parameters.
+
+\subsection{Local consistency and preference reachability}
+Let $b=(\theta,(r+e\pi)X-c)$ and let $C$ denote the covariance matrix of the two-dimensional diffusion. Before the exit correction, \eqref{eq:quadrature} satisfies
+\[
+\mathbb E\Delta S=b\Delta,\qquad
+\operatorname{Cov}(\Delta S)=C\Delta,
+\quad C_{uX}=\sigma_u\sigma_X\pi X\rho_{uX}.
+\]
+The six polynomial tests $1,u,X,u^2,X^2,uX$ give the correct constant and linear generators exactly, and quadratic-generator errors $O(\Delta)$ from the drift outer product. At $(u,X)=(2,1)$ and $(c,\theta,\pi)=(.4,.13,.65)$, the continuous generators are
+\[
+(0,\ .13,\ -.341,\ .5225,\ -.6651,\ -.553625).
+\]
+The executable checks step sizes $.1,.05,.025,.0125$. The covariance error is below $10^{-12}$ and the quadratic-generator discrepancy declines at the predicted rate. These tests include, rather than infer, the cross term. At a zero-adjustment interior state, the generator contribution of $u^2$ is $.0025$, not zero.
+
+There is no nearest-neighbor rounding of the next preference state. The mean preference displacement is $\theta\Delta$ and bilinear continuation varies between nodes. A smooth test function linear in $u$ therefore sees every nonzero feasible adjustment even when $|\theta|\Delta$ is less than half a grid spacing. Preference reachability is not inferred from the existence of a control parameter in metadata.
+
+Positive bilinear interpolation on a smooth function has error of order $h_u^2+h_X^2$ under appropriate derivative bounds. Dividing by $\Delta$ produces a generator contribution of order $(h_u^2+h_X^2)/\Delta$. Thus an interior consistency limit requires a coupled choice such as $(h_u^2+h_X^2)/\Delta\to0$, together with vanishing action and time errors. Near the killed boundary, additional exit-time consistency and boundary regularity are needed. The four-branch linear-segment rule is not an exact Brownian-bridge crossing calculation. These qualifications explain why the displayed separate refinements are informative diagnostics but not a continuum error certificate.
+
+\subsection{Boundary cash flows and recorded exits}
+For a proposed increment $d$, the exit fraction is the minimum positive fraction at which $s+\lambda d$ reaches a domain face, capped at one. At a crossing the continuation value is $g(t+\lambda\Delta,s+\lambda d)$, the flow receives discount integral
+$[1-\exp(-\rho\lambda\Delta)]/\rho$, and there is no continuation policy after settlement. A regression starts at $X=.51$, chooses $c=.8,\pi=0$, and verifies that every branch reaches $X=.5$ with fraction strictly below one and then terminates. The program never changes wealth to $.5$ and permits another consumption date under the pre-exit contract.
+
+The exit ledger distinguishes an exit event from a post-correction state. The adjustment budget is accumulated only until settlement. For a surviving branch interpolated to a boundary node, the next-date boundary settlement is part of the finite kernel. This interpolation effect is a numerical feature, not a physical reflection. The settlement fee is a model primitive; comparing fees 6, 8, and 10 is explicitly labeled a comparison of contracts.
+
+\section{Recursive aggregation, temporal selves, and strategic interaction}
+\label{app:recursive}
+\subsection{The recursive aggregator and its domain}
+For $a=1-1/\psi$, $b=1-\gamma$, and $bV>0$, expand the aggregator as in \eqref{eq:ez}. Its consumption derivative is
+\[
+f_c(c,V)=\rho c^{a-1}(bV)^{1-a/b}>0.
+\]
+Its value derivative is
+\[
+f_V(c,V)=\frac{\rho}{a}(b-a)c^a(bV)^{-a/b}-\frac{\rho b}{a}.
+\]
+On compact ranges with consumption bounded away from zero and $bV$ bounded away from zero, these derivatives are bounded. This is a local Lipschitz conclusion on the specified range, not a global sign or existence theorem for all values. The transform $V=e^W/b$ enforces $bV>0$, but cannot by itself verify integrability, terminal compatibility, comparison, or transversality.
+
+A policy-wise recursive evaluation solves \eqref{eq:bsde}; in the Markov setting its equation is $v_t+\mathcal L^\pi v+f(c^\pi,v)=0$. When $f$ is Lipschitz in $v$ with constant $L$, standard comparison of a perturbed evaluation with a verified evaluation gives a finite-horizon error envelope of the form
+\[
+e^{L(T-t)}b+\int_t^T e^{L(r-t)}\epsilon\,dr
+\]
+under the relevant comparison and integrability hypotheses. A decreasing driver can give a sharper dissipative estimate, but monotonicity must be checked from $f_V$ on the actual range. The time-separable discounted bound in Theorem~\ref{thm:continuous} is not silently applied to an arbitrary Epstein--Zin driver.
+
+\subsection{Executed implicit recursive reference}
+The supplementary calculation fixes $\gamma=5$, $\psi=1.5$, and $\rho=.04$ on a deterministic saving problem with ten steps of length $.05$. At each wealth node $x\in[.5,2]$, consumption is $c=mx$ with 80 fractions in $[.01,.6]$, and the next wealth is the stated saving transition in the code. For each action the scalar evaluation equation is
+\[
+y=I_hV_{n+1}(x')+\Delta f(c,y),\qquad by>0.
+\]
+The negative-value root is bracketed and solved numerically before maximizing over the action grid. The terminal target is $x^b/b$. Outside the wealth lattice, continuation uses the specified terminal homothetic tail as numerical boundary data at that date. It is not a solution on an unbounded wealth domain. At the central node the recorded value is $-.29658656$ and the selected consumption fraction is the lower bound $.01$. This active bound is reported rather than described as an interior stationary ratio.
+
+The sign-domain and implicit-equation residual tests are actual evaluated quantities. Neural solution error is null because this experiment solves scalar implicit reference equations rather than training a recursive neural policy. The general recursive portfolio model remains part of the paper's operator formulation and analytical derivations; its stationary ratios $.3$ and $.0455$ remain algebraic anchors until their full infinite-horizon verification is supplied.
+
+\subsection{Ordinary continuation and acting-self utility}
+For a fixed continuation policy, ordinary log-wealth utility in the two-consumption-date example has form $V_n(w)=A_n\log w+B_n$. Starting from $A_N=1,B_N=0$, the sophisticated self chooses
+\[
+\alpha_n=\frac{1}{1+\beta\delta A_{n+1}},\quad c_n=\alpha_n w,
+\quad A_n=1+\delta A_{n+1},\quad
+B_n=\log\alpha_n+\delta[A_{n+1}\log(1-\alpha_n)+B_{n+1}].
+\]
+Evaluation uses $\delta$, while improvement uses $\beta\delta$. With $\delta=1$ and two decisions, $A_1=2$ and $\alpha_0=1/(1+2\beta)$. Substituting $\beta$ into the evaluation coefficient instead produces the different expression $1/(1+\beta+\beta^2)$. At $\beta=1$ the two formulas coincide, so this special case cannot diagnose the distinction.
+
+A one-shot deviation is evaluated against the same frozen continuation policy whose equilibrium is being claimed. Replacing its continuation with a different grid's optimized value changes the estimand. For a general finite sophisticated-self computation, all feasible actions can be enumerated at each date using the correctly evaluated future policy. For continuous actions a local search gives only a feasible deviation lower bound unless concavity, a global oracle, or an explicit upper-bound calculation closes the search gap.
+
+\subsection{Dynamic games and equilibrium selection}
+Let $J_i(\pi_i,\pi_{-i})$ denote player $i$'s payoff with its own objective and transition law. A Nash certificate bounds
+\[
+\sup_{\widetilde\pi_i}J_i(\widetilde\pi_i,\pi_{-i})-J_i(\pi_i,\pi_{-i}),
+\]
+not a joint-profit improvement. An actor graph that differentiates through rivals is not the unilateral derivative graph. In the static benchmark $q_i(1-q_i-q_j)$, the derivative with a detached rival is $1-2q_i-q_j$. It vanishes at $q_i=q_j=1/3$, whereas joint optimization selects $1/4$ and leaves a profitable deviation. The executable graph regression verifies both the own gradient and the absence of a rival parameter gradient.
+
+The three-date capacity game has an exogenous Markov demand state and endogenous future capacity. At each state-date pair, enumerate the two players' current feasible output--investment actions using continuation values from the already selected future equilibria. A pure equilibrium is an action pair that is a best response for each player against the other current action and the fixed future policy profile. Every enumerated state has at least one pure equilibrium in this particular game. Lexicographic tie selection is recorded, and the full profile includes asymmetric choices. In a finite-horizon game, this backward best-response construction establishes subgame perfection on the finite state space; no uniqueness follows from it.
+
+For large-population or competitive-limit analysis, the demand and capacity scaling, investment technology, and equilibrium concept must be fixed before taking a limit. Symmetric initialization is neither a proof of equilibrium nor an equilibrium-selection theorem. Those questions are retained as model extensions rather than filled with the historical illustrative $N$-series. No claim about a trained high-dimensional game or a solved competitive limit is attached to the current exact finite game.
+
+\section{Trace estimands and computational cost}
+\label{app:trace}
+For standard Gaussian $z$ and symmetric $A$, diagonalization and the independent squared-normal moments give
+$\mathbb E z'Az=\operatorname{tr}A$ and $\operatorname{Var}(z'Az)=2\|A\|_F^2$.
+Independence across $K$ probes yields variance $2\|A\|_F^2/K$ for their mean. Expanding the squared residual then proves \eqref{eq:trace}. For Rademacher probes the diagonal contribution to variance vanishes, so the formula must be changed rather than reused uncritically.
+
+For $K\geq2$, define the cross-product correction
+\begin{equation}
+U_K=a^2-a\bar q_K+\frac{1}{4K(K-1)}\sum_{i\ne j}q_iq_j.
+\label{eq:U}
+\end{equation}
+Independence of distinct probes gives $\mathbb E U_K=(a-\operatorname{tr}A/2)^2$. The statistic is unbiased but can be negative in a finite batch and may have a different variance and optimization behavior. It is therefore an additional estimand, not a blanket replacement justified by unbiasedness alone. The audit reports its empirical mean and standard error separately. When $A$ depends on network parameters, the uncorrected variance term itself varies with those parameters; a squared stochastic trace can consequently change the expected minimizer.
+
+Let $C_{\rm jet}$ denote the actual cost of a directional second derivative and its parameter gradient for the chosen network. If $\Sigma$ has $m$ columns, exact contraction can be organized as $m$ directional second derivatives, with loading and batching costs. A $K$-probe contraction costs roughly $K C_{\rm jet}$ plus those costs; it is not an unconditional $O(d)$ solver. Total work additionally multiplies by collocation samples, training iterations, and any restarts. Peak memory, warm-up, and accelerator synchronization must be measured for a hardware comparison. The current CPU timers do not measure peak memory, so that metric remains null.
+
+\paragraph{The coupled dynamic regression.}
+For the finite-horizon quadratic-cost economy, a policy $a=Wx$ gives a quadratic value $x'Px+c$. Given a frozen next evaluator, the actor minimizes the expected quadratic stage-plus-continuation cost. Gaussian shocks contribute $\operatorname{tr}(PSS')$; the value recursion includes this constant. A matrix-valued linear neural actor is trained against the frozen evaluator by L-BFGS, while an independent Riccati recursion computes the benchmark. Both use identical $A,Q,R,S$, horizon and terminal cost. Correlation is a state-transition covariance here, not a metadata label on a static objective.
+
+The known quadratic family makes this a favorable regression. At dimensions 4, 8, and 16, Riccati times are approximately $.00060,.00040,.00043$ seconds and actor times are $1.319,.0323,.0384$ seconds. The first timing includes startup effects. These numbers neither establish a dimension scaling law nor compare against adaptive sparse grids. The original static coupled quadratic program is retained in the R3 archive as a small linear-algebra check, separate from this dynamic experiment.
+
+\section{Approximation, counterexamples, and optimization limits}
+\label{app:limits}
+\subsection{A composite objective can bias evaluation}
+Consider a one-state terminal evaluation problem whose true value is zero and whose critic is a scalar $v$. The exact evaluation residual is $v$. A joint surrogate $v^2-\lambda v$ has minimizer $v=\lambda/2$, not the evaluated value, for every $\lambda\ne0$. The example isolates the logical issue: optimizing performance and evaluation over the same value parameter need not preserve the evaluation equation. Adding a positive residual weight changes the bias but does not prove exact evaluation. The separated actor has no gradient into that value parameter, so it does not create this particular bias.
+
+Similarly, zero-centering a residual is not a stability theorem. The derivative of $R^2/2$ is $R\nabla R$ and its Jacobian, conditioning, sampling, and step sizes govern a finite optimizer. Value dependence in a recursive driver remains inside this derivative. A zero target does not make the objective independent of the value level.
+
+\subsection{A small squared residual does not select a viscosity solution}
+On $(-1,1)$ with boundary values zero, consider $|v'|=1$. The nonnegative distance function $1-|x|$ is the viscosity solution. The function $|x|-1$ has the same boundary values and satisfies $|v'|=1$ almost everywhere, but it fails the viscosity supersolution test at zero: the constant test function $-1$ touches it from below and has $|\phi'|-1=-1<0$.
+
+Smooth approximations
+$v_\varepsilon(x)=\sqrt{x^2+\varepsilon^2}-\sqrt{1+\varepsilon^2}$
+have exactly the boundary data and converge uniformly to $|x|-1$. Their squared residual $\int_{-1}^1(|v_\varepsilon'|-1)^2dx$ tends to zero by dominated convergence, although the limit is not the viscosity solution. Thus boundary agreement, smooth networks, and an $L^2$ residual do not establish viscosity selection. Monotone, stable, consistent schemes with appropriate comparison can provide a different route \citep{barles1991}; positivity of an interior interpolation alone does not verify all of those hypotheses at a killed boundary.
+
+Smooth nonpolynomial neural networks can approximate a sufficiently smooth function and derivatives on compact subsets under the relevant approximation hypotheses. This does not create derivatives at a kink, ensure global boundary regularity, close a finite policy class under a maximizing selector, or prove that stochastic optimization finds the approximant. The retained derivative-approximation motivation is used only in that conditional sense.
+
+\subsection{Two-timescale statements and suboptimal attractors}
+For projected stochastic approximation, a conventional ODE analysis requires bounded iterates, suitable continuity and stability, martingale-difference noise with bounded conditional second moments, step sizes satisfying infinite sums, finite squared sums, and a vanishing slow-to-fast step-size ratio, plus a globally attracting critic equilibrium for each frozen actor. Under the appropriate additional technical conditions, the actor limit set is governed by the corresponding limiting ODE and its internally chain-transitive sets.
+
+This is not a global optimality statement. For $H(a)=-(a^2-1)^2+.2a$, the negative local maximizer is an asymptotically stable isolated stationary point with strictly positive global improvement gap. The audit solves the cubic stationarity equation and evaluates the gap $.3998745872$. Exact critic evaluation and zero noise do not remove that attractor. To conclude optimality one must establish, for the actual actor dynamics, that every relevant limiting set has zero feasible improvement gap, or use an applicable global concavity or gradient-domination argument. The finite runs use Adam and L-BFGS and are assessed by their measured errors; they are not examples of a diminishing-step asymptotic theorem.
+
+\section{Implementation, evidence classes, and reproducibility}
+\label{app:repro}
+\subsection{Executed parameterizations and data flow}
+The continuous Merton critic has one learned log-amplitude and its actor has two learned logits. It uses float64 automatic differentiation through the value with respect to wealth, including the Hessian; critic and actor optimizers are separate. Its independently evaluated policy has positive transversality decay $D$. Analytical controls are used only after training to measure error.
+
+The NDU run is different: time-specific nonlinear networks represent a finite Bellman operator. Its actor maps two normalized states to 125 logits through two 48-unit tanh layers. Its critic maps six features, including log distances to boundary faces, through two 48-unit tanh layers to a scalar adjustment to terminal utility. Next-date critics are frozen, the actor target uses only their continuation predictions, and the current critic is fitted to the enacted actor's policy-evaluation target. The independent NumPy optimizer and evaluator are not imported as training labels.
+
+Training residuals are not out-of-sample certificates because all interior finite states are collocation points. The independent evaluator changes the computational path, not the economic grid. The source contains separate NumPy and PyTorch implementations of the transition and interpolation, whose equality is tested on deterministic data. Cross-grid reference calculations are discretization diagnostics; they have not been relabeled a held-out neural accuracy result.
+
+\subsection{Interpreting metrics}
+A value error against the finite optimal reference, a critic error against the evaluated policy, a coarse--fine value difference, and a unilateral gain are different estimands. Policy component differences are retained for consumption, adjustment, and portfolio share. Boundary-node actor outputs are not enacted after settlement; full-grid maxima and interior summaries must be distinguished when interpreting them. A finite exhaustive best-response maximum is a finite-model certificate. A feasible search over only some continuous deviations is merely a lower bound on exploitability.
+
+Execution status and tolerance status are separate fields. A program that completes can miss its target; a timed-out audit has no final solution certificate. A null numerical error has an explicit reason, such as an unmeasured continuous-diffusion error or a recursive reference that did not train a neural policy. A numerical zero is used only for a quantity actually calculated, such as the finite game deviation maximum or a tested monotonicity violation.
+
+The initial failed neural source and its weights, metrics, and raw arrays are retained in the local review bundle. The successful three-seed sources and weights are separate. The attempted twelve-date runs are marked incomplete. Wall-clock times are metadata and are excluded from scientific payload hashes. Source hashes identify the exact executed script; the reachable review commit identifies the historical base, not a fictitious commit containing the subsequently created scripts. The final manifest maps every delivered source to its actual file hash and repository path.
+
+\subsection{Retained material and revision lineage}
+The new authoritative entry is \texttt{ECTA\_R4.tex}. The original \texttt{ECTA.tex}, the R3-authoritative \texttt{ECTA\_R2.tex}, its standalone supplement, embedded arrays, earlier reports, and R3 numerical artifacts are left unchanged. Core model formulations, constrained policy derivations, recursive aggregation, temporal-self and game extensions, trace analysis, and theoretical qualifications appear in the current text and these appendices. Historical unexecuted plots are retained as archival objects, not presented again as learned current outcomes. The retention map identifies their source locations and the corresponding corrected discussion. This preserves the scientific record without repeating incompatible equations as simultaneous current specifications.
