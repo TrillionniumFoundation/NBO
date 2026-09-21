@@ -1,0 +1,101 @@
+name: R5 execute and pin complete evidence
+on:
+  push:
+    branches: [revision/econometrica-r5-certified-control-2026-09-21]
+    paths:
+      - '.github/workflows/r5-execute-and-pin.yml'
+      - 'revisions/2026-09-21-r5/bootstrap/**'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r5-evidence
+  cancel-in-progress: false
+jobs:
+  evidence:
+    if: github.ref == 'refs/heads/revision/econometrica-r5-certified-control-2026-09-21'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      R5: revisions/2026-09-21-r5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: revision/econometrica-r5-certified-control-2026-09-21
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Verify and expand the source transport capsule
+        shell: python
+        run: |
+          from pathlib import Path
+          import base64,gzip,json,hashlib
+          root=Path('.').resolve(); prefix='revisions/2026-09-21-r5/'
+          parts=[root/(prefix+'bootstrap/source-'+str(i)+'.b64') for i in range(4)]
+          blob=base64.b64decode(''.join(p.read_text().strip() for p in parts),validate=True)
+          assert hashlib.sha256(blob).hexdigest()=='31f834b437704b0ded3dc43abd799cf73d620da245a5ac289bfc27a94c2588c3'
+          for name,content in json.loads(gzip.decompress(blob)).items():
+              assert name.startswith(prefix) and '..' not in Path(name).parts
+              p=root/name; p.parent.mkdir(parents=True,exist_ok=True)
+              if p.exists() and p.read_text()!=content:
+                  raise RuntimeError('Refusing to overwrite changed source '+name)
+              p.write_text(content)
+          (root/(prefix+'results')).mkdir(exist_ok=True)
+          (root/(prefix+'paper')).mkdir(exist_ok=True)
+      - name: Install the recorded numerical environment
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Reproduce the development pilots separately
+        run: |
+          python "$R5/replication/continuous_actor.py" --seed 0 > "$R5/results/pilot_ndu_reproduction.log"
+          python "$R5/replication/nonlinear_control.py" --d 8 --seed 30 --method nbo > "$R5/results/pilot_nonlinear_reproduction.log"
+          python "$R5/replication/recursive_neural.py" --seed 50 > "$R5/results/pilot_recursive_reproduction.log"
+          python "$R5/replication/neural_game.py" --seed 60 > "$R5/results/pilot_game_reproduction.log"
+      - name: Execute all prespecified configurations without seed replacement
+        run: |
+          python "$R5/replication/run_panel.py" | tee "$R5/results/confirmatory_driver.log"
+          python "$R5/replication/run_extensions.py" | tee "$R5/results/extensions_driver.log"
+          python "$R5/replication/run_scheme_panel.py" | tee "$R5/results/scheme_driver.log"
+          python "$R5/replication/boundary_certificate.py" > "$R5/results/boundary_certificate.log"
+      - name: Aggregate and independently check delivered objects
+        run: |
+          python "$R5/replication/assemble_results.py"
+          python "$R5/replication/validate_r5.py"
+          python - <<'PY'
+          from pathlib import Path
+          import os,json
+          p=Path(os.environ['R5'])/'results/ci_execution.json'
+          p.write_text(json.dumps({'source_commit':os.environ['GITHUB_SHA'],'run_id':os.environ['GITHUB_RUN_ID'],'purpose':'Independent same-protocol repository reproduction; local pilot observations remain development history, not new confirmatory seeds','branch':os.environ['GITHUB_REF_NAME']},indent=2))
+          PY
+          python "$R5/replication/hash_delivery.py"
+      - name: Pin sources, checkpoints, raw arrays, histories, and failed attempts in Git
+        if: always()
+        run: |
+          git config user.name 'NBO revision evidence bot'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$R5/replication" "$R5/results" "$R5/paper"
+          if test -f "$R5/manifest.json"; then git add "$R5/manifest.json"; fi
+          git reset -- ':(glob)**/__pycache__/**' || true
+          if ! git diff --cached --quiet; then
+            git commit -m 'evidence(r5): pin executed protocols, neural weights, raw arrays and independent validation'
+            git fetch origin revision/econometrica-r5-certified-control-2026-09-21
+            git rebase origin/revision/econometrica-r5-certified-control-2026-09-21
+            git push origin HEAD:revision/econometrica-r5-certified-control-2026-09-21
+          fi
+      - name: Preserve a complete immutable run bundle
+        if: always()
+        run: |
+          mkdir -p /tmp/nbo-r5-delivery
+          git archive --format=tar HEAD > /tmp/nbo-r5-delivery/repository.tar
+          git rev-parse HEAD > /tmp/nbo-r5-delivery/commit.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r5-complete-evidence-${{ github.run_id }}
+          path: /tmp/nbo-r5-delivery/
+          retention-days: 90
