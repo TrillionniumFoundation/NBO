@@ -1,0 +1,42 @@
+name: R5 canonical review build
+on:
+  push:
+    branches: [revision/econometrica-r5-certified-control-2026-09-21]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Archive immutable source snapshot
+        run: |
+          mkdir -p /tmp/nbo-review
+          git archive --format=tar HEAD > /tmp/nbo-review/source.tar
+          git rev-parse HEAD > /tmp/nbo-review/commit.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r5-source-${{ github.sha }}
+          path: /tmp/nbo-review/
+          retention-days: 90
+      - name: Install canonical LaTeX dependencies
+        run: sudo apt-get update -qq && sudo apt-get install -y texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Build journal-class manuscript
+        run: |
+          ENTRY=ECTA_R4
+          if test -f ECTA_R5.tex; then ENTRY=ECTA_R5; fi
+          pdflatex -interaction=nonstopmode -halt-on-error "$ENTRY.tex"
+          pdflatex -interaction=nonstopmode -halt-on-error "$ENTRY.tex"
+          mkdir -p /tmp/nbo-build
+          cp "$ENTRY.pdf" "$ENTRY.log" /tmp/nbo-build/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r5-canonical-build-${{ github.sha }}
+          path: |
+            /tmp/nbo-build/
+            ECTA_R4.log
+            ECTA_R5.log
+          if-no-files-found: ignore
+          retention-days: 90
