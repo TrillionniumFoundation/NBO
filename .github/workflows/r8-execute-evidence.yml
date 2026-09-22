@@ -1,0 +1,87 @@
+name: R8 execute and pin numerical evidence
+on:
+  push:
+    branches: [revision/econometrica-r8-verified-manuscript-2026-09-22]
+    paths: [.github/workflows/r8-execute-evidence.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r8-evidence
+  cancel-in-progress: false
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      OMP_NUM_THREADS: 1
+      OPENBLAS_NUM_THREADS: 1
+      MKL_NUM_THREADS: 1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: sx-fang/MartNet
+          ref: 991ea8dde5bad6ba912eb8cc48b0cb48dbdd6c2a
+          path: .r8-external
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Pinned numerical environment
+        run: |
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install numpy==2.3.5 scipy==1.17.0 mpmath==1.3.0
+      - name: Execute declared panel without seed selection
+        shell: bash
+        run: |
+          set -euo pipefail
+          P=revisions/2026-09-22-r8/replication
+          O=revisions/2026-09-22-r8/results
+          mkdir -p "$O"
+          python -u "$P/verify_continuum.py" | tee "$O/continuum.log"
+          python -u "$P/learned_geometry.py" | tee "$O/geometry.log"
+          python -u "$P/diagnostics.py" --task algebra | tee "$O/algebra.log"
+          python -u "$P/diagnostics.py" --task safeguard | tee "$O/safeguard.log"
+          python -u "$P/diagnostics.py" --task mesh | tee "$O/mesh.log"
+          for d in 8 16; do
+            for seed in 400 401 402 403 404 405; do
+              python -u "$P/external_comparison.py" --source .r8-external --seed "$seed" --dimension "$d" | tee "$O/external_d${d}_s${seed}.log"
+            done
+          done
+      - name: Bind executed source and external implementation
+        if: always()
+        shell: python
+        run: |
+          import hashlib,json,os,pathlib,platform,subprocess,sys
+          root=pathlib.Path('.'); out=root/'revisions/2026-09-22-r8/results';out.mkdir(parents=True,exist_ok=True)
+          inputs=list(root.glob('revisions/2026-09-22-r8/replication/*.py'))
+          inputs+=list(root.glob('revisions/2026-09-21-r4/replication/*.py'))
+          inputs+=list(root.glob('revisions/2026-09-21-r5/replication/*.py'))
+          inputs+=[root/'revisions/2026-09-22-r8/protocol.json']
+          external=list(root.glob('.r8-external/code/SOCMartNet-v3-refactored/socmartnet/*.py'))
+          sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+          data={'source_commit':os.environ['GITHUB_SHA'],'run_id':os.environ['GITHUB_RUN_ID'],
+            'run_attempt':os.environ['GITHUB_RUN_ATTEMPT'],'python':sys.version,'platform':platform.platform(),
+            'cpu':subprocess.check_output(['lscpu'],text=True),'packages':subprocess.check_output([sys.executable,'-m','pip','freeze'],text=True),
+            'author_commit':subprocess.check_output(['git','-C','.r8-external','rev-parse','HEAD'],text=True).strip(),
+            'source_sha256':{str(p):sha(p) for p in inputs},'external_sha256':{str(p):sha(p) for p in external},
+            'result_sha256':{str(p):sha(p) for p in out.iterdir() if p.is_file() and p.name!='execution_manifest.json'},
+            'evidence_policy':'All twelve paired cells are required; raw records retained. Mathematical precision and numerical performance are evaluated separately.'}
+          (out/'execution_manifest.json').write_text(json.dumps(data,indent=2)+'\n')
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r8-executed-evidence
+          path: revisions/2026-09-22-r8/results
+          retention-days: 30
+      - name: Commit complete evidence on the R8 branch only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add revisions/2026-09-22-r8/results
+          git commit -m 'evidence(r8): pin full interval, refinement, safeguard and paired-author panel'
+          git pull --rebase origin revision/econometrica-r8-verified-manuscript-2026-09-22
+          git push origin HEAD:revision/econometrica-r8-verified-manuscript-2026-09-22
