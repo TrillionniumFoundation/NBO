@@ -1,0 +1,293 @@
+\section{Introduction}
+A numerical decision rule is useful for economic analysis only when its error is small relative to the comparison being made. This requirement is distinct from a small training loss. It is also distinct from outperforming another learning algorithm. When a decision maker can change a preference state, an apparent welfare gain may reflect either the adjustment technology or an inaccurate evaluation of the policy without that technology. When termination is an economic contract, an inaccurate treatment of first exit can dominate both effects.
+
+This paper studies Neural Bellman Operators (NBO): separated policy evaluation and feasible policy improvement, implemented by neural networks and assessed by independent verification. The motivating economy combines consumption, portfolio choice, stochastic risk aversion, and costly preference adjustment. The analysis retains its original running utility, continuous controls, correlated Brownian shocks, and first-exit liquidation covenant. Neither reflecting the state at a training boundary nor altering the running payoff is used to establish the economic results below.
+
+The main numerical result is a certified $.01$-optimal policy in the original continuous economy at the central initial state, for adjustment-cost coefficients $.5$, $2$, and $8$. The respective regret upper bounds are $.00987440$, $.00971727$, and $.00996896$. Each lower endpoint evaluates a feasible policy; each upper endpoint covers all original adaptive controls. The computation does not replace the first-exit contract, restrict the original optimum to time controls, or use a finite action grid to claim a continuous guarantee.
+
+The economic consequences are quantitative. Raising the adjustment-cost coefficient from two to eight lowers optimal welfare by an amount in $[.02318257,.04286880]$. The width of this interval is smaller than its lower endpoint. Access to adjustment at coefficient two raises optimal welfare by an amount in $[.04096859,.05973218]$ relative to the \emph{optimal} no-adjustment economy, rather than relative to a selected no-adjustment rule. Discounted expenditures of the deployed policies are also enclosed independently. The optimal expenditure itself is bounded by valid secants, not identified by relabeling a learned policy as an optimizer.
+
+The computational argument separates policy generation from proof. A learned time-control actor is polished within the feasible output class and evaluated by Gaussian polynomial moments under exact first exit. An affine-preference market-deflator witness then bounds the flexible optimum. Portfolio terms cancel for every adapted original portfolio rule. A supporting source inequality retains flexible adjustment, and a conditional-variance correction pays explicitly for its random marginal value. Outward weighted Taylor boxes enclose the remaining one-Gaussian integrals. Explicit continuation potentials cover artificial verification faces without altering the economic domain.
+
+These constructions improve on the preceding wealth-independent witness, whose $k=2$ regret upper was $.10634$. That witness and its complete proofs remain available; the new certificate is not a relabeling of its evaluation precision as optimality precision. The restricted economy's separate market-deflator bound is retained, together with its independently evaluated feasible policy. It gives an initial restricted-value interval narrower than $.00905$. Combining the two economies' bounds establishes the welfare inequalities above.
+
+A second contribution addresses the inner optimization needed for verification. In a coupled nonconvex control family, all nonconvex coupling depends on the sum of the actions. A one-dimensional branch-and-bound calculation, together with strongly convex scalar dual subproblems, certifies the full continuous action box without a tensor action grid. Executed certificates reach gaps below $10^{-5}$ through 128 action dimensions. At the eight- and sixteen-dimensional learned-critic test states, interval differentiation of the actual network weights also encloses the error in the floating-point critic gradient. This is an implemented bridge between learned parameters and an action certificate, not an assumption that an optimizer's stationary point is globally greedy.
+
+The same nonconvex family is given an absolute accuracy axis. A pointwise running-cost relaxation and removal of control bounds admit a Cole--Hopf representation that retains the original nonquadratic terminal payoff. Orthogonal Gaussian coordinates integrate analytically, leaving a positive scalar integral with an outward enclosure. The resulting number is a lower bound for the unchanged original minimization problem. Relative performance is evaluated separately in a frozen holdout experiment: three dimensions, two training budgets, twelve seed pairs per panel, equal learning-rate search budgets, warmed initialization, randomized method order, and a third, independently specified feedback rule. The pinned author implementation of SOC-MartNet is not modified.
+
+Classical verification, monotone approximation, and primal--dual numerical methods supply important foundations. The stopped It\^o argument is not claimed as a new general verification principle. Nor is alternating neural evaluation and improvement claimed as a new algorithmic idea. The contribution is the constructive combination of original-contract verification, independent economic upper and lower bounds, computable neural-jet allowances, and a non-enumerative global action audit, with each error quantity matched to an executed calculation. Section~\ref{r9:related} compares these objects theorem by theorem with neighboring methods. Recursive utility, sophisticated temporal selves, dynamic games, stochastic-trace identities, counterexamples, and the complete preceding manuscripts are preserved in the supplement rather than being used to enlarge the empirical claims of the present application.
+
+\section{The economic environment}\label{r9:economy}
+The state is $s=(u,x)$, where $u$ denotes relative risk aversion and $x$ denotes wealth. An admissible action is $a=(c,\theta,p)$ in the compact set
+\[
+ A=[.05,.8]\times[-.2,.2]\times[-.5,.8].
+\]
+Controls are progressively measurable and have well-defined stopped state equations. The feedbacks and time controls actually evaluated below are bounded and satisfy this requirement. Before termination,
+\begin{align}
+ du_t&=\theta_t\,dt+.05\,dZ^u_t,\\
+ dx_t&=[(.02+.06p_t)x_t-c_t]dt+.2p_tx_t\,dZ^x_t,
+ \qquad d\langle Z^u,Z^x\rangle_t=-.25\,dt.\label{r9:dynamics}
+\end{align}
+The horizon is $T=1$, discounting is $\rho=.04$, and the open state domain is
+$D=(1.2,2.8)\times(.5,2)$. Write $\tau=T\wedge\inf\{r\geq t:S_r\notin D\}$. For $k>0$, running utility and settlement are
+\begin{align}
+ \ell_k(u,c,\theta)&=\frac{c^{1-u}}{1-u}-\frac{k}{2}\theta^2,\\
+ G(u,x)&=-.02(u-2)^2+.1\log x,
+ \qquad g(t,u,x)=G(u,x)-8(1-t).\label{r9:payoff}
+\end{align}
+The policy payoff and optimal value are
+\begin{equation}
+ J_k^\pi(t,s)=\E^\pi_{t,s}\!\left[\int_t^\tau e^{-\rho(r-t)}\ell_k(S_r,a_r)\,dr
+        +e^{-\rho(\tau-t)}g(\tau,S_\tau)\right],
+ \qquad V_k=\sup_\pi J_k^\pi.\label{r9:objective}
+\end{equation}
+The no-adjustment value $V_R$ restricts $\theta$ to zero and retains \emph{all} admissible consumption and portfolio choices. It is independent of $k$. The cost experiment holds the controls, transition law, stopping rule, settlement, utility normalization, and consumption units fixed. A state-dependent transformation of utility would generally define another economy.
+
+The early settlement fee is a liquidation covenant. There is no continuation consumption or wealth injection following exit. At the lower wealth boundary the largest admissible wealth drift is negative. At the upper boundary, $p=0$ eliminates the wealth diffusion and permits an inward drift. Thus neither a silently viable rectangle nor a theorem requiring uniform controlled-boundary regularity can be substituted for this contract. The verification below requires only inequalities for smooth test functions on the trace at which the process is actually stopped.
+
+For a smooth function $v$, put
+\begin{align}
+ \mathcal L^av={}&\theta v_u+[(.02+.06p)x-c]v_x
+   +.00125v_{uu}+.02p^2x^2v_{xx}-.0025pxv_{ux},\\
+ R_av={}&v_t+\mathcal L^av+\ell_k-\rho v.\label{r9:generator}
+\end{align}
+The mixed derivative is retained. Its sign is not inferred solely from the negative shock correlation.
+
+\begin{proposition}[Complete selection at a fixed jet]\label{r9:selection}
+For the generator in \eqref{r9:generator}, a global maximizing action can be selected componentwise. Consumption is $\operatorname{proj}_{[.05,.8]}(v_x^{-1/u})$ when $v_x>0$ and is $.8$ otherwise. Adjustment is $\operatorname{proj}_{[-.2,.2]}(v_u/k)$. Let $h_1=.06xv_x-.0025xv_{ux}$ and $h_2=.04x^2v_{xx}$. If $h_2<0$, the portfolio is $\operatorname{proj}_{[-.5,.8]}(-h_1/h_2)$; if $h_2\geq0$, an endpoint maximizing $h_1p+h_2p^2/2$ is selected, with a fixed tie rule.
+\end{proposition}
+The statement includes convex and zero-curvature portfolio objectives and nonpositive marginal wealth value. It applies to the continuous generator, not to the interpolated, killed-Euler finite-step target. It says nothing about global optimization over shared neural parameters.
+
+\section{Learning and verification are separate operations}\label{r9:algorithm}
+For a fixed policy, exact evaluation solves $R_\pi v=0$ with the stopping contract. Exact improvement maximizes the Hamiltonian of that fixed evaluation. Denote these operators by $\mathcal E$ and $\mathcal I$; ideal policy iteration is $\pi_{j+1}=\mathcal I(\mathcal E\pi_j)$. A neural implementation approximates both operators, while an independent evaluator measures the payoff of the policy that will actually be used.
+
+In the raw NBO implementation, critic updates hold the actor fixed. Actor updates hold critic parameters fixed, but retain differentiation through the controlled successor state. A rival's parameters, when present in a game, are also frozen during unilateral improvement. This separation prevents an actor loss from lowering itself by changing the object being evaluated. It does not make the joint network optimization convex. The ideal policy-iteration compactness and limiting arguments are retained in the supplement; no such argument is invoked to certify an observed Adam trajectory.
+
+The inherited finite safeguard is a distinct algorithm. For $\mathcal T_n^aw=r_n^a+\delta P_n^aw$, positive substochastic $P_n^a$, and $\delta=e^{-\rho\Delta}$, define the policy-evaluation residual $e_n=\|v_n-\mathcal T_n^{\pi_n}v_{n+1}\|_\infty$ and the full candidate improvement gap $\eta_n=\|\max_a\mathcal T_n^av_{n+1}-\mathcal T_n^{\pi_n}v_{n+1}\|_\infty$. If the terminal error is at most $b$, backward comparison yields
+\begin{equation}
+ \|V_{h,n}^*-V_{h,n}^{\pi}\|_\infty
+ \leq2\delta^{N-n}b+\sum_{j=n}^{N-1}\delta^{j-n}(2e_j+\eta_j).\label{r9:finite}
+\end{equation}
+The state-dependent envelope and threshold-correction proof are reproduced in the supplement. A threshold can reduce the fraction of decisions changed while leaving the cost of a complete candidate audit essentially unchanged. In particular, the retained 125-action tensor audit is not the non-enumerative certifier of Section~\ref{r9:action}. Its floating-point envelope is not relabeled as an outward continuous-time bound.
+
+\subsection{A quantitative bridge from a fitted network}
+Let $C_\rho(h)=(1-e^{-\rho h})/\rho$, with $C_0(h)=h$.
+\begin{assumption}[Admissible witnesses]\label{r9:witness}
+Witnesses are bounded, continuous on the stopped trace, and $C^{1,2}$ in the interior of each time slab. Localized It\^o identities pass to the stopping time by uniform integrability. At slab interfaces an upper witness has nonpositive forward jumps and a lower witness has nonnegative forward jumps. The implemented policy has a well-defined stopped state equation.
+\end{assumption}
+\begin{theorem}[Stopped one-sided comparison]\label{r9:pair}
+Suppose Assumption~\ref{r9:witness} holds, $U\geq g-b_U$ and $L\leq g+b_L$ on the stopped trace, $\sup_aR_aU\leq\epsilon_U$, and $R_\pi L\geq-\epsilon_L$, where all four allowances are nonnegative. Then
+\begin{align}
+ J_k^\pi&\geq L-b_L-C_\rho(T-t)\epsilon_L,\qquad
+ V_k\leq U+b_U+C_\rho(T-t)\epsilon_U,\\
+ 0\leq V_k-J_k^\pi&\leq U-L+b_U+b_L+C_\rho(T-t)(\epsilon_U+\epsilon_L).\label{r9:pairbound}
+\end{align}
+The inequalities do not require an attained optimizer or a smooth optimal value.
+\end{theorem}
+
+\begin{theorem}[Cover-and-oracle certificate for neural output]\label{r9:bridge}
+Let a continuous neural witness $v$ and a feasible neural policy $\pi$ satisfy Assumption~\ref{r9:witness}, with stopped-trace error at most $b$. Let cells cover the full audited time--state domain and have representatives $z_j$. Suppose independent calculation proves, throughout cell $j$,
+\[
+ |R_\pi v(z)-R_\pi v(z_j)|\leq\omega_j,
+ \quad |\Gamma(z)-\Gamma(z_j)|\leq\nu_j,
+ \qquad \Gamma=\sup_aR_av-R_\pi v.
+\]
+Suppose the representative evaluation intervals imply $|R_\pi v(z_j)|\leq e_j$ and a global action oracle implies $\Gamma(z_j)\leq q_j$, including jet, inner-solve, and arithmetic allowances. Set $e=\max_j(e_j+\omega_j)$ and $q=\max_j(q_j+\nu_j)$. Then
+\begin{equation}
+ 0\leq V_k-J_k^\pi\leq 2b+C_\rho(T-t)(2e+q).\label{r9:bridgebound}
+\end{equation}
+In particular, certified derivative bounds $M_j,N_j$ and cell radii $h_j$ permit $\omega_j=M_jh_j$ and $\nu_j=N_jh_j$. Any sequence of learned outputs for which these verified allowances vanish has vanishing regret, irrespective of whether its parameters converge.
+\end{theorem}
+This is a quantitative a posteriori connection to network errors, not a claim that an empirical mean-square loss controls a supremum. Interval differentiation or weight-based derivative bounds can supply the cell moduli. They may be conservative, and covering a high-dimensional state domain remains costly. Section~\ref{r9:action} executes the jet-to-action part for actual learned critics. The economic calculation instead fits an independent polynomial witness; it does not falsely claim to have certified a whole-state neural critic merely because its action audit passed at selected states.
+
+\input{revisions/2026-09-22-r10/paper/flexible_dual}
+
+\section{Certifying the value of preference adjustment}\label{r9:economics}
+For each feasible policy write $J_k(\pi)=A(\pi)-kB(\pi)$, where
+\[
+ B(\pi)=\E^\pi\int_t^\tau e^{-\rho(r-t)}\theta_r^2/2\,dr,
+ \qquad 0\leq B(\pi)\leq .02C_\rho(T-t).
+\]
+The policy set is common to every $k$.
+\begin{theorem}[Accuracy-calibrated cost comparisons]\label{r9:cost}
+The optimal value is convex and nonincreasing in $k$. If optimizers exist, their adjustment budgets are nonincreasing across distinct prices. More generally, let $\pi_i$ be $\varepsilon_i$-optimal at $k_i$, with $k_2>k_1$. Then
+\begin{equation}
+ B(\pi_2)-B(\pi_1)\leq\frac{\varepsilon_1+\varepsilon_2}{k_2-k_1}.\label{r9:reversal}
+\end{equation}
+If $V(k)\in[\underline V(k),\overline V(k)]$, the budget of an optimizer at $k$, for $k_-<k<k_+$, lies in the primitive budget range intersected with
+\begin{equation}
+ \left[\frac{\underline V(k)-\overline V(k_+)}{k_+-k},
+       \frac{\overline V(k_-)-\underline V(k)}{k-k_-}\right].\label{r9:secant}
+\end{equation}
+\end{theorem}
+The theorem concerns discounted adjustment expenditures, not a pointwise ordering of controls. A re-solved $V_u/k$ is not a comparative-static proof. The new full-value enclosures in Table~\ref{r10:tab:original} now resolve strict welfare losses across the cost grid. At $k=2$, \eqref{r9:secant} also gives the optimal-budget enclosure $[.00386376,.01960529]$, conditional on existence of an optimizer. Its positive lower endpoint is informative, while its upper endpoint is still the primitive bound. The tightly enclosed expenditures in Table~\ref{r9:tab:economics} describe the specified learned-and-polished policies, not an identified optimal budget.
+
+\subsection{A market-deflator witness for the restricted optimum}\label{r9:dual}
+A tighter comparison becomes possible by exploiting the restricted economy's structure. Introduce the auxiliary process
+\begin{equation}
+ dY_t=.02Y_t\,dt-.3Y_t\,dZ^x_t,\qquad Y_0=1.55.\label{r9:deflator}
+\end{equation}
+It is a test-process constructed from the original shocks. It does not restrict portfolio information, change wealth, or add a traded asset. For
+\[
+ W_0(u,x,y)=y(x-.5)+.1\log(.5)-.02(u-2)^2,
+\]
+the $p$ terms in the generator of $Yx$ cancel exactly. With $\theta=0$, define
+\begin{align}
+ \Psi(u,y)&=\max_{.05\leq c\leq.8}\left\{\frac{c^{1-u}}{1-u}-yc\right\},\\
+ S(u,y)&=\Psi(u,y)+.01y-.00005-.004\log(.5)+.0008(u-2)^2.\label{r9:dualsource}
+\end{align}
+On $u\in[1.5,2.6]$, $y\in[.2,12]$, one has $-8<S<0$. Extend $S$ to a bounded function $\widetilde S\in[-8,0]$ by clipping its two arguments at these verification faces. Let
+\begin{equation}
+ F_R(h,u,y)=\E_{u,y}\int_0^h e^{-.04r}\widetilde S(U_r,Y_r)\,dr,\label{r9:restrictedpotential}
+\end{equation}
+where $dU_r=.05\,dZ^u_r$ and $Y$ follows \eqref{r9:deflator}. Thus $-8h\leq F_R\leq0$.
+
+\begin{theorem}[A restricted-economy upper bound]\label{r9:restricted}
+Let $Z_R$ be the sum of the following nonnegative localization potentials:
+\begin{align}
+ Z_{R,u}&=8h\{e^{-200(u-1.5)+50h}+e^{-240(2.6-u)+72h}\},\\
+ Z_{R,y}&=8h\{e^{-22\log(y/.2)+22.33h}
+                         +e^{-22\log(12/y)+22.33h}\}.
+\end{align}
+Then
+\begin{equation}
+ V_R(0,2,1.25)\leq W_0(2,1.25,1.55)+F_R(1,2,1.55)+Z_R(1,2,1.55).
+ \label{r9:restrictedupper}
+\end{equation}
+The upper bound covers all adaptive original consumption and portfolio controls with $\theta=0$. Consequently, for any feasible flexible policy with certified payoff lower bound $\underline J_k$ and any upper bound $\overline V_R$ from \eqref{r9:restrictedupper},
+\begin{equation}
+ V_k(0,2,1.25)-V_R(0,2,1.25)\geq\max\{0,\underline J_k-\overline V_R\}.\label{r9:accesslower}
+\end{equation}
+\end{theorem}
+
+\begin{table}[t]
+\centering\small
+\caption{Refining the no-adjustment dual witness}\label{r9:tab:dual}
+\input{revisions/2026-09-22-r9/paper/tables/restricted_dual}
+\par\smallskip\footnotesize These intervals enclose the \emph{dual witness value}, not the restricted optimum. Only their upper endpoints are used as upper bounds for that optimum. A separately evaluated restricted policy gives the primal lower bound. Original stopping and all adaptive consumption and portfolio opportunities are retained.
+\end{table}
+
+The expectation in \eqref{r9:restrictedpotential} has an explicit two-Gaussian representation. We transform time by $r=v^2$, evaluate constant and linear Taylor terms with interval-enclosed weighted moments, and bound the Hessian remainder on each box. Exponential Taylor remainders, Gaussian tails, and localization are included. This produces the executed refinement in Table~\ref{r9:tab:dual}; it does not appeal to a mesh difference as an error estimate. The final restricted-optimum upper bound is $-1.33599309$ after outward display rounding. The evaluated restricted policy has payoff in $[-1.34503942,-1.34503585]$, so the restricted problem itself has an initial optimal-value enclosure narrower than $.00905$.
+
+\begin{table}[t]
+\centering\scriptsize
+\caption{Certified current-policy expenditures and optimal value of access}\label{r9:tab:economics}
+\input{revisions/2026-09-22-r10/paper/tables/economics}
+\par\smallskip\footnotesize The expenditure column evaluates the displayed learned policy. The access columns bound the difference between the two \emph{optimal} values. The lower endpoint pairs a feasible flexible policy with the restricted dual upper; the upper endpoint pairs the flexible upper with a feasible restricted policy. All endpoints are rounded outward from full-precision records. The cost-two access interval has width below its entire positive gain; at cost eight, the interval still resolves the sign but not a comparably precise magnitude.
+\end{table}
+
+The welfare lower bounds remain strictly positive at all three prices. At $k=2$ the optimal access gain lies in $[.04096859,.05973218]$; its width is smaller than the lower endpoint. Table~\ref{r10:tab:cost-effects} separately compares the flexible optima at different adjustment prices. The $2\to8$ and $.5\to8$ effects exceed their entire interval widths. The $.5\to2$ comparison resolves the sign but has a larger relative uncertainty. No comparison assumes that a displayed policy is an optimizer or interprets the value-ordering theorem as a pointwise ordering of adjustment controls.
+
+\begin{table}[t]\centering\small
+\caption{Accuracy-calibrated optimal welfare losses from higher adjustment costs}\label{r10:tab:cost-effects}
+\input{revisions/2026-09-22-r10/paper/tables/cost_effects}
+\par\smallskip\footnotesize Each interval encloses $V_{k_1}-V_{k_2}$ in the unchanged original economy. Bounds use independent value endpoints, not fitted derivatives in $k$. The last column compares the width with the lower endpoint of the effect interval.
+\end{table}
+
+\section{Global action certification without a tensor grid}\label{r9:action}
+Consider the following minimization problem, which is also used for the external comparison:
+\begin{align}
+ dX_t&=2a_t\,dt+\sqrt{.32}\,dW_t,\qquad X_0=0,
+       \qquad a_t\in[-1,1]^d,\\
+ f_d(a)&=\frac1d\sum_{i=1}^d\{a_i^2+.1\sin^2a_i\}
+                 +.3\sin\!\left(\sum_i a_i\right),\\
+ q_d(x)&=\frac1d\sum_{i=1}^d(x_i-.5)^2
+                 +.2\cos\!\left(d^{-1/2}\sum_i x_i\right),\label{r9:nonconvex}\\
+ V_d^*&=\inf_a\E\left[\int_0^1 f_d(a_t)\,dt+q_d(X_1)\right].\notag
+\end{align}
+The objective has genuinely coupled nonconvex actions. No analytic optimal-action or optimal-value labels are supplied to training. At a fixed critic gradient $p$, the action-dependent Hamiltonian is
+\[
+ H_p(a)=\sum_i f_i(a_i)+.3\sin z,\qquad
+ f_i(s)=\frac{s^2+.1\sin^2s}{d}+2p_is,\quad z=\sum_i a_i.
+\]
+Each $f_i$ is strongly convex with modulus at least $m=1.8/d$.
+
+\begin{theorem}[Scalar global partition and convex dual bounds]\label{r9:actionthm}
+For any multiplier $\lambda$ and $z\in[-d,d]$, put
+\[
+ D(\lambda)=\sum_i\min_{|s|\leq1}\{f_i(s)-\lambda s\}.
+\]
+On a scalar interval $z\in[z_0-r,z_0+r]$, a lower bound for the full Hamiltonian is
+\begin{equation}
+ D(\lambda)+\lambda z_0+.3\sin z_0
+       -|\lambda+.3\cos z_0|r-.15r^2.\label{r9:actionlower}
+\end{equation}
+Any feasible action supplies an upper bound. Each inner convex minimum can itself be bounded below by $q(s_0)-e(s_0)^2/(2m)$, where $q=f_i-\lambda s$ and $e$ is the derivative magnitude in a feasible descent direction, or the full derivative magnitude at an interior point. Outward versions of these bounds, followed by scalar subdivision and pruning, give a global gap on $[-1,1]^d$.
+
+If a stored gradient $\widehat p$ differs from the true neural gradient by componentwise bounds $\delta_i$, the feasible action's true-gradient gap is at most its stored-gradient gap plus $4\sum_i\delta_i$.
+\end{theorem}
+Floating-point root finding only proposes multipliers and actions. It is not trusted to solve the convex subproblems exactly. Even an inaccurate proposal remains valid after the strong-convexity allowance. This structure removes tensor enumeration; it does not establish a dimension-free complexity theorem or solve a generic nonseparable nonconvex Hamiltonian.
+
+\begin{table}[t]
+\centering\small
+\caption{Executed continuous-action certificates}\label{r9:tab:action}
+\input{revisions/2026-09-22-r9/paper/tables/actions}
+\par\smallskip\footnotesize One frozen jet is used per dimension, at both tolerances. At $d=8,16$, these are gradients of retained learned critics at recorded states; displayed gaps include interval neural-derivative allowances. At larger dimensions they are independently generated jets for the same Hamiltonian family. The experiment measures certificate work for these instances, not an average-case scaling law or a whole-state neural PDE residual.
+\end{table}
+
+The 128-dimensional $10^{-5}$ calculation uses 339 scalar boxes and 43,392 scalar convex subproblems. It replaces neither raw actor training nor the preceding finite tensor safeguard in retrospect. At the learned eight- and sixteen-dimensional jets, interval forward differentiation of the stored critic weights bounds the $\ell^1$ gradient discrepancies below $4.584\times10^{-17}$ and $7.877\times10^{-17}$, respectively. These allowances are propagated into the action gap. Theorem~\ref{r9:bridge} identifies the additional state-cover and residual quantities that would be needed for a whole-policy guarantee.
+
+\section{An absolute bound and a frozen external comparison}\label{r9:external}
+\subsection{A rigorous lower bound for the unchanged nonconvex family}
+Let $r_0=1+.1\sin^2(1)$, $\sigma^2=.32$, and $\lambda_d=\sigma^2r_0/(2d)$. Since $\sin^2a\geq\sin^2(1)a^2$ for $|a|\leq1$, replacing the running cost by $r_0\|a\|^2/d-.3$ and allowing unbounded controls gives a relaxation. The original terminal function $q_d$ is retained.
+\begin{proposition}[Scalar-integral absolute lower bound]\label{r9:lower}
+Let $Z$ be normal with mean $2\sqrt d/(r_0+4)$ and variance $\sigma^2r_0/(r_0+4)$. Then
+\begin{equation}
+ V_d^*\geq
+ \frac{.25r_0}{r_0+4}+\frac{\sigma^2r_0}{4}\log(1+4/r_0)-.3
+ -\lambda_d\log\E\exp\!\left[-\frac{.2}{\lambda_d}\cos Z\right].\label{r9:lowerformula}
+\end{equation}
+An outward enclosure of the positive expectation yields a rigorous numerical lower bound for the original objective \eqref{r9:nonconvex}.
+\end{proposition}
+The relaxation is an upper/lower-bound device, not a new training problem with a known manufactured value. The terminal cosine, which couples all state coordinates, remains in the scalar expectation. Its tails are bounded analytically and its interior is integrated by interval rectangles.
+
+\begin{table}[t]
+\centering\scriptsize
+\caption{Absolute lower bounds for the original nonconvex control problem}\label{r9:tab:absolute}
+\input{revisions/2026-09-22-r9/paper/tables/absolute}
+\par\smallskip\footnotesize A row encloses the relaxed value. Its lower endpoint is also a lower bound for the original bounded-control value. The width shown by successive enclosures is quadrature uncertainty; it does not include or estimate the structural relaxation gap.
+\end{table}
+
+\subsection{Holdout design and exact deployment interpretation}
+The comparison retains the original actor and critic architectures: two tanh hidden layers with 48 units each, a bounded actor output, and the same terminal-value embedding. NBO uses separated evaluation and improvement with Adam, three critic steps per actor step, 256 training states, and four successors. SOC-MartNet uses its pinned author solver, RMSprop, the 600-output test network, and the inherited $J=2$, $K=1$ multiplier setup. These different optimization systems are disclosed rather than described as identical implementations.
+
+The committed protocol freezes dimensions $8,16,32$ and training budgets of 10 and 30 seconds. At each dimension, both methods receive the same six validation trials: two seeds and three learning-rate multipliers. Selection minimizes mean independent validation cost, with a fixed tie rule. Twelve different holdout seeds, 720--731, are then evaluated at each dimension--budget pair. Within each pair, actor and critic starting weights are identical and their hashes are checked. Framework warmup precedes both clocks, and method order is seed-randomized. Training-only and setup-plus-training clocks are retained. The baseline $a_i(t,x)=\operatorname{proj}_{[-1,1]}[-2(x_i-.5)/\{1+4(1-t)\}]$ is specified independently from the associated quadratic problem and is evaluated on the unchanged nonquadratic objective.
+
+Each trained network is deployed as a sample-and-hold control on 128 dates and evaluated with 4,096 independent, paired Gaussian paths. In \eqref{r9:nonconvex}, drift under a held action and volatility are constant on a slab; the Gaussian transition and running-cost integral are therefore exact in real arithmetic for \emph{that deployed continuous-time policy}. A 64-date evaluation uses aggregated common increments and changes the deployment policy. Its difference from the 128-date result is not called an Euler-error bound. Floating-point network evaluation and Monte Carlo uncertainty remain distinct from the outward deterministic lower bound in Table~\ref{r9:tab:absolute}.
+
+
+\begin{table}[t]\centering\scriptsize
+\caption{Frozen holdout comparison: twelve seed pairs per panel}\label{r9:tab:external}
+\input{revisions/2026-09-22-r9/paper/tables/external}
+\par\smallskip\footnotesize Smaller realized cost is better. The median difference is NBO minus SOC-MartNet. The last column is a one-sided exact sign-test $p$-value adjusted across the six predeclared dimension--budget panels. The sign test concerns the joint training-and-audit pipeline under independent seed draws, not an outward numerical error guarantee.
+\end{table}
+\begin{table}[t]\centering\scriptsize
+\caption{Absolute reference excess and actual training clocks}\label{r9:tab:externalabsolute}
+\input{revisions/2026-09-22-r9/paper/tables/external_absolute}
+\par\smallskip\footnotesize Excess is the estimated mean policy cost minus the rigorous original-value lower bound. It provides an absolute reference axis but is not itself a deterministic regret enclosure: sampling error and floating-point rollout evaluation are not outward certified. Training clocks include completed-update overshoot and exclude separately recorded warmup and setup.
+\end{table}
+
+
+The holdout results favor NBO over the author implementation in mean cost in all six panels, but their interpretation is not uniform. In dimensions 8 and 32, NBO has lower paired cost for all twelve seeds at both budgets; each multiplicity-adjusted sign-test value is $.001465$. In dimension 16 the adjusted values are 1 and $.438$, so these panels do not establish a robust seed-level ordering under the declared test. Tripling the budget gives only small improvements in NBO mean cost, from $.5812$ to $.5785$, $.4663$ to $.4630$, and $.3813$ to $.3799$ respectively. Most importantly, the independently specified quadratic-feedback baseline has lower mean cost than both learned methods in every panel. Its mean costs are $.5121$, $.1740$, and $.08544$ in dimensions 8, 16, and 32. These retained results support the stated NBO--SOC-MartNet comparison at the frozen budgets, not a claim that NBO is the best available control rule or that additional training has already reached an accurate optimum.
+
+The raw records retain every seed difference, the median and interquartile range, approximate Student intervals, costs for all three rules, path standard errors, training curves, optimizer clocks, and checkpoints. Approximate Student intervals are descriptive; the exact sign calculation avoids assuming Gaussian seed-level differences. The source protocol predates holdout execution, while the benchmark family and adapters themselves were developed in earlier revisions. Holdout seeds do not turn one problem family into evidence of general superiority across economic environments. Two budget points are not a matched-accuracy frontier, and a finite absolute lower bound need not be tight enough to rank methods at a small prescribed regret.
+
+\section{Relation to rigorous control and neural computation}\label{r9:related}
+The strongest claims should be compared with methods that establish bounds, not only with methods that train networks. Theorem~\ref{r9:pair} is an application of classical stopped verification to smooth upper and lower witnesses. Its role here is to handle the actual liquidation trace without presupposing a smooth or boundary-regular optimal value. Theorem~\ref{r9:bridge} supplies a computation-facing cover, derivative, and oracle allowance. Neither theorem claims that classical verification was absent from the literature.
+
+Monotone, stable, consistent approximations with comparison provide convergence to viscosity solutions in the framework of \citet{barles1991}. Controlled Markov-chain approximation is developed systematically by \citet{kushner2001}; adaptive sparse-grid methods address high-dimensional dynamic models in \citet{brumm2017}. Such results concern specified approximation schemes and their hypotheses. The finite telescoping budget in the preserved manuscript names the operator discrepancies needed for a continuous statement; an observed mesh difference does not supply them. The original-payoff certificates here instead evaluate continuous generators or exact Gaussian moments directly, with separately bounded analytic and arithmetic remainders. They do not assert a convergence rate for the inherited killed-Euler scheme.
+
+Primal--dual numerical control methods also pair feasible decisions with bounds. \citet{brown2010} relax nonanticipativity with penalties and establish weak and strong duality for stochastic dynamic programs. \citet{brown2011} use related bounds in portfolio optimization with transaction costs. Our restricted and flexible constructions are market-deflator witnesses with explicit stopped localization; they are not claims that policy-plus-upper-bound analysis is new. Theorem~\ref{r10:dual} adds a verified affine-preference source and a conditional-coefficient variance allowance. Its distinction from an information-relaxation bound with an uncomputed penalty is that every source integral, variance constant, and face allowance is evaluated here. \citet{lasserre2008} develop occupation-measure and moment relaxations for polynomial nonlinear optimal control under their stated assumptions. We do not invoke their deterministic convergence theorem for the present logarithmic, stochastic, controlled-exit problem. The explicit source bounds, interval polynomial conversions, Gaussian tails, and trace inequalities are verified here instead.
+
+Theorem~\ref{r10:dual}, Proposition~\ref{r9:upper}, and Theorem~\ref{r9:restricted} identify the current and preceding model-specific constructions behind the economic bounds. The affine-preference theorem retains costly adjustment through an adapted conditional coefficient, bounds its randomness quantitatively, and closes the declared central-state target. The fitted generator proposition couples a polynomial witness to a small localization potential; the restricted theorem cancels every portfolio term before computing a bounded-source expectation. Theorem~\ref{r9:actionthm} exploits rank-one action coupling and strong convexity of the remaining scalar problems. It is a structured convex-duality and branch-and-bound construction, not a generic replacement for global nonconvex optimization. Proposition~\ref{r9:lower} preserves the nonquadratic terminal payoff in a computable relaxation of the exact comparison problem.
+
+Neural policy iteration and neural PDE solvers are important computational antecedents. \citet{jacka2015} analyze continuous-time policy improvement. \citet{kim2026explore} separate iteration, policy-network, and residual errors in entropy-regularized control; \citet{kim2026interior} study interior bounds and the mismatch between collocation and closed-loop performance. \citet{lee2025} combine policy iteration and operator learning. \citet{cai2025published} impose martingale conditions without an explicit Hamiltonian infimum. NBO's raw training comparison is with a pinned implementation of the last method, not a locally recreated approximation described as author code. Our certificates can also audit a policy produced by another solver. This portability is a property of independent verification, while the training results remain evidence about the specifically recorded NBO and SOC-MartNet adapters.
+
+Recursive utility, temporal-self equilibria, and games require their own evaluation operators and optimality notions. Their complete equations, assumptions, finite gain bounds, failures, and earlier numerical results are preserved in the supplement. No new large-scale recursive or game accuracy result is inferred from the additive-utility certificates above. The stochastic-trace bias identities and local-optimizer counterexamples are preserved for the same reason: they identify conditions that a neural training loss cannot replace.
+
+\section{Conclusion}
+The original continuous preference-adjustment economy now has accepted central-state policies at the declared $.01$ regret tolerance for all three cost coefficients. A feasible learned-and-polished policy supplies each lower bound, while an independent affine-preference dual supplies an upper bound over the original continuous adaptive controls. This closes the numerical target without deleting the original stopping contract or replacing it by a manufactured-payoff problem.
+
+The value of access and the welfare cost of more expensive adjustment are resolved at a precision calibrated to the reported effects. At coefficient two the optimal access gain is at least $.04096859$; raising the coefficient to eight lowers optimal welfare by at least $.02318257$. Both guarantees exceed their corresponding interval widths. Optimal adjustment budgets obey the analytical ordering and a valid secant enclosure, but are not equated with the budgets of approximate policies.
+
+The constructive tools also retain their distinct roles: fitted Bernstein witnesses, stopped Gaussian-moment evaluation, market-deflator localization, quantitative output and neural-derivative allowances, and a structured continuous-action oracle. The unchanged coupled comparison problem has an absolute lower reference and a complete frozen holdout record, including unfavorable baseline and sign-test outcomes. Those experiments do not establish a universally best-tuned neural solver or an external matched-accuracy dominance theorem. All preceding manuscripts, equations, negative diagnostics, and raw outcomes remain preserved for further examination.

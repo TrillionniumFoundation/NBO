@@ -1,0 +1,61 @@
+\section{The preceding fitted construction, retained for comparison}\label{r10:retained}
+The following section is preserved verbatim from the completed R9 paper. Its policies, upper witnesses, tables, and statements that the $.01$ target was not met describe that preceding computation. The current R10 certificate is Theorem~\ref{r10:dual} and Table~\ref{r10:tab:original}. This dated preservation is not an alternative current claim.
+
+\section{Constructive certificates in the original economy}\label{r9:construct}
+All initial numerical bounds in this section concern $(t,u,x)=(0,2,1.25)$. A central-state certificate is not advertised as a uniform certificate for every state in $D$. The policy used here is newly trained in a time-control neural subclass. The retained lattice-trained, state-feedback NBO policies, their finite corrections, and their previous continuous bounds remain separately available in the supplement.
+
+\subsection{Fitting an upper witness without importing an optimal value}
+Put $h=1-t$ and restrict the \emph{verification domain}, not the economic domain, to $u\in[1.5,2.6]$. Fit
+\[
+ F(h,u)=h\sum_{i=0}^{12}\sum_{j=0}^{14}\beta_{ij}
+ T_i(2h-1)T_j\!\left(2\frac{u-1.5}{1.1}-1\right).
+\]
+The coefficients are obtained from a method-of-lines initializer and residual least squares. The optimizer's collocation residual is not the certificate. For $w=G+F$, the consumption and portfolio maximizers are $.8$ and $.8$. Maximizing the remaining wealth term over $x\in[.5,2]$ gives the scalar residual majorant
+\begin{align}
+ \mathcal R_kF={}&-F_h+.00125F_{uu}-.04F+
+ H_k\{F_u-.04(u-2)\}+\frac{.8^{1-u}}{1-u}\\
+ &+.0008(u-2)^2+.00195+.00352-.04-.004\log2,\label{r9:reduced}\\[-2mm]
+ H_k(q)={}&\max_{|\theta|\leq.2}(q\theta-k\theta^2/2).\notag
+\end{align}
+The source is the original utility, not a payoff manufactured to make $F$ exact.
+
+Power coefficients are enclosed at 70-digit interval precision and converted to Bernstein coefficients. The utility term is replaced by a polynomial with a proved uniform remainder below $2.117\times10^{-9}$. De Casteljau subdivision uses outward rounding at every elementary step. The positive-saturation, negative-saturation, and interior branches of $H_k$ are all included whenever their certified $q$ range permits them. Outward thresholds also cover a cell touching a switching surface. The same calculation proves $F/h\geq-8$.
+
+\begin{proposition}[Localized fitted upper witness]\label{r9:upper}
+Suppose $F(0,u)=0$, $F/h\geq-8$, and $\mathcal R_kF\leq\epsilon$ on the verification rectangle. For $k\geq.5$, let
+\begin{align}
+ Z(h,u)&=8h\{e^{-120(u-1.5)+42h}+e^{-160(2.6-u)+64h}\},\\
+ U(t,u,x)&=G(u,x)+F(1-t,u)+Z(1-t,u)+\epsilon_+C_\rho(1-t).
+\end{align}
+Then $V_k(0,2,1.25)\leq U(0,2,1.25)$. No reflecting boundary or truncation of the original policy is introduced at $u=1.5$ or $2.6$.
+\end{proposition}
+The exponential terms bound continuation when an artificial verification face is reached. The globally valid upper witness $G$ is used beyond that face. At the central state the localization addition is less than $1.219\times10^{-7}$, rather than an eight-unit initial gap. Uniform residual correction and localization are different terms and are reported separately.
+
+\subsection{A learned feasible policy and independent stopped evaluation}\label{r9:policy}
+The actor has one time input, a twelve-unit tanh layer, and two outputs. At sixteen fixed time nodes, a sigmoid constrains adjustment to $[0,.2]$, and a differentiable budget projection constrains consumption to $[.05,.8]$. The portfolio is zero. Training uses the original expected payoff, Gaussian quadrature, and no optimal-value or greedy-action labels. The deployed controls are the resulting frozen binary64 constants on each time slab; there is no claim that this time-control class exhausts the state-feedback opportunities in \eqref{r9:objective}.
+
+The budget projection enforces
+\begin{equation}
+ \sum_{j=0}^{15}c_j\int_{j/16}^{(j+1)/16}e^{-.02r}\,dr
+ <1.25-.5e^{-.02}.\label{r9:budgetprojection}
+\end{equation}
+Thus $x_t=e^{.02t}\{1.25-\int_0^te^{-.02r}c_r\,dr\}$ is deterministic. Since consumption exceeds $.02(1.25)$, wealth decreases and its interval-enclosed terminal value remains strictly above $.5$. Wealth never exits. The remaining preference exit is controlled by a Brownian maximal inequality, not by a discretized boundary check.
+
+An evaluator independent of the training quadrature approximates utility by a degree-90 polynomial in $u-2$, with a uniform analytic remainder on the original preference interval. Free Gaussian moments are evaluated by recurrence, integrated over outward time rectangles, and corrected for the stopped event using a maximal probability bound and Cauchy--Schwarz. The terminal wealth, adjustment expenditure, polynomial approximation, time integration, exact-exit correction, and arithmetic are all enclosed. There is no Euler, action-grid, or spatial-interpolation term in this route. Those omissions are consequences of the deployed policy and analytic evaluation, not uncomputed entries assigned zero.
+
+\begin{table}[t]
+\centering\small
+\caption{Original-payoff continuous certificates at the central state}\label{r9:tab:original}
+\input{revisions/2026-09-22-r9/paper/tables/original}
+\par\smallskip\footnotesize Payoff endpoints and upper bounds are rounded outward. Each regret upper is the independent optimal-value upper minus the lower endpoint of the learned policy's payoff interval. All controls in the optimal-value bound are continuous. The $.01$ full-policy target is not met in any row.
+\end{table}
+
+\begin{table}[t]
+\centering\scriptsize
+\caption{Executed refinement for the $k=2$ certificate}\label{r9:tab:refine}
+\input{revisions/2026-09-22-r9/paper/tables/refinement}
+\par\smallskip\footnotesize Time boxes refine the independent policy evaluator. Bernstein boxes refine the already fitted upper witness. The two seconds columns measure the respective integration and subdivision stages; complete timings, including coefficient construction, are in the raw records. A shrinking evaluation or residual allowance need not eliminate the approximation gap between the chosen upper witness and policy.
+\end{table}
+
+Table~\ref{r9:tab:original} reports the actual original-economy bounds. Table~\ref{r9:tab:refine} makes the constructive refinement explicit. The last row gives substantially more precise policy evaluation than optimality certification. The fitted witness is independent of the policy and valid over the full original wealth and action ranges. Its loss of wealth-specific information is economically consequential. A separate wealth-sensitive linear-programming pilot is retained with its computation log and rejected candidate diagnostics; an unvalidated collocation objective is not used in either table.
+

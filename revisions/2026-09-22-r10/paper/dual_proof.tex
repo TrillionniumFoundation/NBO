@@ -1,0 +1,194 @@
+\section{Proof of the affine-preference dual}\label{r10:proof:dual}
+This appendix gives the analytic inequalities behind the new upper bound and identifies exactly which finite interval calculations enter the proof. The frozen fitting objectives are not proof inputs. The only fitted objects subsequently used are the exact stored values of $y_0$ and the sixteen reference drifts, whose admissible ranges are checked independently.
+
+\subsection{The supporting-plane inequality}\label{r10:proof:plane}
+Let $r=u-1$, $l=\log y$, and
+\[
+ L=\operatorname{proj}_{[-\log(.8),-\log(.05)]}(l/u),\quad
+ c=e^{-L},\quad E=e^{Lr}.
+\]
+The consumption maximizer is $c$, including both constrained branches. Write $\chi=1$ on the interior branch and zero on a constrained branch; on a box intersecting a switching surface its interval enclosure is $[0,1]$. The derivatives required by the certifier are
+\begin{align}
+ \Psi&=-E/r-yc,\qquad \beta=E(1-Lr)/r^2,\notag\\
+ (S_0)_l&=-yc+.01y,\notag\\
+ (S_0)_{uu}&=-\frac{E\{(Lr-1)^2+1\}}{r^3}+\chi\frac{ycL^2}{u},\label{r10:jets}\\
+ (S_0)_{ul}&=-\chi\frac{ycL}{u},\notag\\
+ (S_0)_{ll}&=-yc+\chi\frac{yc}{u}+.01y.\notag
+\end{align}
+On the interior branch $yc=E$. The envelope is continuously differentiable across the consumption constraint; the displayed one-sided second derivatives enclose its almost-everywhere Hessian. This is sufficient both for supporting inequalities and for the integral Taylor remainder used below.
+
+No lower-consumption constraint is active on $u\in[1.5,2.5]$, $y\in[.2,12]$, because $\log(12)/1.5<-\log(.05)$. Moreover $L<2$ throughout that rectangle. On its interior consumption branch,
+\begin{equation}
+ \partial_l(S_0)_{uu}=\partial_u\beta_l
+       =\frac{EL(2-L)}{u^2}\geq0.\label{r10:monotonejets}
+\end{equation}
+For the upper-consumption branch $(S_0)_{uu}$ is independent of $l$ and $\beta_l=0$. The jump in $(S_0)_{uu}$ when increasing $l$ enters the interior branch is nonnegative. When increasing $u$ leaves that branch, $\beta_l$ jumps upward to zero. Thus $(S_0)_{uu}$ is nondecreasing in $l$, and $\beta_l$ is nondecreasing in $u$, including the switching boundary.
+
+The following enclosures are computed by the interval program on complete interval covers, not by point sampling:
+\begin{align}
+ \sup_{1.5\leq u\leq2.3}(S_0)_{uu}(u,12)&<- .0862,\\
+ \sup_{2.3\leq u\leq2.5}\beta(u,12)&<- .9687,\\
+ \beta(2.2,12)&>- .9573.\label{r10:primitive-margins}
+\end{align}
+The first cover has 1,600 intervals and the second has 2,000. All decimal endpoints and analytic constants are enclosed at 70-digit interval precision; all subsequent binary operations and interval hulls are rounded outward. Full endpoints and the finite cover prescription are stored in \texttt{tangent\_primitive\_checks.json} and its generating program.
+
+By \eqref{r10:monotonejets}, the first inequality proves concavity on $[1.5,2.3]$ for every $y$ in the verification rectangle. For $u\in[2.3,2.5]$ and $m\in[2,2.2]$, the difference $\beta(u,y)-\beta(m,y)$ is nondecreasing in $l$, since $\beta_l$ is nondecreasing in $u$. Its maximum therefore occurs at $y=12$. At that endpoint, concavity gives $\beta(m,12)\geq\beta(2.2,12)$, and the last two inequalities in \eqref{r10:primitive-margins} make the difference strictly negative. Integrating the derivative between $m$ and $u$ now proves \eqref{r10:plane} on both sides of $m$. This argument does not infer a two-dimensional supporting plane from concavity at a single endpoint without controlling the cross derivative.
+
+The same program covers $m\in[2,2.2]$ by 1,000 intervals and uses $(S_0)_l<0$, $\beta_l\leq0$ to check the two $y$ endpoints. It obtains
+\begin{equation}
+ -6.989<S_0(m,y)<-1.2443,\qquad |\beta(m,y)|<.9712.\label{r10:source-bounds}
+\end{equation}
+The deliberately simpler bounds $-7.1\leq S_0\leq0$ and $|\beta|\leq1.1$ are used for tails and localization. They continue to hold after clipping $y$.
+
+\subsection{An adapted solution of the affine auxiliary problem}
+For this subsection start at $(0,2,y_0)$ and use the full-line auxiliary processes. All sources are affine in $U$, with bounded coefficients, and all controls are bounded. Fubini's theorem, conditional expectation, and optional stopping on bounded rectangles are legitimate by Gaussian first-moment bounds. With
+\[
+ B_s=\int_s^1e^{-\rho(t-s)}\E[\beta_t\mid\mathcal F_s]dt
+                  +e^{-\rho(1-s)}b_T,
+\]
+Markov independence of future Brownian increments gives
+$\E[\beta_t\mid\mathcal F_s]=\E[\beta_t\mid Y_s]$, even when the control observes the full correlated Brownian history. In particular, $B_s$ is an adapted function of $(s,Y_s)$ and $\E B_s=b(s)$.
+
+Write
+\[
+ U_t-m(t)=\int_0^t(\theta_s-\bar\theta_s)ds+.05Z^u_t.
+\]
+Substitution in \eqref{r10:auxiliary}, followed by conditional Fubini, shows that its control-dependent part is
+\[
+ \E\int_0^1e^{-\rho s}
+       \{(\theta_s-\bar\theta_s)B_s-k\theta_s^2/2\}\,ds.
+\]
+The pointwise maximizer $\theta_s=\operatorname{proj}_{[-.2,.2]}(B_s/k)$ is adapted and bounded. It gives a well-defined auxiliary $U$ because it is a function of the exogenous process $Y$. Thus this maximization introduces neither perfect foresight nor a new assumption about the optimizer of the original economy. Its exact value yields
+\begin{align}
+ A_k(0,2,y_0)={}&e^{-\rho}\phi(m(1))+
+ \int_0^1e^{-\rho t}\{\E S_0(m(t),\widehat Y_t)-k\bar\theta_t^2/2\}dt+C\notag\\
+ &+\int_0^1e^{-\rho s}\E g_k(B_s,\bar\theta_s)ds.\label{r10:exact-affine}
+\end{align}
+For the stochastic source term, the joint Gaussian covariance is
+\[
+ \operatorname{Cov}(.05Z^u_t,\log Y_t)
+ =(.05)(-.3)(-.25)t=.00375t.
+\]
+Gaussian integration by parts consequently gives exactly the term $C$ in \eqref{r10:quantities}. The clipping and consumption switches are continuous Lipschitz maps; their weak derivatives, rather than nonexistent classical derivatives at isolated switches, suffice for this identity. Since $\beta_l\leq0$, $C\leq0$. In particular, treating the two noises as independent would discard a real term of the original economy.
+
+\subsection{The conditional-variance allowance}
+The function $H_k$ is continuously differentiable, with $H_k'(q)=\operatorname{proj}_{[-.2,.2]}(q/k)$. Its derivative is $1/k$-Lipschitz. The same bound applies to the derivative of $q\mapsto g_k(q,a)$ for fixed $a$. Therefore
+\begin{equation}
+ \E g_k(B_s,\bar\theta_s)
+ \leq g_k(b(s),\bar\theta_s)+\frac{\operatorname{Var}(B_s)}{2k}.\label{r10:smooth-gap}
+\end{equation}
+Let $l_s=\log Y_s$ and write $B_s=f_s(l_s)$. The law of $l_s$ is Gaussian with mean $M-.025s$ and variance $.09s$. The Gaussian Poincare inequality gives
+\[
+ \operatorname{Var}(B_s)\leq .09s\,\E|f_s'(l_s)|^2.
+\]
+For completeness, with an orthonormal Hermite expansion $f=\sum_{n\geq0}c_nH_n$ under a Gaussian of variance $v$, one has $\operatorname{Var}f=\sum_{n\geq1}c_n^2$ and $v\E|f'|^2=\sum_{n\geq1}nc_n^2$. Polynomial approximation extends the inequality to the bounded Lipschitz functions used here. No unknown mixing or concentration constant enters the calculation.
+
+Differentiation of the conditional Gaussian transition is a translation derivative, so
+\[
+ f_s'(l_s)=\int_s^1e^{-\rho(t-s)}\E[\partial_l\beta_t\mid Y_s]dt.
+\]
+Conditional Jensen and Minkowski give
+\begin{equation}
+ \operatorname{Var}(B_s)\leq .09s
+ \left\{\int_s^1e^{-\rho(t-s)}\sqrt{\E|\partial_l\beta_t|^2}\,dt\right\}^2
+ \leq .09sD^2C_\rho(1-s)^2.\label{r10:poincare}
+\end{equation}
+We next verify the constant in this inequality. On the interior branch and before clipping, for $m\in[2,2.2]$,
+\[
+ |\partial_l\beta(m,e^l)|^2
+  =e^{2(1-1/m)l}\frac{l^2}{m^4}
+  \leq\frac1{16}e^{(12/11)l}l^2\quad(l>0).
+\]
+For $l\leq0$, the upper-consumption constraint makes the derivative zero. At a clipped $y$ face the derivative is also zero almost everywhere. The positive right-hand side can therefore be integrated over the entire untruncated Gaussian as an upper bound. Its exact exponential moment is
+\[
+ \E[e^{al}l^2]=e^{a\mu+a^2v/2}\{(\mu+av)^2+v\}.
+\]
+For $y_0\in[1.2,2.4]$, the means $\mu=M-.025t$ are positive. The expression is increasing in both $\mu$ and $v$ on the relevant range. Using $\mu\leq M$ and $v\leq.09$ gives \eqref{r10:variance}. Finally,
+\[
+ \int_0^1e^{-\rho s}sC_\rho(1-s)^2ds
+ \leq\int_0^1s(1-s)^2ds=1/12.
+\]
+Combining \eqref{r10:exact-affine}, \eqref{r10:smooth-gap}, and \eqref{r10:poincare} proves \eqref{r10:computable}. The allowance is positive and remains present at every quadrature resolution.
+
+\subsection{Transfer from the auxiliary problem to the actual contract}
+Set
+\[
+ W(t,u,x,y)=y(x-.5)+.1\log(.5)+A_k(t,u,y).
+\]
+The accounting identity for $Yx$ cancels every original adaptive portfolio choice. The maximization defining $\Psi$ bounds every original consumption. Inequality \eqref{r10:plane} bounds the remaining source as long as $(u,y)$ lies in the verification rectangle. Dynamic programming for the explicitly solved affine auxiliary problem then makes discounted $W$ plus accumulated original payoff a supermartingale up to the first relevant face, for any original policy. One can establish the same statement directly from conditional Fubini and the adapted selector above; no differentiability of the unknown original value is needed. Smooth approximations of the bounded Lipschitz source, with uniform source-error corrections, give the equivalent classical verification argument.
+
+The terminal tangent obeys $Q\geq\phi$ everywhere because $\phi$ is concave. Write $F=A_k-Q$. Under the feasible auxiliary choice $\theta=0$, discounted Ito applied to the affine function $Q$ gives
+\[
+ F(t,u,y)\geq\E\int_t^1 e^{-\rho(r-t)}
+ \{S_0(m(r),\widehat Y_r)+\beta(m(r),\widehat Y_r)(U_r-m(r))-\rho Q(U_r)\}dr.
+\]
+For any starting $u\in[1.5,2.5]$, one has
+\[
+ \E|U_r-m(r)|\leq.7+.05=.75,\qquad
+ \E|Q(U_r)|\leq.0008+.008(.75)=.0068.
+\]
+Consequently \eqref{r10:source-bounds} implies
+\begin{equation}
+ F(t,u,y)\geq\{-7.1-1.1(.75)-.04(.0068)\}(1-t)
+                 =-7.925272(1-t)>-8(1-t).\label{r10:boundaryfloor}
+\end{equation}
+This is a uniform bound for the required starting rectangle; it is not a claim that the affine potential is bounded on the entire $u$ line.
+
+For $x\in[.5,2]$ and $y\geq.2$,
+\[
+ y(x-.5)+.1\log(.5)-.1\log x\geq0,
+\]
+by differentiation in $x$, with equality at $x=.5$. Thus $W\geq G-8h$ on actual wealth exits and $W\geq G$ at $h=0$. For the preference localization, $.2(120)+.00125(120)^2=42$ bounds the killed generator for either sign and every original $\theta$. For log-deflator localization, $dl=-.025dt-.3dZ^x$ and
+$22.33=.025(22)+.045(22)^2$ bounds either sign. Each term in \eqref{r10:localization} is a nonnegative supermartingale potential that contributes at least $8h$ on its artificial face. Their addition therefore raises the continuation value to at least $G$ at every artificial face. The already established global upper $V_k\leq G$, for $k\geq.5$, applies beyond that face. Stopped verification before it and this fallback after it prove \eqref{r10:dualbound}. All constants correspond to the original discount, diffusion correlation, action bounds, and liquidation fee.
+
+\section{Validated evaluation and implementation error}\label{r10:proof:numerics}
+\subsection{Interval quadrature of the dual}
+The frozen references have sixteen time slabs. A slab $t\in[j/16,(j+1)/16]$ is transformed to $v\in[\sqrt{j/16},\sqrt{(j+1)/16}]$ and subdivided into 4, 8, or 16 intervals. The standard Gaussian is covered by 64, 128, or 256 intervals on $[-6,6]$, respectively. Thus the three meshes use 4,096, 16,384, and 65,536 source boxes. All square-root endpoints are enclosed before binary64 conversion.
+
+On a box the reference mean and log-deflator are
+\[
+ m(v^2)=2+\mu_j+\bar\theta_j(v^2-j/16),\qquad
+ l(v,z)=M-.025v^2-.3vz,
+\]
+where $\mu_j=\sum_{i<j}\bar\theta_i/16$ is an interval-enclosed sum of exact deployment constants. The source Hessian in $(v,z)$ follows from \eqref{r10:jets} and the chain rule. The entire image box is enclosed, with the hull of all possible consumption branches. The program asserts that the covered Gaussian region stays inside the $y$ clipping faces for each of the fitted references.
+
+With $w_v=2ve^{-.04v^2}$ and $w_z=(2\pi)^{-1/2}e^{-z^2/2}$, the source integral uses the exact interval-enclosed zeroth, first-centered, and second-centered moments of both weights. The exponential series for the time weight retains terms through degree twelve in $-.04v^2$ and bounds the remaining terms analytically. The Gaussian weight uses its degree-110 exponential series with an analytic absolute remainder on $[-6,6]$. Antiderivatives of each polynomial term are evaluated at interval endpoints. No floating-point Gaussian quadrature weight is assumed exact in the certificate.
+
+If $r_v,r_z$ are box radii, a valid second-order remainder bound is
+\[
+ \frac12\|S_{vv}\|_\infty M_{v,2}M_{z,0}
+ +\|S_{vz}\|_\infty r_vr_zM_{v,0}M_{z,0}
+ +\frac12\|S_{zz}\|_\infty M_{v,0}M_{z,2}.
+\]
+The interval first-centered moments retain their signs; constant and linear terms are not discarded as though all weighted boxes were symmetric. The source is $C^1$ with locally bounded one-sided Hessians across an active-consumption switch, so the integral Taylor formula with the Hessian hull remains valid there.
+
+A Gaussian Chernoff bound gives $\Pr(|Z|>6)\leq2e^{-18}$. The source tail lies between $-7.1\Pr(|Z|>6)$ and zero at each time; the coefficient tail has magnitude at most $1.1\Pr(|Z|>6)$. For the covariance tail,
+\[
+ |\partial_l\beta|\leq12^{6/11}\log(12)/4<2.5
+\]
+on the nonzero-derivative region, so its omitted contribution lies in
+$[-.00375(2.5)\Pr(|Z|>6)/2,0]$. The signs are retained because $\beta_l\leq0$. These corrections account for the full unbounded Gaussian, not just the sampled central region.
+
+For $b(s)$, interval source-coefficient integrals are accumulated backwards. The remaining fraction of the current time cell ranges independently from zero to its entire discounted mass. Multiplying by the interval for $e^{\rho s}$ encloses $b(s)$ throughout that cell. The convexity of $g_k(q,\bar\theta)$ makes the maximum over its resulting $q$ interval occur at an endpoint. At an uncertain saturation threshold the unconstrained quadratic conjugate supplies a safe upper bound. This calculation supplies the control-gap integral in \eqref{r10:computable}.
+
+Every elementary binary64 addition, subtraction, multiplication, division, and pairwise sum is rounded outward. Analytic constants and weighted moments use 70-digit interval arithmetic. The fitting objective, the source-quadrature enclosure, the policy-payoff enclosure, and the optimality gap have different meanings and are recorded in different files. The acceptance test subtracts the policy's lower endpoint from the optimal-value upper endpoint with outward rounding. The comparison with $.01$ is then a test of the original-policy regret, not of a residual norm.
+
+\subsection{Proof of the feasible-output allowance}
+\begin{proof}[Proof of Proposition~\ref{r10:output}]
+Couple the two policies to the same preference Brownian motion. Wealth is deterministic, decreasing, and remains in $(.5,1.25]$ because of the stated budget and consumption constraints. The difference of preference paths at time $t$ is at most $\int_0^t|\theta_s-\widetilde\theta_s|ds$. The terminal wealth difference is at most $e^{.02}\delta_c$.
+
+On the event that neither policy exits through preference before time one, $u\in[1.2,2.8]$. For $c\in[.7,.8]$, put $r=u-1$ and $L=-\log c$. Since $Lr<1$, the running utility satisfies
+\[
+ |\partial_c\ell|=c^{-u}<3,\qquad
+ 0\leq\partial_u\{c^{1-u}/(1-u)\}
+ =e^{Lr}(1-Lr)/r^2\leq1/r^2\leq25.
+\]
+The terminal preference derivative has magnitude at most $.032$, while the terminal wealth derivative is at most $.2$. Finally,
+$\frac{k}{2}|\theta^2-\widetilde\theta^2|\leq.2k|\theta-\widetilde\theta|$.
+Integrating these inequalities and using discount factors at most one gives the first two terms of \eqref{r10:outputbound}.
+
+Each policy's preference exit has probability at most $2e^{-72}$ by the same maximal inequality used in the independent evaluator. The union thus has probability at most $4e^{-72}$. On any stopped path, utility has magnitude below 6 before the adjustment cost, that cost contributes at most $.02k$, and settlement has magnitude below $8.1$. Each payoff therefore has absolute value at most $14.1+.02k$. Bounding the payoff difference on the exit union by twice this quantity gives the last term of \eqref{r10:outputbound}. The argument never replaces the stopped economy with a reflected or unstopped payoff.
+\end{proof}
+
+\subsection{What the finite execution establishes}
+All three cost instances pass the $.01$ acceptance test. The interval upper bounds apply to arbitrary original adaptive controls; the lower bounds apply to the stored polished time policies. This distinction is essential to an optimality certificate. The computations do not identify a globally optimal feedback surface, establish a rate for the neural optimizer, or prove that a fixed affine relaxation converges to exact value as its quadrature mesh tends to zero. Its nonvanishing allowances are displayed explicitly. The finite target and the economic inequalities reported in the main text follow from the executed upper and lower bounds alone.

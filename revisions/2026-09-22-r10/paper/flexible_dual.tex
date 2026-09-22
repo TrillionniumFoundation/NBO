@@ -1,0 +1,105 @@
+\section{A constructive certificate for the flexible economy}\label{r10:flexible}
+The principal numerical target is a regret bound of $.01$ for the original problem \eqref{r9:objective}, not for a finite approximation. The certificate below attains this target at $(0,2,1.25)$ for each of the three adjustment prices. It uses a feasible policy to bound value from below and a separate, affine-preference market-deflator construction to bound the optimum from above. The latter retains arbitrary adapted consumption, portfolio choice, and preference adjustment. Neither a state lattice nor an optimal-value label enters its construction.
+
+\subsection{An affine source that preserves the original opportunities}
+Set $\phi(u)=-.02(u-2)^2$, $h=1-t$, and let $Y$ satisfy \eqref{r9:deflator}, with its initial level $y_0>0$ now chosen as a witness parameter. Define
+\begin{align}
+ S_0(u,y)&=\Psi(u,y)+.01y-.004\log(.5),\\
+ \beta(u,y)&=\partial_u\Psi(u,y),\\
+ m(t)&=2+\int_0^t\bar\theta_s\,ds,\qquad 0\leq\bar\theta_s\leq.2,\label{r10:source}
+\end{align}
+where $\Psi$ is the original consumption conjugate in \eqref{r9:dualsource}. The reference drift $\bar\theta$ is deterministic. It is a parameter of an upper witness, not a restriction on the decision maker's adjustment policy. Write $\widehat y=\operatorname{proj}_{[.2,12]}y$ and
+\[
+ Q(u)=\phi(m(1))+\phi'(m(1))(u-m(1)),\qquad b_T=\phi'(m(1)).
+\]
+The verification rectangle is $u\in[1.5,2.5]$, $y\in[.2,12]$. On it, the following supporting inequality holds:
+\begin{equation}
+ S_0(u,y)\leq S_0(m,y)+\beta(m,y)(u-m),\quad 2\leq m\leq2.2.\label{r10:plane}
+\end{equation}
+It is a one-sided inequality on the whole rectangle, not a fitted tangent at sampled states. Its proof combines derivative identities and interval inequalities with explicit margins; see Appendix~\ref{r10:proof:plane}. Global concavity of $S_0$ outside this rectangle is not assumed.
+
+Put $\widehat S_r(u,y)=S_0(m(r),\widehat y)+\beta(m(r),\widehat y)(u-m(r))$. Consider the full-line auxiliary control problem
+\begin{align}
+ A_k(t,u,y)=\sup_{|\theta|\leq.2}\E_{t,u,y}\bigg[&\int_t^1 e^{-\rho(r-t)}
+ \{\widehat S_r(U_r,Y_r)-k\theta_r^2/2\}dr\notag\\
+ &+e^{-\rho(1-t)}Q(U_1)\bigg].\label{r10:auxiliary}
+\end{align}
+Here $dU_r=\theta_rdr+.05dZ^u_r$, and the auxiliary control remains adapted. The affine source makes its marginal value of $u$ an explicitly defined conditional expectation, which can be bounded without solving another neural control problem. Put
+\begin{align}
+ Z_u(h,u)&=8h\{e^{-120(u-1.5)+42h}+e^{-120(2.5-u)+42h}\},\\
+ Z_y(h,y)&=8h\{e^{-22\log(y/.2)+22.33h}+e^{-22\log(12/y)+22.33h}\}.\label{r10:localization}
+\end{align}
+
+\begin{theorem}[Affine-preference dual and a computable initial upper bound]\label{r10:dual}
+For $k\geq.5$, $y_0\in[1.2,2.4]$, and any deterministic $\bar\theta\in[0,.2]$, the original flexible optimum satisfies
+\begin{equation}
+ V_k(0,2,1.25)\leq .75y_0+.1\log(.5)+A_k(0,2,y_0)+Z_u(1,2)+Z_y(1,y_0).\label{r10:dualbound}
+\end{equation}
+To evaluate the right side, put $\beta_t=\beta(m(t),\widehat Y_t)$ and
+\begin{align}
+ b(s)&=\int_s^1e^{-\rho(t-s)}\E\beta_t\,dt+e^{-\rho(1-s)}b_T,\\
+ g_k(q,a)&=H_k(q)-qa+ka^2/2,\\
+ C&=.00375\int_0^1te^{-\rho t}\E\left[\partial_l\beta(m(t),\widehat Y_t)\right]dt,\label{r10:quantities}
+\end{align}
+where the $l$ derivative includes the clipping map and $H_k(q)=\max_{|a|\leq.2}(qa-ka^2/2)$. Then
+\begin{align}
+ A_k(0,2,y_0)\leq{}&e^{-\rho}\phi(m(1))+
+ \int_0^1e^{-\rho t}\left\{\E S_0(m(t),\widehat Y_t)-k\bar\theta_t^2/2\right\}dt+C\notag\\
+ &+\int_0^1e^{-\rho s}g_k(b(s),\bar\theta_s)ds+\frac{.09D^2}{24k},\label{r10:computable}
+\end{align}
+with the explicit bound
+\begin{equation}
+ D^2=\frac{e^{aM+.045a^2}}{16}\{(M+.09a)^2+.09\},\qquad
+ a=12/11,\quad M=\log y_0.\label{r10:variance}
+\end{equation}
+All expectations in \eqref{r10:quantities}--\eqref{r10:computable} are one-Gaussian integrals. They involve no unknown optimal value or policy.
+\end{theorem}
+
+The cancellation of the portfolio is the same accounting identity used in the restricted dual: $d(Yx)=(.04Yx-Yc)dt+$ a local martingale. The new step is to retain flexible adjustment while replacing its source by a supporting affine function. The variance allowance in \eqref{r10:computable} pays explicitly for the random conditional marginal value of adjustment. Replacing that marginal value by its unconditional mean without this allowance would generally produce an invalid upper bound. The covariance term $C$ also matters: it retains the original correlation between preference and market shocks and is nonpositive here. It is evaluated, not silently discarded or confused with a change of measure.
+
+The source bound $S_0\geq-7.1$ and $|\beta|\leq1.1$ imply $A_k-Q\geq-7.925272h$ on the verification rectangle, by choosing zero adjustment in the auxiliary problem. Hence the factors $8h$ in \eqref{r10:localization} pay for continuation at artificial faces. On actual wealth exits, the uncorrected affine witness already dominates the liquidation settlement. The global fallback $V_k\leq G$ covers continuation after an artificial exit. These facts connect \eqref{r10:computable} to the original stopped economy rather than to a surrogate full-line economy.
+
+\subsection{Policy generation, verified refinement, and the stopping rule}\label{r10:algorithm}
+The lower-bound policies start from the retained one-input, twelve-unit neural time-control actors. A constrained L-BFGS-B step polishes their sixteen consumption and adjustment outputs using the original payoff and the same exact budget projection. This is an explicit enlargement from a fixed network's image to the feasible time-control outputs; it is not described as additional Adam iterations or as a theorem that the neural optimizer converges. Consumption and adjustment constants are rounded inward relative to the \emph{exact decimal} action bounds, and feasibility is checked using their exact binary rational values. The finite-node training objective is a proposal mechanism, not an asserted untruncated Gaussian expectation of singular CRRA utility. The independent polynomial-moment evaluator in Appendix~\ref{r9:proof:policy} then encloses each deployed continuous-time policy under exact first preference exit. The full network histories, original outputs, polished outputs, and output-optimization records remain separate.
+
+The dual reference is fitted with Gaussian quadrature, but its fitted objective is never used as a bound. Verification uses $t=v^2$, subdivides each of the sixteen time slabs, and covers the standard Gaussian coordinate on $[-6,6]$. Constant and linear Taylor terms are integrated with interval-enclosed weighted moments. Hessian ranges enclose the entire remainder, including boxes crossing the consumption constraint. Gaussian tails, the terminal tangent, the conditional-variance allowance, localization, and outward arithmetic are separately included. The small one-dimensional interval tests establishing \eqref{r10:plane} precede every certificate execution.
+
+The stopping rule is simple. Given a policy lower bound $L$ and an upper bound $U$ from Theorem~\ref{r10:dual}, return the policy with tolerance $\varepsilon$ only when $U-L\leq\varepsilon$. Otherwise refine the quadrature or return the explicit unachieved target at the declared work limit. Soundness does not require optimizer convergence. Nor does soundness imply that an arbitrary tolerance can be reached with a fixed affine relaxation. For the three declared $.01$ instances, the finite executions below supply the termination certificate.
+
+\begin{table}[t]\centering\small
+\caption{Original flexible-economy certificates after output polishing}\label{r10:tab:original}
+\input{revisions/2026-09-22-r10/paper/tables/original}
+\par\smallskip\footnotesize All three regret bounds are below $.01$. Each upper bound covers the full original continuous control set and stopping contract. Each lower bound evaluates the specified feasible time-control policy. Endpoints are rounded outward; gaps use the unrounded endpoints. These are central-state certificates, not uniform claims over every initial condition.
+\end{table}
+
+\begin{table}[t]\centering\small
+\caption{Verified work needed to cross the absolute-error target}\label{r10:tab:frontier}
+\input{revisions/2026-09-22-r10/paper/tables/frontier}
+\par\smallskip\footnotesize The policy is independently evaluated once at the finest stated precision. Time includes that evaluation, dual preparation, and cumulative dual verification through each row, on one CPU thread. It excludes inherited network training, witness fitting, imports, and setup. This is an absolute-accuracy \emph{verification} frontier, not an all-in training comparison or an external matched-accuracy superiority claim. Raw stage clocks are retained.
+\end{table}
+
+\begin{table}[t]\centering\scriptsize
+\caption{Separate upper-bound allowances at $k=2$}\label{r10:tab:allowances}
+\input{revisions/2026-09-22-r10/paper/tables/error_budget}
+\par\smallskip\footnotesize The source remainder is the Taylor allowance on the covered Gaussian region. Analytic Gaussian tails, interval weight errors, terminal evaluation, and the covariance interval are included in the full records. The variance allowance does not decrease merely by subdividing quadrature boxes. No row is obtained by treating a mesh difference as a rigorous error estimate.
+\end{table}
+
+The finest upper bounds are approximately $-1.26279687$, $-1.28530724$, and $-1.31820708$. Combined with the feasible-policy lower endpoints, they give regret upper bounds $.00987440$, $.00971727$, and $.00996896$ after outward display rounding. The central target is attained without a finite candidate-action grid, an Euler-error assumption, or an assumption that the policy is optimal within its neural class. The preceding wealth-independent witness and its larger gaps are retained in Appendix~\ref{r10:retained}, where their loss of wealth information can be compared with the new construction.
+
+\subsection{A quantitative bridge from implemented controls to the certificate}
+The bound applies to the stored deployment constants themselves. A further perturbation result quantifies its robustness to control evaluation error, rather than inferring robustness from a small training loss.
+\begin{proposition}[Feasible-output error allowance]\label{r10:output}
+Consider two deterministic time-control policies with $p=0$, $c,\widetilde c\in[.7,.8]$, $\theta,\widetilde\theta\in[0,.2]$, and strictly feasible budgets as in \eqref{r9:budgetprojection}. Let
+\[
+ \delta_c=\int_0^1|c_t-\widetilde c_t|dt,\qquad
+ \delta_\theta=\int_0^1|\theta_t-\widetilde\theta_t|dt.
+\]
+Their original stopped payoffs satisfy
+\begin{equation}
+ |J_k(c,\theta)-J_k(\widetilde c,\widetilde\theta)|
+ \leq(3+.2e^{.02})\delta_c+(25+.2k+.032)\delta_\theta
+           +8(14.1+.02k)e^{-72}.\label{r10:outputbound}
+\end{equation}
+Consequently, a validated output error bounded by the right side is an additive allowance in the returned policy's regret certificate. Feasibility must still be checked separately; small unconstrained control error alone does not rule out early wealth exit.
+\end{proposition}
+For the stored policies the output allowance is zero: their binary64 constants are treated as exact reals by the evaluator. Proposition~\ref{r10:output} instead gives an explicit interface for a budget-preserving implementation with perturbed outputs. Together with the neural-jet bound of Theorem~\ref{r9:bridge}, it connects observable implementation errors to certified quantities without attributing an unproved global convergence rate to Adam, RMSprop, or L-BFGS-B.

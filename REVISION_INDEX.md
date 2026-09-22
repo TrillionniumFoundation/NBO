@@ -1,25 +1,20 @@
-# Neural Bellman Operators — canonical revision R9
+# Neural Bellman Operators — canonical revision R10
 
-**Revision date:** September 22, 2026  
-**Revision branch:** `revision/econometrica-r9-constructive-certification-2026-09-22`  
-**Base review commit:** `9749c3cf28f9438315b8f504a358bbe307ea89a5`  
-**Report:** `reviews/2026-09-22-econometrica-r8/referee_report.md`
+The current revision is on `revision/econometrica-r10-referee-resolution-2026-09-22`.
 
-## Authoritative reading order
+| Purpose | File |
+|---|---|
+| Referee entry point | `R10_REVIEW.md` |
+| Current paper and complete proofs | `ECTA_R10.tex`, `ECTA_R10.pdf` |
+| Full historical preservation supplement | `SUPP_R10.tex`, `SUPP_R10.pdf` |
+| Point-by-point response to the R9 referee | `revisions/2026-09-22-r10/response_to_referee.md` |
+| Current original-economy results | `revisions/2026-09-22-r10/results/scientific_summary.json` |
+| Immutable source/result/build/review map | `revisions/2026-09-22-r10/publication_receipt.json` |
+| Independent certificate re-execution | `revisions/2026-09-22-r10/ci_recheck.json` |
+| Evidence and document validation | `revisions/2026-09-22-r10/validation_report.json` |
+| Reproduction commands and scope | `revisions/2026-09-22-r10/replication/README.md` |
+| Exact inherited-file preservation map | `revisions/2026-09-22-r10/inherited_manifest.json` |
 
-1. `ECTA_R9.tex` / `ECTA_R9.pdf` — current complete Econometrica-style manuscript, new results, generated numerical tables, and full new proofs.
-2. `SUPP_R9.tex` / `SUPP_R9.pdf` — complete R8 manuscript/proofs, complete R4 exposition/appendix, and all six delivered R5 tables, through unchanged historical inputs.
-3. `revisions/2026-09-22-r9/response_to_referee.md` — point-by-point response to R8-F1–F12, with exact evidence and remaining distinctions.
-4. `revisions/2026-09-22-r9/results/scientific_summary.json` — original-economy enclosures, optimal access-welfare intervals, explicit flexible precision flags, and full holdout summaries.
-5. `revisions/2026-09-22-r9/replication/README.md` — certificate, training, and clean-build commands and dependency scope.
-6. `revisions/2026-09-22-r9/validation_report.json` and `source_manifest.json` — validation and source/evidence hashes.
-7. `revisions/2026-09-22-r9/preservation_map.md` and `inherited_manifest.json` — unchanged source chain and historical reading map.
-8. `R9_REVIEW.md` — compact review entry point.
+The original continuous central-state regret target of 0.01 is met at costs 0.5, 2, and 8. This supersedes the completed R9 flexible-policy precision status for the **new polished policies and new dual bound**; it does not alter the old evidence in place.
 
-## Main scientific distinctions
-
-The original first-exit economy is unchanged. At the central state and adjustment cost two, certified optimal access welfare is at least **0.04094994** and the restricted optimum is enclosed within **0.009047**. The flexible learned policy has payoff-evaluation width **1.33e-5**, but regret upper **0.10633861**, above the retained **0.01** target. The current manuscript does not turn evaluation accuracy into optimality accuracy.
-
-The external evidence has a rigorous absolute lower reference and a frozen, symmetrically tuned 72-pair holdout comparison. The independent feedback baseline outperforms both learned methods in every panel. All checkpoints, path arrays, and unfavorable results remain available.
-
-The previous R3 revision index is archived at `revisions/2026-09-22-r9/archive/REVISION_INDEX_before_R9.md`. Earlier manuscript and review branches remain intact; the R9 branch is the single canonical pointer for this resubmission.
+The complete R9 external holdout, its primary exact sign inference, all unfavorable results, the older manuscripts, and all historical proof files remain accessible. The previous root index is preserved verbatim at `revisions/2026-09-22-r10/archive/REVISION_INDEX_before_R10.md`.
