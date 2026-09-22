@@ -1,0 +1,91 @@
+\section{Proofs for the certificate-aligned algorithm}\label{app:alignedproofs}
+\begin{proof}[Proof of Theorem~\ref{thm:objectivebridge}]
+For a fixed slab and sign, write $A=\max\{0,\max_i a_i\}$ and $B=\max\{0,\max_i b_i\}$. The definition of $d$ gives $b_i\leq\max\{a_i,0\}+d\leq A+d$, hence $B\leq A+d$. For $K=M+1$ logits including zero, factor $e^{A/\tau}$ out of their exponential sum. The remaining sum lies in $[1,K]$. It follows that
+\[
+ A\leq\tau\log(1+\textstyle\sum_i e^{a_i/\tau})\leq A+\tau\log K.
+\]
+Multiply by the positive discounted slab mass, sum over the two signs and all slabs, and apply Theorem~\ref{thm:accessibility}. This proves \eqref{eq:objectivebridge}; taking $a=b$ and $d=0$ proves \eqref{eq:entropygap}. A nonzero independently certified trace budget can be added to both policy-loss bounds without changing the argument.
+
+For the implementation, every stored logit is interpreted as its exact dyadic value. The maximum used to stabilize the logarithm is also an exact stored value. Directed subtraction, exponentiation, pairwise summation, logarithm, multiplication, and discounted-mass evaluation enclose the smooth objective. Directed subtraction of each nonnegative proposal logit from its retained certified endpoint encloses the correction. Its construction is valid regardless of the source of the difference between the two computational graphs. An incomplete cover would invalidate the initial use of Theorem~\ref{thm:accessibility}; the implementation rejects that case rather than increasing a numerical tolerance.
+\end{proof}
+
+\begin{proof}[Proof of Proposition~\ref{prop:certificateacceptance}]
+The initial accepted certificate is valid by independent verification. At each subsequent checkpoint, rejection leaves the incumbent unchanged, and acceptance replaces it by a valid strictly smaller bound and its associated policy. Induction proves the first assertion.
+
+For the second assertion, consider a deterministic unit-horizon problem with discount $\rho\geq0$, zero terminal reward, and two actions with constant rewards $0$ and $-1$. Put $C_\rho(h)=\int_0^h e^{-\rho s}\,ds$ and $v_a(t)=aC_\rho(1-t)$. Then $v_a'-\rho v_a=-a$, so the optimal residual is $-a$ and the residual of an action with reward $r$ is $r-a$. The signed certificate is
+\[
+ C_\rho(1)\{(-a)_++(a-r)_+\}.
+\]
+The optimal action $r=0$ paired with $a=-10$ has certificate $10C_\rho(1)$ and true regret zero. The worse action $r=-1$ paired with $a=-1$ has certificate $C_\rho(1)$ and true regret $C_\rho(1)>0$. Both witnesses match terminal reward and both certificates are valid. Strict certificate acceptance therefore does not imply increasing policy values. This is an analytical counterexample to the inference, not a simulated observation about the original economy.
+\end{proof}
+
+\begin{proof}[Proof of Proposition~\ref{prop:finitehorizon}]
+Let $A_n=\|V_n^*-v_n\|_\infty$ and $P_n=\|V_n^\pi-v_n\|_\infty$. The evaluation and improvement inequalities imply
+\[
+ \|v_n-T_nv_{n+1}\|_\infty\leq\epsilon_n+\eta_n.
+\]
+The Lipschitz inequalities for $T_n$ and $T_n^{\pi_n}$ give
+\[
+ A_n\leq qA_{n+1}+\epsilon_n+\eta_n,\qquad
+ P_n\leq qP_{n+1}+\epsilon_n,
+\]
+with $A_N,P_N\leq b$. Backward iteration and the triangle inequality give \eqref{eq:finitehorizon}. Finally,
+$C_\rho(h)\sum_{n=0}^{N-1}e^{-\rho nh}=C_\rho(Nh)$, including its continuous extension at $\rho=0$. The bound concerns this finite-horizon Bellman problem. Any use for a different continuous-time problem still requires a transfer theorem or a direct continuous-time certificate.
+\end{proof}
+
+\begin{proof}[Proof of Proposition~\ref{prop:fixedwitness}]
+The upper half of the verification argument gives
+\[
+ V_2(0,2,x)\leq v(0,2,x)+\int_0^1e^{-.04s}e_+(s)\,ds
+\]
+for every interior $x$. The upper trace inequalities remove any adverse settlement discrepancy. Let $x\uparrow2$, use continuity of the fixed witness and Proposition~\ref{prop:traceconsistency}, and subtract $g(0,2,2)$. The result is $\Delta\leq h_v+\int e^{-.04s}e_+(s)\,ds$. Since the integral is nonnegative, \eqref{eq:fixedwitnessfloor} follows. No policy payoff enters this lower bound; it is a statement about the residual needed to support that particular witness.
+\end{proof}
+
+\section{Proof for nonlinear vector-state control}\label{app:nonlinearproof}
+\begin{proof}[Proof of Theorem~\ref{thm:nonlinearcontrol}]
+Let $D$ be the cyclic first-difference matrix, so $(Dz)_i=z_i-z_{i+1}$ and $\|D\|_2\leq2$. Differentiating \eqref{eq:nonlinearpotential} gives
+\[
+ \nabla^2\Phi(z)=\operatorname{diag}(q_i+\tfrac12\operatorname{sech}^2z_i)
+ +D^\top\operatorname{diag}(\tfrac3{10}\operatorname{sech}^2(Dz)_i)D.
+\]
+All terms are positive semidefinite. Since $1\leq q_i\leq6/5$ and $\operatorname{sech}^2\leq1$,
+$\nabla^2\Phi(z)\preceq(6/5+1/2+(3/10)4)I=(29/10)I$ globally.
+
+Stack the $H$ propagated states. Their derivative with respect to $U$ is a block lower-triangular convolution operator $B$ with coefficients $1,3/5,(3/5)^2,\ldots$. If $S$ is the finite shift operator, then $B=\sum_{j=0}^{H-1}(3/5)^j S^j\otimes I_d$, so $\|B\|_2\leq\sum_j(3/5)^j\leq5/2$. Therefore
+\[
+ \nabla_U^2F_x(U)=4I+B^\top\operatorname{diag}(\nabla^2\Phi(z_{h+1}))B,
+\]
+and its spectrum lies in $[4,4+(25/4)(29/10)]=[4,177/8]$. This also establishes coercivity, existence, and uniqueness of the minimizer for every $x$.
+
+Let $m=4$, $L=177/8$, and $\alpha=2/(m+L)=16/209$. With $g_k=\nabla F_x(U_k)$, the fundamental theorem of calculus yields
+\[
+ g_{k+1}=\left(I-\alpha\int_0^1\nabla^2F_x(U_k-t\alpha g_k)\,dt\right)g_k.
+\]
+The integral is symmetric with spectrum in $[m,L]$. Consequently
+$\|g_{k+1}\|_2\leq (L-m)/(L+m)\,\|g_k\|_2=(145/209)\|g_k\|_2$.
+Strong convexity, followed by minimization of its quadratic lower tangent, gives
+$F_x(U)-\inf F_x\leq\|\nabla F_x(U)\|_2^2/(2m)=\|\nabla F_x(U)\|_2^2/8$.
+
+It remains to bound the initial gradient uniformly in the state cube and in the neural weights. The output constraint gives $|u_{0,hi}|\leq1/4$, and $|b_{hi}|\leq.03$. State propagation therefore implies
+\[
+ |z_{hi}|\leq1+\frac{.25+.03}{1-.6}=1.7.
+\]
+Each coordinate of $\nabla\Phi$ has absolute value at most
+$(6/5)(1.7)+1/2+2(3/10)=3.14$. The backward adjoint is a geometrically weighted sum of such gradients. Hence every coordinate of $\nabla_U F_x(U_0)$ has absolute value at most
+$4(1/4)+3.14/(1-.6)=8.85$. There are $Hd$ coordinates, so
+$\|g_0\|_2^2\leq Hd(8.85)^2$. Combining the inequalities proves \eqref{eq:nonlinearuniform} and solving it for $k$ gives the work allocation.
+
+Forward propagation, cyclic neighbor differences, and backward adjoints each require $O(Hd)$ operations; no dense Hessian need be formed. Directed verification of a stored plan replaces its unknown exact gradient norm by an upper enclosure. It certifies that stored plan at that stored initial vector even when its floating-point optimization trajectory differs from the exact-real iteration. It does not, by itself, certify the floating-point neural/correction map simultaneously at every state.
+\end{proof}
+
+\section{Proof of budget-feasible compensation}\label{app:wealthproof}
+\begin{proof}[Proof of Proposition~\ref{prop:wealthcompensation}]
+Couple the original and compensated policies with the same preference Brownian motion. Their preference processes and adjustment costs coincide. Their portfolios are both zero. The wealth difference before stopping is
+\[
+ z(s)=\Delta x e^{.02s}-\frac{d_c}{.02}(e^{.02s}-1)
+ =\Delta x\,\frac{e^{.02}-e^{.02s}}{e^{.02}-1}\geq0,
+\]
+with $z(1)=0$. The verified wealth and consumption conditions make both policies admissible and exclude wealth stopping. Thus they have the same preference or terminal stopping time. At preference stopping, the wealth-dependent settlement increment is $.1\log((X_s+z(s))/X_s)\geq0$; at time one it is zero.
+
+For any preference $u\in[1.2,2.8]$, marginal utility is $c^{-u}$. Along the compensated consumption segment, $c\leq.8<1$, so $c^{-u}\geq.8^{-1.2}$. The mean value theorem therefore bounds the instantaneous utility increment below by $d_c .8^{-1.2}$. The survival probability at every time is at least $1-p_e$. Integrating with discount and adding the nonnegative settlement change proves \eqref{eq:wealthgain}. The library's uniform policy-loss inequality then gives the concluding comparison with the original optimal value. The proof neither redefines that value nor asserts that the sufficient compensation is the minimum possible one.
+\end{proof}

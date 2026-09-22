@@ -1,0 +1,41 @@
+\section{Retained quadratic inventory validation}\label{sec:inventory}
+For historical validation of the dynamic certificate, retain the quadratic inventory-adjustment economy below. Its numerical gain problem reduces to two scalar Riccati equations; the genuinely vector-state nonlinear experiment is Section~\ref{sec:nonlinearinventory}. With $M=\mathbf1\mathbf1'/d$,
+\begin{equation}
+ dX_s=(AX_s+a_s)ds+.1dW_s,\qquad A=-.2I+.3M,\label{eq:inventorydynamics}
+\end{equation}
+and minimize
+\begin{equation}
+ \mathcal J(t,x;a)=\E\!\left[\int_t^1\{X_s'(I+.5M)X_s+|a_s|^2\}ds+.5|X_1|^2\right].
+ \label{eq:inventorycriterion}
+\end{equation}
+Controls are square-integrable adapted adjustments. Mean inventory affects drift and aggregate holding cost; idiosyncratic inventory also has its own adjustment dynamics and shocks. This is a coupled $d$-state dynamic problem, not an action maximization at frozen derivatives. It is a structured, uncalibrated application, and the structure is available to classical solvers as well.
+
+The orthogonal and mean modes have $(a_\perp,q_\perp)=(-.2,1)$ and $(a_m,q_m)=(.1,1.5)$. Their Riccati gains satisfy
+\[
+ (p_i^*)'+2a_i p_i^*-(p_i^*)^2+q_i=0,\qquad p_i^*(1)=.5.
+\]
+We train two neural gain outputs $\widehat p_i(t)=.5+(1-t)\operatorname{softplus}(N_i(t))$ against these \emph{differential residuals}, not against exact Riccati solutions. The feedback is
+\[
+ \widehat a(t,x)=-\widehat P(t)x,\qquad
+ \widehat P=\widehat p_\perp(I-M)+\widehat p_mM.
+\]
+The network changes its gain with time and controls all $d$ state coordinates. One learned pair is reused across the six dimensions; this reuse is not counted as six independent training runs.
+
+\begin{theorem}[State-global quadratic neural policy certificate]\label{thm:inventory}
+Suppose interval differentiation on a complete time cover bounds the two neural Riccati residuals by $\varepsilon_i$. Put $\kappa_\perp=1.4$, $\kappa_m=.8$, and
+\[
+ D=\max_i\varepsilon_i\frac{1-e^{-\kappa_i}}{\kappa_i},\qquad
+ C=\frac{1-e^{-.8}}{.8}.
+\]
+For every $d\geq1$ and every $|x|^2/d\leq1$,
+\begin{equation}
+ 0\leq\frac{\mathcal J(0,x;\widehat a)-\mathcal V(0,x)}d
+ \leq D^2\left\{C+\frac{.01}{.8}(1-C)\right\}.
+ \label{eq:inventorycertificate}
+\end{equation}
+The bound concerns the continuous-time controlled diffusion on all of $\R^d$, not a finite collection of initial states.
+\end{theorem}
+The proof uses a quadratic performance-difference identity and a closed-loop Lyapunov moment bound. It replaces state covering by algebra valid on the entire state space. The certificate's time-enclosure work depends on network size and the number of time cells, rather than a tensor grid in $d$. Applying the feedback requires a mean and coordinatewise operations, hence $O(d)$ work. This advantage comes from the model's two invariant modes; it is not a generic escape from dimensional dependence for nonlinear Bellman equations.
+
+Ten fixed seeds, two widths, and both predeclared checkpoints are retained. Every final checkpoint has per-coordinate certified loss at most \RInventoryFinalMax; the complete range and costs appear in Table~\ref{tab:inventory}. The certificate scales to total loss by multiplication by $d$. The supplement also reports the earlier checkpoint and fixed-network time-cover refinements separately. A structure-aware classical calculation solves only two scalar Riccati equations. Its low cost is reported rather than hidden: this application establishes accurate, reproducibly generated neural feedback with full dynamic certification, not superiority over the classical solution of this specially structured problem.
+\input{revisions/2026-09-23-r18/paper/inventory_table}

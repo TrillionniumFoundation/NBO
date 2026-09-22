@@ -1,0 +1,116 @@
+% Preserved from R14 main: economy, verification, coefficient transport.
+\section{The stopped preference-adjustment economy}\label{sec:economy}
+Time is continuous, with horizon $T=1$. Preferences $u$ and wealth $x$ evolve as
+\begin{align}
+ du_s&=\theta_s\,ds+.05\,dZ^u_s,\label{eq:u}\\
+ dx_s&=\{(.02+.06p_s)x_s-c_s\}\,ds+.2p_sx_s\,dZ^x_s,\label{eq:x}
+\end{align}
+where $d\langle Z^u,Z^x\rangle_s=-.25\,ds$. The state domain is
+\[
+ D=(1.2,2.8)\times(.5,2),
+ \qquad A=[.05,.8]\times[-.2,.2]\times[-.5,.8].
+\]
+An admissible control $a=(c,\theta,p)$ is progressively measurable, takes values in $A$, and is used up to the first exit from $D$ or time one, whichever occurs first. The controls in the original optimization are not restricted to deterministic time functions or to neural networks.
+
+For adjustment price $k\in[.5,8]$, the running payoff and settlement are
+\begin{align}
+ \ell_k(u,c,\theta)&=\frac{c^{1-u}}{1-u}-\frac{k}{2}\theta^2,\label{eq:ell}\\
+ G(u,x)&=-.02(u-2)^2+.1\log x,\qquad
+ g(s,u,x)=G(u,x)-8(1-s).\label{eq:trace}
+\end{align}
+Let $\tau=1\wedge\inf\{s\geq t:(u_s,x_s)\notin D\}$ and $\rho=.04$. The criterion is
+\begin{equation}
+ J_k(t,z;a)=\E_{t,z}\left[\int_t^\tau e^{-\rho(s-t)}\ell_k(u_s,c_s,\theta_s)\,ds
+       +e^{-\rho(\tau-t)}g(\tau,u_\tau,x_\tau)\right].
+ \label{eq:value}
+\end{equation}
+Here $V_k=\sup_{a\in\cA}J_k(\cdot;a)$. The liquidation fee makes a stopping-trace error economically meaningful even when the training distribution assigns little mass near an exit. It is therefore included explicitly in verification rather than approximated by an average boundary loss.
+
+For a smooth test function $v$, define the discounted residual
+\begin{align}
+ \cR_a v={}&v_t+\theta v_u+\{(.02+.06p)x-c\}v_x
+       +.00125v_{uu}+.02p^2x^2v_{xx}-.0025pxv_{ux}\notag\\
+       &+\frac{c^{1-u}}{1-u}-\frac{k}{2}\theta^2-.04v.
+ \label{eq:residual}
+\end{align}
+All constants in the certificate denote the displayed exact decimals. Training uses floating-point approximations of them, but the certification program encloses the exact constants and treats stored binary64 network weights as exact real numbers.
+
+The central initial condition is $(t,u,x)=(0,2,1.25)$. We also study the nondegenerate rectangle
+\begin{equation}
+ K=[1.98,2.02]\times[1.24,1.26].\label{eq:K}
+\end{equation}
+The claim on $K$ is uniform over its interior, not a statement about 72 isolated initial conditions. Its proof is given in Section~\ref{sec:state}, and its tolerance differs from the sharper central-state tolerance.
+
+\section{Constructive neural verification}\label{sec:verification}
+We first state the verification result for a class of stopped controlled diffusions. Let $Z$ take values in a bounded domain, with drift $b_a$, covariance matrix $\Sigma_a$, running reward $f_a$, constant discount $\rho\geq0$, and settlement $g$ on the parabolic boundary. Write
+\[
+ \cR_a v=v_t+b_a\cdot Dv+\tfrac12\Sigma_a:D^2v+f_a-\rho v.
+\]
+The assumptions below concern the stochastic model and the computed witness. They do not assume regularity of the unknown optimal value.
+
+\begin{assumption}\label{ass:verification}
+For every admissible control, the stopped diffusion and its payoff are well defined. The controlled coefficients and payoffs are bounded on the stopped domain. The candidate feedback $\pi$ is admissible. The witness $v$ is continuously differentiable in time and twice continuously differentiable in state on a neighborhood of the closed domain, and its derivatives are bounded there. Discounted It\^o's formula and optional stopping hold for these bounded stopped quantities.
+\end{assumption}
+The compact economy in Section~\ref{sec:economy} with the stored smooth, bounded neural feedback satisfies these requirements. Boundedness also permits localization of the stochastic integral before taking expectations.
+
+\begin{theorem}[A complete residual and improvement certificate]\label{thm:bridge}
+Under Assumption~\ref{ass:verification}, suppose verified nonnegative functions $e(s),q(s)$ and a number $b\geq0$ satisfy, at every state and time,
+\begin{equation}
+ |\cR_\pi v|\leq e(s),\qquad
+ 0\leq\sup_{a\in A}\cR_a v-\cR_\pi v\leq q(s),
+ \qquad |v-g|\leq b\ \hbox{on the stopping boundary}.
+ \label{eq:checks}
+\end{equation}
+Then, for every initial state $z$ and time $t$,
+\begin{equation}
+ 0\leq V(t,z)-J(t,z;\pi)
+ \leq 2b+\int_t^T e^{-\rho(s-t)}\{2e(s)+q(s)\}\,ds.
+ \label{eq:bridgebound}
+\end{equation}
+The same conclusion applies to any admissible implementation whose action lies in a verified output-error neighborhood of the stored feedback, provided that the residual and improvement inequalities have been enclosed over that neighborhood.
+\end{theorem}
+
+The theorem is deliberately an a posteriori statement. It is useful because every item in \eqref{eq:checks} has a finite implementation, not because its stochastic comparison identity is new. A training history can propose the witness and policy, but cannot replace any of the inequalities. The proof in Appendix~\ref{app:bridge} separates the policy-evaluation and upper-comparison errors; each stopping-trace discrepancy is paid once.
+
+\subsection{A finite implementation}
+Fix a rational rectangular cover of the entire state--time domain, including every stopping face. On each cell, interval forward differentiation gives the value, first derivatives, and relevant second derivatives of the stored network. An action oracle bounds the maximum over the continuous action set. Interval evaluation of the deployed policy gives its residual and the difference from this global maximum. Taking the largest bounds in each time slab produces $e$ and $q$. Facewise interval evaluation produces $b$. Finally, integration of these piecewise-constant bounds yields \eqref{eq:bridgebound}.
+
+A cell is accepted only if all operations have finite, valid enclosures and every potential action branch is covered. No failed or inconclusive cell can be removed from the domain. Refinement replaces a cell by a complete cover of that cell, while keeping previous results in the execution record. The method either returns the certified inequality for the specified stored object or records that a requested accuracy has not been established at the available resolution. This is a stopping criterion for an accuracy claim, not a criterion based on validation loss.
+
+In the economy, the action maximization separates into three scalar problems conditional on the interval-enclosed derivatives. Consumption is strictly concave, and its maximizer is
+\[
+ c^*=\operatorname{proj}_{[.05,.8]}(v_x^{-1/u})\quad\hbox{when }v_x>0,
+ \qquad c^*=.8\quad\hbox{when }v_x\leq0.
+\]
+The preference action is $\theta^*=\operatorname{proj}_{[-.2,.2]}(v_u/k)$. The portfolio objective is
+\[
+ h_1p+\tfrac12h_2p^2,\quad
+ h_1=.06xv_x-.0025xv_{ux},\quad h_2=.04x^2v_{xx}.
+\]
+A negative curvature gives a clipped vertex; nonnegative curvature gives an endpoint maximum. When an interval does not determine the sign, the calculation encloses the whole feasible portfolio interval. Thus uncertainty enlarges the bound instead of excluding an action. These formulas preserve the original continuous control opportunities.
+
+\subsection{Transport across model coefficients}
+The affine dependence on $k$ used later is not a general argument for perturbing dynamics. For the latter we use residual transport. Consider another model with the same state domain, action set, and settlement, but possibly different coefficients and discount. Let its discount be at least $\underline\rho\geq0$, and let $\widetilde\cR_a$ denote its residual.
+
+\begin{proposition}[Coefficient transport]\label{prop:transport}
+Suppose the original checks \eqref{eq:checks} hold, and interval coefficient bounds verify
+\begin{equation}
+ \sup_{a\in A}|\widetilde\cR_a v-\cR_a v|\leq d(s)
+ \label{eq:transportmodulus}
+\end{equation}
+throughout the common domain. If Assumption~\ref{ass:verification} also holds for the new model, its policy regret is at most
+\begin{equation}
+ 2b+\int_t^T e^{-\underline\rho(s-t)}\{2e(s)+q(s)+2d(s)\}\,ds.
+ \label{eq:transportbound}
+\end{equation}
+If the settlement changes by at most $b_\mathrm{par}$, replace $b$ by $b+b_\mathrm{par}$.
+\end{proposition}
+
+For example, the modulus in \eqref{eq:transportmodulus} can be evaluated directly from
+\[
+ |(\widetilde b_a-b_a)\cdot Dv|
+ +\tfrac12|(\widetilde\Sigma_a-\Sigma_a):D^2v|
+ +|\widetilde f_a-f_a|+|\widetilde\rho-\rho|\,|v|.
+\]
+It includes the change in the covariance matrix rather than treating volatility perturbations as drift changes. The proposition does not couple paths or equate stopping times across economies. Each model is verified against its own stopped dynamics on the common domain. The executed coefficient box is reported in Section~\ref{sec:neural}.
+

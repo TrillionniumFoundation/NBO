@@ -1,0 +1,130 @@
+\paragraph{Historical evidence retained.} The following original-economy experiments, bounds, comparisons, and welfare-resolution calculations are the R14 research record. Their sources and results are unchanged. They are not additional R16 training runs or endpoints of the fresh R16 library.
+\section{Retained R14: executed neural verification on the original economy}\label{sec:neural}
+The retained R14 neural experiment uses a state-feedback actor and critic with two hidden layers of 48 tanh units. Inputs are $(2t-1,(u-2)/.8,(x-1.25)/.75)$. The actor's output transformation is
+\[
+ c=.425+.375\tanh a_1,\qquad
+ \theta=.2\tanh a_2,\qquad
+ p=.15+.65\tanh a_3.
+\]
+The critic is $v(t,u,x)=G(u,x)+(1-t)N(t,u,x)$, so its terminal trace is exact. The first-exit trace is not imposed by this architecture and must be checked.
+
+All weights are freshly generated from seed 1401. Each actor-improvement step is preceded by three critic residual updates, with batch size 128. Adam learning rates are $.0005$ for the critic and $.0002$ for the actor, and the boundary-loss coefficient is $.025$. Snapshots at 100, 300, and 800 updates are retained. The experiment uses the 48-by-48 tanh architecture of the retained comparisons, but its continuous economic residual and boundary objective are a new adapter; it is not the same finite-step training objective as the external benchmark. The optimizer and sampled objective are proposal mechanisms only.
+
+The certification program uses an independent interval implementation for network evaluation and differentiation. It checks all cells of $[0,1]\times[1.2,2.8]\times[.5,2]$, all four first-exit faces, and the terminal face. A componentwise output neighborhood of radius $2^{-24}$ is included in the action ranges. This proves robustness for any admissible action within that neighborhood of the mathematical real-tanh network. It does not assert an undocumented error bound for a machine-library tanh routine or for a discretized diffusion simulator.
+
+\begin{table}[t]\centering\small
+\caption{Whole-domain neural certificates on the unchanged economy, $k=2$}\label{tab:neural}
+\input{revisions/2026-09-22-r14/paper/tables/neural}
+\par\smallskip\footnotesize Upper bounds are rounded upward. Time is the measured verification stage, excluding training. Every row covers the complete domain with zero skipped and zero failed cells. The last three rows refine the cover for the same 800-update snapshot. None attains the $.01$ target.
+\end{table}
+
+Table~\ref{tab:neural} separates the stopping trace from the integrated policy residual and action gap. The finest cover has 16,384 interior cells and 512 cells on each stopping face. It gives the time-zero bound \neuralbound\ and an all-initial-times bound below $23.656877772$. The terminal trace is zero. The 800-update sampled residual mean square is approximately $.0079446$, but this does not control either the worst-case residual or the first-exit trace. Moreover, the 800-update snapshot is not uniformly better than the 300-update snapshot at the same coarse cover. Both outcomes remain in the record.
+
+\begin{table}[t]\centering\small
+\caption{Stopping-trace errors for the finest neural cover}\label{tab:boundary}
+\input{revisions/2026-09-22-r14/paper/tables/boundary}
+\par\smallskip\footnotesize Each entry is a uniform bound over the complete face and time interval. The comparison theorem pays the largest face bound twice. The error is an evaluation of the stored critic against $G-8(1-t)$, not a change in that settlement.
+\end{table}
+
+The coefficient-transport calculation uses the same stored snapshot and cover, with
+\[
+ r\in[.019,.021],\quad\mu\in[.058,.062],\quad
+ \sigma_u\in[.049,.051],\quad\sigma_x\in[.195,.205],
+\]
+\[
+ \rho\in[.039,.041],\qquad k\in[1.9,2.1],
+\]
+and correlation fixed at $-.25$. Here $\mu$ denotes the risky-wealth drift coefficient multiplying $p$. The action bounds, state domain, and settlement are unchanged. Proposition~\ref{prop:transport} gives a time-zero regret bound below $23.530407814$ uniformly over this model box. This demonstrates an executed transport mechanism beyond affine objective continuation. It does not make the base neural certificate accurate: the same boundary and approximation errors remain visible.
+
+The finest computation records separate cellwise evaluation, action, and transport quantities. A diagnostic comparison of the interval neural derivatives with automatic differentiation checks 140 derivative components at 20 states and 60 actor components, with no discrepancy outside the numerical tolerance. This diagnostic detects implementation disagreement; it is not substituted for the full-cell interval proof.
+
+\section{Retained R14: independent numerical evidence and robustness}\label{sec:independence}
+The sharp economic comparison uses a second implementation that imports none of the inherited primal or dual certifiers. Its basic arithmetic encloses exact rational constants and exact stored binary64 inputs. Addition, multiplication, division, and reductions are rounded outward. Exponentials and logarithms are bounded by rational series with analytic remainders; tanh is obtained from the enclosed exponential. The Gauss nodes are isolated by exact polynomial signs and the weights are enclosed by their defining formula. The supplement states the floating-point model and the analytic remainder bounds, so these assertions are not based solely on rerunning a production function.
+
+\begin{table}[t]\centering\small
+\caption{Independent central-state certificates for all retained prices}\label{tab:nodes}
+\input{revisions/2026-09-22-r14/paper/tables/nodes}
+\par\smallskip\footnotesize Every upper endpoint covers all original adapted controls; every lower endpoint belongs to the identified feasible policy. The last column is the width of that policy's payoff enclosure, not its regret. Regret uses unrounded endpoints. All 18 cases are included, and no inherited generation time is counted as zero.
+\end{table}
+
+The independent primal evaluator uses 262,144 integrand evaluations per 16-interval policy. The fine dual uses 262,144 source boxes per price. Complete supporting-plane covers certify a negative second-derivative upper bound below $-.06717$ on the first preference region and a strict derivative separation on the remaining region. They also certify a source floor above $-6.98956$, a source ceiling below zero, and an absolute preference coefficient below $.97119$. These independently computed margins imply the analytic bounds $S_0\geq-7.1$ and $|\beta|\leq1.1$ used for stopping continuation. The complete old policy and dual inputs are retained and identified by their content hashes.
+
+\begin{table}[t]\centering\small
+\caption{Separate quantities in the independent $k=4.25$ calculation}\label{tab:dualbudget}
+\input{revisions/2026-09-22-r14/paper/tables/dual_budget}
+\par\smallskip\footnotesize Intervals are displayed outward. The source-remainder enclosure, Gaussian tail, terminal tangent, reference cost, and arithmetic allowances are present in the machine-readable record. The conditional-variance allowance is positive and is not removed when quadrature is refined.
+\end{table}
+
+Exact price postprocessing is independently implemented by enumerating affine intersections with rational arithmetic, rather than importing the original hull routine. Its input expenditures are newly computed from the stored preference actions with an explicit stopping correction. Thus the upstream policy values, upper values, expenditure intervals, and downstream envelope all have a new execution path. Reproducibility of this path remains distinct from independence of its analytic premises.
+
+\subsection{Stress tests for the entire library}
+The robustness experiment changes every dual pilot: $y_0$ is increased by $10^{-6}$, and its reference preference drifts receive alternating perturbations of $\pm10^{-6}$ with inward projection into the admissible reference interval. Simultaneously, the proof uses the weaker source floor $-7.11$, the larger coefficient bound $1.11$, twice the Gaussian-tail allowance, and 1.1 times the conditional-variance allowance. The resulting continuation floor remains strictly above $-8$. All 18 upper certificates are recomputed, while the original economy and feasible lower policies remain unchanged.
+
+\begin{table}[t]\centering\small
+\caption{Continuum certificates under independent verification and perturbation}\label{tab:robustness}
+\input{revisions/2026-09-22-r14/paper/tables/robustness}
+\par\smallskip\footnotesize The first three rows refer to the central initial state. The fourth covers the additional initial-state rectangle $K$ and is not compared with the central-state $.01$ tolerance as though the domains were identical. The perturbation experiment changes proof witnesses and allowances, not the economic primitives.
+\end{table}
+
+The unperturbed independent bound leaves approximately $3.10\times10^{-5}$ below $.01$, compared with approximately $5.98\times10^{-6}$ for the retained R12 bound. The perturbed calculation remains below $.01$. Neither statement claims a bound below $.009$. An additional exact sensitivity calculation shows how a common enlargement of every upper and lower endpoint changes the final envelope: enlarging each side by $\delta$ increases the guaranteed gap by at most $2\delta$. It is a sensitivity result conditional on valid node intervals, not a replacement for the independent primitive audit.
+
+A third, materially different decomposition integrates the capped and interior conjugate using closed truncated-lognormal moments. At prices $.5$, $4.25$, and $8$, a separate program computes the source integral, initial affine coefficient, and covariance term at 40 and 70 decimal digits. Every computed quantity lies inside the independently certified interval. The agreement provides a useful cross-check of algebra and decomposition; these point-valued high-precision quadratures are not themselves rigorous enclosures, and their convergence is not used as a proof of the interval certificate.
+
+\section{Retained R14: accuracy, computational work, and comparators}\label{sec:comparison}
+A certification time measured from frozen proof objects is not the cost of generating those objects. The 18-node independent audit takes approximately 103.08 seconds of measured wall time in the retained run, but starts from existing policies and dual pilots. The 72-corner state audit takes approximately 29.71 seconds. These are verification costs. The generation costs of inherited and interrupted historical attempts are not reconstructed from their absence and are not assigned zero.
+
+The fresh neural run records all 800 actor updates and 2,400 critic updates, the fixed seed, every retained checkpoint, and resource usage. Its recorded execution after program entry is approximately 13.08 seconds, with interpreter and import time separately recorded. It uses one Torch CPU thread and no GPU. The execution environment reports an AMD EPYC 9V74 processor and five exposed logical CPUs; this identifies the environment, not exclusive ownership of a physical machine. Stage times recorded during overlapping local experiments are descriptive clocks, not controlled hardware-efficiency comparisons.
+
+\subsection{A newly generated policy-richness frontier}
+The same original economy at $k=2$ is also solved within deterministic time-control classes of 16, 32, and 64 intervals. Each problem starts from a fixed feasible constant-consumption construction and preference action $.05$. Constrained sequential quadratic optimization uses analytic gradients to propose a policy. A separately initialized scalar-deflator and reference-drift fit proposes its upper witness. The fresh policy is then checked by the independent stopped evaluator and the fresh upper witness by the independent dual. The fitting objective is not counted as a certificate.
+
+\begin{table}[t]\centering\small
+\caption{Fresh generation and independent verification as policy richness increases}\label{tab:frontier}
+\input{revisions/2026-09-22-r14/paper/tables/frontier}
+\par\smallskip\footnotesize All stage times are seconds. Each case starts without inherited policy or dual inputs, and all three optimizations report success. End-to-end measured case times are 8.67, 8.54, and 8.77 seconds. The experiment changes policy richness, unlike a price-node refinement experiment. All cases pass $.01$; none passes $.005$, $.0025$, or $.001$.
+\end{table}
+
+The frontier is informative because its approximation object is held distinct from its upper relaxation. Policy refinement improves the lower bound, but the independently fitted affine upper bound is nearly unchanged. A fixed specialized relaxation can therefore limit the attainable regret even when quadrature error is very small. This calculation is not evidence of convergence to arbitrary tolerance, and it does not establish convergence of the neural optimizer.
+
+The classical comparator is a freshly executed direct time-control optimization. It is a serious feasible-policy and upper-bound calculation on the same original economy, but it is not two distinct state-space HJB methods and it does not furnish a matched-accuracy advantage for the neural method. A comparative claim requiring monotone PDE, semi-Lagrangian, or controlled Markov-chain baselines at the same certified accuracy remains outside the completed experiment. Likewise, the preserved Riccati-reference study used structured gain outputs; its errors cannot be relabeled as errors of the present 48-by-48 tanh actor and residual-training pipeline.
+
+\subsection{Retained comparisons and high-dimensional scope}
+The historical SOC-MartNet holdouts, method-specific tuning studies, and clipped-feedback comparator are preserved without suppressing unfavorable panels. The clipped-feedback comparator's lower mean cost and the absence of a robust ordering in several higher-dimensional seed panels limit what can be inferred about candidate-generation quality. They do not invalidate the stopped comparison theorem, just as the theorem does not establish empirical superiority.
+
+The 128-dimensional experiment in the retained record certifies a rank-one-coupled Hamiltonian action oracle at frozen jets. Its nonconvex coupling can be reduced to a scalar aggregate search with strongly convex conditional subproblems. This is an action-optimization result. It is not a certified solution of a 128-dimensional dynamic economic model. The actual neural state-domain calculation in this revision concerns the two-state economy in Section~\ref{sec:economy}; no action-dimension result is used to inflate that state dimension.
+
+\section{Retained R14: what the certified counterfactuals identify}\label{sec:economics}
+For any policy, raising $k$ subtracts $(q-p)B(\pi)$, where
+\[
+ 0\leq B(\pi)=\E\int_0^\tau e^{-\rho s}\theta_s^2/2\,ds
+ \leq .02\frac{1-e^{-\rho}}{\rho}.
+\]
+Consequently $V_k$ is nonincreasing and convex. Monotonicity determines a weak sign without numerical computation, but not a strictly positive or economically well-resolved welfare loss.
+
+Let $[L(k),U(k)]$ be the independently certified central-state value envelope. For $p<q$, a valid loss interval is
+\begin{equation}
+ \left[\max\{0,L(p)-U(q)\},\\
+ \min\left\{U(p)-L(q),\ .02\C(1)(q-p)\right\}\right],
+ \quad \C(h)=\frac{1-e^{-\rho h}}{\rho}.
+ \label{eq:welfare}
+\end{equation}
+A positive lower endpoint establishes strict loss. We report a separate relative-resolution criterion: the width of this interval is no greater than its positive lower endpoint. Neither criterion follows automatically from a $.01$ bound on policy regret.
+
+\begin{table}[t]\centering\small
+\caption{Certified welfare losses when the adjustment price rises}\label{tab:welfare}
+\input{revisions/2026-09-22-r14/paper/tables/welfare}
+\par\smallskip\footnotesize ``Strict'' means a strictly positive lower endpoint. ``Relative'' means interval width no greater than that endpoint. A ``No'' in the strict column does not reverse the economic monotonicity theorem; it means that strict loss is not separated from zero by these intervals.
+\end{table}
+
+The contrast between $2\to8$ and $4\to4.1$ is substantive. The first comparison is strictly positive and relatively resolved by the current intervals. The second has a small absolute upper bound but no certified positive lower bound from interval separation. A policy may therefore be sufficiently accurate for an absolute deployment tolerance while the current value bounds remain too wide for a local comparative-static statement.
+
+\begin{table}[t]\centering\small
+\caption{Price regions in which welfare losses are separated}\label{tab:regions}
+\input{revisions/2026-09-22-r14/paper/tables/regions}
+\par\smallskip\footnotesize Decimal endpoints are descriptive approximations of exact rational thresholds, not proof endpoints. The exact fractions and open-endpoint convention are in the price-audit file. A dash means no such region up to price eight is established by this predicate. The relative criterion here uses the untruncated difference of value intervals and is therefore conservative.
+\end{table}
+
+The policy library also has a direct economic interpretation. Its selector chooses a stored control vector on each exact price region; within that region no new optimization is required. The supplement lists the selected regions, their widths, consumption ranges, and average preference adjustments. These are properties of feasible chosen policies. They are not claims that the optimal policy itself is piecewise constant in the price, or that policy expenditures equal derivatives of the unknown optimum.
+
+The tolerance $.01$ is an absolute loss criterion in the utility units of \eqref{eq:value}. It is not a scale-free welfare measure. The relative and strict-loss diagnostics in \eqref{eq:welfare}, rather than the target alone, determine which of the reported economic comparisons are resolved. No empirical calibration or external welfare normalization is imposed to make this declared numerical target appear economically universal.
+

@@ -1,0 +1,117 @@
+% Preserved from R14 main: dual and joint state-price construction.
+\section{A sharp economic comparison construction}\label{sec:dual}
+A neural certificate should be compared with independently identified bounds for the same economy. We therefore retain the affine-preference market-deflator construction and reimplement its numerical evaluation. The lower policy and the upper comparison object are identified separately from the neural feedback throughout.
+
+\subsection{Feasible policies and the original stopping contract}
+A library policy consists of 16 exact stored consumption constants $c_j\in[.7,.8]$, preference actions $\theta_j\in[0,.2]$, and $p_j=0$. These controls are held on their time intervals until the original first exit. Wealth is deterministic and satisfies
+\[
+ x_1=e^{.02}\left(x_0-\int_0^1e^{-.02s}c_s\,ds\right).
+\]
+The program proves $x_1>.5$ and the complete action bounds before evaluating a payoff. It does not round a budget residual to zero or assume that a nearly feasible policy is feasible.
+
+The previous implementation evaluated a polynomial representation with Gaussian moments. The new evaluator instead applies an interval-certified Gauss rule directly to the original CRRA expression on a covered Gaussian domain. After $t=v^2$, it integrates over $v$ and a standard-normal coordinate $z$. Rationally isolated Gauss nodes, interval weights, and analytic complex-neighborhood remainder bounds enclose the integrals. The unbounded normal tail and the discrepancy from stopping are accounted for analytically. The use of an auxiliary bounded full-horizon extension in this proof does not change the objective \eqref{eq:value}: it is connected to that objective by an explicit stopping correction, less than $3.87\times10^{-18}$ on $K$ for these policies.
+
+At $k=4.25$, the second implementation encloses the policy payoff in
+\begin{equation}
+ [-1.315469674845588,\ -1.315469674834266],\label{eq:primalexample}
+\end{equation}
+with the stored unrounded interval width approximately $1.13\times10^{-11}$. This is a policy-payoff width, not an optimality gap. The latter still requires an upper bound on $V_k$.
+
+\subsection{The affine-preference dual}
+Let $dY_s=.02Y_s\,ds-.3Y_s\,dZ^x_s$. Its product with wealth satisfies
+\[
+ d(Y_sx_s)=(.04Y_sx_s-Y_sc_s)\,ds+\hbox{a local martingale}.
+\]
+The cancellation holds for every original adapted portfolio control. Define
+\[
+ \Psi(u,y)=\max_{.05\leq c\leq.8}\left\{\frac{c^{1-u}}{1-u}-yc\right\},\quad
+ S_0(u,y)=\Psi(u,y)+.01y-.004\log(.5),\quad\beta=\partial_u\Psi.
+\]
+For a deterministic reference $\bar\theta\in[0,.2]$, set $m(t)=2+\int_0^t\bar\theta_sds$ and let $Q$ be the affine tangent to $\phi(u)=-.02(u-2)^2$ at $m(1)$. On $u\in[1.5,2.5]$, $y\in[.2,12]$, the supporting inequality is
+\begin{equation}
+ S_0(u,y)\leq S_0(m,y)+\beta(m,y)(u-m),\qquad 2\leq m\leq2.2.
+ \label{eq:plane}
+\end{equation}
+It is justified by analytic monotonicity and complete interval covers, not by sampled tangency or presumed global concavity. Its new primitive checks have strictly positive margins; the supplement gives the proof and the recorded numerical margins.
+
+Put $\widehat y=\operatorname{proj}_{[.2,12]}y$ and replace the source by the right side of \eqref{eq:plane} at $\widehat y$. The resulting full-line auxiliary problem $A_k(t,u,y)$ retains adapted preference actions, quadratic adjustment cost, and terminal payoff $Q$. Its source and terminal value are affine in the initial preference. The following positive localization potentials reconnect it to the original first-exit problem:
+\begin{align}
+ Z_u(h,u)&=8h\{e^{-120(u-1.5)+42h}+e^{-120(2.5-u)+42h}\},\label{eq:Zu}\\
+ Z_y(h,y)&=8h\{e^{-22\log(y/.2)+22.33h}+e^{-22\log(12/y)+22.33h}\}.
+ \label{eq:Zy}
+\end{align}
+For $y_0\in[1.2,2.4]$ the resulting upper bound is
+\begin{equation}
+ V_k(0,2,1.25)\leq .75y_0+.1\log(.5)+A_k(0,2,y_0)+Z_u(1,2)+Z_y(1,y_0).
+ \label{eq:dual}
+\end{equation}
+
+The auxiliary value has a computable upper bound consisting of one-Gaussian source expectations, a terminal tangent, a correlated-shock correction, a reference-action gap, and a conditional-variance allowance. The latter is necessary because the adapted marginal value of adjustment is random; replacing it by its unconditional mean without a correction would not be valid. The supplement states and proves the complete formula, including the factors $.00375$ and $.09/(24k)$ in the covariance and variance terms.
+
+In the second implementation, the source uses separate analytic formulas for its capped and interior consumption branches. Interval automatic differentiation supplies Hessian enclosures, and a rational-root Gauss construction encloses the weighted moments. This differs from the inherited manually differentiated source and polynomial moment integrator. The analytic dual theorem is shared; its mathematical validity is not established merely by agreement between programs. Its finite supporting-plane checks and all decisive numerical quantities are recomputed by the new implementation.
+
+\section{Joint initial-state and price certification}\label{sec:state}
+The state-domain extension is obtained without assuming a Lipschitz modulus for the unknown optimal value. Two structural properties suffice: a convex upper comparison function and a concave feasible-policy lower function.
+
+\subsection{Extending the dual in the initial state}
+For the fixed dual witness, define
+\begin{equation}
+ b_0=\int_0^1e^{-\rho s}\E\beta(m(s),\widehat Y_s)\,ds+e^{-\rho}Q'.
+ \label{eq:b0}
+\end{equation}
+An interval for $b_0$ is obtained in the same independent execution as the dual. Since the coefficient of the initial $u$ in the auxiliary criterion is independent of the chosen adapted preference action,
+\[
+ A_k(0,u,y_0)=A_k(0,2,y_0)+(u-2)b_0.
+\]
+Let $U_0$ be a certified upper endpoint in \eqref{eq:dual}. It follows that
+\begin{align}
+ V_k(0,u,x)\leq{}& U_0+y_0(x-1.25)+(u-2)b_0\notag\\
+ &+8e^{-18}\{e^{120(u-2)}+e^{-120(u-2)}-2\},\label{eq:stateupper}
+\end{align}
+for the verified initial rectangle. Interval multiplication is sign-aware when $u-2<0$. With an interval for $b_0$, its upper support function is convex in $u$. Thus the computable right side of \eqref{eq:stateupper} is convex in $(u,x)$. This is a property of the upper comparison object, not an assertion that $V_k$ itself is convex in wealth.
+
+\subsection{A budget-preserving policy map}
+Write $Q_r=\int_0^1e^{-.02s}ds$. For each stored policy, define
+\begin{equation}
+ c_j(x)=c_j+\frac{x-1.25}{Q_r},\qquad
+ \theta_j(x)=\theta_j,\qquad p_j(x)=0.\label{eq:budgetshift}
+\end{equation}
+Its terminal wealth is identical to that of the central-state policy. All shifted consumption values remain in $[.7,.8]$ on $K$; this is checked for every library member. The policy depends on the initial state and is thereafter a time control until exit. It is not described as an approximate neural feedback surface.
+
+The utility $f(c,u)=c^{1-u}/(1-u)$ is jointly concave over the region needed by the Gaussian cover. With $r=u-1$ its Hessian satisfies
+\begin{align*}
+ f_{cc}&=-u c^{-u-1},\\
+ f_{cu}&=-(\log c)c^{-u},\\
+ f_{uu}&=-\frac{c^{-r}}{r^3}\{(r\log c+1)^2+1\},\\
+ \det D^2f&=\frac{c^{-2u}}{r^3}
+ \{r^2(\log c)^2+2r(r+1)\log c+2(r+1)\}.
+\end{align*}
+On $u\in[1.2,2.8]$, $c\in[.7,.8]$, one has $r(-\log c)<1$, so the determinant is positive. The covered expected payoff, with the exact budget shift, is therefore concave in the initial state. A single uniform tail and stopping correction turns this covered functional into a lower bound for the original stopped policy throughout $K$.
+
+\begin{proposition}[Four vertices and a continuum of prices]\label{prop:stateprice}
+Suppose, at each price node $k_i$, a convex upper function $U_i(z)$ bounds $V_{k_i}(0,z)$ on a rectangle $K$. For each policy $j$, suppose a concave lower function $F_j(z;k)$ bounds its original payoff on $K$, is affine in $k$, and has a verified expenditure slope interval. Then corner values alone produce a uniform regret certificate on $K\times[k_1,k_N]$ by the following finite construction. Between adjacent price nodes use the chord of $U_i$ and $U_{i+1}$. For each policy transfer its four lower corner values affinely in price, using the appropriate expenditure endpoint. At each price select the policy minimizing the largest of its four upper-minus-lower corner gaps. The supremum of the resulting bound is attained at an endpoint or an intersection of the finitely many affine corner-gap functions.
+\end{proposition}
+
+The optimal value is convex in $k$ because the policy set, dynamics, and stopping contract are common and fixed-policy payoffs have the form $A(\pi)-kB(\pi)$. This justifies the upper price chord, not interpolation of $V$ as though it were affine. The expenditure used for the concave covered lower functional is its full-horizon deterministic expenditure, with the stopping discrepancy already paid uniformly at the largest price. For the separate central-state exact-policy envelope, the program instead bounds the stopped expenditure. Confusing these two slopes would invalidate the transfer; they are separately recomputed and labeled in the evidence.
+
+\begin{proposition}[Executed state--price certificate]\label{prop:executed}
+For the unchanged economy \eqref{eq:value}, the 18 stored policies with the state map \eqref{eq:budgetshift} and the price selector in Proposition~\ref{prop:stateprice} satisfy
+\begin{equation}
+ \sup_{(u,x)\in K}\sup_{k\in[.5,8]}
+ \{V_k(0,u,x)-J_k(0,u,x;\pi_{k,x})\}\leq\statebound.
+ \label{eq:executedstate}
+\end{equation}
+The central-state selector based on the independently evaluated stopped policies satisfies
+\begin{equation}
+ \sup_{k\in[.5,8]}
+ \{V_k(0,2,1.25)-J_k(0,2,1.25;\pi_k)\}\leq\pricebound.
+ \label{eq:executedprice}
+\end{equation}
+\end{proposition}
+
+The execution evaluates all 72 policy--state corners, uses all 18 independently verified upper witnesses, and checks 211 exact candidate breakpoints for the joint state--price construction. No unsampled state requires an empirical smoothness extrapolation. The exact rational worst-case joint bound is
+\[
+ \frac{2187960974729572475442514300375}{180891518006739738096917284913152}.
+\]
+The displayed decimal in \eqref{eq:executedstate} is rounded upward. The computational record contains the complete selected-policy regions and every corner interval. Appendix~\ref{app:stateprice} proves the interpolation and finite-breakpoint steps.
+

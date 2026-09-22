@@ -1,0 +1,65 @@
+\section{A certificate-aligned neural Bellman algorithm}\label{sec:aligned}
+The primary algorithm has three explicit objects: a policy $\pi_\theta$, a smooth witness $v_\phi$, and a complete-cover certificate. Its target is the original continuous-time policy loss, not the optimal value of a discretized training problem. The architecture in Section~\ref{sec:accessibility} supplies admissibility and a zero signed trace budget. The following construction addresses the remaining residuals.
+
+Partition time into $0=t_0<\cdots<t_N=T$ and cover the spatial domain on slab $j$ by $M_j$ closed boxes. Write
+\[
+ m_j=\int_{t_j}^{t_{j+1}}e^{-\rho s}\,ds,
+ \qquad b^+_{ji}\geq\sup_{(s,z)\in Q_{ji},a}\cR_a v_\phi(s,z),\qquad
+ b^-_{ji}\geq\sup_{(s,z)\in Q_{ji}}(-\cR_{\pi_\theta}v_\phi)(s,z).
+\]
+Each $b^\pm_{ji}$ is nonnegative; the optimal comparison ranges over the original continuous action set. Define
+\begin{align}
+ B(b)&=\sum_j m_j\sum_{\sigma\in\{+,-\}}\max\{0,\max_i b^\sigma_{ji}\},\label{eq:coverB}\\
+ S_\tau(a)&=\sum_jm_j\sum_{\sigma\in\{+,-\}}
+ \tau\log\left(1+\sum_{i=1}^{M_j}\exp(a^\sigma_{ji}/\tau)\right),\quad \tau>0.\label{eq:smoothS}
+\end{align}
+The extra unit in each logarithm is the zero logit. It is necessary because only the positive part of each signed residual is charged. All bounds in this section are for time zero; replacing $m_j$ by the appropriate discounted remaining-slab masses gives the corresponding bound at another initial time.
+
+\begin{theorem}[Trainable envelope and certified policy loss]\label{thm:objectivebridge}
+Suppose the hypotheses of Theorem~\ref{thm:accessibility} hold, the signed trace budget is zero, and the boxes cover the entire state--time domain. For any finite proposal logits $a^\sigma_{ji}$, let
+\[
+ d_j^\sigma\geq\max_i\left(b^\sigma_{ji}-\max\{a^\sigma_{ji},0\}\right)_+,
+ \qquad D=\sum_jm_j(d_j^++d_j^-).
+\]
+Then every interior initial state satisfies
+\begin{equation}
+ 0\leq V(0,z)-J(0,z;\pi_\theta)\leq B(b)\leq S_\tau(a)+D.\label{eq:objectivebridge}
+\end{equation}
+If the certified endpoints themselves are used as logits, then
+\begin{equation}
+ B(b)\leq S_\tau(b)\leq B(b)+2\tau\sum_jm_j\log(M_j+1).\label{eq:entropygap}
+\end{equation}
+A directed upper enclosure of $S_\tau(a)+D$, computed from the exact stored proposal logits and the certified endpoints, is therefore a sufficient, checkable stopping criterion for the policy-loss target.
+\end{theorem}
+The theorem applies to the implemented differentiable interval-envelope loss even when its ordinary floating-point arithmetic has not itself been proved enclosing. The correction $D$ covers any endpoint discrepancy between that proposal graph and the independently evaluated certificate; it is not assumed to be a rounding error of a particular library routine. In the new audit, the logits are recomputed from the stored neural weights and then interpreted as exact dyadic numbers for the directed soft-maximum calculation. Neither differentiation through an ordinary floating-point interval graph nor a small sampled loss is called a certificate.
+
+The smoothing allowance is explicit. With four time slabs, 256 spatial boxes per slab, $\rho=.04$, $T=1$, and $\tau=.15$, its upper bound is $1.631868$. This is a worst-case allowance, not an observed policy loss. Refining the cover while keeping $\tau$ fixed need not remove this allowance. A sufficient joint refinement rule is $\tau\log(1+\max_j M_j)\to0$, together with consistent residual enclosures. The theorem does not assert that a nonconvex optimizer reaches a requested envelope level.
+
+\subsection{The executed algorithm}
+The complete-cover neural algorithm uses the following rule. Initialize the actor and critic, form the fixed cover, and minimize $S_\tau(a(\theta,\phi))$ by joint Adam updates of their parameters. At each predeclared checkpoint, freeze and serialize both networks. Independently recompute every signed residual box with directed arithmetic and the original action maximization. Reject an incomplete, nonfinite, or failed enclosure. For a complete object, compare its bound $B$ with the incumbent bound, retain the proposal regardless of the comparison, and replace the incumbent only under a strict decrease. Stop at the declared work budget or when the complete bound meets the stated target. The implementation is \texttt{guided\_neural.py}; the separate checker is \texttt{accessibility\_certificate.py}.
+
+The reported original-economy run uses checkpoints $0,100,400$, temperature $.15$, learning rate $.003$, gradient clipping at 100, and two hidden tanh layers of width 16 or 32. There is no point sampling in its envelope objective: all 1,024 boxes enter every proposal update. The ten seeds and paired all-face ablations use matched initialization logic, optimization budget, cover, and arithmetic. The acceptance decision uses the complete MPFR bound, not the smooth proposal loss. The new R18 audit applies Theorem~\ref{thm:objectivebridge} to these already executed, predeclared R17 trajectories; it is not represented as a newly randomized training study.
+
+\begin{proposition}[What certificate acceptance guarantees]\label{prop:certificateacceptance}
+The incumbent bound of the preceding algorithm is nonincreasing and remains a valid upper bound for its associated incumbent policy. Neither this property nor a decrease in raw proposal bounds implies that the true values of successive policies increase.
+\end{proposition}
+The distinction is substantive. A better witness can certify the same policy more sharply. Conversely, a worse policy can have a smaller bound if it is paired with a much better witness. Accordingly, the numerical record reports raw proposals, incumbent decisions, and actor--critic interchanges separately. A claim of true policy improvement would require an additional policy-value comparison, not just the incumbent rule.
+
+\subsection{A finite-horizon error allocation without a stationary resolvent}
+The auxiliary stationary recurrence in Section~\ref{sec:certifiediteration} has a different role. Its amplification factors become large when $q=e^{-\rho h}\uparrow1$. For a finite horizon, a backward error allocation is more appropriate when a time-discrete implementation is analyzed directly. Let $T_n$ and $T_n^{\pi_n}$ be monotone Bellman operators with Lipschitz modulus $q$, and let $v_N$ approximate the terminal reward $g$.
+
+\begin{proposition}[Finite-horizon evaluation and improvement defects]\label{prop:finitehorizon}
+If
+\[
+ \|v_N-g\|_\infty\leq b,\quad
+ \|v_n-T_n^{\pi_n}v_{n+1}\|_\infty\leq\epsilon_n,\quad
+ 0\leq T_nv_{n+1}-T_n^{\pi_n}v_{n+1}\leq\eta_n\mathbf1,
+\]
+then the nonstationary policy $\pi=(\pi_0,\ldots,\pi_{N-1})$ satisfies
+\begin{equation}
+ \|V_0^*-V_0^\pi\|_\infty
+ \leq 2q^Nb+\sum_{n=0}^{N-1}q^n(2\epsilon_n+\eta_n).\label{eq:finitehorizon}
+\end{equation}
+For $q=e^{-\rho h}$, $Nh=T$, and $\epsilon_n\leq\bar\epsilon C_\rho(h)$, $\eta_n\leq\bar\eta C_\rho(h)$, the accumulated defect term is at most $(2\bar\epsilon+\bar\eta)C_\rho(T)$.
+\end{proposition}
+The finite-horizon statement is representation independent. Its 80 exact-rational finite-MDP regression cases do not constitute execution of a continuous-time neural policy-iteration scheme. The original-economy algorithm instead applies Theorem~\ref{thm:objectivebridge} directly to the continuous-time policy, avoiding an unproved discretization-transfer bound. Both finite-Bellman results are retained, with their different hypotheses and numerical roles made explicit.

@@ -1,0 +1,62 @@
+\section{Nonlinear multi-product control with a state-uniform certificate}\label{sec:nonlinearinventory}
+A high-dimensional test should require the policy to depend on the high-dimensional state. We therefore distinguish the following nonlinear planning problem from the two-mode quadratic inventory model retained in Section~\ref{sec:inventory}. Here there is no Riccati reduction or supplied optimal solution.
+
+There are $d$ heterogeneous products and $H=12$ dates. Initial inventory is $x\in[-1,1]^d$. The deterministic dynamics and total cost are
+\begin{align}
+ z_0&=x,\qquad z_{h+1}=\tfrac35z_h+u_h-b_h,\qquad
+ b_{hi}=\frac{((h+i)\bmod7)-3}{100},\label{eq:nonlineardynamics}\\
+ F_x(U)&=\sum_{h=0}^{H-1}\{2\|u_h\|_2^2+\Phi(z_{h+1})\},\quad
+ U=(u_0,\ldots,u_{H-1})\in\R^{Hd},\label{eq:nonlinearcost}\\
+ \Phi(z)&=\sum_{i=0}^{d-1}\left\{\frac{q_i z_i^2}{2}+\frac12\log\cosh z_i\right\}
+ +\frac3{10}\sum_{i=0}^{d-1}\log\cosh(z_i-z_{i+1}),\quad
+ q_i=1+\frac{i}{5(d-1)},\label{eq:nonlinearpotential}
+\end{align}
+where indices in the coupling term are cyclic. Production/adjustment costs are quadratic, while individual and cross-product inventory penalties are nonquadratic. Every coordinate enters the nonlinear coupling; heterogeneity prevents the two-invariant-mode decomposition of the quadratic comparison model. Its Bellman equation is
+\[
+ W_h(z)=\inf_{u\in\R^d}\{2\|u\|_2^2+\Phi(\tfrac35z+u-b_h)+W_{h+1}(\tfrac35z+u-b_h)\},\qquad W_H=0.
+\]
+The computation instead uses the equivalent deterministic control-plan formulation, without treating either formulation's unknown value as training data.
+
+A two-hidden-layer neural map takes all $d$ coordinates of $x$ and produces all $Hd$ controls:
+\[
+ U_0(x)=\tfrac14\tanh N_\theta(x).
+\]
+It is trained on the original cost, not optimal labels, using 400 Adam updates, batches of 32 uniformly drawn initial states, learning rate $.003$, width $\min\{64,2d\}$, and three predeclared seeds. A correction stage applies
+\begin{equation}
+ U_{k+1}(x)=U_k(x)-\frac{16}{209}\nabla_U F_x(U_k(x)).\label{eq:gradientcorrection}
+\end{equation}
+The complete solver is the neural initialization together with the declared number of corrections. The correction, not a change of model or an optimal-value label, supplies its quantitative convergence mechanism.
+
+\begin{theorem}[Uniform nonlinear control accuracy and work]\label{thm:nonlinearcontrol}
+For every $d\geq2$ and every $x$, the cost in \eqref{eq:nonlinearcost} satisfies
+\begin{equation}
+ 4I\preceq\nabla_U^2F_x(U)\preceq\frac{177}{8}I,\qquad U\in\R^{Hd}.
+ \label{eq:nonlinearhessian}
+\end{equation}
+Let $r=145/209$. For every $x\in[-1,1]^d$ and every bounded neural initialization above, the exact-real correction obeys
+\begin{equation}
+ 0\leq F_x(U_k(x))-\inf_U F_x(U)
+ \leq\frac{\|\nabla F_x(U_k(x))\|_2^2}{8}
+ \leq\frac{Hd(8.85)^2}{8}\,r^{2k}.\label{eq:nonlinearuniform}
+\end{equation}
+A gradient evaluation requires $O(Hd)$ arithmetic operations using forward state propagation and backward adjoints. Thus, after initialization, a sufficient number of correction steps for total loss at most $\varepsilon$ is
+\[
+ k\geq\max\left\{0,\left\lceil
+ \frac{\log(Hd(8.85)^2/(8\varepsilon))}{2\log(209/145)}
+ \right\rceil\right\}.
+\]
+No tensor cover of the initial-state cube is required.
+\end{theorem}
+The work statement counts exact-real arithmetic operations, not bit complexity or the cost of floating-point certification. The result uses strong convexity and the sparse coupled dynamics of this application. It is not a theorem for a general stochastic high-dimensional HJB equation. The factor $d$ in total loss is visible, and no per-coordinate normalization is used to hide it.
+
+\subsection{Uniform and pointwise numerical objects}
+Table~\ref{tab:r18nonlinearuniform} reports the directed evaluation of the state-uniform bound for every specified dimension and correction budget. The $d=128$ total bound is below $.000360$ after 24 corrections and below $1.037\times10^{-6}$ after 32. These inequalities hold for the exact-real neural map and correction at every initial state in the cube, regardless of which of the three stored neural seeds is used.
+\input{revisions/2026-09-23-r18/paper/nonlinear_uniform_table}
+
+Separately, the actual stored floating-point plans are checked by MPFR at two fixed initial vectors: an alternating corner and a predeclared pseudorandom vector. The checker evaluates the original cost and KKT gradient using exact rational model constants, and applies the first inequality in \eqref{eq:nonlinearuniform}. It does not assume that the floating-point optimizer has converged. All 90 neural query/budget objects and 66 classical query/budget objects are retained across dimensions. At $d=128$ and 32 corrections, the six retained neural query-plan bounds range from $8.28771\times10^{-15}$ to $1.62604\times10^{-14}$. Those sharper values concern those six exact stored plans, not every state in the cube. The new R18 execution rechecks all 18 final neural query plans across the three dimensions.
+
+\subsection{Matched certificate comparisons}
+The comparison methods are zero-start gradient descent with the same step, strongly-convex accelerated gradient, and L-BFGS. All use the same original model and the same independent gradient-based cost-loss inequality. Table~\ref{tab:r18nonlinearcomparisons} reports the final $d=128$ query results and separates neural training, online solution, and verification time. The supplement includes the corresponding tables at $d=8$ and $32$ and every retained correction budget.
+\input{revisions/2026-09-23-r18/paper/nonlinear_comparison_table}
+
+The data do not establish a neural speed advantage: strong classical methods attain comparable or smaller certified errors without the training cost. The state-uniform theorem likewise holds for any initialization in the specified bounded class, including an untrained one. Neural initialization and its amortized cost are therefore reported as components of the solver, not credited with the contraction supplied by the correction. This application establishes an accurately certified, full-state-dependent nonlinear control-plan solver; it does not replace the original stochastic economy or close that economy's remaining neural accuracy gap.
