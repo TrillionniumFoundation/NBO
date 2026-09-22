@@ -1,0 +1,119 @@
+name: R19 policy-sensitive Econometrica publication
+on:
+  push:
+    branches: [revision/econometrica-r19-policy-sensitive-continuation-2026-09-23]
+    paths: [.github/workflows/r19-publication.yml]
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r19-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Materialize exact audited source bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64,hashlib,json,tarfile,io
+          from pathlib import Path,PurePosixPath
+          prefix='revisions/2026-09-23-r19/'
+          transport=Path(prefix)/'publication'
+          repairs=json.loads((transport/'transport_repairs.json').read_text())
+          for name,r in repairs.items():
+              p=transport/name
+              text=p.read_text()
+              digest=hashlib.sha256(text.encode()).hexdigest()
+              if digest!=r['after']:
+                  assert digest==r['before'],('Unexpected transport bytes',name)
+                  for lo,hi,replacement in reversed(r['patches']):
+                      text=text[:lo]+replacement+text[hi:]
+                  assert hashlib.sha256(text.encode()).hexdigest()==r['after'],name
+                  p.write_text(text)
+          raw=base64.b64decode(''.join((transport/f'payload_{i:02d}.b64').read_text() for i in range(5)),validate=True)
+          assert hashlib.sha256(raw).hexdigest()=='de66d37b2bedc06b607b91344aa7ac62dde4e00955b25a86f21592d71b30582a','Source bundle checksum mismatch'
+          allowed={'ECTA_R19.tex','SUPP_R19.tex','RESPONSE_R19.tex','R19_REVIEW.md'}
+          with tarfile.open(fileobj=io.BytesIO(raw),mode='r:gz') as archive:
+              members=archive.getmembers()
+              assert len(members)==26
+              for item in members:
+                  path=PurePosixPath(item.name)
+                  assert item.isfile() and not path.is_absolute() and '..' not in path.parts
+                  assert item.name in allowed or item.name.startswith(prefix)
+                  target=Path(item.name);data=archive.extractfile(item).read()
+                  if target.exists():
+                      assert target.read_bytes()==data,('Refuse unexpected overwrite',item.name)
+                  else:
+                      target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
+          print('Verified source SHA256; materialized 26 new source files.')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          test "$(git ls-remote origin "refs/heads/${GITHUB_REF_NAME}" | cut -f1)" = "$GITHUB_SHA"
+          git add -f ECTA_R19.tex SUPP_R19.tex RESPONSE_R19.tex R19_REVIEW.md revisions/2026-09-23-r19
+          if ! git diff --cached --quiet; then
+            git commit -m 'revision(r19): policy-value-separated neural learning, continuation proofs and complete R18 response'
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+          echo "R19_SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned arithmetic and manuscript dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends gcc libmpfr-dev texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Reexecute all new scientific objects and independent value acceptance
+        run: python revisions/2026-09-23-r19/replication/run_all.py
+      - name: Compile and validate the main paper, supplement and response
+        run: python revisions/2026-09-23-r19/replication/build.py
+      - name: Verify every inherited file and pin all new scientific evidence
+        run: python revisions/2026-09-23-r19/replication/publication_manifest.py
+      - name: Commit publication on the new revision branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin "refs/heads/${GITHUB_REF_NAME}" | cut -f1)" = "$R19_SOURCE_COMMIT"
+          find revisions/2026-09-23-r19 -type d -name __pycache__ -prune -exec rm -rf {} +
+          git add -f ECTA_R19.tex ECTA_R19.pdf SUPP_R19.tex SUPP_R19.pdf RESPONSE_R19.tex RESPONSE_R19.pdf R19_REVIEW.md revisions/2026-09-23-r19
+          git diff --cached --name-only | python -c "import sys; p=[s.strip() for s in sys.stdin]; assert all(s.startswith('revisions/2026-09-23-r19/') or s in {'ECTA_R19.tex','ECTA_R19.pdf','SUPP_R19.tex','SUPP_R19.pdf','RESPONSE_R19.tex','RESPONSE_R19.pdf','R19_REVIEW.md'} for s in p),p"
+          git commit -m 'publication(r19): verified policy improvement, matched tolerances, Econometrica PDFs and preservation manifest'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git rev-parse HEAD > R19_PUBLICATION_COMMIT.txt
+          printf '%s\n' "$R19_SOURCE_COMMIT" > R19_SOURCE_COMMIT.txt
+          git archive HEAD ECTA_R19.tex ECTA_R19.pdf SUPP_R19.tex SUPP_R19.pdf RESPONSE_R19.tex RESPONSE_R19.pdf R19_REVIEW.md revisions/2026-09-23-r19 .github/workflows/r19-publication.yml | gzip -n > NBO_R19_review_package.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r19-referee-publication
+          path: |
+            NBO_R19_review_package.tar.gz
+            R19_PUBLICATION_COMMIT.txt
+            R19_SOURCE_COMMIT.txt
+          retention-days: 30
+      - name: Preserve diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r19-publication-diagnostics
+          path: |
+            revisions/2026-09-23-r19/results/
+            revisions/2026-09-23-r19/build_logs/
+            ECTA_R19.log
+            SUPP_R19.log
+            RESPONSE_R19.log
+          retention-days: 14
