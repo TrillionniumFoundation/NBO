@@ -1,0 +1,81 @@
+name: R16 complete scientific reproduction
+on:
+  push:
+    branches: [revision/econometrica-r16-certified-policy-iteration-2026-09-23]
+    paths: [.github/workflows/r16-experiments.yml]
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r16-reproduction
+  cancel-in-progress: false
+jobs:
+  reproduce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Check and materialize exact scientific source
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,io,tarfile
+          d=Path('.github/r16-source')
+          names=['part00.b64','part01.b64','part02.b64','tail-a.b64','tail-b.b64','tail-c.b64']
+          s=''.join((d/n).read_text().strip() for n in names)
+          # Explicit transport-character repairs; the immutable archive hash is decisive.
+          s=s.replace('uenm/d3/wZd6','uenm/d/wZd6').replace('riZ9hFUc','riZ9FUc')
+          Path('/tmp/r16-source-received.b64').write_text(s)
+          data=base64.b64decode(s,validate=True)
+          assert hashlib.sha256(data).hexdigest()=='a4a0d93b83ca361cdbd5b0a73bc249188ef3d739aa415003f9165956fc9ff172',hashlib.sha256(data).hexdigest()
+          with tarfile.open(fileobj=io.BytesIO(data),mode='r:gz') as tf:
+              for m in tf.getmembers():
+                  p=Path(m.name)
+                  assert m.isfile() and not p.is_absolute() and '..' not in p.parts
+                  assert m.name.startswith('revisions/2026-09-23-r16/replication/')
+                  assert p.suffix in ('.py','.c')
+                  p.parent.mkdir(parents=True,exist_ok=True)
+                  p.write_bytes(tf.extractfile(m).read())
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm -r .github/r16-source
+          git add revisions/2026-09-23-r16/replication
+          git commit -m 'revision(r16): materialize checksum-validated scientific implementation'
+          git push origin HEAD:revision/econometrica-r16-certified-policy-iteration-2026-09-23
+      - name: Install exact scientific environment
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libmpfr-dev gcc
+          python -m pip install numpy==2.3.5 scipy==1.17.0 sympy==1.14.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Generate and certify every preregistered object
+        run: python revisions/2026-09-23-r16/replication/run_all.py
+      - name: Publish complete results without changing historical files
+        run: |
+          rm -f revisions/2026-09-23-r16/replication/*.so
+          git add -f revisions/2026-09-23-r16/results revisions/2026-09-23-r16/build_logs
+          git commit -m 'results(r16): complete original-economy, MPFR, fresh-library and coupled-state experiments'
+          git push origin HEAD:revision/econometrica-r16-certified-policy-iteration-2026-09-23
+          git rev-parse HEAD > /tmp/R16_RESULT_COMMIT.txt
+      - name: Pack evidence and diagnostics
+        if: always()
+        run: tar -czf /tmp/r16-evidence.tar.gz revisions/2026-09-23-r16
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r16-complete-evidence
+          path: |
+            /tmp/r16-evidence.tar.gz
+            /tmp/r16-source-received.b64
+            /tmp/R16_RESULT_COMMIT.txt
+          retention-days: 30
