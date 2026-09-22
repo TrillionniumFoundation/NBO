@@ -1,0 +1,627 @@
+Revision R14 — technical supplement
+SUPPLEMENT TO “NEURAL BELLMAN OPERATORS”
+QIAN QI
+Peking University
+This supplement gives the analytic dual, the numerical enclosure constructions, the neural
+derivative and action calculations, and the replication protocol for Revision R14. It distin-
+guishes interval proofs from high-precision diagnostics, frozen inputs from freshly generated
+policies, and a current technical supplement from the preserved historical record. Earlier
+manuscripts, extensions, experiments, and unsuccessful calculations remain unchanged in the
+repository and are indexed here rather than silently deleted or recast as current evidence.
+1. SCOPE, NOTATION, AND THE CURRENT EVIDENCE
+This supplement supplies details required to verify the R14 manuscript. Time, domain, control
+bounds, utility, and first-exit settlement are exactly those in the main paper. In particular, the
+lower calculations do not replace stopped CRRA utility by an unstopped singular expectation,
+and the upper calculations do not restrict the original adapted portfolio control to zero. The
+deterministic policies are lower-bound objects; their upper comparison bounds optimize over
+the original economic opportunities.
+Three numerical objects have distinct meanings. The state-feedback tanh actor/critic has a full-
+domain residual certificate whose current bound is large. The independently verified time-control
+library has a sharp central-state price-continuum certificate and a new initial-state rectangle
+certificate. The freshly generated 16-, 32-, and 64-interval policies provide a policy-richness
+and resource experiment without inherited optimizer inputs. These objects have separate files,
+hashes, and accuracy predicates.
+The main paper contains full proofs of its residual theorem, coefficient transport, and four-
+corner price construction. Sections below give the analytic economic dual and the independently
+implemented enclosure lemmas used as inputs to the computer-assisted economic propositions.
+The shared analytic premise is explicit: two numerical implementations of a false analytic
+inequality would not establish that inequality.
+2. THE AFFINE-PREFERENCE DUAL IN THE ORIGINAL STOPPED ECONOMY
+2.1. Consumption conjugacy and its supporting plane
+Write r = u − 1, l = log y. On the rectangle relevant to the witness, the lower consumption
+cap .05 never binds. The consumption conjugate is
+Ψ(u,el
+) =
+(
+−exp(−r log .8)/r − .8el
+, l ≤ −ulog .8,
+−uexp(rl/u)/r, l ≥ −ulog .8.
+(1)
+Let S0 = Ψ + .01el
+− .004log(.5) and β = ∂uΨ. Both branches match in value and first deriva-
+tives at the consumption switch. Their one-sided Hessians need not match; all interval boxes
+crossing the switch use their hull.
+The desired supporting inequality is
+S0(u,y) ≤ S0(m,y) + β(m,y)(u − m), u ∈ [1.5,2.5], m ∈ [2,2.2], y ∈ [.2,12]. (2)
+Qian QI: qiqian@pku.edu.cn
+2
+The following derivative facts reduce its proof to one-dimensional covers. On an interior
+consumption branch, putting L = l/u and E = exp((1 − 1/u)l), direct differentiation gives
+∂lS0,uu =
+EL(2 − L)
+u2 , ∂lβ = −
+El
+u2 .
+The first derivative is nonnegative on the present box: 0 < L < 2 whenever the interior branch
+applies. On the capped branch S0,uu is independent of l. Thus its maximum over the y rectangle
+is controlled at y = 12.
+A complete interval cover of u ∈ [1.5,2.3] at y = 12, consisting of 1,600 intervals, gives
+S0,uu ≤ −.0671742195. Hence β is decreasing over this interval. On u ∈ [2.3,2.5], a separate
+2,000-interval cover gives
+β(u,12) ≤ −.9675376119 < −.9572021815 ≤ β(2.2,12).
+To extend this comparison to smaller y, compare β(u,el
+) − β(m,el
+) for u > m. In the interior
+branch, E/u2
+decreases in u because ∂u log(E/u2
+) = l/u2
+− 2/u < 0 on the box. Therefore
+∂lβ(u,el
+) − ∂lβ(m,el
+) ≥ 0 whenever both are interior. When the larger u is capped and the
+smaller is interior, this difference is again nonnegative; when both are capped it is zero. The
+difference is consequently largest at y = 12. Integrating the resulting derivative order from m
+to u proves the upper-side supporting inequality. Integrating the decreasing derivative on the
+lower-side interval proves the other side. This proves (2) without asserting global concavity of
+S0.
+Additional complete covers of m ∈ [2,2.2] verify
+−7.1 ≤ S0(m,y) ≤ 0, |β(m,y)| ≤ 1.1 (y ∈ [.2,12]). (3)
+Here S0 is decreasing in y, since its derivative is −c∗
++ .01 < 0, and β is nonincreasing in l
+where its derivative is nonzero. Checking the two y endpoints therefore suffices. The recorded
+lower bound is above −6.989553453, and the recorded absolute coefficient bound is below
+.971182123. All finite covers use the new interval implementation and the formulas (1) with
+automatic differentiation.
+2.2. The auxiliary adapted-control problem
+Let Y follow dY = .02Y dt−.3Y dZx
+, let b
+Y be its clipping to [.2,12], and fix a deterministic
+reference drift θ̄ ∈ [0,.2]. Put
+m(t) = 2 +
+Z t
+0
+θ̄sds, ϕ(u) = −.02(u − 2)2
+,
+Q(u) = ϕ(m(1)) + ϕ′
+(m(1))(u − m(1)), bT = ϕ′
+(m(1)).
+Define the affine source
+b
+St(u,y) = S0(m(t), b
+y) + β(m(t), b
+y)(u − m(t))
+and the full-line auxiliary value
+Ak(t,u,y) = sup
+|θ|≤.2
+Et,u,y
+Z 1
+t
+e−ρ(s−t)
+{b
+Ss(Us,Ys) − kθ2
+s/2}ds + e−ρ(1−t)
+Q(U1)
+
+, (4)
+NEURAL BELLMAN OPERATORS: SUPPLEMENT 3
+where dUs = θsds + .05dZu
+s . The preference action is still adapted. Because Y is exogenous
+and the coefficients of U and its terminal value are affine, the conditional marginal value is
+Bs = E
+Z 1
+s
+e−ρ(t−s)
+β(m(t), b
+Yt)dt + e−ρ(1−s)
+bT Fs
+
+.
+Conditional Fubini, followed by pointwise maximization of the strictly concave quadratic in θs,
+gives the exact improvement formula relative to θ̄:
+Ak(0,2,y0) = A +
+Z 1
+0
+e−ρs
+Egk(Bs,θ̄s)ds, (5)
+where gk(q,a) = Hk(q) − qa + ka2
+/2 and
+Hk(q) = max
+|a|≤.2
+{qa − ka2
+/2}.
+The reference expectation is
+A = e−ρ
+ϕ(m(1)) +
+Z 1
+0
+e−ρt
+{ES0(m(t), b
+Yt) − kθ̄2
+t /2}dt + C, (6)
+C = .00375
+Z 1
+0
+te−ρt
+E[∂lβ(m(t), b
+Yt)]dt. (7)
+To obtain the covariance term, use the reference decomposition Ut = m(t) + .05Zu
+t . The
+log-deflator is lt = log y0 − .025t − .3Zx
+t . Gaussian integration by parts gives E[Zu
+t β(lt)] =
+.075tEβl(lt), because the correlation is −.25. Multiplication by .05 produces .00375. Clipping
+is included in the almost-everywhere derivative. Since βl ≤ 0, the correction is nonpositive; it is
+evaluated rather than dropped.
+2.3. A quantitative allowance for the random marginal value
+The derivative H′
+k is 1/k-Lipschitz, including across its saturation points. For b(s) = EBs
+this yields
+Egk(Bs,a) ≤ gk(b(s),a) +
+Var(Bs)
+2k
+.
+A Gaussian Poincaré inequality for the past Brownian coordinate and conditional Jensen give
+Var(Bs) ≤ .09s
+Z 1
+s
+e−ρ(t−s)
+q
+E|∂lβ(m(t), b
+Yt)|2 dt
+2
+.
+For m ∈ [2,2.2], the nonzero derivative has l > 0 and
+|∂lβ|2
+≤
+1
+16
+e(12/11)l
+l2
+.
+The derivative vanishes in the capped-consumption and clipped-deflator regions. For a Gaussian
+l with mean µ and variance v,
+E[eal
+l2
+] = eaµ+a2v/2
+{(µ + av)2
++ v}.
+4
+Using a = 12/11, M = log y0, µ ≤ M, v ≤ .09, and the positive mean range y0 ∈ [1.2,2.4],
+define
+D2
+=
+eaM+.045a2
+16
+{(M + .09a)2
++ .09}. (8)
+The preceding expressions are increasing in the relevant µ,v ranges. Since
+R 1
+0
+s(1 − s)2
+ds =
+1/12 and Cρ(1 − s) ≤ 1 − s, equations (5)–(8) imply
+Ak(0,2,y0) ≤ A +
+Z 1
+0
+e−ρs
+gk(b(s),θ̄s)ds +
+.09D2
+24k
+. (9)
+This positive variance allowance is retained at every mesh. An unconditional reference control
+is not silently treated as the optimal adapted auxiliary control.
+2.4. Returning to the first-exit contract
+Set h = 1 − t and
+W(t,u,x,y) = y(x − .5) + .1log(.5) + Ak(t,u,y).
+The product identity for Y x cancels every adapted portfolio control. Consumption conjugacy
+and the supporting plane imply that discounted W plus the original running payoff is a super-
+martingale up to the relevant state or localization face. This can be proved directly by conditional
+Fubini and the adapted selector in (5). Alternatively, smoothing the bounded Lipschitz source
+with a uniform error correction gives a classical verification argument and then the limit.
+The affine tangent satisfies Q ≥ ϕ. To control continuation, use the feasible auxiliary action
+θ = 0. For an initial u ∈ [1.5,2.5],
+E|Ur − m(r)| ≤ .7 + .05 = .75, E|Q(Ur)| ≤ .0008 + .008(.75) = .0068.
+Applying Itô to Q and using (3) shows
+Ak(t,u,y) − Q(u) ≥ {−7.1 − 1.1(.75) − .04(.0068)}h = −7.925272h > −8h. (10)
+For x ∈ [.5,2], y ≥ .2, y(x − .5) + .1log(.5) − .1log x ≥ 0, by differentiation in x and equality
+at .5. Thus W dominates the original settlement on actual wealth exits and at the horizon.
+For completeness, G is a global upper comparison for the original economy. The utility is
+increasing in consumption, and even its largest value on the original state/action box is less than
+−.82. The positive parts of θGu, the wealth drift term, and −ρG together are less than .017,
+while the remaining diffusion and adjustment terms are nonpositive or can be bounded within
+this margin. Hence supa RaG < 0. Also G ≥ g on the stopping trace. Stopped verification
+therefore gives Vk ≤ G for k ≥ .5.
+The potentials
+Zu = 8h{e−120(u−1.5)+42h
++ e−120(2.5−u)+42h
+},
+Zy = 8h{e−22 log(y/.2)+22.33h
++ e−22 log(12/y)+22.33h
+}
+are nonnegative supermartingale potentials. Indeed, .2(120) + .00125(120)2
+= 42 bounds the
+preference exponential generator, while .025(22) + .045(22)2
+= 22.33 bounds either sign of
+the log-deflator generator. Differentiating the factor h makes the killed generator nonpositive.
+NEURAL BELLMAN OPERATORS: SUPPLEMENT 5
+Each contributes at least 8h at its artificial face. Adding them to W, using (10) and then the
+fallback V ≤ G, proves the original-economy upper bound in the main paper. Artificial clipping
+and full-line continuation are therefore proof devices with explicit allowances, not changes to
+the economic contract.
+In the stress calculation the corresponding continuation floor is −7.11 − 1.11(.75) −
+.04(.0068) = −7.942772 > −8. Witness perturbations remain in the same verified reference
+class, so the same analytic argument applies.
+3. INDEPENDENT ARITHMETIC AND QUADRATURE
+3.1. Trusted arithmetic model
+The interval core assumes IEEE 754 binary64 addition, subtraction, multiplication, and divi-
+sion in round-to-nearest arithmetic; correctly directed neighboring numbers from nextafter;
+exact binary decomposition/scaling through frexp and ldexp where applicable; and gradual
+underflow rather than flush-to-zero. Each elementary result is expanded outward. Reductions
+use explicit outward pairwise operations. Neural affine layers do not invoke an unaccounted
+BLAS dot-product error model. Overflow, nonfinite endpoints, or division through zero cause
+failure rather than cell deletion.
+Every decimal economic constant is first interpreted as a rational. Every stored binary64
+parameter is its exact dyadic rational value. A rational is converted to an interval only after
+checking its position against the candidate floating value. Intervals can overestimate because of
+dependency, but cannot be narrowed by an optimizer’s successful termination flag.
+For |x| ≤ 1/8, the exponential uses its degree-18 Taylor polynomial with the uniform absolute
+remainder
+ex
+−
+18
+X
+j=0
+xj
+j!
+≤
+8
+7
+(1/8)19
+19!
+.
+Larger arguments are divided by powers of two until the small-argument condition holds, and
+enclosed squaring restores the result. For a positive argument, an exact binary exponent and a
+mantissa in [1,2) reduce its logarithm to
+log m = 2
+39
+X
+j=0
+y2j+1
+2j + 1
++ R, y =
+m − 1
+m + 1
+, |R| ≤
+2(1/3)81
+81(1 − 1/9)
+.
+The same construction encloses log 2. Tanh is evaluated from the enclosed exponential and
+monotonicity, with exact range restriction to [−1,1]. No assumed ulp accuracy of a platform
+transcendental function enters these proof computations. Separate tests compare 807 elementary
+enclosures with 100-digit evaluations; these tests check implementation behavior but do not
+replace the remainder inequalities.
+3.2. Rationally certified Gauss rules
+The eight Gauss–Legendre roots are first proposed by an ordinary floating-point routine. Each
+root is then isolated in a disjoint rational bracket by exact sign evaluations of the degree-eight
+Legendre polynomial and 80 bisections. Eight disjoint sign-changing brackets account for all
+roots. The positive weights are enclosed using
+wi =
+2
+(1 − x2
+i )[P′
+8(xi)]2 .
+6
+The program checks positivity and all moments through degree 15. The Gauss rule’s exactness
+through degree 2n − 1 and its positive weights are the standard construction described in NIST
+(2026); its nodes and weights are not assumed to equal their floating-point proposals.
+Square-root endpoint proposals are validated by exact rational square comparisons and
+expanded until they bracket the true root. The constant π is enclosed using Machin’s identity
+π = 16arctan(1/5) − 4arctan(1/239), with 60 alternating-series terms and the first omitted
+term as a remainder bound.
+For an analytic function bounded by M on a complex disk of radius R around the center of a
+real integration interval of half-width h < R, the degree-15 Taylor remainder on that interval is
+at most M(h/R)16
+/(1 − h/R). Both integration and the positive Gauss rule have norm equal
+to the interval length. Subtracting their exact actions on the degree-15 polynomial gives the
+rigorous remainder
+|I(f) − Q8(f)| ≤ 2lengthM
+(h/R)16
+1 − h/R
+. (11)
+This inequality, interval root/weight errors, and outward summation are used together. Agreement
+between two mesh levels is not an error bound.
+3.3. The original-policy evaluator
+For a stored time policy and an initial state in K, let µj be its cumulative preference drift at
+the start of interval j. After t = v2
+the covered preference is
+U = u0 + µj + θj(v2
+− j/n) + .05vz, z ∈ [−8,8].
+The integrand contains the original utility −exp[−(U −1)log cj]/(U −1), the Gaussian density,
+the Jacobian 2v, and discount e−.04v2
+. It is not a polynomial utility surrogate. A tensor Gauss
+rule uses eight subdivisions in v per policy interval, 32 normal cells, and eight Gauss nodes on
+each axis.
+The complex-neighborhood constants used in (11) are global on the state rectangle and the
+feasible control ranges. For the v disk use radius 1/8 with real z ∈ [−8,8]. One has |v| ≤ 1.125,
+and the real part of U − 1 stays between .476875 and 1.723125. There is no CRRA pole in
+the disk. The utility, Gaussian density, discount, and Jacobian together have modulus less than
+five. For the z disk use radius two with real v ∈ [0,1]; the real part of U − 1 stays between
+.48 and 1.72, while the Gaussian density’s complex factor is at most e2
+/
+√
+2π. The complete
+modulus is below 32. These values give Mv = 5, Mz = 32. Tensor error follows by writing
+IvIz − QvQz = (Iv − Qv)Iz + Qv(Iz − Qz) and using positivity and the interval lengths. All
+remainder terms are summed outward.
+To bound the omitted normal tails, extend the running utility by clipping its preference
+argument to [1.2,2.8] outside the covered range. On the feasible consumption interval this
+extension lies in [−6,0]. Its omitted expected contribution lies in [−12e−32
+,0], by the Gaussian
+Chernoff bound. The terminal preference quadratic is integrated analytically without clipping,
+and terminal wealth is exactly enclosed from the budget. The auxiliary full-horizon functional
+is connected to the original stopped payoff by a separate estimate; it is not substituted for that
+payoff without correction.
+For all initial states in K and all stored or fresh feasible drifts in [0,.2], either preference
+exit requires a Brownian excursion of at least .58 after subtracting the largest possible drift.
+Therefore
+pexit ≤ 2exp{−.582
+/(2 · .052
+)}.
+NEURAL BELLMAN OPERATORS: SUPPLEMENT 7
+Also
+E(U1 − 2)4
+≤ .224
++ 6(.22)2
+(.0025) + 3(.0025)2
+.
+Bounding the running-payoff, fee, and bounded terminal differences on the exit event, and using
+Cauchy–Schwarz for the unbounded terminal quadratic, gives the uniform allowance
+ϵstop = 15pexit + .02
+p
+{.224 + 6(.22)2(.0025) + 3(.0025)2}pexit < 3.87 × 10−18
+. (12)
+The constant 15 covers all k ≤ 8. The wealth path is strictly decreasing for the verified controls,
+with x1 > .5, so there is no wealth exit before time one. The final policy interval includes
+the symmetric quadrature error, the one-sided missing utility tail, and the symmetric stopping
+correction (12).
+The central-state stopped expenditure is independently enclosed by its exact deterministic
+full-horizon value minus at most .02pexit. The state–price concavity construction instead uses
+the full-horizon expenditure of its covered lower functional; its uniform stopping error has
+already been paid. Both constructions are therefore valid, but their expenditure labels must not
+be interchanged.
+3.4. The independent dual evaluator
+The dual changes variables to t = v2
+, with 32 subdivisions per reference time interval and
+512 normal cells on [−6,6]. The source and its first and second derivatives are generated from
+(1) by an independent two-variable interval differentiation class. Chain rules map them to (v,z).
+Every source box is enclosed, and every possible consumption-switch branch is included. The
+program verifies that the normal cover does not cross a deflator clipping face; the omitted tails
+cover the remaining probability.
+Write wv = 2ve−.04v2
+and wz = (2π)−1/2
+e−z2/2
+. Zeroth, first-centered, and second-centered
+moments of these weights are integrated by the validated Gauss rule. For their Cauchy bounds
+the disks have radii 1/8 and two and base modulus bounds three. Centered moment factors use
+(R + 1/1024)p
+, p = 0,1,2, with an explicit check that midpoint representation errors are below
+1/1024. This accounts for a floating-point center that is not an exact interval midpoint.
+Constant and linear source terms retain the signed first-centered moments. The source Hessian
+on the complete box bounds the remainder by
+1
+2
+∥Svv∥∞Mv,2Mz,0 + ∥Svz∥∞rvrzMv,0Mz,0 + 1
+2
+∥Szz∥∞Mv,0Mz,2.
+The source is C1
+across the action switch with bounded one-sided Hessians, so the integral
+Taylor formula with the Hessian hull is valid there. Weighted first moments are not discarded on
+the false premise that a weighted box is symmetric.
+The Gaussian tail probability is at most 2e−18
+. The source tail is enclosed between −7.1
+times its discounted mass and zero; the coefficient tail has absolute bound 1.1 times its mass.
+Since βl ≤ 0 and |βl| ≤ 2.5 on its nonzero clipped region, the covariance tail has the signed
+enclosure used in the code. These corrections cover the entire normal distribution.
+To enclose b(s), coefficient integrals are accumulated backward in time. The incomplete
+current cell is bounded by its entire discounted mass and its coefficient interval. The convex
+function gk(q,θ̄) attains its maximum on the resulting q interval at an endpoint. Its scalar action
+maximum is evaluated with the clipped maximizer. Terminal, source, covariance, control-gap,
+variance, localization, and arithmetic terms are finally summed outward. The stored upper
+endpoint is a bound on the original optimum, not on the fitted pilot objective.
+8
+4. INDEPENDENT HIGH-PRECISION CROSS-CHECKS
+A third program evaluates the Gaussian expectations by closed truncated-lognormal moments
+rather than the production or second interval quadrature. If L ∼ N(µ,s2
+), define
+Mq(a,b) = eqµ+q2s2/2
+
+Φ
+
+b − µ − qs2
+s
+
+− Φ
+
+a − µ − qs2
+s
+
+.
+The first weighted moment is
+M1,q(a,b) = (µ + qs2
+)Mq(a,b) + seqµ+q2s2/2
+{φ(za) − φ(zb)}.
+The capped region, interior consumption region, and two deflator-clipping tails are integrated
+separately using these formulas. In particular, the interior coefficient derivative integrates as
+−M1,q/m2
+, not by blindly applying a smooth quadrature rule across its switch. Remaining time
+integrals are evaluated at 40 and 70 decimal digits.
+The source, initial affine coefficient, and covariance at prices .5, 4.25, and 8 all fall inside
+the independently certified intervals at both precisions. All six runs and their timings are stored.
+This test is numerically independent in decomposition and precision, but its time quadrature is
+not asserted to produce an interval proof. The decisive bounds remain those from the complete
+rational-root/interval execution.
+5. NEURAL DERIVATIVES, ACTIONS, AND THE OUTPUT-ERROR CONTRACT
+For a scalar composition w = tanhz, the chain rule is
+wi = (1 − w2
+)zi, wij = −2w(1 − w2
+)zizj + (1 − w2
+)zij.
+The interval implementation propagates value, t,u,x first derivatives and uu,ux,xx second
+derivatives through each affine layer and tanh layer. For the critic v = G + (1 − t)N, this gives,
+for example,
+vt = −N + (1 − t)Nt, vux = (1 − t)Nux,
+vuu = −.04 + (1 − t)Nuu, vxx = −.1/x2
++ (1 − t)Nxx.
+Every multiplication and layer reduction is outward. The full cell image is used, not a derivative
+evaluated only at its center.
+The action oracle uses the scalar formulas in the main paper. If the marginal-wealth interval
+crosses zero, the consumption optimum is enclosed over the whole feasible interval. If the
+portfolio-curvature interval crosses zero, the complete portfolio range is retained in the upper
+evaluation. These cases can make the bound wide, but preserve validity for all continuous actions.
+The candidate action ranges additionally include the 2−24
+output allowance and are clipped to
+the exact economic action bounds.
+The residual and action records for every interior cell are stored in compressed JSON. The
+finest cover has 16,384 such cells; each of the four first-exit faces has 512 cells. The terminal face
+is exact by the critic construction. The per-time-slab maxima are assembled with an enclosed
+discount integral. A separate undiscounted integral over the full horizon supplies a safe all-
+initial-times bound. The model-transport modulus encloses drift, variance, cross-covariance,
+discount, and running-cost changes simultaneously; the correlation remains fixed at −.25.
+The mathematical feedback uses exact stored weights and real tanh. Its output-neighborhood
+certificate covers any admissible implementation satisfying the stated action-error contract.
+NEURAL BELLMAN OPERATORS: SUPPLEMENT 9
+No automatic guarantee for a hardware tanh implementation, a stochastic time integrator, or a
+floating-point budget reconstruction follows from this contract without a separate error analysis.
+The network’s fine-domain certificate is deliberately not replaced by the much sharper bound
+belonging to a different time-control policy.
+6. POLICY INTERPRETATION AND ECONOMIC-RESOLUTION RECORDS
+TABLE I
+CENTRAL-STATE SELECTED POLICY REGIONS AND CONTROL SUMMARIES
+Policy kj Left Right Width Consumption range Mean θ
+0.5 0.50000 0.67789 0.17789 0.76182–0.77217 0.18363
+0.875 0.67789 1.06576 0.38787 0.76197–0.77151 0.17275
+1.25 1.06576 1.43620 0.37044 0.76217–0.77092 0.16279
+1.625 1.43620 1.81288 0.37668 0.76243–0.77039 0.15319
+2 1.81288 2.24707 0.43419 0.76273–0.76995 0.14390
+2.5 2.24707 2.74540 0.49833 0.76320–0.76944 0.13209
+3 2.74540 3.24895 0.50355 0.76374–0.76903 0.12073
+3.5 3.24895 3.74918 0.50023 0.76435–0.76872 0.10983
+4 3.74918 4.12169 0.37251 0.76499–0.76849 0.09950
+4.25 4.12169 4.37187 0.25017 0.76529–0.76840 0.09446
+4.5 4.37187 4.73837 0.36650 0.76557–0.76833 0.08992
+5 4.73837 5.23938 0.50102 0.76605–0.76822 0.08205
+5.5 5.23938 5.74023 0.50085 0.76646–0.76815 0.07546
+6 5.74023 6.24095 0.50072 0.76632–0.76812 0.06985
+6.5 6.24095 6.74158 0.50062 0.76616–0.76811 0.06503
+7 6.74158 7.24212 0.50054 0.76602–0.76811 0.06083
+7.5 7.24212 7.74259 0.50047 0.76590–0.76814 0.05715
+8 7.74259 8.00000 0.25741 0.76579–0.76818 0.05389
+Endpoints and widths are descriptive rounded values; exact rational endpoints determine the selector. Consumption
+and average preference adjustment refer to the selected stored policy, with portfolio zero. The state-uniform selector is
+separately recorded because it minimizes the worst corner gap rather than only the central-state gap.
+The exact price program records strict-loss and relative-resolution regions for four anchor
+prices. Weak monotonicity holds in all cases from the model. A missing strict-resolution region
+means that the certified interval still includes zero, not that a price increase benefits the decision
+maker. The relative criterion for complete regions uses the untruncated interval difference and is
+conservative; selected pairwise tables also use the universal expenditure bound to tighten the
+upper loss endpoint.
+7. REPLICATION, SCOPE OF TIMING, AND HISTORICAL PRESERVATION
+The replication directory contains separate entry points for neural generation, neural verifica-
+tion, independent policy evaluation, independent dual evaluation, exact price postprocessing,
+state–price certification, full-library stress, high-precision diagnostics, and the fresh classical
+frontier. Executed results are written to new directories rather than overwriting earlier attempts.
+The build and manifest checks distinguish a numerical failure to meet a requested tolerance
+from a malformed or missing certificate.
+10
+The neural run is a full fresh run after interpreter entry, including all critic and actor updates.
+Shell timing separately includes imports. The classical frontier separately measures policy
+generation, dual fitting, primal verification, and dual verification, starts from fixed initial guesses
+in every case, and retains optimizer reports. The old library audit starts from frozen inputs and is
+labeled verification only. Historical interrupted work not recorded in the archive is unknown,
+not zero. Resource clocks from overlapping runs cannot establish a matched-hardware speed
+ranking.
+A source-frozen clean replay reexecutes all 18 second-implementation node calculations and
+compares the decisive lower endpoints, upper endpoints, and newly computed expenditure inter-
+vals exactly. The original development ledger is preserved, including the fact that expenditure
+fields were subsequently replaced by independent calculations. The clean replay checks the final
+source rather than silently assigning its hash to an earlier execution. Content hashes identify
+every included source and result file. A local reconstruction of the R12 archive is distinguished
+from its actual remote Git commit; publication metadata does not claim a remote write when
+none has occurred.
+Historical preservation is handled at the file level, not by requiring every previous sentence to
+remain in the current main text. A byte-for-byte audit compared all 1,830 files of the downloaded
+R12 repository archive with the initial working copy and found no mismatch. Earlier manuscripts,
+proofs, data, failure records, and code remain unchanged. The old navigation index is archived
+before its replacement with a single R14 entry point. The current supplement supplies the proofs
+needed for the current manuscript; it does not concatenate 148 pages of superseded manuscripts.
+TABLE II
+PRESERVATION MAP FOR SUBSTANTIVE INHERITED MATERIAL
+Material Unchanged location and interpretation
+Original model and early theoretical
+development
+Root ECTA.tex, ECTA_R2.tex, and earlier source directo-
+ries; retained research history.
+Recursive utility, sophisticated
+selves, games, stochastic trace
+identities
+Earlier manuscripts and SUPP_R12.tex/.pdf; retained ex-
+tensions, not new full-domain numerical claims.
+Original continuous-policy evalua-
+tion and cover/oracle theory
+R9 replication and proof directories; comparison baseline for
+the independently implemented R14 objects.
+Affine-preference dual and earlier
+loose witnesses
+R10 proof, result, and retained-construction files; analytic his-
+tory and failed/loose certificates remain visible.
+External holdout and method-specific
+tuning
+R9–R11 result and paper directories; unfavorable panels and
+unstable seed orderings preserved.
+Exact-reference gain-policy study R11 accuracy source and results; not recast as the R14 tanh
+architecture’s accuracy.
+Structured 128-dimensional action
+oracle
+R10–R12 retained action-oracle evidence; frozen-jet action
+optimization, not 128-state dynamic control.
+Eighteen-price continuation and his-
+torical refinement
+R12 source, results, receipts, and refinement history; frozen
+inputs and their original timing scope preserved.
+The response document maps every R13 finding, the inherited R12 issues, and the current
+evidence paths. It explicitly distinguishes completed calculations from unachieved neural ac-
+curacy, absent matched-accuracy classical comparisons, and remote publication status. This
+preserves the research objective without certifying a claim that the current computation has not
+established.
+NEURAL BELLMAN OPERATORS: SUPPLEMENT 11
+REFERENCES
+Barles, G., and P. E. Souganidis (1991): “Convergence of Approximation Schemes for Fully Nonlinear Second Order
+Equations,” Asymptotic Analysis, 4, 271–283. []
+Brown, D. B., J. E. Smith, and P. Sun (2010): “Information Relaxations and Duality in Stochastic Dynamic Programs,”
+Operations Research, 58, 785–801. []
+Brown, D. B., and J. E. Smith (2011): “Dynamic Portfolio Optimization With Transaction Costs: Heuristics and Dual
+Bounds,” Management Science, 57, 1752–1770. []
+Brumm, J., and S. Scheidegger (2017): “Using Adaptive Sparse Grids to Solve High-Dimensional Dynamic Models,”
+Econometrica, 85, 1575–1612. []
+Cai, W., S. Fang, and T. Zhou (2025): “SOC-MartNet: A Martingale Neural Network for the Hamilton–Jacobi–Bellman
+Equation without Explicit infu∈U H in Stochastic Optimal Controls,” SIAM Journal on Scientific Computing, 47,
+C795–C819. []
+Han, J., and W. E (2016): “Deep Learning Approximation for Stochastic Control Problems,” arXiv:1611.07422. []
+Han, J., A. Jentzen, and W. E (2018): “Solving High-Dimensional Partial Differential Equations Using Deep Learning,”
+Proceedings of the National Academy of Sciences, 115, 8505–8510. []
+Judd, K. L. (1998): Numerical Methods in Economics. Cambridge, MA: MIT Press. []
+Kushner, H. J., and P. Dupuis (2001): Numerical Methods for Stochastic Control Problems in Continuous Time, second
+edition. New York: Springer. []
+National Institute of Standards and Technology (2026): Digital Library of Mathematical Functions, Section 3.5,
+“Quadrature,” online reference consulted September 22, 2026. [6]
+

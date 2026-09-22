@@ -1,0 +1,386 @@
+\section{Introduction}\label{sec:introduction}
+The solution of a dynamic economic model is a policy, not a training loss. A small average Bellman residual can coexist with large errors at a liquidation boundary, and an accurate scalar value at one initial condition does not establish the accuracy of a feedback rule on a state region. These distinctions are consequential when the numerical procedure contains a learned policy, an independently constructed comparison function, and a separate verification program. Each object can be useful, but their guarantees must not be interchanged.
+
+This paper develops and executes a constructive verification procedure for neural Bellman operators. Policy evaluation produces a differentiable value approximation. Policy improvement produces an admissible feedback. Verification then encloses their derivatives and residuals on every cell of a continuous state--time domain, solves the continuous action maximization with certified error, and checks the complete stopping trace. The final quantity is a bound on the policy's loss against the original control problem. No optimal-value labels, finite candidate-action interpretation, or convergence assertion for the training optimizer is needed for this implication.
+
+The application is a stopped consumption--investment economy in which preferences themselves can be adjusted at a quadratic cost. The original utility, adaptive portfolio opportunity, correlated shocks, and first-exit settlement remain in force throughout. We make three constructive advances. First, the neural residual theorem is executed on an actual stored state-feedback actor and critic over the full state--time domain. The calculation includes all state cells and all stopping faces. It also supplies an explicit coefficient-transport certificate when drift, diffusion, discounting, and the adjustment price vary in stated intervals. Second, we give a state-domain extension of an affine-preference market-deflator dual. Joint concavity of a budget-preserving feasible-policy construction and convexity of the dual's localization potential turn four corner calculations into a certificate over an initial-state rectangle. A finite exact calculation then covers the continuum of adjustment prices. Third, the economically sharp bounds are reimplemented with a separate arithmetic and quadrature stack, and the entire node library is subjected to enlarged primitive bounds and perturbed witnesses.
+
+It is important to state the numerical outcome at the outset. At the central initial state the independently audited policy library has uniform regret below \pricebound\ for every adjustment price in $[.5,8]$. The perturbed-witness audit remains below \stressbound. On the rectangle $u\in[1.98,2.02]$, $x\in[1.24,1.26]$, the corresponding state-indexed policy library has uniform regret below \statebound\ over the same price interval. These results refer to specified feasible time-control policies and an upper bound over all original adapted controls. They are not reassigned to the newly trained neural feedback.
+
+The full-domain neural computation has a different outcome. Its finest retained enclosure gives regret at most \neuralbound\ at initial time zero, uniformly over the original state rectangle, and does not certify the $.01$ target. Its two-sided stopping-trace allowance alone is approximately $14.05$. This is an executed verification result rather than an unexecuted interface theorem, but it is not evidence of high-accuracy neural control. The distinction makes the numerical method testable: improvements in sampled training losses do not count as improvements in certified policy accuracy until the same stored object passes the complete comparison calculation.
+
+A newly executed classical time-control calculation provides an additional diagnostic on the unchanged economy. Increasing the number of policy intervals from 16 to 64 reduces its certified regret from approximately $.0096881$ to $.0096651$, but not to $.005$. Every policy-generation, dual-fitting, and verification stage of this experiment is recorded. The small improvement also locates a limitation of the current approximation and relaxation, rather than suggesting that quadrature refinement alone produces an arbitrary accuracy guarantee. This comparison is not a substitute for a matched-accuracy study against two strong classical state-space solvers.
+
+\subsection{Relation to the literature}
+The verification identity and the policy-iteration principle are classical. Numerical dynamic programming and economically meaningful error assessment are treated by \citet{Judd1998}; controlled Markov-chain approximation by \citet{KushnerDupuis2001}; and monotone approximation by \citet{BarlesSouganidis1991}. Adaptive sparse grids provide an important state-space benchmark in computational economics \citep{BrummScheidegger2017}. Dual upper bounds obtained by enlarging information or control opportunities have a substantial literature \citep{BrownSmithSun2010,BrownSmith2011}. These methods motivate comparisons on the same economic problem rather than comparisons only within a family of neural solvers.
+
+Neural approaches to control and high-dimensional equations include \citet{HanE2016,HanJentzenE2018}; \citet{CaiFangZhou2025} provide the SOC-MartNet implementation used in the retained external comparison. Our contribution is not a new proof that a valid supersolution bounds value, nor a theorem that Adam converges. It is a set of explicit, executed constructions joining a stored neural object to stopped-policy bounds, transporting those bounds across model coefficients, and extending a sharp application-specific certificate jointly across states and an affine objective parameter. The supporting-plane and localization mechanism is specialized to the present economy; the stopped residual theorem and coefficient transport apply to the model class in Section~\ref{sec:verification}.
+
+The external neural holdouts, the structured high-dimensional action oracle, and the exact-reference experiments from earlier versions remain part of the research record. They answer different questions. In particular, the retained clipped quadratic-feedback comparator has lower mean cost than both learned methods in the reported panels, and several seed-level comparisons do not establish a stable ordering. Neither the existence of a certificate nor those selective pairwise comparisons establishes general numerical superiority. Section~\ref{sec:comparison} and the supplement preserve these distinctions and identify the unchanged source material.
+
+\section{The stopped preference-adjustment economy}\label{sec:economy}
+Time is continuous, with horizon $T=1$. Preferences $u$ and wealth $x$ evolve as
+\begin{align}
+ du_s&=\theta_s\,ds+.05\,dZ^u_s,\label{eq:u}\\
+ dx_s&=\{(.02+.06p_s)x_s-c_s\}\,ds+.2p_sx_s\,dZ^x_s,\label{eq:x}
+\end{align}
+where $d\langle Z^u,Z^x\rangle_s=-.25\,ds$. The state domain is
+\[
+ D=(1.2,2.8)\times(.5,2),
+ \qquad A=[.05,.8]\times[-.2,.2]\times[-.5,.8].
+\]
+An admissible control $a=(c,\theta,p)$ is progressively measurable, takes values in $A$, and is used up to the first exit from $D$ or time one, whichever occurs first. The controls in the original optimization are not restricted to deterministic time functions or to neural networks.
+
+For adjustment price $k\in[.5,8]$, the running payoff and settlement are
+\begin{align}
+ \ell_k(u,c,\theta)&=\frac{c^{1-u}}{1-u}-\frac{k}{2}\theta^2,\label{eq:ell}\\
+ G(u,x)&=-.02(u-2)^2+.1\log x,\qquad
+ g(s,u,x)=G(u,x)-8(1-s).\label{eq:trace}
+\end{align}
+Let $\tau=1\wedge\inf\{s\geq t:(u_s,x_s)\notin D\}$ and $\rho=.04$. The criterion is
+\begin{equation}
+ J_k(t,z;a)=\E_{t,z}\left[\int_t^\tau e^{-\rho(s-t)}\ell_k(u_s,c_s,\theta_s)\,ds
+       +e^{-\rho(\tau-t)}g(\tau,u_\tau,x_\tau)\right].
+ \label{eq:value}
+\end{equation}
+Here $V_k=\sup_{a\in\cA}J_k(\cdot;a)$. The liquidation fee makes a stopping-trace error economically meaningful even when the training distribution assigns little mass near an exit. It is therefore included explicitly in verification rather than approximated by an average boundary loss.
+
+For a smooth test function $v$, define the discounted residual
+\begin{align}
+ \cR_a v={}&v_t+\theta v_u+\{(.02+.06p)x-c\}v_x
+       +.00125v_{uu}+.02p^2x^2v_{xx}-.0025pxv_{ux}\notag\\
+       &+\frac{c^{1-u}}{1-u}-\frac{k}{2}\theta^2-.04v.
+ \label{eq:residual}
+\end{align}
+All constants in the certificate denote the displayed exact decimals. Training uses floating-point approximations of them, but the certification program encloses the exact constants and treats stored binary64 network weights as exact real numbers.
+
+The central initial condition is $(t,u,x)=(0,2,1.25)$. We also study the nondegenerate rectangle
+\begin{equation}
+ K=[1.98,2.02]\times[1.24,1.26].\label{eq:K}
+\end{equation}
+The claim on $K$ is uniform over its interior, not a statement about 72 isolated initial conditions. Its proof is given in Section~\ref{sec:state}, and its tolerance differs from the sharper central-state tolerance.
+
+\section{Constructive neural verification}\label{sec:verification}
+We first state the verification result for a class of stopped controlled diffusions. Let $Z$ take values in a bounded domain, with drift $b_a$, covariance matrix $\Sigma_a$, running reward $f_a$, constant discount $\rho\geq0$, and settlement $g$ on the parabolic boundary. Write
+\[
+ \cR_a v=v_t+b_a\cdot Dv+\tfrac12\Sigma_a:D^2v+f_a-\rho v.
+\]
+The assumptions below concern the stochastic model and the computed witness. They do not assume regularity of the unknown optimal value.
+
+\begin{assumption}\label{ass:verification}
+For every admissible control, the stopped diffusion and its payoff are well defined. The controlled coefficients and payoffs are bounded on the stopped domain. The candidate feedback $\pi$ is admissible. The witness $v$ is continuously differentiable in time and twice continuously differentiable in state on a neighborhood of the closed domain, and its derivatives are bounded there. Discounted It\^o's formula and optional stopping hold for these bounded stopped quantities.
+\end{assumption}
+The compact economy in Section~\ref{sec:economy} with the stored smooth, bounded neural feedback satisfies these requirements. Boundedness also permits localization of the stochastic integral before taking expectations.
+
+\begin{theorem}[A complete residual and improvement certificate]\label{thm:bridge}
+Under Assumption~\ref{ass:verification}, suppose verified nonnegative functions $e(s),q(s)$ and a number $b\geq0$ satisfy, at every state and time,
+\begin{equation}
+ |\cR_\pi v|\leq e(s),\qquad
+ 0\leq\sup_{a\in A}\cR_a v-\cR_\pi v\leq q(s),
+ \qquad |v-g|\leq b\ \hbox{on the stopping boundary}.
+ \label{eq:checks}
+\end{equation}
+Then, for every initial state $z$ and time $t$,
+\begin{equation}
+ 0\leq V(t,z)-J(t,z;\pi)
+ \leq 2b+\int_t^T e^{-\rho(s-t)}\{2e(s)+q(s)\}\,ds.
+ \label{eq:bridgebound}
+\end{equation}
+The same conclusion applies to any admissible implementation whose action lies in a verified output-error neighborhood of the stored feedback, provided that the residual and improvement inequalities have been enclosed over that neighborhood.
+\end{theorem}
+
+The theorem is deliberately an a posteriori statement. It is useful because every item in \eqref{eq:checks} has a finite implementation, not because its stochastic comparison identity is new. A training history can propose the witness and policy, but cannot replace any of the inequalities. The proof in Appendix~\ref{app:bridge} separates the policy-evaluation and upper-comparison errors; each stopping-trace discrepancy is paid once.
+
+\subsection{A finite implementation}
+Fix a rational rectangular cover of the entire state--time domain, including every stopping face. On each cell, interval forward differentiation gives the value, first derivatives, and relevant second derivatives of the stored network. An action oracle bounds the maximum over the continuous action set. Interval evaluation of the deployed policy gives its residual and the difference from this global maximum. Taking the largest bounds in each time slab produces $e$ and $q$. Facewise interval evaluation produces $b$. Finally, integration of these piecewise-constant bounds yields \eqref{eq:bridgebound}.
+
+A cell is accepted only if all operations have finite, valid enclosures and every potential action branch is covered. No failed or inconclusive cell can be removed from the domain. Refinement replaces a cell by a complete cover of that cell, while keeping previous results in the execution record. The method either returns the certified inequality for the specified stored object or records that a requested accuracy has not been established at the available resolution. This is a stopping criterion for an accuracy claim, not a criterion based on validation loss.
+
+In the economy, the action maximization separates into three scalar problems conditional on the interval-enclosed derivatives. Consumption is strictly concave, and its maximizer is
+\[
+ c^*=\operatorname{proj}_{[.05,.8]}(v_x^{-1/u})\quad\hbox{when }v_x>0,
+ \qquad c^*=.8\quad\hbox{when }v_x\leq0.
+\]
+The preference action is $\theta^*=\operatorname{proj}_{[-.2,.2]}(v_u/k)$. The portfolio objective is
+\[
+ h_1p+\tfrac12h_2p^2,\quad
+ h_1=.06xv_x-.0025xv_{ux},\quad h_2=.04x^2v_{xx}.
+\]
+A negative curvature gives a clipped vertex; nonnegative curvature gives an endpoint maximum. When an interval does not determine the sign, the calculation encloses the whole feasible portfolio interval. Thus uncertainty enlarges the bound instead of excluding an action. These formulas preserve the original continuous control opportunities.
+
+\subsection{Transport across model coefficients}
+The affine dependence on $k$ used later is not a general argument for perturbing dynamics. For the latter we use residual transport. Consider another model with the same state domain, action set, and settlement, but possibly different coefficients and discount. Let its discount be at least $\underline\rho\geq0$, and let $\widetilde\cR_a$ denote its residual.
+
+\begin{proposition}[Coefficient transport]\label{prop:transport}
+Suppose the original checks \eqref{eq:checks} hold, and interval coefficient bounds verify
+\begin{equation}
+ \sup_{a\in A}|\widetilde\cR_a v-\cR_a v|\leq d(s)
+ \label{eq:transportmodulus}
+\end{equation}
+throughout the common domain. If Assumption~\ref{ass:verification} also holds for the new model, its policy regret is at most
+\begin{equation}
+ 2b+\int_t^T e^{-\underline\rho(s-t)}\{2e(s)+q(s)+2d(s)\}\,ds.
+ \label{eq:transportbound}
+\end{equation}
+If the settlement changes by at most $b_\mathrm{par}$, replace $b$ by $b+b_\mathrm{par}$.
+\end{proposition}
+
+For example, the modulus in \eqref{eq:transportmodulus} can be evaluated directly from
+\[
+ |(\widetilde b_a-b_a)\cdot Dv|
+ +\tfrac12|(\widetilde\Sigma_a-\Sigma_a):D^2v|
+ +|\widetilde f_a-f_a|+|\widetilde\rho-\rho|\,|v|.
+\]
+It includes the change in the covariance matrix rather than treating volatility perturbations as drift changes. The proposition does not couple paths or equate stopping times across economies. Each model is verified against its own stopped dynamics on the common domain. The executed coefficient box is reported in Section~\ref{sec:neural}.
+
+\section{A sharp economic comparison construction}\label{sec:dual}
+A neural certificate should be compared with independently identified bounds for the same economy. We therefore retain the affine-preference market-deflator construction and reimplement its numerical evaluation. The lower policy and the upper comparison object are identified separately from the neural feedback throughout.
+
+\subsection{Feasible policies and the original stopping contract}
+A library policy consists of 16 exact stored consumption constants $c_j\in[.7,.8]$, preference actions $\theta_j\in[0,.2]$, and $p_j=0$. These controls are held on their time intervals until the original first exit. Wealth is deterministic and satisfies
+\[
+ x_1=e^{.02}\left(x_0-\int_0^1e^{-.02s}c_s\,ds\right).
+\]
+The program proves $x_1>.5$ and the complete action bounds before evaluating a payoff. It does not round a budget residual to zero or assume that a nearly feasible policy is feasible.
+
+The previous implementation evaluated a polynomial representation with Gaussian moments. The new evaluator instead applies an interval-certified Gauss rule directly to the original CRRA expression on a covered Gaussian domain. After $t=v^2$, it integrates over $v$ and a standard-normal coordinate $z$. Rationally isolated Gauss nodes, interval weights, and analytic complex-neighborhood remainder bounds enclose the integrals. The unbounded normal tail and the discrepancy from stopping are accounted for analytically. The use of an auxiliary bounded full-horizon extension in this proof does not change the objective \eqref{eq:value}: it is connected to that objective by an explicit stopping correction, less than $3.87\times10^{-18}$ on $K$ for these policies.
+
+At $k=4.25$, the second implementation encloses the policy payoff in
+\begin{equation}
+ [-1.315469674845588,\ -1.315469674834266],\label{eq:primalexample}
+\end{equation}
+with the stored unrounded interval width approximately $1.13\times10^{-11}$. This is a policy-payoff width, not an optimality gap. The latter still requires an upper bound on $V_k$.
+
+\subsection{The affine-preference dual}
+Let $dY_s=.02Y_s\,ds-.3Y_s\,dZ^x_s$. Its product with wealth satisfies
+\[
+ d(Y_sx_s)=(.04Y_sx_s-Y_sc_s)\,ds+\hbox{a local martingale}.
+\]
+The cancellation holds for every original adapted portfolio control. Define
+\[
+ \Psi(u,y)=\max_{.05\leq c\leq.8}\left\{\frac{c^{1-u}}{1-u}-yc\right\},\quad
+ S_0(u,y)=\Psi(u,y)+.01y-.004\log(.5),\quad\beta=\partial_u\Psi.
+\]
+For a deterministic reference $\bar\theta\in[0,.2]$, set $m(t)=2+\int_0^t\bar\theta_sds$ and let $Q$ be the affine tangent to $\phi(u)=-.02(u-2)^2$ at $m(1)$. On $u\in[1.5,2.5]$, $y\in[.2,12]$, the supporting inequality is
+\begin{equation}
+ S_0(u,y)\leq S_0(m,y)+\beta(m,y)(u-m),\qquad 2\leq m\leq2.2.
+ \label{eq:plane}
+\end{equation}
+It is justified by analytic monotonicity and complete interval covers, not by sampled tangency or presumed global concavity. Its new primitive checks have strictly positive margins; the supplement gives the proof and the recorded numerical margins.
+
+Put $\widehat y=\operatorname{proj}_{[.2,12]}y$ and replace the source by the right side of \eqref{eq:plane} at $\widehat y$. The resulting full-line auxiliary problem $A_k(t,u,y)$ retains adapted preference actions, quadratic adjustment cost, and terminal payoff $Q$. Its source and terminal value are affine in the initial preference. The following positive localization potentials reconnect it to the original first-exit problem:
+\begin{align}
+ Z_u(h,u)&=8h\{e^{-120(u-1.5)+42h}+e^{-120(2.5-u)+42h}\},\label{eq:Zu}\\
+ Z_y(h,y)&=8h\{e^{-22\log(y/.2)+22.33h}+e^{-22\log(12/y)+22.33h}\}.
+ \label{eq:Zy}
+\end{align}
+For $y_0\in[1.2,2.4]$ the resulting upper bound is
+\begin{equation}
+ V_k(0,2,1.25)\leq .75y_0+.1\log(.5)+A_k(0,2,y_0)+Z_u(1,2)+Z_y(1,y_0).
+ \label{eq:dual}
+\end{equation}
+
+The auxiliary value has a computable upper bound consisting of one-Gaussian source expectations, a terminal tangent, a correlated-shock correction, a reference-action gap, and a conditional-variance allowance. The latter is necessary because the adapted marginal value of adjustment is random; replacing it by its unconditional mean without a correction would not be valid. The supplement states and proves the complete formula, including the factors $.00375$ and $.09/(24k)$ in the covariance and variance terms.
+
+In the second implementation, the source uses separate analytic formulas for its capped and interior consumption branches. Interval automatic differentiation supplies Hessian enclosures, and a rational-root Gauss construction encloses the weighted moments. This differs from the inherited manually differentiated source and polynomial moment integrator. The analytic dual theorem is shared; its mathematical validity is not established merely by agreement between programs. Its finite supporting-plane checks and all decisive numerical quantities are recomputed by the new implementation.
+
+\section{Joint initial-state and price certification}\label{sec:state}
+The state-domain extension is obtained without assuming a Lipschitz modulus for the unknown optimal value. Two structural properties suffice: a convex upper comparison function and a concave feasible-policy lower function.
+
+\subsection{Extending the dual in the initial state}
+For the fixed dual witness, define
+\begin{equation}
+ b_0=\int_0^1e^{-\rho s}\E\beta(m(s),\widehat Y_s)\,ds+e^{-\rho}Q'.
+ \label{eq:b0}
+\end{equation}
+An interval for $b_0$ is obtained in the same independent execution as the dual. Since the coefficient of the initial $u$ in the auxiliary criterion is independent of the chosen adapted preference action,
+\[
+ A_k(0,u,y_0)=A_k(0,2,y_0)+(u-2)b_0.
+\]
+Let $U_0$ be a certified upper endpoint in \eqref{eq:dual}. It follows that
+\begin{align}
+ V_k(0,u,x)\leq{}& U_0+y_0(x-1.25)+(u-2)b_0\notag\\
+ &+8e^{-18}\{e^{120(u-2)}+e^{-120(u-2)}-2\},\label{eq:stateupper}
+\end{align}
+for the verified initial rectangle. Interval multiplication is sign-aware when $u-2<0$. With an interval for $b_0$, its upper support function is convex in $u$. Thus the computable right side of \eqref{eq:stateupper} is convex in $(u,x)$. This is a property of the upper comparison object, not an assertion that $V_k$ itself is convex in wealth.
+
+\subsection{A budget-preserving policy map}
+Write $Q_r=\int_0^1e^{-.02s}ds$. For each stored policy, define
+\begin{equation}
+ c_j(x)=c_j+\frac{x-1.25}{Q_r},\qquad
+ \theta_j(x)=\theta_j,\qquad p_j(x)=0.\label{eq:budgetshift}
+\end{equation}
+Its terminal wealth is identical to that of the central-state policy. All shifted consumption values remain in $[.7,.8]$ on $K$; this is checked for every library member. The policy depends on the initial state and is thereafter a time control until exit. It is not described as an approximate neural feedback surface.
+
+The utility $f(c,u)=c^{1-u}/(1-u)$ is jointly concave over the region needed by the Gaussian cover. With $r=u-1$ its Hessian satisfies
+\begin{align*}
+ f_{cc}&=-u c^{-u-1},\\
+ f_{cu}&=-(\log c)c^{-u},\\
+ f_{uu}&=-\frac{c^{-r}}{r^3}\{(r\log c+1)^2+1\},\\
+ \det D^2f&=\frac{c^{-2u}}{r^3}
+ \{r^2(\log c)^2+2r(r+1)\log c+2(r+1)\}.
+\end{align*}
+On $u\in[1.2,2.8]$, $c\in[.7,.8]$, one has $r(-\log c)<1$, so the determinant is positive. The covered expected payoff, with the exact budget shift, is therefore concave in the initial state. A single uniform tail and stopping correction turns this covered functional into a lower bound for the original stopped policy throughout $K$.
+
+\begin{proposition}[Four vertices and a continuum of prices]\label{prop:stateprice}
+Suppose, at each price node $k_i$, a convex upper function $U_i(z)$ bounds $V_{k_i}(0,z)$ on a rectangle $K$. For each policy $j$, suppose a concave lower function $F_j(z;k)$ bounds its original payoff on $K$, is affine in $k$, and has a verified expenditure slope interval. Then corner values alone produce a uniform regret certificate on $K\times[k_1,k_N]$ by the following finite construction. Between adjacent price nodes use the chord of $U_i$ and $U_{i+1}$. For each policy transfer its four lower corner values affinely in price, using the appropriate expenditure endpoint. At each price select the policy minimizing the largest of its four upper-minus-lower corner gaps. The supremum of the resulting bound is attained at an endpoint or an intersection of the finitely many affine corner-gap functions.
+\end{proposition}
+
+The optimal value is convex in $k$ because the policy set, dynamics, and stopping contract are common and fixed-policy payoffs have the form $A(\pi)-kB(\pi)$. This justifies the upper price chord, not interpolation of $V$ as though it were affine. The expenditure used for the concave covered lower functional is its full-horizon deterministic expenditure, with the stopping discrepancy already paid uniformly at the largest price. For the separate central-state exact-policy envelope, the program instead bounds the stopped expenditure. Confusing these two slopes would invalidate the transfer; they are separately recomputed and labeled in the evidence.
+
+\begin{proposition}[Executed state--price certificate]\label{prop:executed}
+For the unchanged economy \eqref{eq:value}, the 18 stored policies with the state map \eqref{eq:budgetshift} and the price selector in Proposition~\ref{prop:stateprice} satisfy
+\begin{equation}
+ \sup_{(u,x)\in K}\sup_{k\in[.5,8]}
+ \{V_k(0,u,x)-J_k(0,u,x;\pi_{k,x})\}\leq\statebound.
+ \label{eq:executedstate}
+\end{equation}
+The central-state selector based on the independently evaluated stopped policies satisfies
+\begin{equation}
+ \sup_{k\in[.5,8]}
+ \{V_k(0,2,1.25)-J_k(0,2,1.25;\pi_k)\}\leq\pricebound.
+ \label{eq:executedprice}
+\end{equation}
+\end{proposition}
+
+The execution evaluates all 72 policy--state corners, uses all 18 independently verified upper witnesses, and checks 211 exact candidate breakpoints for the joint state--price construction. No unsampled state requires an empirical smoothness extrapolation. The exact rational worst-case joint bound is
+\[
+ \frac{2187960974729572475442514300375}{180891518006739738096917284913152}.
+\]
+The displayed decimal in \eqref{eq:executedstate} is rounded upward. The computational record contains the complete selected-policy regions and every corner interval. Appendix~\ref{app:stateprice} proves the interpolation and finite-breakpoint steps.
+
+\section{Executed neural verification on the original economy}\label{sec:neural}
+The fresh neural experiment uses a state-feedback actor and critic with two hidden layers of 48 tanh units. Inputs are $(2t-1,(u-2)/.8,(x-1.25)/.75)$. The actor's output transformation is
+\[
+ c=.425+.375\tanh a_1,\qquad
+ \theta=.2\tanh a_2,\qquad
+ p=.15+.65\tanh a_3.
+\]
+The critic is $v(t,u,x)=G(u,x)+(1-t)N(t,u,x)$, so its terminal trace is exact. The first-exit trace is not imposed by this architecture and must be checked.
+
+All weights are freshly generated from seed 1401. Each actor-improvement step is preceded by three critic residual updates, with batch size 128. Adam learning rates are $.0005$ for the critic and $.0002$ for the actor, and the boundary-loss coefficient is $.025$. Snapshots at 100, 300, and 800 updates are retained. The experiment uses the 48-by-48 tanh architecture of the retained comparisons, but its continuous economic residual and boundary objective are a new adapter; it is not the same finite-step training objective as the external benchmark. The optimizer and sampled objective are proposal mechanisms only.
+
+The certification program uses an independent interval implementation for network evaluation and differentiation. It checks all cells of $[0,1]\times[1.2,2.8]\times[.5,2]$, all four first-exit faces, and the terminal face. A componentwise output neighborhood of radius $2^{-24}$ is included in the action ranges. This proves robustness for any admissible action within that neighborhood of the mathematical real-tanh network. It does not assert an undocumented error bound for a machine-library tanh routine or for a discretized diffusion simulator.
+
+\begin{table}[t]\centering\small
+\caption{Whole-domain neural certificates on the unchanged economy, $k=2$}\label{tab:neural}
+\input{revisions/2026-09-22-r14/paper/tables/neural}
+\par\smallskip\footnotesize Upper bounds are rounded upward. Time is the measured verification stage, excluding training. Every row covers the complete domain with zero skipped and zero failed cells. The last three rows refine the cover for the same 800-update snapshot. None attains the $.01$ target.
+\end{table}
+
+Table~\ref{tab:neural} separates the stopping trace from the integrated policy residual and action gap. The finest cover has 16,384 interior cells and 512 cells on each stopping face. It gives the time-zero bound \neuralbound\ and an all-initial-times bound below $23.656877772$. The terminal trace is zero. The 800-update sampled residual mean square is approximately $.0079446$, but this does not control either the worst-case residual or the first-exit trace. Moreover, the 800-update snapshot is not uniformly better than the 300-update snapshot at the same coarse cover. Both outcomes remain in the record.
+
+\begin{table}[t]\centering\small
+\caption{Stopping-trace errors for the finest neural cover}\label{tab:boundary}
+\input{revisions/2026-09-22-r14/paper/tables/boundary}
+\par\smallskip\footnotesize Each entry is a uniform bound over the complete face and time interval. The comparison theorem pays the largest face bound twice. The error is an evaluation of the stored critic against $G-8(1-t)$, not a change in that settlement.
+\end{table}
+
+The coefficient-transport calculation uses the same stored snapshot and cover, with
+\[
+ r\in[.019,.021],\quad\mu\in[.058,.062],\quad
+ \sigma_u\in[.049,.051],\quad\sigma_x\in[.195,.205],
+\]
+\[
+ \rho\in[.039,.041],\qquad k\in[1.9,2.1],
+\]
+and correlation fixed at $-.25$. Here $\mu$ denotes the risky-wealth drift coefficient multiplying $p$. The action bounds, state domain, and settlement are unchanged. Proposition~\ref{prop:transport} gives a time-zero regret bound below $23.530407814$ uniformly over this model box. This demonstrates an executed transport mechanism beyond affine objective continuation. It does not make the base neural certificate accurate: the same boundary and approximation errors remain visible.
+
+The finest computation records separate cellwise evaluation, action, and transport quantities. A diagnostic comparison of the interval neural derivatives with automatic differentiation checks 140 derivative components at 20 states and 60 actor components, with no discrepancy outside the numerical tolerance. This diagnostic detects implementation disagreement; it is not substituted for the full-cell interval proof.
+
+\section{Independent numerical evidence and robustness}\label{sec:independence}
+The sharp economic comparison uses a second implementation that imports none of the inherited primal or dual certifiers. Its basic arithmetic encloses exact rational constants and exact stored binary64 inputs. Addition, multiplication, division, and reductions are rounded outward. Exponentials and logarithms are bounded by rational series with analytic remainders; tanh is obtained from the enclosed exponential. The Gauss nodes are isolated by exact polynomial signs and the weights are enclosed by their defining formula. The supplement states the floating-point model and the analytic remainder bounds, so these assertions are not based solely on rerunning a production function.
+
+\begin{table}[t]\centering\small
+\caption{Independent central-state certificates for all retained prices}\label{tab:nodes}
+\input{revisions/2026-09-22-r14/paper/tables/nodes}
+\par\smallskip\footnotesize Every upper endpoint covers all original adapted controls; every lower endpoint belongs to the identified feasible policy. The last column is the width of that policy's payoff enclosure, not its regret. Regret uses unrounded endpoints. All 18 cases are included, and no inherited generation time is counted as zero.
+\end{table}
+
+The independent primal evaluator uses 262,144 integrand evaluations per 16-interval policy. The fine dual uses 262,144 source boxes per price. Complete supporting-plane covers certify a negative second-derivative upper bound below $-.06717$ on the first preference region and a strict derivative separation on the remaining region. They also certify a source floor above $-6.98956$, a source ceiling below zero, and an absolute preference coefficient below $.97119$. These independently computed margins imply the analytic bounds $S_0\geq-7.1$ and $|\beta|\leq1.1$ used for stopping continuation. The complete old policy and dual inputs are retained and identified by their content hashes.
+
+\begin{table}[t]\centering\small
+\caption{Separate quantities in the independent $k=4.25$ calculation}\label{tab:dualbudget}
+\input{revisions/2026-09-22-r14/paper/tables/dual_budget}
+\par\smallskip\footnotesize Intervals are displayed outward. The source-remainder enclosure, Gaussian tail, terminal tangent, reference cost, and arithmetic allowances are present in the machine-readable record. The conditional-variance allowance is positive and is not removed when quadrature is refined.
+\end{table}
+
+Exact price postprocessing is independently implemented by enumerating affine intersections with rational arithmetic, rather than importing the original hull routine. Its input expenditures are newly computed from the stored preference actions with an explicit stopping correction. Thus the upstream policy values, upper values, expenditure intervals, and downstream envelope all have a new execution path. Reproducibility of this path remains distinct from independence of its analytic premises.
+
+\subsection{Stress tests for the entire library}
+The robustness experiment changes every dual pilot: $y_0$ is increased by $10^{-6}$, and its reference preference drifts receive alternating perturbations of $\pm10^{-6}$ with inward projection into the admissible reference interval. Simultaneously, the proof uses the weaker source floor $-7.11$, the larger coefficient bound $1.11$, twice the Gaussian-tail allowance, and 1.1 times the conditional-variance allowance. The resulting continuation floor remains strictly above $-8$. All 18 upper certificates are recomputed, while the original economy and feasible lower policies remain unchanged.
+
+\begin{table}[t]\centering\small
+\caption{Continuum certificates under independent verification and perturbation}\label{tab:robustness}
+\input{revisions/2026-09-22-r14/paper/tables/robustness}
+\par\smallskip\footnotesize The first three rows refer to the central initial state. The fourth covers the additional initial-state rectangle $K$ and is not compared with the central-state $.01$ tolerance as though the domains were identical. The perturbation experiment changes proof witnesses and allowances, not the economic primitives.
+\end{table}
+
+The unperturbed independent bound leaves approximately $3.10\times10^{-5}$ below $.01$, compared with approximately $5.98\times10^{-6}$ for the retained R12 bound. The perturbed calculation remains below $.01$. Neither statement claims a bound below $.009$. An additional exact sensitivity calculation shows how a common enlargement of every upper and lower endpoint changes the final envelope: enlarging each side by $\delta$ increases the guaranteed gap by at most $2\delta$. It is a sensitivity result conditional on valid node intervals, not a replacement for the independent primitive audit.
+
+A third, materially different decomposition integrates the capped and interior conjugate using closed truncated-lognormal moments. At prices $.5$, $4.25$, and $8$, a separate program computes the source integral, initial affine coefficient, and covariance term at 40 and 70 decimal digits. Every computed quantity lies inside the independently certified interval. The agreement provides a useful cross-check of algebra and decomposition; these point-valued high-precision quadratures are not themselves rigorous enclosures, and their convergence is not used as a proof of the interval certificate.
+
+\section{Accuracy, computational work, and comparators}\label{sec:comparison}
+A certification time measured from frozen proof objects is not the cost of generating those objects. The 18-node independent audit takes approximately 103.08 seconds of measured wall time in the retained run, but starts from existing policies and dual pilots. The 72-corner state audit takes approximately 29.71 seconds. These are verification costs. The generation costs of inherited and interrupted historical attempts are not reconstructed from their absence and are not assigned zero.
+
+The fresh neural run records all 800 actor updates and 2,400 critic updates, the fixed seed, every retained checkpoint, and resource usage. Its recorded execution after program entry is approximately 13.08 seconds, with interpreter and import time separately recorded. It uses one Torch CPU thread and no GPU. The execution environment reports an AMD EPYC 9V74 processor and five exposed logical CPUs; this identifies the environment, not exclusive ownership of a physical machine. Stage times recorded during overlapping local experiments are descriptive clocks, not controlled hardware-efficiency comparisons.
+
+\subsection{A newly generated policy-richness frontier}
+The same original economy at $k=2$ is also solved within deterministic time-control classes of 16, 32, and 64 intervals. Each problem starts from a fixed feasible constant-consumption construction and preference action $.05$. Constrained sequential quadratic optimization uses analytic gradients to propose a policy. A separately initialized scalar-deflator and reference-drift fit proposes its upper witness. The fresh policy is then checked by the independent stopped evaluator and the fresh upper witness by the independent dual. The fitting objective is not counted as a certificate.
+
+\begin{table}[t]\centering\small
+\caption{Fresh generation and independent verification as policy richness increases}\label{tab:frontier}
+\input{revisions/2026-09-22-r14/paper/tables/frontier}
+\par\smallskip\footnotesize All stage times are seconds. Each case starts without inherited policy or dual inputs, and all three optimizations report success. End-to-end measured case times are 8.67, 8.54, and 8.77 seconds. The experiment changes policy richness, unlike a price-node refinement experiment. All cases pass $.01$; none passes $.005$, $.0025$, or $.001$.
+\end{table}
+
+The frontier is informative because its approximation object is held distinct from its upper relaxation. Policy refinement improves the lower bound, but the independently fitted affine upper bound is nearly unchanged. A fixed specialized relaxation can therefore limit the attainable regret even when quadrature error is very small. This calculation is not evidence of convergence to arbitrary tolerance, and it does not establish convergence of the neural optimizer.
+
+The classical comparator is a freshly executed direct time-control optimization. It is a serious feasible-policy and upper-bound calculation on the same original economy, but it is not two distinct state-space HJB methods and it does not furnish a matched-accuracy advantage for the neural method. A comparative claim requiring monotone PDE, semi-Lagrangian, or controlled Markov-chain baselines at the same certified accuracy remains outside the completed experiment. Likewise, the preserved Riccati-reference study used structured gain outputs; its errors cannot be relabeled as errors of the present 48-by-48 tanh actor and residual-training pipeline.
+
+\subsection{Retained comparisons and high-dimensional scope}
+The historical SOC-MartNet holdouts, method-specific tuning studies, and clipped-feedback comparator are preserved without suppressing unfavorable panels. The clipped-feedback comparator's lower mean cost and the absence of a robust ordering in several higher-dimensional seed panels limit what can be inferred about candidate-generation quality. They do not invalidate the stopped comparison theorem, just as the theorem does not establish empirical superiority.
+
+The 128-dimensional experiment in the retained record certifies a rank-one-coupled Hamiltonian action oracle at frozen jets. Its nonconvex coupling can be reduced to a scalar aggregate search with strongly convex conditional subproblems. This is an action-optimization result. It is not a certified solution of a 128-dimensional dynamic economic model. The actual neural state-domain calculation in this revision concerns the two-state economy in Section~\ref{sec:economy}; no action-dimension result is used to inflate that state dimension.
+
+\section{What the certified counterfactuals identify}\label{sec:economics}
+For any policy, raising $k$ subtracts $(q-p)B(\pi)$, where
+\[
+ 0\leq B(\pi)=\E\int_0^\tau e^{-\rho s}\theta_s^2/2\,ds
+ \leq .02\frac{1-e^{-\rho}}{\rho}.
+\]
+Consequently $V_k$ is nonincreasing and convex. Monotonicity determines a weak sign without numerical computation, but not a strictly positive or economically well-resolved welfare loss.
+
+Let $[L(k),U(k)]$ be the independently certified central-state value envelope. For $p<q$, a valid loss interval is
+\begin{equation}
+ \left[\max\{0,L(p)-U(q)\},\\
+ \min\left\{U(p)-L(q),\ .02\C(1)(q-p)\right\}\right],
+ \quad \C(h)=\frac{1-e^{-\rho h}}{\rho}.
+ \label{eq:welfare}
+\end{equation}
+A positive lower endpoint establishes strict loss. We report a separate relative-resolution criterion: the width of this interval is no greater than its positive lower endpoint. Neither criterion follows automatically from a $.01$ bound on policy regret.
+
+\begin{table}[t]\centering\small
+\caption{Certified welfare losses when the adjustment price rises}\label{tab:welfare}
+\input{revisions/2026-09-22-r14/paper/tables/welfare}
+\par\smallskip\footnotesize ``Strict'' means a strictly positive lower endpoint. ``Relative'' means interval width no greater than that endpoint. A ``No'' in the strict column does not reverse the economic monotonicity theorem; it means that strict loss is not separated from zero by these intervals.
+\end{table}
+
+The contrast between $2\to8$ and $4\to4.1$ is substantive. The first comparison is strictly positive and relatively resolved by the current intervals. The second has a small absolute upper bound but no certified positive lower bound from interval separation. A policy may therefore be sufficiently accurate for an absolute deployment tolerance while the current value bounds remain too wide for a local comparative-static statement.
+
+\begin{table}[t]\centering\small
+\caption{Price regions in which welfare losses are separated}\label{tab:regions}
+\input{revisions/2026-09-22-r14/paper/tables/regions}
+\par\smallskip\footnotesize Decimal endpoints are descriptive approximations of exact rational thresholds, not proof endpoints. The exact fractions and open-endpoint convention are in the price-audit file. A dash means no such region up to price eight is established by this predicate. The relative criterion here uses the untruncated difference of value intervals and is therefore conservative.
+\end{table}
+
+The policy library also has a direct economic interpretation. Its selector chooses a stored control vector on each exact price region; within that region no new optimization is required. The supplement lists the selected regions, their widths, consumption ranges, and average preference adjustments. These are properties of feasible chosen policies. They are not claims that the optimal policy itself is piecewise constant in the price, or that policy expenditures equal derivatives of the unknown optimum.
+
+The tolerance $.01$ is an absolute loss criterion in the utility units of \eqref{eq:value}. It is not a scale-free welfare measure. The relative and strict-loss diagnostics in \eqref{eq:welfare}, rather than the target alone, determine which of the reported economic comparisons are resolved. No empirical calibration or external welfare normalization is imposed to make this declared numerical target appear economically universal.
+
+\section{Conclusion}\label{sec:conclusion}
+Neural Bellman operators require a verification object that is tied to the deployed policy, the continuous action set, and the original stopping contract. This paper makes that object explicit and executes it over the full domain of a preference-adjustment economy. The execution exposes a large boundary-trace error in the current neural critic; it does not transform a small sampled residual into an unsupported policy-accuracy claim.
+
+The same economy admits sharp independent comparison bounds. A separate numerical implementation verifies the complete retained price library, withstands enlarged allowances and perturbed witnesses, and extends the certificate to a continuum of initial states and prices through an explicit concavity--convexity construction. Exact welfare-resolution regions distinguish nearly optimal deployment from sharply identified counterfactual effects. The new policy-richness and resource experiments show both genuine tightening and the present limits of the approximation/dual combination.
+
+The methodological objective remains a competitive, accurately certified neural policy/value solver. The present results establish an operational verification chain, a joint state--price construction, and independently audited economic benchmarks; they do not establish that the current neural candidate reaches the benchmark tolerance or dominates strong classical state-space alternatives. The complete execution records retain that distinction for subsequent verification and revision.

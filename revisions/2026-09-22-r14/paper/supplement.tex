@@ -1,0 +1,314 @@
+\section{Scope, notation, and the current evidence}
+This supplement supplies details required to verify the R14 manuscript. Time, domain, control bounds, utility, and first-exit settlement are exactly those in the main paper. In particular, the lower calculations do not replace stopped CRRA utility by an unstopped singular expectation, and the upper calculations do not restrict the original adapted portfolio control to zero. The deterministic policies are lower-bound objects; their upper comparison bounds optimize over the original economic opportunities.
+
+Three numerical objects have distinct meanings. The state-feedback tanh actor/critic has a full-domain residual certificate whose current bound is large. The independently verified time-control library has a sharp central-state price-continuum certificate and a new initial-state rectangle certificate. The freshly generated 16-, 32-, and 64-interval policies provide a policy-richness and resource experiment without inherited optimizer inputs. These objects have separate files, hashes, and accuracy predicates.
+
+The main paper contains full proofs of its residual theorem, coefficient transport, and four-corner price construction. Sections below give the analytic economic dual and the independently implemented enclosure lemmas used as inputs to the computer-assisted economic propositions. The shared analytic premise is explicit: two numerical implementations of a false analytic inequality would not establish that inequality.
+
+\section{The affine-preference dual in the original stopped economy}\label{supp:dual}
+\subsection{Consumption conjugacy and its supporting plane}
+Write $r=u-1$, $l=\log y$. On the rectangle relevant to the witness, the lower consumption cap $.05$ never binds. The consumption conjugate is
+\begin{equation}
+ \Psi(u,e^l)=
+ \begin{cases}
+ -\exp(-r\log .8)/r-.8e^l,& l\leq-u\log .8,\\
+ -u\exp(rl/u)/r,&l\geq-u\log .8.
+ \end{cases}\label{supp:Psi}
+\end{equation}
+Let $S_0=\Psi+.01e^l-.004\log(.5)$ and $\beta=\partial_u\Psi$. Both branches match in value and first derivatives at the consumption switch. Their one-sided Hessians need not match; all interval boxes crossing the switch use their hull.
+
+The desired supporting inequality is
+\begin{equation}
+ S_0(u,y)\leq S_0(m,y)+\beta(m,y)(u-m),
+ \quad u\in[1.5,2.5],\ m\in[2,2.2],\ y\in[.2,12].\label{supp:plane}
+\end{equation}
+The following derivative facts reduce its proof to one-dimensional covers. On an interior consumption branch, putting $L=l/u$ and $E=\exp((1-1/u)l)$, direct differentiation gives
+\[
+ \partial_l S_{0,uu}=\frac{E L(2-L)}{u^2},\qquad
+ \partial_l\beta=-\frac{E l}{u^2}.
+\]
+The first derivative is nonnegative on the present box: $0<L<2$ whenever the interior branch applies. On the capped branch $S_{0,uu}$ is independent of $l$. Thus its maximum over the $y$ rectangle is controlled at $y=12$.
+
+A complete interval cover of $u\in[1.5,2.3]$ at $y=12$, consisting of 1,600 intervals, gives $S_{0,uu}\leq-.0671742195$. Hence $\beta$ is decreasing over this interval. On $u\in[2.3,2.5]$, a separate 2,000-interval cover gives
+\[
+ \beta(u,12)\leq-.9675376119<-.9572021815\leq\beta(2.2,12).
+\]
+To extend this comparison to smaller $y$, compare $\beta(u,e^l)-\beta(m,e^l)$ for $u>m$. In the interior branch, $E/u^2$ decreases in $u$ because $\partial_u\log(E/u^2)=l/u^2-2/u<0$ on the box. Therefore $\partial_l\beta(u,e^l)-\partial_l\beta(m,e^l)\geq0$ whenever both are interior. When the larger $u$ is capped and the smaller is interior, this difference is again nonnegative; when both are capped it is zero. The difference is consequently largest at $y=12$. Integrating the resulting derivative order from $m$ to $u$ proves the upper-side supporting inequality. Integrating the decreasing derivative on the lower-side interval proves the other side. This proves \eqref{supp:plane} without asserting global concavity of $S_0$.
+
+Additional complete covers of $m\in[2,2.2]$ verify
+\begin{equation}
+ -7.1\leq S_0(m,y)\leq0,\qquad |\beta(m,y)|\leq1.1
+ \quad (y\in[.2,12]).\label{supp:primitive}
+\end{equation}
+Here $S_0$ is decreasing in $y$, since its derivative is $-c^*+.01<0$, and $\beta$ is nonincreasing in $l$ where its derivative is nonzero. Checking the two $y$ endpoints therefore suffices. The recorded lower bound is above $-6.989553453$, and the recorded absolute coefficient bound is below $.971182123$. All finite covers use the new interval implementation and the formulas \eqref{supp:Psi} with automatic differentiation.
+
+\subsection{The auxiliary adapted-control problem}
+Let $Y$ follow $dY=.02Y\,dt-.3Y\,dZ^x$, let $\widehat Y$ be its clipping to $[.2,12]$, and fix a deterministic reference drift $\bar\theta\in[0,.2]$. Put
+\[
+ m(t)=2+\int_0^t\bar\theta_sds,\qquad \phi(u)=-.02(u-2)^2,
+\]
+\[
+ Q(u)=\phi(m(1))+\phi'(m(1))(u-m(1)),\quad b_T=\phi'(m(1)).
+\]
+Define the affine source
+\[
+ \widehat S_t(u,y)=S_0(m(t),\widehat y)+\beta(m(t),\widehat y)(u-m(t))
+\]
+and the full-line auxiliary value
+\begin{equation}
+ A_k(t,u,y)=\sup_{|\theta|\leq.2}\E_{t,u,y}\left[
+ \int_t^1e^{-\rho(s-t)}\{\widehat S_s(U_s,Y_s)-k\theta_s^2/2\}\,ds
+ +e^{-\rho(1-t)}Q(U_1)\right],\label{supp:aux}
+\end{equation}
+where $dU_s=\theta_sds+.05dZ^u_s$. The preference action is still adapted. Because $Y$ is exogenous and the coefficients of $U$ and its terminal value are affine, the conditional marginal value is
+\[
+ B_s=\E\left[\int_s^1e^{-\rho(t-s)}\beta(m(t),\widehat Y_t)dt
+                +e^{-\rho(1-s)}b_T\,\middle|\,\mathcal F_s\right].
+\]
+Conditional Fubini, followed by pointwise maximization of the strictly concave quadratic in $\theta_s$, gives the exact improvement formula relative to $\bar\theta$:
+\begin{equation}
+ A_k(0,2,y_0)=\overline A+
+ \int_0^1e^{-\rho s}\E g_k(B_s,\bar\theta_s)\,ds,\label{supp:exactA}
+\end{equation}
+where $g_k(q,a)=H_k(q)-qa+ka^2/2$ and
+\[
+ H_k(q)=\max_{|a|\leq.2}\{qa-ka^2/2\}.
+\]
+The reference expectation is
+\begin{align}
+ \overline A={}&e^{-\rho}\phi(m(1))+
+ \int_0^1e^{-\rho t}\{\E S_0(m(t),\widehat Y_t)-k\bar\theta_t^2/2\}\,dt+C,\label{supp:Abar}\\
+ C={}&.00375\int_0^1te^{-\rho t}
+       \E[\partial_l\beta(m(t),\widehat Y_t)]\,dt.\label{supp:cov}
+\end{align}
+To obtain the covariance term, use the reference decomposition $U_t=m(t)+.05Z^u_t$. The log-deflator is $l_t=\log y_0-.025t-.3Z^x_t$. Gaussian integration by parts gives
+$\E[Z^u_t\beta(l_t)]=.075t\E\beta_l(l_t)$, because the correlation is $-.25$. Multiplication by $.05$ produces $.00375$. Clipping is included in the almost-everywhere derivative. Since $\beta_l\leq0$, the correction is nonpositive; it is evaluated rather than dropped.
+
+\subsection{A quantitative allowance for the random marginal value}
+The derivative $H'_k$ is $1/k$-Lipschitz, including across its saturation points. For $b(s)=\E B_s$ this yields
+\[
+ \E g_k(B_s,a)\leq g_k(b(s),a)+\frac{\operatorname{Var}(B_s)}{2k}.
+\]
+A Gaussian Poincar\'e inequality for the past Brownian coordinate and conditional Jensen give
+\[
+ \operatorname{Var}(B_s)
+ \leq .09s\left\{\int_s^1e^{-\rho(t-s)}
+           \sqrt{\E|\partial_l\beta(m(t),\widehat Y_t)|^2}\,dt\right\}^2.
+\]
+For $m\in[2,2.2]$, the nonzero derivative has $l>0$ and
+\[
+ |\partial_l\beta|^2
+ \leq \frac1{16}e^{(12/11)l}l^2.
+\]
+The derivative vanishes in the capped-consumption and clipped-deflator regions. For a Gaussian $l$ with mean $\mu$ and variance $v$,
+\[
+ \E[e^{al}l^2]=e^{a\mu+a^2v/2}\{(\mu+av)^2+v\}.
+\]
+Using $a=12/11$, $M=\log y_0$, $\mu\leq M$, $v\leq.09$, and the positive mean range $y_0\in[1.2,2.4]$, define
+\begin{equation}
+ D^2=\frac{e^{aM+.045a^2}}{16}\{(M+.09a)^2+.09\}.\label{supp:D2}
+\end{equation}
+The preceding expressions are increasing in the relevant $\mu,v$ ranges. Since
+$\int_0^1s(1-s)^2ds=1/12$ and $\C(1-s)\leq1-s$, equations \eqref{supp:exactA}--\eqref{supp:D2} imply
+\begin{equation}
+ A_k(0,2,y_0)\leq\overline A+
+ \int_0^1e^{-\rho s}g_k(b(s),\bar\theta_s)\,ds
+ +\frac{.09D^2}{24k}.\label{supp:computable}
+\end{equation}
+This positive variance allowance is retained at every mesh. An unconditional reference control is not silently treated as the optimal adapted auxiliary control.
+
+\subsection{Returning to the first-exit contract}
+Set $h=1-t$ and
+\[
+ W(t,u,x,y)=y(x-.5)+.1\log(.5)+A_k(t,u,y).
+\]
+The product identity for $Yx$ cancels every adapted portfolio control. Consumption conjugacy and the supporting plane imply that discounted $W$ plus the original running payoff is a supermartingale up to the relevant state or localization face. This can be proved directly by conditional Fubini and the adapted selector in \eqref{supp:exactA}. Alternatively, smoothing the bounded Lipschitz source with a uniform error correction gives a classical verification argument and then the limit.
+
+The affine tangent satisfies $Q\geq\phi$. To control continuation, use the feasible auxiliary action $\theta=0$. For an initial $u\in[1.5,2.5]$,
+\[
+ \E|U_r-m(r)|\leq.7+.05=.75,\qquad
+ \E|Q(U_r)|\leq.0008+.008(.75)=.0068.
+\]
+Applying It\^o to $Q$ and using \eqref{supp:primitive} shows
+\begin{equation}
+ A_k(t,u,y)-Q(u)\geq
+ \{-7.1-1.1(.75)-.04(.0068)\}h=-7.925272h>-8h.
+ \label{supp:floor}
+\end{equation}
+For $x\in[.5,2]$, $y\geq.2$,
+$y(x-.5)+.1\log(.5)-.1\log x\geq0$, by differentiation in $x$ and equality at $.5$. Thus $W$ dominates the original settlement on actual wealth exits and at the horizon.
+
+For completeness, $G$ is a global upper comparison for the original economy. The utility is increasing in consumption, and even its largest value on the original state/action box is less than $-.82$. The positive parts of $\theta G_u$, the wealth drift term, and $-\rho G$ together are less than $.017$, while the remaining diffusion and adjustment terms are nonpositive or can be bounded within this margin. Hence $\sup_a\cR_aG<0$. Also $G\geq g$ on the stopping trace. Stopped verification therefore gives $V_k\leq G$ for $k\geq.5$.
+
+The potentials
+\[
+ Z_u=8h\{e^{-120(u-1.5)+42h}+e^{-120(2.5-u)+42h}\},
+\]
+\[
+ Z_y=8h\{e^{-22\log(y/.2)+22.33h}+e^{-22\log(12/y)+22.33h}\}
+\]
+are nonnegative supermartingale potentials. Indeed, $.2(120)+.00125(120)^2=42$ bounds the preference exponential generator, while $.025(22)+.045(22)^2=22.33$ bounds either sign of the log-deflator generator. Differentiating the factor $h$ makes the killed generator nonpositive. Each contributes at least $8h$ at its artificial face. Adding them to $W$, using \eqref{supp:floor} and then the fallback $V\leq G$, proves the original-economy upper bound in the main paper. Artificial clipping and full-line continuation are therefore proof devices with explicit allowances, not changes to the economic contract.
+
+In the stress calculation the corresponding continuation floor is
+$-7.11-1.11(.75)-.04(.0068)=-7.942772>-8$. Witness perturbations remain in the same verified reference class, so the same analytic argument applies.
+
+\section{Independent arithmetic and quadrature}\label{supp:arithmetic}
+\subsection{Trusted arithmetic model}
+The interval core assumes IEEE 754 binary64 addition, subtraction, multiplication, and division in round-to-nearest arithmetic; correctly directed neighboring numbers from \texttt{nextafter}; exact binary decomposition/scaling through \texttt{frexp} and \texttt{ldexp} where applicable; and gradual underflow rather than flush-to-zero. Each elementary result is expanded outward. Reductions use explicit outward pairwise operations. Neural affine layers do not invoke an unaccounted BLAS dot-product error model. Overflow, nonfinite endpoints, or division through zero cause failure rather than cell deletion.
+
+Every decimal economic constant is first interpreted as a rational. Every stored binary64 parameter is its exact dyadic rational value. A rational is converted to an interval only after checking its position against the candidate floating value. Intervals can overestimate because of dependency, but cannot be narrowed by an optimizer's successful termination flag.
+
+For $|x|\leq1/8$, the exponential uses its degree-18 Taylor polynomial with the uniform absolute remainder
+\[
+ \left|e^x-\sum_{j=0}^{18}\frac{x^j}{j!}\right|
+ \leq\frac{8}{7}\frac{(1/8)^{19}}{19!}.
+\]
+Larger arguments are divided by powers of two until the small-argument condition holds, and enclosed squaring restores the result. For a positive argument, an exact binary exponent and a mantissa in $[1,2)$ reduce its logarithm to
+\[
+ \log m=2\sum_{j=0}^{39}\frac{y^{2j+1}}{2j+1}+R,
+ \quad y=\frac{m-1}{m+1},\quad
+ |R|\leq\frac{2(1/3)^{81}}{81(1-1/9)}.
+\]
+The same construction encloses $\log2$. Tanh is evaluated from the enclosed exponential and monotonicity, with exact range restriction to $[-1,1]$. No assumed ulp accuracy of a platform transcendental function enters these proof computations. Separate tests compare 807 elementary enclosures with 100-digit evaluations; these tests check implementation behavior but do not replace the remainder inequalities.
+
+\subsection{Rationally certified Gauss rules}
+The eight Gauss--Legendre roots are first proposed by an ordinary floating-point routine. Each root is then isolated in a disjoint rational bracket by exact sign evaluations of the degree-eight Legendre polynomial and 80 bisections. Eight disjoint sign-changing brackets account for all roots. The positive weights are enclosed using
+\[
+ w_i=\frac{2}{(1-x_i^2)[P'_8(x_i)]^2}.
+\]
+The program checks positivity and all moments through degree 15. The Gauss rule's exactness through degree $2n-1$ and its positive weights are the standard construction described in \citet{NISTQuadrature}; its nodes and weights are not assumed to equal their floating-point proposals.
+
+Square-root endpoint proposals are validated by exact rational square comparisons and expanded until they bracket the true root. The constant $\pi$ is enclosed using Machin's identity
+$\pi=16\arctan(1/5)-4\arctan(1/239)$, with 60 alternating-series terms and the first omitted term as a remainder bound.
+
+For an analytic function bounded by $M$ on a complex disk of radius $R$ around the center of a real integration interval of half-width $h<R$, the degree-15 Taylor remainder on that interval is at most
+$M(h/R)^{16}/(1-h/R)$.
+Both integration and the positive Gauss rule have norm equal to the interval length. Subtracting their exact actions on the degree-15 polynomial gives the rigorous remainder
+\begin{equation}
+ |I(f)-Q_8(f)|\leq
+ 2\,\mathrm{length}\,M\frac{(h/R)^{16}}{1-h/R}.
+ \label{supp:cauchy}
+\end{equation}
+This inequality, interval root/weight errors, and outward summation are used together. Agreement between two mesh levels is not an error bound.
+
+\subsection{The original-policy evaluator}
+For a stored time policy and an initial state in $K$, let $\mu_j$ be its cumulative preference drift at the start of interval $j$. After $t=v^2$ the covered preference is
+\[
+ U= u_0+\mu_j+\theta_j(v^2-j/n)+.05vz,\quad z\in[-8,8].
+\]
+The integrand contains the original utility $-\exp[-(U-1)\log c_j]/(U-1)$, the Gaussian density, the Jacobian $2v$, and discount $e^{-.04v^2}$. It is not a polynomial utility surrogate. A tensor Gauss rule uses eight subdivisions in $v$ per policy interval, 32 normal cells, and eight Gauss nodes on each axis.
+
+The complex-neighborhood constants used in \eqref{supp:cauchy} are global on the state rectangle and the feasible control ranges. For the $v$ disk use radius $1/8$ with real $z\in[-8,8]$. One has $|v|\leq1.125$, and the real part of $U-1$ stays between $.476875$ and $1.723125$. There is no CRRA pole in the disk. The utility, Gaussian density, discount, and Jacobian together have modulus less than five. For the $z$ disk use radius two with real $v\in[0,1]$; the real part of $U-1$ stays between $.48$ and $1.72$, while the Gaussian density's complex factor is at most $e^2/\sqrt{2\pi}$. The complete modulus is below 32. These values give $M_v=5$, $M_z=32$. Tensor error follows by writing $I_vI_z-Q_vQ_z=(I_v-Q_v)I_z+Q_v(I_z-Q_z)$ and using positivity and the interval lengths. All remainder terms are summed outward.
+
+To bound the omitted normal tails, extend the running utility by clipping its preference argument to $[1.2,2.8]$ outside the covered range. On the feasible consumption interval this extension lies in $[-6,0]$. Its omitted expected contribution lies in $[-12e^{-32},0]$, by the Gaussian Chernoff bound. The terminal preference quadratic is integrated analytically without clipping, and terminal wealth is exactly enclosed from the budget. The auxiliary full-horizon functional is connected to the original stopped payoff by a separate estimate; it is not substituted for that payoff without correction.
+
+For all initial states in $K$ and all stored or fresh feasible drifts in $[0,.2]$, either preference exit requires a Brownian excursion of at least $.58$ after subtracting the largest possible drift. Therefore
+\[
+ p_{\rm exit}\leq2\exp\{- .58^2/(2\cdot .05^2)\}.
+\]
+Also
+\[
+ \E(U_1-2)^4\leq .22^4+6(.22)^2(.0025)+3(.0025)^2.
+\]
+Bounding the running-payoff, fee, and bounded terminal differences on the exit event, and using Cauchy--Schwarz for the unbounded terminal quadratic, gives the uniform allowance
+\begin{equation}
+ \epsilon_{\rm stop}=15p_{\rm exit}
+   +.02\sqrt{\{.22^4+6(.22)^2(.0025)+3(.0025)^2\}p_{\rm exit}}
+   <3.87\times10^{-18}.\label{supp:stop}
+\end{equation}
+The constant 15 covers all $k\leq8$. The wealth path is strictly decreasing for the verified controls, with $x_1>.5$, so there is no wealth exit before time one. The final policy interval includes the symmetric quadrature error, the one-sided missing utility tail, and the symmetric stopping correction \eqref{supp:stop}.
+
+The central-state stopped expenditure is independently enclosed by its exact deterministic full-horizon value minus at most $.02p_{\rm exit}$. The state--price concavity construction instead uses the full-horizon expenditure of its covered lower functional; its uniform stopping error has already been paid. Both constructions are therefore valid, but their expenditure labels must not be interchanged.
+
+\subsection{The independent dual evaluator}
+The dual changes variables to $t=v^2$, with 32 subdivisions per reference time interval and 512 normal cells on $[-6,6]$. The source and its first and second derivatives are generated from \eqref{supp:Psi} by an independent two-variable interval differentiation class. Chain rules map them to $(v,z)$. Every source box is enclosed, and every possible consumption-switch branch is included. The program verifies that the normal cover does not cross a deflator clipping face; the omitted tails cover the remaining probability.
+
+Write $w_v=2ve^{-.04v^2}$ and $w_z=(2\pi)^{-1/2}e^{-z^2/2}$. Zeroth, first-centered, and second-centered moments of these weights are integrated by the validated Gauss rule. For their Cauchy bounds the disks have radii $1/8$ and two and base modulus bounds three. Centered moment factors use $(R+1/1024)^p$, $p=0,1,2$, with an explicit check that midpoint representation errors are below $1/1024$. This accounts for a floating-point center that is not an exact interval midpoint.
+
+Constant and linear source terms retain the signed first-centered moments. The source Hessian on the complete box bounds the remainder by
+\[
+ \tfrac12\|S_{vv}\|_\infty M_{v,2}M_{z,0}
+ +\|S_{vz}\|_\infty r_vr_zM_{v,0}M_{z,0}
+ +\tfrac12\|S_{zz}\|_\infty M_{v,0}M_{z,2}.
+\]
+The source is $C^1$ across the action switch with bounded one-sided Hessians, so the integral Taylor formula with the Hessian hull is valid there. Weighted first moments are not discarded on the false premise that a weighted box is symmetric.
+
+The Gaussian tail probability is at most $2e^{-18}$. The source tail is enclosed between $-7.1$ times its discounted mass and zero; the coefficient tail has absolute bound $1.1$ times its mass. Since $\beta_l\leq0$ and $|\beta_l|\leq2.5$ on its nonzero clipped region, the covariance tail has the signed enclosure used in the code. These corrections cover the entire normal distribution.
+
+To enclose $b(s)$, coefficient integrals are accumulated backward in time. The incomplete current cell is bounded by its entire discounted mass and its coefficient interval. The convex function $g_k(q,\bar\theta)$ attains its maximum on the resulting $q$ interval at an endpoint. Its scalar action maximum is evaluated with the clipped maximizer. Terminal, source, covariance, control-gap, variance, localization, and arithmetic terms are finally summed outward. The stored upper endpoint is a bound on the original optimum, not on the fitted pilot objective.
+
+\section{Independent high-precision cross-checks}
+A third program evaluates the Gaussian expectations by closed truncated-lognormal moments rather than the production or second interval quadrature. If $L\sim N(\mu,s^2)$, define
+\[
+ M_q(a,b)=e^{q\mu+q^2s^2/2}
+ \left\{\Phi\!\left(\frac{b-\mu-qs^2}{s}\right)
+       -\Phi\!\left(\frac{a-\mu-qs^2}{s}\right)\right\}.
+\]
+The first weighted moment is
+\[
+ M_{1,q}(a,b)=(\mu+qs^2)M_q(a,b)
+ +s e^{q\mu+q^2s^2/2}\{\varphi(z_a)-\varphi(z_b)\}.
+\]
+The capped region, interior consumption region, and two deflator-clipping tails are integrated separately using these formulas. In particular, the interior coefficient derivative integrates as $-M_{1,q}/m^2$, not by blindly applying a smooth quadrature rule across its switch. Remaining time integrals are evaluated at 40 and 70 decimal digits.
+
+The source, initial affine coefficient, and covariance at prices $.5$, $4.25$, and $8$ all fall inside the independently certified intervals at both precisions. All six runs and their timings are stored. This test is numerically independent in decomposition and precision, but its time quadrature is not asserted to produce an interval proof. The decisive bounds remain those from the complete rational-root/interval execution.
+
+\section{Neural derivatives, actions, and the output-error contract}
+For a scalar composition $w=\tanh z$, the chain rule is
+\[
+ w_i=(1-w^2)z_i,\qquad
+ w_{ij}=-2w(1-w^2)z_i z_j+(1-w^2)z_{ij}.
+\]
+The interval implementation propagates value, $t,u,x$ first derivatives and $uu,ux,xx$ second derivatives through each affine layer and tanh layer. For the critic $v=G+(1-t)N$, this gives, for example,
+\[
+ v_t=-N+(1-t)N_t,\qquad v_{ux}=(1-t)N_{ux},
+\]
+\[
+ v_{uu}=-.04+(1-t)N_{uu},\qquad
+ v_{xx}=-.1/x^2+(1-t)N_{xx}.
+\]
+Every multiplication and layer reduction is outward. The full cell image is used, not a derivative evaluated only at its center.
+
+The action oracle uses the scalar formulas in the main paper. If the marginal-wealth interval crosses zero, the consumption optimum is enclosed over the whole feasible interval. If the portfolio-curvature interval crosses zero, the complete portfolio range is retained in the upper evaluation. These cases can make the bound wide, but preserve validity for all continuous actions. The candidate action ranges additionally include the $2^{-24}$ output allowance and are clipped to the exact economic action bounds.
+
+The residual and action records for every interior cell are stored in compressed JSON. The finest cover has 16,384 such cells; each of the four first-exit faces has 512 cells. The terminal face is exact by the critic construction. The per-time-slab maxima are assembled with an enclosed discount integral. A separate undiscounted integral over the full horizon supplies a safe all-initial-times bound. The model-transport modulus encloses drift, variance, cross-covariance, discount, and running-cost changes simultaneously; the correlation remains fixed at $-.25$.
+
+The mathematical feedback uses exact stored weights and real tanh. Its output-neighborhood certificate covers any admissible implementation satisfying the stated action-error contract. No automatic guarantee for a hardware tanh implementation, a stochastic time integrator, or a floating-point budget reconstruction follows from this contract without a separate error analysis. The network's fine-domain certificate is deliberately not replaced by the much sharper bound belonging to a different time-control policy.
+
+\section{Policy interpretation and economic-resolution records}
+\begin{table}[ht]\centering\small
+\caption{Central-state selected policy regions and control summaries}
+\input{revisions/2026-09-22-r14/paper/tables/policy_regions}
+\par\smallskip\footnotesize Endpoints and widths are descriptive rounded values; exact rational endpoints determine the selector. Consumption and average preference adjustment refer to the selected stored policy, with portfolio zero. The state-uniform selector is separately recorded because it minimizes the worst corner gap rather than only the central-state gap.
+\end{table}
+
+The exact price program records strict-loss and relative-resolution regions for four anchor prices. Weak monotonicity holds in all cases from the model. A missing strict-resolution region means that the certified interval still includes zero, not that a price increase benefits the decision maker. The relative criterion for complete regions uses the untruncated interval difference and is conservative; selected pairwise tables also use the universal expenditure bound to tighten the upper loss endpoint.
+
+\section{Replication, scope of timing, and historical preservation}\label{supp:replication}
+The replication directory contains separate entry points for neural generation, neural verification, independent policy evaluation, independent dual evaluation, exact price postprocessing, state--price certification, full-library stress, high-precision diagnostics, and the fresh classical frontier. Executed results are written to new directories rather than overwriting earlier attempts. The build and manifest checks distinguish a numerical failure to meet a requested tolerance from a malformed or missing certificate.
+
+The neural run is a full fresh run after interpreter entry, including all critic and actor updates. Shell timing separately includes imports. The classical frontier separately measures policy generation, dual fitting, primal verification, and dual verification, starts from fixed initial guesses in every case, and retains optimizer reports. The old library audit starts from frozen inputs and is labeled verification only. Historical interrupted work not recorded in the archive is unknown, not zero. Resource clocks from overlapping runs cannot establish a matched-hardware speed ranking.
+
+A source-frozen clean replay reexecutes all 18 second-implementation node calculations and compares the decisive lower endpoints, upper endpoints, and newly computed expenditure intervals exactly. The original development ledger is preserved, including the fact that expenditure fields were subsequently replaced by independent calculations. The clean replay checks the final source rather than silently assigning its hash to an earlier execution. Content hashes identify every included source and result file. A local reconstruction of the R12 archive is distinguished from its actual remote Git commit; publication metadata does not claim a remote write when none has occurred.
+
+Historical preservation is handled at the file level, not by requiring every previous sentence to remain in the current main text. A byte-for-byte audit compared all 1,830 files of the downloaded R12 repository archive with the initial working copy and found no mismatch. Earlier manuscripts, proofs, data, failure records, and code remain unchanged. The old navigation index is archived before its replacement with a single R14 entry point. The current supplement supplies the proofs needed for the current manuscript; it does not concatenate 148 pages of superseded manuscripts.
+
+\begin{table}[ht]\centering\small
+\caption{Preservation map for substantive inherited material}
+\begin{tabularx}{\linewidth}{p{.35\linewidth}X}
+\toprule
+Material & Unchanged location and interpretation\\
+\midrule
+Original model and early theoretical development & Root \texttt{ECTA.tex}, \texttt{ECTA\_R2.tex}, and earlier source directories; retained research history.\\
+Recursive utility, sophisticated selves, games, stochastic trace identities & Earlier manuscripts and \texttt{SUPP\_R12.tex/.pdf}; retained extensions, not new full-domain numerical claims.\\
+Original continuous-policy evaluation and cover/oracle theory & R9 replication and proof directories; comparison baseline for the independently implemented R14 objects.\\
+Affine-preference dual and earlier loose witnesses & R10 proof, result, and retained-construction files; analytic history and failed/loose certificates remain visible.\\
+External holdout and method-specific tuning & R9--R11 result and paper directories; unfavorable panels and unstable seed orderings preserved.\\
+Exact-reference gain-policy study & R11 accuracy source and results; not recast as the R14 tanh architecture's accuracy.\\
+Structured 128-dimensional action oracle & R10--R12 retained action-oracle evidence; frozen-jet action optimization, not 128-state dynamic control.\\
+Eighteen-price continuation and historical refinement & R12 source, results, receipts, and refinement history; frozen inputs and their original timing scope preserved.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The response document maps every R13 finding, the inherited R12 issues, and the current evidence paths. It explicitly distinguishes completed calculations from unachieved neural accuracy, absent matched-accuracy classical comparisons, and remote publication status. This preserves the research objective without certifying a claim that the current computation has not established.
