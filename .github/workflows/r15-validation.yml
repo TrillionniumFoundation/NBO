@@ -11,18 +11,18 @@ on:
 permissions:
   contents: read
 jobs:
-  snapshot:
+  toolchain:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Export exact tracked source
+      - name: Retrieve MPFR development interface
         run: |
-          git rev-parse HEAD > /tmp/source_commit.txt
-          git archive --format=tar.gz HEAD > /tmp/nbo-source.tar.gz
+          sudo apt-get update -qq
+          sudo apt-get install -y libmpfr-dev
+          mkdir /tmp/r15-tools
+          cp /usr/include/mpfr.h /tmp/r15-tools/
+          dpkg-query -W libmpfr-dev libmpfr6 libgmp10 > /tmp/r15-tools/package_versions.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: r15-source-snapshot
-          path: |
-            /tmp/source_commit.txt
-            /tmp/nbo-source.tar.gz
+          name: r15-mpfr-interface
+          path: /tmp/r15-tools/
           retention-days: 7
