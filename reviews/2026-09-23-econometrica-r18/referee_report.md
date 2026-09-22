@@ -19,31 +19,13 @@ These are real improvements.
 
 The central Econometrica-level problem nevertheless remains unresolved.
 
-The flagship original-economy neural method still does not establish useful policy accuracy. The best final complete certificate is
+The flagship original-economy neural method still does not establish useful policy accuracy. The best final complete certificate is **7.27831906346675**, against the unchanged target **0.01**. Thus the best certified result is still about **728 times the declared target**. The fixed-network refinement experiment reaches approximately **7.25156**, not a small-policy-error regime. More importantly, the new fixed-witness theorem shows that the final accessible critics themselves impose residual floors above approximately **6.27**. This is not now primarily an interval-resolution problem.
 
-[
-7.27831906346675,
-]
-
-against the unchanged target
-
-[
-0.01.
-]
-
-Thus the best certified result is still about **728 times the declared target**. The fixed-network refinement experiment reaches approximately (7.25156), not a small-policy-error regime. More importantly, the new fixed-witness theorem shows that the final accessible critics themselves impose residual floors above approximately (6.27). This is not now primarily an interval-resolution problem.
-
-The more serious scientific issue is what the successful certificate descent means. At the final checkpoint, the negative/policy-side certificate component is exactly zero for every reported accessibility-aware seed. The entire reported bound is the positive optimal-comparison component. For seed 17100, pairing the **initial actor with the final critic gives exactly the same bound** as pairing the final actor with the final critic:
-
-[
-7.339624178645005.
-]
-
-Pairing the final actor with the initial critic gives (23.718685694842687).
+The more serious scientific issue is what the successful certificate descent means. At the final checkpoint, the negative/policy-side certificate component is exactly zero for every reported accessibility-aware seed. The entire reported bound is the positive optimal-comparison component. For seed 17100, pairing the **initial actor with the final critic gives exactly the same bound** as pairing the final actor with the final critic: **7.339624178645005**. Pairing the final actor with the initial critic gives **23.718685694842687**.
 
 This is decisive evidence about the current experiment. R18 has demonstrated that the new objective learns a much better *witness*. It has **not demonstrated that the neural policy itself becomes materially better**. The authors are commendably explicit about this, but that candor does not remove the numerical-method requirement.
 
-The new high-dimensional nonlinear inventory problem is also informative but does not rescue the neural-method claim. Its strongest theorem follows from global strong convexity and holds for **any bounded initialization, including an untrained one**. At 128 coordinates, zero-start gradient descent with the same 32 corrections attains a query certificate of approximately (2.06	imes10^{-14}), while neural initialization plus gradient correction gives approximately (1.63	imes10^{-14}). Accelerated gradient is better still, approximately (2.6	imes10^{-16}), with no training cost. The state-uniform theorem itself does not use learned quality. Scientifically, this is a clean strongly-convex control-plan optimization result with a neural warm start, not evidence that a neural Bellman operator is required.
+The new high-dimensional nonlinear inventory problem is also informative but does not rescue the neural-method claim. Its strongest theorem follows from global strong convexity and holds for **any bounded initialization, including an untrained one**. At 128 coordinates, zero-start gradient descent with the same 32 corrections attains a query certificate of approximately **2.06 × 10^-14**, while neural initialization plus gradient correction gives approximately **1.63 × 10^-14**. Accelerated gradient is better still, approximately **2.6 × 10^-16**, with no training cost. The state-uniform theorem itself does not use learned quality. Scientifically, this is a clean strongly-convex control-plan optimization result with a neural warm start, not evidence that a neural Bellman operator is required.
 
 I did not find an obvious local contradiction in the new accessibility theorem, objective-bridge theorem, finite-horizon defect allocation, nonlinear Hessian argument, or wealth-compensation proof during this audit. The negative recommendation is therefore not based on an identified mathematical error. It is based on the mismatch between the paper's methodological identity and what the validated numerical evidence now establishes.
 
@@ -55,11 +37,7 @@ My recommendation remains **Reject**.
 
 The R18 review object is well organized and materially auditable.
 
-The publication-pinned revision head is
-
-`49d286a174a7d3f71293adc920284584673f390b`
-
-with publication message
+The publication-pinned revision head is `49d286a174a7d3f71293adc920284584673f390b`, with publication message:
 
 > publication(r18): validated manuscript PDFs, complete objective audit and preservation manifest
 
@@ -85,15 +63,15 @@ R18 replaces that proposal objective with a complete-cover differentiable residu
 
 Across all ten accessibility-aware seeds the raw bounds decrease at both declared transitions:
 
-- initialization: approximately (26.30)–(26.67);
-- 100 updates: approximately (7.53)–(10.59);
-- 400 updates: approximately (7.278)–(7.344).
+- initialization: approximately 26.30–26.67;
+- 100 updates: approximately 7.53–10.59;
+- 400 updates: approximately 7.278–7.344.
 
 The improvement is not manufactured by discarding unfavorable proposals. This is a genuine improvement over R16.
 
 ### 3.2 The objective theorem actually concerns the implemented proposal graph
 
-Theorem 4 (the trainable envelope / certified policy-loss bridge) is much better connected to execution than the old finite-MDP policy-iteration discussion. The endpoint correction (D) explicitly covers disagreement between proposal logits and independently certified residual endpoints. The R18 audit evaluates all 60 objects and reports the largest integrated correction below (1.20	imes10^{-13}).
+The trainable-envelope / certified-policy-loss theorem is much better connected to execution than the old finite-MDP policy-iteration discussion. The endpoint correction D explicitly covers disagreement between proposal logits and independently certified residual endpoints. The R18 audit evaluates all 60 objects and reports the largest integrated correction below **1.20 × 10^-13**.
 
 This is a meaningful implementation bridge.
 
@@ -111,13 +89,13 @@ This removes two important design defects of R16.
 
 ### 3.5 The new nonlinear application really uses the full state
 
-The new 8/32/128-dimensional nonlinear inventory problem is not the previous two-mode Riccati system. The neural map takes the complete state vector and outputs the complete (12d)-dimensional control plan. The potential is nonlinear and cross-coordinate coupled.
+The new 8/32/128-dimensional nonlinear inventory problem is not the previous two-mode Riccati system. The neural map takes the complete state vector and outputs the complete 12d-dimensional control plan. The potential is nonlinear and cross-coordinate coupled.
 
 This is a genuine dimensional improvement.
 
 ### 3.6 The welfare normalization is materially better
 
-The new (0.0078) initial-wealth compensation for the sharp deterministic time-control library is budget financed and accompanied by an explicit feasible policy adjustment. It is correctly described as sufficient rather than exact.
+The new 0.0078 initial-wealth compensation for the sharp deterministic time-control library is budget financed and accompanied by an explicit feasible policy adjustment. It is correctly described as sufficient rather than exact.
 
 This is a better economic interpretation than the earlier externally financed top-up.
 
@@ -138,10 +116,10 @@ These improvements make R18 easier to evaluate. They also make the remaining iss
 | Seed 17100 final actor + initial critic | 23.718685694842687 | Main observed gain comes from critic/witness |
 | Final accessible vs all-face ablation | width-dependent reversal | No demonstrated finite-budget benefit of accessibility architecture |
 | MC/SL original-economy certificates | about 7.3145–7.7741 | Better comparison design, but no matched sharp accuracy |
-| Nonlinear 128-d uniform bound, 32 corrections | (1.036	imes10^{-6}) | Strong certified optimization result |
-| 128-d query: neural + gradient | (1.63	imes10^{-14}) | Excellent query certificate |
-| 128-d query: zero + gradient | (2.06	imes10^{-14}) | Almost the same without training |
-| 128-d query: accelerated gradient | (2.6	imes10^{-16}) | Better certificate without neural training |
+| Nonlinear 128-d uniform bound, 32 corrections | 1.036 × 10^-6 | Strong certified optimization result |
+| 128-d query: neural + gradient | 1.63 × 10^-14 | Excellent query certificate |
+| 128-d query: zero + gradient | 2.06 × 10^-14 | Almost the same without training |
+| 128-d query: accelerated gradient | 2.6 × 10^-16 | Better certificate without neural training |
 | Neural training cost in nonlinear example | about 12.7 s | No demonstrated end-to-end advantage |
 | Sharp original-economy library | below 0.01 | Accurate result remains non-neural |
 
@@ -157,9 +135,9 @@ This is the most basic unresolved point.
 
 The paper keeps the title **Neural Bellman Operators**, keeps the original nonlinear economy as the flagship problem, keeps the full-domain certification requirement, and keeps the 0.01 target.
 
-The best final result is (7.278319).
+The best final result is **7.278319**.
 
-The gap is not a minor constant-factor miss. It is roughly (728	imes) the declared tolerance.
+The gap is not a minor constant-factor miss. It is roughly **728×** the declared tolerance.
 
 The authors correctly refuse to rename the accurate deterministic time-control/dual library as a neural result. That honesty is important, but it leaves the central empirical proposition unproved.
 
@@ -185,15 +163,11 @@ This is the most important new finding created by R18 itself.
 
 The supplement reports, for every final accessibility-aware seed, a zero negative/policy component. For example, seed 17100 moves from
 
-[
-16.983515 + 9.316999 = 26.300514
-]
+**16.983515 + 9.316999 = 26.300514**
 
 at initialization to
 
-[
-7.339624 + 0 = 7.339624
-]
+**7.339624 + 0 = 7.339624**
 
 at 400 updates.
 
@@ -201,9 +175,9 @@ The same qualitative endpoint holds for all ten seeds: the final bound is entire
 
 Even more revealingly, the seed-17100 actor/critic interchange gives:
 
-- initial actor + final critic: (7.339624178645005);
-- final actor + final critic: (7.339624178645005);
-- final actor + initial critic: (23.718685694842687).
+- initial actor + final critic: 7.339624178645005;
+- final actor + final critic: 7.339624178645005;
+- final actor + initial critic: 23.718685694842687.
 
 Thus, for the one interchange experiment actually shown, the final actor is unnecessary for the reported final certificate.
 
@@ -222,7 +196,7 @@ The next revision needs a policy-sensitive evaluation design. Suitable possibili
 - reporting all-seed initial-actor/final-critic and final-actor/initial-critic interchanges;
 - measuring certified policy-improvement steps rather than joint actor/critic certificate decreases.
 
-The paper itself proves in Proposition 5 that certificate acceptance need not imply policy improvement. The flagship experiment currently sits on exactly that identification problem.
+The paper itself proves that certificate acceptance need not imply policy improvement. The flagship experiment currently sits on exactly that identification problem.
 
 ---
 
@@ -236,11 +210,11 @@ R18 openly states this.
 
 That limitation becomes central because the observed improvement can be explained almost entirely by the critic.
 
-The new objective has therefore solved the specific R16 pathology
+The new objective has therefore solved the specific R16 pathology:
 
 > sampled loss can improve while complete certificate worsens,
 
-but has not yet solved the harder methodological problem
+but has not yet solved the harder methodological problem:
 
 > certificate-aware training produces increasingly accurate policies.
 
@@ -263,7 +237,7 @@ A joint objective in which the critic can absorb essentially all of the numerica
 
 The fixed-witness theorem is one of the most useful additions in R18 because it prevents a misleading interpretation of further cover refinement.
 
-The final accessible critics have upper-face trace excesses only about (0.052)–(0.097). The paper's own theorem then gives a positive-optimal-residual floor above approximately (6.27).
+The final accessible critics have upper-face trace excesses only about **0.052–0.097**. The paper's own theorem then gives a positive-optimal-residual floor above approximately **6.27**.
 
 This is much larger than the 0.01 target.
 
@@ -317,11 +291,11 @@ R18 fixes two serious R16 baseline confounds:
 - unrestricted original interior action grids;
 - method-specific witnesses.
 
-However, the resulting bounds remain approximately (7.31)–(7.77), and the finest grids are not best. The paper itself says these bounds cannot rank true policy values.
+However, the resulting bounds remain approximately **7.31–7.77**, and the finest grids are not best. The paper itself says these bounds cannot rank true policy values.
 
 Therefore the table still cannot answer the practical numerical-method question:
 
-> At a target certified error (arepsilon), what work is required by NBO versus a standard controlled Markov-chain or semi-Lagrangian solver?
+> At a target certified error ε, what work is required by NBO versus a standard controlled Markov-chain or semi-Lagrangian solver?
 
 The current answer is: none of these methods reaches the target under the reported verification pipeline.
 
@@ -348,13 +322,13 @@ The nonlinear 128-dimensional example is mathematically clean and is a real impr
 
 But its strongest guarantee is deliberately initialization-agnostic.
 
-Theorem 7 proves that **every bounded initialization** converges under exact-real gradient correction with the same contraction factor. The cube-uniform bound at 32 corrections therefore holds even for an untrained bounded initializer.
+The nonlinear theorem proves that **every bounded initialization** converges under exact-real gradient correction with the same contraction factor. The cube-uniform bound at 32 corrections therefore holds even for an untrained bounded initializer.
 
 The query data reinforce this:
 
-- neural + gradient: about (1.63	imes10^{-14});
-- zero + gradient: about (2.06	imes10^{-14});
-- accelerated gradient: about (2.6	imes10^{-16}).
+- neural + gradient: about 1.63 × 10^-14;
+- zero + gradient: about 2.06 × 10^-14;
+- accelerated gradient: about 2.6 × 10^-16.
 
 Online time is essentially the same for neural and zero-start gradient descent, while the neural version has an additional training cost of about 12.7 seconds.
 
@@ -441,7 +415,7 @@ For example:
 
 ### R18-F11 — Major: the wealth-compensation result is useful but does not validate the neural solver
 
-The new (0.624%) initial-wealth compensation is a good response to the welfare-normalization objection.
+The new **0.624%** initial-wealth compensation is a good response to the welfare-normalization objection.
 
 It applies to the sharp deterministic time-control library.
 
@@ -480,7 +454,7 @@ The fixed-witness theorem gives a direct diagnostic.
 
 For every seed and checkpoint, report:
 
-- verified upper-face trace excess (h_v);
+- verified upper-face trace excess;
 - implied fixed-witness floor;
 - positive certificate component;
 - relation between the two.
@@ -515,7 +489,7 @@ This should be visible in the main discussion because it determines what scienti
 
 The learned initializer improves the zero-correction and early-correction query errors. But its one-time training cost is nontrivial relative to the online solve.
 
-For target tolerances such as (10^{-2},10^{-3},10^{-4},10^{-6}), report:
+For target tolerances such as 10^-2, 10^-3, 10^-4, and 10^-6, report:
 
 - corrections needed by neural start;
 - corrections needed by zero start;
@@ -651,7 +625,7 @@ Those are substantial accomplishments.
 
 But the central numerical-method requirement remains unmet.
 
-On the unchanged nonlinear economy, the best neural certificate is still about 7.28 against a 0.01 target. The final certificates are entirely dominated by the positive upper-comparison/witness term. For the one explicit actor–critic interchange, the initial actor paired with the final critic produces exactly the same certificate as the final actor. The new high-dimensional success is driven by a globally strongly-convex correction that works nearly as well from zero and better under accelerated gradient, with no neural training cost.
+On the unchanged nonlinear economy, the best neural certificate is still about **7.28** against a **0.01** target. The final certificates are entirely dominated by the positive upper-comparison/witness term. For the one explicit actor–critic interchange, the initial actor paired with the final critic produces exactly the same certificate as the final actor. The new high-dimensional success is driven by a globally strongly-convex correction that works nearly as well from zero and better under accelerated gradient, with no neural training cost.
 
 The paper has therefore progressed from
 
