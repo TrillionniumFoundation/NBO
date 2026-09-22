@@ -1,0 +1,96 @@
+name: R16 materialized referee publication
+on:
+  push:
+    branches: [revision/econometrica-r16-referee-copy-2026-09-23]
+    paths: [.github/workflows/r16-publication.yml]
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r16-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      R16_RESULT_COMMIT: 2d9814c08c15acf7d23c2b400d405ecae86d5ed8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Join completed scientific evidence and materialize exact manuscript
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin revision/econometrica-r16-certified-policy-iteration-2026-09-23
+          git merge --no-edit "$R16_RESULT_COMMIT"
+          python - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,io,json,lzma,tarfile
+          p=Path('revisions/2026-09-23-r16')
+          assert json.loads((p/'results/pipeline_resources.json').read_text())['status']=='completed'
+          d=Path('.github/r16-paper')
+          files=sorted(d.glob('part*.b64'))
+          assert len(files)==11
+          s=''.join(x.read_text().strip() for x in files)
+          # A known single-character transcription repair; the full archive digest is decisive.
+          s=s.replace('BbM/72cmhuy','BbM/72cXmhuy')
+          Path('/tmp/r16-paper-received.b64').write_text(s)
+          data=base64.b64decode(s,validate=True)
+          assert hashlib.sha256(data).hexdigest()=='c30b73d0893864d427fdaca98d4450f8266d6cdb0fc18bfc1ee4abba1ce21504',hashlib.sha256(data).hexdigest()
+          allowed={'ECTA_R16.tex','SUPP_R16.tex','R16_REVIEW.md','REVISION_INDEX.md'}
+          with tarfile.open(fileobj=io.BytesIO(lzma.decompress(data)),mode='r:') as tf:
+              for m in tf.getmembers():
+                  q=Path(m.name)
+                  assert m.isfile() and not q.is_absolute() and '..' not in q.parts
+                  assert m.name in allowed or (m.name.startswith('revisions/2026-09-23-r16/') and q.suffix in {'.py','.tex','.md'})
+                  q.parent.mkdir(parents=True,exist_ok=True)
+                  q.write_bytes(tf.extractfile(m).read())
+          PY
+          python revisions/2026-09-23-r16/replication/materialize_retained.py
+          git rm -r .github/r16-paper
+          git add ECTA_R16.tex SUPP_R16.tex R16_REVIEW.md REVISION_INDEX.md revisions/2026-09-23-r16
+          git commit -m 'paper(r16): materialize complete Econometrica revision and point-by-point response'
+          git push origin HEAD:revision/econometrica-r16-referee-copy-2026-09-23
+      - name: Install publication dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended poppler-utils
+          python -m pip install numpy==2.3.5
+      - name: Validate evidence preservation and compile the referee copy
+        run: |
+          python revisions/2026-09-23-r16/replication/validate_publication.py
+      - name: Publish validated PDFs and manifests
+        run: |
+          git add ECTA_R16.pdf SUPP_R16.pdf
+          git add -f revisions/2026-09-23-r16/paper revisions/2026-09-23-r16/results/paper_summary.json revisions/2026-09-23-r16/results/fresh_library/envelope_history.json revisions/2026-09-23-r16/build_logs revisions/2026-09-23-r16/PUBLICATION_MANIFEST.json revisions/2026-09-23-r16/PRESERVATION_MANIFEST.json
+          git commit -m 'publication(r16): validated manuscript PDFs, complete result tables and preservation manifests'
+          git push origin HEAD:revision/econometrica-r16-referee-copy-2026-09-23
+          git rev-parse HEAD > /tmp/R16_PUBLICATION_COMMIT.txt
+      - name: Pack materialized review object and diagnostics
+        if: always()
+        run: |
+          python - <<'PY'
+          import tarfile
+          from pathlib import Path
+          paths=['ECTA_R16.tex','ECTA_R16.pdf','SUPP_R16.tex','SUPP_R16.pdf','R16_REVIEW.md','REVISION_INDEX.md','revisions/2026-09-23-r16']
+          with tarfile.open('/tmp/r16-publication.tar.gz','w:gz') as tf:
+              for f in paths:
+                  if Path(f).exists():tf.add(f)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r16-materialized-publication
+          path: |
+            /tmp/r16-publication.tar.gz
+            /tmp/r16-paper-received.b64
+            /tmp/R16_PUBLICATION_COMMIT.txt
+          retention-days: 30
