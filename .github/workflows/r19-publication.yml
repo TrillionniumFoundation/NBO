@@ -7,7 +7,7 @@ permissions:
   contents: write
 concurrency:
   group: nbo-r19-publication
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   publish:
     runs-on: ubuntu-24.04
@@ -31,7 +31,7 @@ jobs:
           prefix='revisions/2026-09-23-r19/'
           transport=Path(prefix)/'publication'
           repairs=json.loads((transport/'transport_repairs.json').read_text())
-          corrections={r['path']:r for r in json.loads((transport/'source_corrections.json').read_text())}
+          corrections={r['path']:r for p in sorted(transport.glob('source_corrections*.json')) for r in json.loads(p.read_text())}
           for name,r in repairs.items():
               p=transport/name;text=p.read_text();digest=hashlib.sha256(text.encode()).hexdigest()
               if digest!=r['after']:
@@ -70,7 +70,7 @@ jobs:
           test "$(git ls-remote origin "refs/heads/${GITHUB_REF_NAME}" | cut -f1)" = "$GITHUB_SHA"
           git add -f ECTA_R19.tex SUPP_R19.tex RESPONSE_R19.tex R19_REVIEW.md revisions/2026-09-23-r19
           if ! git diff --cached --quiet; then
-            git commit -m 'revision(r19): verify discounted continuation curvature and policy-value-separated source'
+            git commit -m 'revision(r19): final discounted-continuation and learned-gradient proofs'
             git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
           echo "R19_SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
