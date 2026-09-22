@@ -1,0 +1,13 @@
+# Nonlinear state-input inventory experiment
+
+This is a separate deterministic finite-horizon economy, not evidence of target attainment in the stopped preference-adjustment economy. It replaces neither that economy nor the retained two-mode LQ check.
+
+For dimension d in {8,32,128} and horizon H=12, inventories obey z_(h+1)=(3/5)z_h+u_h-b_h, with b_(h,i)=(((h+i) mod 7)-3)/100 and initial x in [-1,1]^d. The running cost is 2||u_h||^2 + Phi(z_(h+1)), where Phi(z)=sum_i[(1+i/(5(d-1))) z_i^2/2 +(1/2)log cosh(z_i)] +(3/10)sum_i log cosh(z_i-z_(i+1)), with cyclic indexing. Controls are unrestricted real vectors. Heterogeneity and nonlinear cross-product costs are retained; no quadratic/Riccati solution labels are used.
+
+A state-input two-hidden-layer tanh network produces a bounded initial plan U0=(1/4)tanh N(x) in R^(H*d). Seeds 17400,17401,17402 are used at every dimension. Width is min(64,2*d). The network is trained for 400 Adam updates, batch 32, learning rate 0.003, directly on the economic plan cost. All inputs are full d-dimensional initial states. No precomputed optimal controls are training labels.
+
+A fixed exact-real gradient correction with step 16/209 is applied at 0,8,16,24,32 iterations. The Hessian bound is 4 I <= Hessian(F_x) <= (177/8) I. Therefore the exact gradient contraction is at most 145/209. A symbolic all-state gradient bound at initialization supplies a total-cost, not merely per-coordinate, error certificate over the entire initial box. The certificate concerns the mathematical activation/update map, not undocumented floating-point deployment. Every retained floating-point test plan is additionally checked from its own stored coordinates with MPFR-directed first-order optimality residuals.
+
+Classical comparators are zero-start gradient correction, zero-start accelerated gradient, and zero-start L-BFGS. Their sampled plan values are not treated as exact optima: all matched-query accuracy comparisons use the same directed residual/strong-convexity certificate. Test initial states are the alternating-sign corner and one deterministic uniform vector generated with seed 17499+d. Full-state theoretical bounds are reported separately from these two test queries. Candidate generation, training, correction, and verification costs are separated. The study is allowed to show that classical convex solvers are faster; it does not presuppose a neural advantage.
+
+The unknown finite-horizon nonlinear value is not constructed backwards from a desired neural solution. This is a strongly convex planning application, not a generic stochastic high-dimensional HJB complexity claim. All constants, network parameters, test states, resulting plans, and certificates are retained.
