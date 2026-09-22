@@ -1,0 +1,134 @@
+{
+  "version": "R11 prospective protocol",
+  "base_commit": "d633bd60818998e53051cee6e7ad351c52a61795",
+  "review_commit": "251ad29668788b2a911c4ca6f9c0a226886518d6",
+  "original_economy": "Keep R10 original-payoff certificates, all models, historical manuscripts, original stopped contract and completed R9 frozen holdout unchanged.",
+  "external": {
+    "author_repository": "sx-fang/MartNet",
+    "author_commit": "991ea8dde5bad6ba912eb8cc48b0cb48dbdd6c2a",
+    "dimensions": [
+      8,
+      16,
+      32
+    ],
+    "objective": "unchanged R9 coupled nonconvex objective",
+    "initial_architecture": "inherited two-layer width-48 actor and critic; equal initial hashes within each pair",
+    "tuning_seeds": [
+      1600,
+      1601
+    ],
+    "initial_candidates_per_method": 12,
+    "adaptive_extension_candidates_per_method": 2,
+    "training_seconds_per_trial": 5,
+    "nominal_training_seconds_per_method_per_dimension": 140,
+    "method_specific": "NBO: learning rate, evaluation-to-improvement ratio, transition particles. SOC: learning rate, adversary rate and width, J/K, initial multiplier, multiplier step. Explicit 12-candidate tables in robustness.py.",
+    "boundary_rule": "After first 12 candidates, select minimum two-seed mean, ties smallest index. If selected multiplier is the current high/low boundary extend that direction by factor 3. Otherwise vary NBO particles (16 then 32) or SOC adversary rate (.003 then .03). Re-select between the two extension slots. Failures get infinite selection score and raw data are retained.",
+    "holdout_seeds": [
+      1820,
+      1821,
+      1822,
+      1823,
+      1824,
+      1825,
+      1826,
+      1827,
+      1828,
+      1829,
+      1830,
+      1831
+    ],
+    "holdout_training_seconds": 10,
+    "holdout_paths": 4096,
+    "deployment_dates": 128,
+    "primary_estimand": "paired NBO-minus-SOC sample-and-hold mean cost across independent training/audit seeds",
+    "primary_test": "one-sided exact sign test; Bonferroni over three new dimension panels; alpha .05",
+    "negative_controls": "Retain third clipped LQ policy; no R9 holdout seed reused; new holdout not tuned upon.",
+    "claims": "Finite randomized tuning budget, not exhaustive best tuning. This post-R9 replication is not a retroactive preregistration of R9. Nominal training opportunity is matched; completed-update overshoot, setup and validation clocks are separately recorded.",
+    "failure": "Failed tuning trials are retained with infinite selection score. Missing/nonfinite holdout invalidates its planned panel and primary aggregate. Collector runs always and commits successful siblings, failures and planned-cell statuses before rejecting an aggregate."
+  },
+  "exact_accuracy_suite": {
+    "cases": [
+      {
+        "name": "tracking",
+        "d": 8,
+        "a": [
+          0
+        ],
+        "b": [
+          2
+        ],
+        "q": [
+          0
+        ],
+        "r": [
+          1
+        ],
+        "sigma": [
+          0.5656854249492381
+        ],
+        "terminal_weight": [
+          1
+        ],
+        "initial_centered": [
+          -0.5
+        ]
+      },
+      {
+        "name": "mean_reverting",
+        "d": 8,
+        "a": [
+          -1
+        ],
+        "b": [
+          1
+        ],
+        "q": [
+          1
+        ],
+        "r": [
+          0.25
+        ],
+        "sigma": [
+          0.4
+        ],
+        "terminal_weight": [
+          1
+        ],
+        "initial_centered": [
+          1
+        ]
+      },
+      {
+        "name": "ill_conditioned",
+        "d": 16,
+        "a": "linspace(-1,.5,d)",
+        "b": "linspace(.5,2,d)",
+        "q": "linspace(.1,2,d)",
+        "r": "geomspace(.1,4,d)",
+        "sigma": "linspace(.15,.65,d)",
+        "terminal_weight": "linspace(.5,2,d)",
+        "initial_centered": "linspace(-1,1,d)"
+      }
+    ],
+    "horizon": 1,
+    "slabs": [
+      4,
+      8,
+      16,
+      32,
+      64,
+      128
+    ],
+    "thresholds": [
+      0.1,
+      0.03,
+      0.01,
+      0.003,
+      0.001
+    ],
+    "reference": "Independent continuous Riccati closed form enclosed by mpmath.iv; original cost of exact stored sample-and-hold gains enclosed by interval moment recursion. No Monte Carlo reference.",
+    "policy_generators": "Exact quadratic evaluation/improvement in a time-gated linear actor and Adam on the same feasible gain outputs (N=32, checkpoints 0,25,100,400). This structured architecture is not the original tanh actor or the pinned SOC comparator.",
+    "timing": "Generation, validation, and cumulative attained-accuracy clocks; setup excluded; each deterministic run records environment.",
+    "scope": "Heterogeneous reference-solvable control mechanisms complement, not replace, original stopped economy and original coupled nonconvex comparison. No universal external head-to-head accuracy dominance claimed."
+  }
+}
