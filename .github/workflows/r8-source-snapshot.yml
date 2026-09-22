@@ -1,0 +1,23 @@
+name: R8 source snapshot
+on:
+  push:
+    branches: [revision/econometrica-r8-verified-manuscript-2026-09-22]
+    paths: [.github/workflows/r8-source-snapshot.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record source identity
+        run: git rev-parse HEAD > R8_SNAPSHOT_SOURCE_COMMIT.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r8-inherited-source
+          path: |
+            .
+            !.git
+          include-hidden-files: true
+          retention-days: 7
