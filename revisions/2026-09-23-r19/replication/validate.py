@@ -40,6 +40,7 @@ def main():
         check(c['uniform_K_final_to_initial_true_regret_ratio_upper']<.42,'True-regret contraction failed')
     check(all(r['compensation_sufficient'] for r in read(out/'neural_wealth_compensation.json')),'Compensation failed')
     traces=read(out/'continuation_value_traces.json');check(all(r['uniform_u_segment_trace_excess_lower']>6.708 for r in traces),'Continuation trace not established')
+    check(all(r['covered_trace_second_derivative_upper']<0 for r in traces),'Discounted continuation curvature not certified')
     a=R/'results/attribution';fa=read(a/'factorial.json')
     check(len(fa)==40 and len(read(a/'trace_trajectories.json'))==30 and len(read(a/'trace_interventions.json'))==5,'Incomplete attribution')
     check(len(read(a/'classical_signed.json'))==6,'Incomplete original feedback comparison')

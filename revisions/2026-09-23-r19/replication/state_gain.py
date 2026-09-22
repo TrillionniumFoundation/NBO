@@ -67,6 +67,8 @@ def main():
     for r in upper['endpoints']:
         duals.append(json.loads((ROOT/f"revisions/2026-09-23-r16/results/fresh_library/dual_k{r['k']:g}.json").read_text()))
     gains=[];state=[];traces=[]
+    trace_curvature=-Q(F(125,729))*M.exp(-Q('.04'))*(1-2*M.exp(-Q(32)))+Q('.04')*(1-M.exp(-Q('.04')))
+    if trace_curvature.hi>=0:raise ArithmeticError('Continuation trace concavity not certified')
     classic=json.loads((OUT/'classical_slsqp_n16.json').read_text());cv=json.loads((OUT/'classical_value_n16.json').read_text())['value_interval']
     for seed in P.SEEDS:
         arow=next(r for r in rows if r['seed']==seed and r['step']==0);brow=next(r for r in rows if r['seed']==seed and r['step']==800)
@@ -94,7 +96,8 @@ def main():
                           'trace_excess_interval':excess.pair()});vs.append(v)
         finally:IP.policy_inputs=old
         traces.append({'seed':seed,'face_values':vs,'uniform_u_segment_trace_excess_lower':min(v['trace_excess_interval'][0] for v in vs if v['u0']!='2'),
-                       'proof':'concavity of the covered payoff minus settlement in u, with common error allowances; inward deterministic wealth gives the interior limit',
+                       'covered_trace_second_derivative_upper':float(trace_curvature.hi),
+                       'proof':'strict negative running curvature dominates positive discounted terminal-minus-initial curvature; common error allowances preserve concavity; inward deterministic wealth gives the interior limit',
                        'scope':'constructive fixed-policy continuation-value witness, not an optimal Bellman upper witness'})
         write(OUT/'uniform_policy_gain.json',gains);write(OUT/'uniform_state_regret.json',state);write(OUT/'continuation_value_traces.json',traces)
         print('STATE_GAIN',seed,total.pair(),state[-1]['uniform_K_regret_upper'],traces[-1]['uniform_u_segment_trace_excess_lower'],flush=True)
