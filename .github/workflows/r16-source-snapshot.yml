@@ -1,0 +1,22 @@
+name: R16 pinned source snapshot
+on:
+  push:
+    branches: [revision/econometrica-r16-certified-policy-iteration-2026-09-23]
+    paths: [.github/workflows/r16-source-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: bb09ac177fc766aea8aba26cb6a40b8aff68528c
+          persist-credentials: false
+      - name: Archive immutable review input
+        run: git archive --format=tar.gz --output=/tmp/nbo-review-input.tar.gz HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-review-input-bb09ac1
+          path: /tmp/nbo-review-input.tar.gz
+          retention-days: 7
