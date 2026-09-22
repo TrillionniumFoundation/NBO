@@ -1,0 +1,79 @@
+\section{A certified policy rule on a continuous cost interval}\label{r12:continuation}
+The preceding value and expenditure enclosures can answer a stronger economic question than evaluation at three selected costs: can one supply an approximately optimal policy for \emph{every} adjustment price in an interval? Repeating training on a fine parameter grid is not enough. An unexamined price may lie between grid points, and a policy fitted at one price need not remain approximately optimal at another. The affine dependence of a fixed policy's payoff on the cost coefficient makes a rigorous continuation possible.
+
+Fix $(t,u,x)=(0,2,1.25)$. For ordered prices $k_0<\cdots<k_m$, let $\pi_j$ be a frozen feasible policy and suppose independently computed quantities satisfy
+\begin{equation}
+ L_j\leq J_{k_j}(\pi_j)\leq V(k_j)\leq U_j,
+ \qquad b_j^-\leq B(\pi_j)\leq b_j^+.
+ \label{r12:node}
+\end{equation}
+Here $B$ includes the actual random first exit. It is not an undiscounted or unstopped training proxy. Define
+\begin{align}
+ \ell_j(k)&=L_j-(k-k_j)
+ \begin{cases}b_j^+,&k\geq k_j,\\ b_j^-,&k<k_j,\end{cases}
+ &\ell(k)&=\max_{0\leq j\leq m}\ell_j(k),\label{r12:lower}\\
+ u(k)&=\frac{k_{i+1}-k}{k_{i+1}-k_i}U_i+
+        \frac{k-k_i}{k_{i+1}-k_i}U_{i+1},
+ && k\in[k_i,k_{i+1}].\label{r12:chord}
+\end{align}
+Using the upper expenditure endpoint on \emph{both} sides of a node would be wrong: a lower cost rewards the policy's expenditure, so its lower endpoint must be used on the left.
+
+\begin{theorem}[Certified parameter continuation]\label{r12:envelope}
+Suppose the policy set, state dynamics, and stopping contract do not depend on $k$, and \eqref{r12:node} holds. Select the lowest-index maximizer $j(k)$ of \eqref{r12:lower}. For every real $k\in[k_0,k_m]$,
+\begin{equation}
+ \ell(k)\leq J_k(\pi_{j(k)})\leq V(k)\leq u(k),
+ \qquad 0\leq V(k)-J_k(\pi_{j(k)})\leq u(k)-\ell(k).
+ \label{r12:uniform}
+\end{equation}
+On each node interval the maximum of $u-\ell$ occurs at an endpoint or a breakpoint of the upper envelope of the affine functions $\ell_j$. If the inputs are rational, these candidate points and gaps admit an exact finite computation. Strictly bounding all these gaps by $\varepsilon$ certifies \eqref{r12:uniform} on the entire continuous price interval, without a parameter-grid approximation error.
+\end{theorem}
+The proof in Appendix~\ref{r12:proof} uses the affine fixed-policy payoff and convexity of the optimal value. It does not require differentiability of $V$, an attained optimal control, or a convergence theorem for the network optimizer. This use of convexity is distinct from assuming convexity of the shared-parameter training objective.
+
+\subsection{Construction and stopping rule}
+The starting nodes are the three independently certified prices $.5$, $2$, and $8$. A disclosed pilot adds $4$. Thereafter a failed node interval is bisected, in increasing-price order; each new price receives its own feasible actor, exact-first-exit payoff enclosure, expenditure enclosure, and affine-preference dual upper bound. Training uses the nearest inherited actor only as a warm start. Output polishing and dual fitting use the preceding deterministic routines with explicitly audited input/output substitutions. They do not use an optimal-value label. The original source files are unchanged.
+
+All final policy evaluations use 16,384 outward time rectangles, and each optimal-value upper uses 65,536 weighted source boxes. Artificial verification faces carry the same explicit localization allowances as in Theorem~\ref{r10:dual}; none becomes an economic stopping boundary. Each continuous-price test then converts the binary64 certificate endpoints to their exact rational values. A monotone upper-hull algorithm constructs all relevant line intersections. No numerical mesh, random evaluation price, interpolation residual estimate, or optimization tolerance replaces this last test.
+
+\begin{table}[t]\centering\small
+\caption{Constructive continuation to the uniform economic tolerance}\label{r12:frontier}
+\input{revisions/2026-09-22-r12/paper/tables/frontier}
+\par\smallskip\footnotesize The maximum covers every real price in $[.5,8]$, at the fixed initial state. Task-seconds sum successful new price-case durations, including polishing and verification; parallel tasks overlap. They exclude the inherited three certificates and interrupted attempts and are not end-to-end CPU time. All interruption records are preserved separately. The acceptance criterion is the exact rational gap, not the displayed runtime.
+\end{table}
+
+The final library contains eighteen nodes and fifteen newly certified policies. It yields
+\begin{equation}
+ \sup_{k\in[.5,8]}\{V(k)-J_k(\pi_{j(k)})\}
+ \leq .009994024846927508 < .01.
+ \label{r12:executed}
+\end{equation}
+The displayed upper is rounded outward from the exact rational maximum. The largest gap occurs at an envelope intersection near $k=7.7422$, not at a training price. Checking only the eighteen training prices would therefore miss the relevant acceptance calculation. This is also a reason to retain all failed refinement stages rather than show only the last table row.
+
+\begin{proposition}[Finite refinement under local slack]\label{r12:termination}
+Suppose each newly supplied node certificate satisfies $U_j-L_j\leq\varepsilon-\eta$ for a common $\eta>0$, and $0\leq b_j^-\leq b_j^+\leq\bar B$. On an interval of length $h$,
+\begin{equation}
+ \max(u-\ell)\leq\max\{U_i-L_i,U_{i+1}-L_{i+1}\}+\bar B h/4.
+ \label{r12:slack}
+\end{equation}
+Consequently, exact bisection terminates after finitely many refinements when all node intervals have length less than $4\eta/\bar B$.
+\end{proposition}
+The proposition quantifies the continuation step, not the ability of an arbitrary optimizer to supply the stipulated node slack. A fixed witness class can have a structural accuracy floor. The executed result \eqref{r12:executed} does not rely on an unproved uniform-slack claim: its actual finite library passes the exact test. The tighter upper-hull test, rather than the conservative bound \eqref{r12:slack}, is used for acceptance.
+
+\subsection{Economic interpretation between certified prices}
+The library delivers a policy for a queried cost without retraining. It selects one frozen sixteen-slab control rule for the whole horizon and applies the original liquidation contract if exit occurs. It does not switch policies according to an unverified neural value between states. The guarantee is against the full adaptive optimum, not merely against the best policy in the library.
+
+For prices $p<q$, the continuation bounds imply
+\begin{equation}
+ V(p)-V(q)\in[\ell(p)-u(q),\,u(p)-\ell(q)]\cap[0,\bar B(q-p)].
+ \label{r12:effects}
+\end{equation}
+Similarly, the value of access lies in $[\ell(k)-\overline V_R,u(k)-\underline V_R]$. The original certified access gain at $k=8$ and monotonicity imply a positive access gain throughout $[.5,8]$. This assertion resolves the sign, not a small relative uncertainty for every price. The sharper effect-to-width comparisons at $k=2$ and for the $2\to8$ experiment remain those already reported above.
+
+If an optimizer exists at an interior price $k$, all available secants may be intersected to obtain
+\begin{align}
+ B(\pi_k^*)&\geq\max\left\{0,\sup_{q>k}\frac{\ell(k)-u(q)}{q-k}\right\},\label{r12:budgetlower}\\
+ B(\pi_k^*)&\leq\min\left\{\bar B,\inf_{p<k}\frac{u(p)-\ell(k)}{k-p}\right\}.
+ \label{r12:budgetupper}
+\end{align}
+Using a finite subset of these secants remains valid and avoids numerical differentiation of a possibly nonsmooth value function. The deployed policies' independently enclosed expenditures remain separate objects; no optimal adjustment budget is inferred from them without the requisite optimal-value comparison.
+
+The new object is the executable parameter-uniform policy certificate and its exact stopping rule. Neither convexity of a supremum of affine functions nor classical policy verification is claimed as new. In combination with the original stopped dual, the construction closes an additional economically meaningful computational chain: a continuum of cost counterfactuals, an implementable policy at every cost, and an explicit absolute error smaller than the declared tolerance. It does not convert the separate external fixed-budget experiments into a universal performance claim.

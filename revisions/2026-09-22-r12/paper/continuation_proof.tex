@@ -1,0 +1,46 @@
+\section{Proofs for continuous-cost certification}\label{r12:proof}
+\subsection{Proof of Theorem~\ref{r12:envelope}}
+Fix a policy $\pi$ as a progressively measurable rule, including its response to the state and its stopping convention. Changing only $k$ does not change its state law or liquidation time. Linearity of expectation therefore gives
+\[
+ J_k(\pi)=J_{k_j}(\pi)-(k-k_j)B(\pi).
+\]
+The integrals are finite: the state and action sets before stopping are bounded, the consumption lower bound is positive, risk aversion stays bounded away from one, and the liquidation payoff is bounded on the stopped trace. For $k\geq k_j$, replace $J_{k_j}$ by its lower bound and $B$ by its upper bound; for $k<k_j$, replace $B$ by its lower bound. This proves $\ell_j(k)\leq J_k(\pi_j)$ on both sides, including equality of the formulas at the node.
+
+The same common-policy-set argument writes $V(k)=\sup_\pi\{A(\pi)-kB(\pi)\}$. A supremum of affine functions is convex, whether or not a maximizer exists. Hence the chord between $V(k_i)$ and $V(k_{i+1})$ bounds $V$ from above; replacing both endpoints by valid uppers proves $V(k)\leq u(k)$. The library is finite, so a lowest-index maximizer exists. Combining its feasible-policy lower with this chord proves \eqref{r12:uniform}.
+
+Inside a node interval no $k_j$ changes the sign of $k-k_j$. Each $\ell_j$ is therefore affine there. Their upper envelope is continuous, convex, and piecewise affine. Subtracting it from the affine chord gives a continuous piecewise-affine function, whose maximum on each linear piece occurs at an endpoint (or everywhere on a constant piece). Its candidates are thus the cell endpoints and envelope breakpoints. For rational input coefficients, every intersection of unequal slopes is rational. Equal-slope lines are reduced to the highest intercept, with a deterministic tie rule. Sorting by slope and successively removing lines whose intersection does not increase constructs the upper envelope. The acceptance calculation uses exact rational arithmetic throughout; a binary64 endpoint is treated as the exact rational number it represents, not as a decimal approximation to a new endpoint. The final decimal display is rounded upward. \hfill$\square$
+
+\subsection{Proof of Proposition~\ref{r12:termination}}
+Write $a=k_i$, $b=k_{i+1}$, $h=b-a$, and $s=(k-a)/h$. As $\ell\geq\max\{\ell_i,\ell_{i+1}\}$, it also exceeds their convex combination with weights $1-s,s$. The expenditure endpoints enter as
+\[
+ \ell_i(k)=L_i-shb_i^+,
+ \qquad \ell_{i+1}(k)=L_{i+1}+(1-s)hb_{i+1}^-.
+\]
+Consequently,
+\begin{align*}
+ u(k)-\ell(k)&\leq (1-s)(U_i-L_i)+s(U_{i+1}-L_{i+1})
+       +s(1-s)h(b_i^+-b_{i+1}^-)\\
+ &\leq\max\{U_i-L_i,U_{i+1}-L_{i+1}\}+\bar B h/4.
+\end{align*}
+This proves \eqref{r12:slack}. A finite number of dyadic subdivisions makes all lengths strictly less than $4\eta/\bar B$. Fair processing of failed intervals then terminates, conditional on the assumed local slack. No conclusion about the training algorithm's rate or ability to attain that slack follows from this argument. \hfill$\square$
+
+\subsection{Cost-transfer and stopping details}
+For the deployed policies $p=0$, consumption is budget-projected into the original action interval and preference drift lies in $[0,.2]$. Wealth does not cross the lower liquidation face before the horizon, as verified independently by the inherited budget certificate. Preference exit is not discarded. The moment evaluator subtracts an explicit stopped-payoff error and encloses the actual discounted expenditure in
+\[
+ \left[B_T-.02\,\Pr\{\tau<T\},\ B_T\right],
+ \qquad B_T=\int_0^1e^{-.04t}\theta_t^2/2\,dt,
+\]
+with $\Pr\{\tau<T\}\leq2e^{-72}$. These outward endpoints, rather than the deterministic full-horizon expenditure alone, supply $b_j^\pm$ in the continuation rule. The stored controls are binary64 real constants strictly within the exact action constraints. No new Euler or Brownian-bridge error enters their continuous stopped evaluation.
+
+For \eqref{r12:effects}, subtract the two valid value intervals and intersect with monotonicity and the primitive expenditure bound. For \eqref{r12:budgetlower}, use $V(q)\geq J_q(\pi_k^*)=V(k)-(q-k)B(\pi_k^*)$ and the appropriate value endpoints. The upper bound follows in the same way from $p<k$. Every intersection is between valid bounds on the same object; the existence qualification concerns the optimal policy's budget only, not the value or policy-regret guarantee.
+
+\subsection{Complete refinement and interruption record}
+The pilot at $k=4$ follows the three inherited certificates. Subsequent completed node sets have sizes seven, thirteen, seventeen, and eighteen. Two multi-batch local invocations were interrupted by the execution tool before their last cells completed. Their partial files and status receipts remain in the revision archive. The missing prices were explicitly retried and individually verified; no incomplete case was accepted. The final envelope requires every planned price to have a completed certificate. Failure preservation and acceptance are distinct: retaining a failed attempt does not invalidate a subsequently certified fixed policy, while a missing final certificate prevents a complete-package pass.
+
+The accompanying code tests sign-sensitive transfer on both sides of a node, exact hull values against direct evaluation, breakpoint maxima against an independent all-pairs construction, deliberate missing and nonfinite cases, and the conditional refinement inequality. Such tests detect implementation mistakes; the proofs above, together with the original interval evaluators, establish the mathematical enclosure. Machine-dependent timing is never an acceptance criterion.
+
+\begin{table}[t]\centering\scriptsize
+\caption{All cost-continuation node certificates}\label{r12:nodes}
+\input{revisions/2026-09-22-r12/paper/tables/nodes}
+\par\smallskip\footnotesize All displayed endpoints are rounded outward. The expenditure is that of the specified feasible policy under actual stopping. Full-precision endpoints, policy controls, dual coefficients, and arithmetic allowances are retained in the per-price records. Three nodes are inherited and fifteen are new.
+\end{table}
