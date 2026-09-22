@@ -1,0 +1,129 @@
+name: R9 canonical publication and certificate build
+on:
+  push:
+    branches: ['revision/econometrica-r9-constructive-certification-2026-09-22']
+    paths: ['.github/workflows/r9-delivery.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+env:
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  R9_BRANCH: revision/econometrica-r9-constructive-certification-2026-09-22
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    outputs:
+      canonical_sha: ${{ steps.canonical.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Import byte-verified ordinary source files
+        run: |
+          python - <<'PY'
+          import hashlib,io,json,pathlib,subprocess,tarfile
+          root=pathlib.Path('.')
+          parts=root/'.github/r9-delivery'
+          if parts.exists():
+              files=sorted(parts.glob('part-*'))
+              assert len(files)==15
+              data=b''.join(p.read_bytes() for p in files)
+              assert hashlib.sha256(data).hexdigest()=='cffd8e9666cab9c8fe189bb627074b6acf841ec58beb8513044c609fe51c326d'
+              allowed={'ECTA_R9.tex','SUPP_R9.tex','R9_REVIEW.md','REVISION_INDEX.md'}
+              with tarfile.open(fileobj=io.BytesIO(data),mode='r:xz') as tf:
+                  members=tf.getmembers()
+                  assert len(members)==77
+                  for m in members:
+                      p=pathlib.PurePosixPath(m.name)
+                      assert m.isfile() and not p.is_absolute() and '..' not in p.parts
+                      assert m.name in allowed or m.name.startswith('revisions/2026-09-22-r9/')
+                      dst=root/m.name
+                      dst.parent.mkdir(parents=True,exist_ok=True)
+                      dst.write_bytes(tf.extractfile(m).read())
+              base='9749c3cf28f9438315b8f504a358bbe307ea89a5'
+              old=subprocess.check_output(['git','archive','--format=tar',base])
+              with tarfile.open(fileobj=io.BytesIO(old),mode='r:') as tf:
+                  hashes={m.name:hashlib.sha256(tf.extractfile(m).read()).hexdigest() for m in tf.getmembers() if m.isfile()}
+              assert len(hashes)==556
+              manifest={'source_commit':base,'files':hashes,'allowed_current_path_changes':['REVISION_INDEX.md'],'archived_replacement':{'REVISION_INDEX.md':'revisions/2026-09-22-r9/archive/REVISION_INDEX_before_R9.md'}}
+              (root/'revisions/2026-09-22-r9/inherited_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+              subprocess.check_call(['git','rm','-r','.github/r9-delivery'])
+          PY
+      - name: Publish canonical source before clean build
+        id: canonical
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -f ECTA_R9.tex SUPP_R9.tex R9_REVIEW.md REVISION_INDEX.md revisions/2026-09-22-r9
+          if ! git diff --cached --quiet; then
+            git commit -m 'paper(r9): constructive original-economy certification, complete referee response and preserved supplement'
+            git push origin HEAD:"$R9_BRANCH"
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  verify:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.publish.outputs.canonical_sha }}
+          fetch-depth: 0
+      - name: Assert ordinary clean source checkout
+        run: |
+          test ! -d .github/r9-delivery
+          test -f ECTA_R9.tex
+          test -f revisions/2026-09-22-r9/paper/main.tex
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned numerical dependencies
+        run: |
+          pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install numpy==2.3.5 scipy==1.17.0 mpmath==1.3.0
+      - name: Install TeX and PDF checks
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y texlive-latex-extra texlive-fonts-recommended poppler-utils
+      - name: Check every evidence record and inherited file
+        run: python revisions/2026-09-22-r9/replication/validate_evidence.py --skip-pdf
+      - name: Re-execute all 22 certificate groups on frozen inputs
+        run: |
+          mkdir -p revisions/2026-09-22-r9/build_logs
+          python revisions/2026-09-22-r9/replication/recheck_certificates.py
+      - name: Regenerate tables and both review PDFs
+        run: |
+          python revisions/2026-09-22-r9/replication/make_tables.py
+          bash revisions/2026-09-22-r9/replication/build.sh
+          python revisions/2026-09-22-r9/replication/validate_evidence.py
+          python revisions/2026-09-22-r9/replication/write_manifest.py
+      - name: Commit verified review artifacts only to R9
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -f ECTA_R9.pdf SUPP_R9.pdf revisions/2026-09-22-r9/build_logs revisions/2026-09-22-r9/certificate_recheck.json revisions/2026-09-22-r9/validation_report.json revisions/2026-09-22-r9/source_manifest.json revisions/2026-09-22-r9/paper/tables
+          git commit -m 'verify(r9): clean-build review PDFs and pass 22 certificate groups plus 1042 evidence checks'
+          git push origin HEAD:"$R9_BRANCH"
+          git archive --format=tar.gz --output=/tmp/NBO-R9-repository.tar.gz HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NBO-R9-referee-package
+          path: |
+            /tmp/NBO-R9-repository.tar.gz
+            ECTA_R9.pdf
+            SUPP_R9.pdf
+            R9_REVIEW.md
+            revisions/2026-09-22-r9/response_to_referee.md
+            revisions/2026-09-22-r9/source_manifest.json
+            revisions/2026-09-22-r9/certificate_recheck.json
+            revisions/2026-09-22-r9/validation_report.json
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: NBO-R9-build-diagnostics
+          path: |
+            revisions/2026-09-22-r9/build_logs
+            ECTA_R9.log
+            SUPP_R9.log
