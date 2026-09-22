@@ -1,0 +1,156 @@
+\section{Proofs of the continuous verification results}\label{r8:proof:verification}
+\subsection{Proof of Theorem~\ref{r8:pair}}
+For a smooth witness $w$ and a fixed admissible policy $a$, localized discounted It\^o calculus gives
+\begin{align}
+ \E\!\left[e^{-\rho(\sigma-t)}w(\sigma,S_\sigma)
+       +\int_t^\sigma e^{-\rho(r-t)}\ell(S_r,a_r)\,dr\right]
+ =w(t,s)+\E\!\int_t^\sigma e^{-\rho(r-t)}R_{a_r}w(r,S_r)\,dr,\label{r8:itoidentity}
+\end{align}
+where $\sigma$ first stops on a compact interior localization or at the economic stopping time. Localization also bounds the stochastic integral. The hypotheses on the witness and uniform integrability permit passage to $\tau$; no regularity of the optimal value is invoked.
+
+For $w=U$, $R_aU\leq\epsilon_U$ for every admissible action. The terminal inequality $g\leq U+b_U$ and $e^{-\rho(\tau-t)}\leq1$ yield
+\[
+ J^a(t,s)\leq U(t,s)+b_U+\epsilon_U\E\int_t^\tau e^{-\rho(r-t)}\,dr
+ \leq U(t,s)+b_U+C_\rho(T-t)\epsilon_U.
+\]
+Take the supremum over policies; attainment is unnecessary. For $w=L$, use the specified policy $\pi$, the inequalities $R_\pi L\geq-\epsilon_L$ and $g\geq L-b_L$, and the same integration identity to obtain the lower bound. Subtraction proves the regret bound, and nonnegativity follows from the definition of the supremum.
+
+For multiple time slabs, apply \eqref{r8:itoidentity} on each slab and sum. Forward-time jumps contribute $U(t^+,S_t)-U(t^-,S_t)$ to the upper-witness identity. They are nonpositive under Assumption~\ref{r8:witnessass}, so the upper inequality is preserved. Lower-witness jumps have the opposite sign. This explains why a piecewise-time approximation may not silently omit its interface errors. The actual policy can be only piecewise continuous in time because It\^o's formula is applied to the witnesses, not to a derivative of the policy. \qed
+
+\subsection{Spatial residual potentials}
+Suppose the upper residual satisfies $R_aU\leq q_U$ and a nonnegative potential obeys
+\[
+ z_{U,t}+\mathcal L^az_U-\rho z_U\leq-q_U\quad\text{for every }a.
+\]
+Then $R_a(U+z_U)\leq0$ by the affine dependence of $R_a$ on the witness. Its boundary inequality is preserved by nonnegativity of $z_U$. Similarly, if $R_\pi L\geq-q_L$ and $z_{L,t}+\mathcal L^\pi z_L-\rho z_L\leq-q_L$, then $R_\pi(L-z_L)\geq0$. Theorem~\ref{r8:pair} applies to $U+z_U$ and $L-z_L$. A potential solving an occupation problem exactly would weight residuals by reachable discounted occupation; an approximate potential is usable only after the displayed differential inequality is enclosed. This construction does not turn an empirical occupancy histogram into a theorem.
+
+\subsection{Verification of the explicit original-economy witnesses}
+Since $\partial_tC_\rho(1-t)=-e^{-\rho(1-t)}$ and $\rho C_\rho(1-t)=1-e^{-\rho(1-t)}$,
+\[
+ (\partial_t-\rho)[-aC_\rho(1-t)]=a
+\]
+for a constant $a$. Hence $\sup_aR_aG\leq-\alpha$ implies $\sup_aR_aU\leq0$, and $R_\pi g\geq-\beta$ implies $R_\pi L\geq0$. On the stopped boundary,
+\[
+ U-g=8(1-t)-\alpha C_\rho(1-t)\geq(8-\alpha)(1-t)\geq0,
+ \qquad L-g=-\beta C_\rho(1-t)\leq0.
+\]
+Both witnesses equal $G$ at maturity. They are smooth and bounded on the closed state rectangle because $x\geq.5$. The bilinear policy is globally Lipschitz on this compact rectangle, componentwise feasible, and piecewise constant in its time index. The stopped coefficients are bounded and have the required state regularity, so the discounted stochastic integrals are integrable. The sign enclosure therefore proves a statement about the original continuously stopped policy, including policies for which the optimal boundary regularity conditions of a different PDE theorem fail.
+
+The interval calculation bounds all $a$ in the upper witness through the exact maximizing rule for $G$. It bounds the lower witness on every time-state cell by the convex range of the four policy corners, enlarged to a Cartesian box; enlarging the action range can only make the lower bound more conservative. Interval dependency can likewise enlarge the bound, never certify a narrower true range. No assertion of floating-point simulation conformance is needed: the mathematical policy is defined by the stored constants and exact interpolation weights. A separate deployment-error allowance would be required for another implementation.
+
+\subsection{Proof of Proposition~\ref{r8:selection}}
+The action-dependent part of $R_av$ is the sum of
+\[
+ \frac{c^{1-u}}{1-u}-v_xc,\qquad v_u\theta-\frac{k}{2}\theta^2,
+ \qquad h_1p+\frac{h_2}{2}p^2.
+\]
+The mixed state derivative changes $h_1$ but introduces no product between control components. The consumption objective has derivative $c^{-u}-v_x$ and strictly negative second derivative $-uc^{-u-1}$. If $v_x\leq0$, its derivative is positive everywhere. Otherwise its unique unconstrained stationary point is $v_x^{-1/u}$, and projection gives the constrained optimum. The adjustment objective is a strictly concave quadratic because $k>0$. The portfolio objective is strictly concave when $h_2<0$, linear when $h_2=0$, and convex when $h_2>0$; the stated vertex or endpoint rule is complete in all cases. Compact product feasibility and additivity make these separate maximizers a global joint maximizer. \qed
+
+\subsection{A learned-geometry regret bound}
+For \eqref{r8:manufactured}, let $H_g^*(t,s)=\sup_a R_ag(t,s)$ for the original running payoff. The modified residual is $\widetilde R_ag=R_ag-H_g^*\leq0$, with equality for the feasible explicit optimizer. Applying \eqref{r8:itoidentity} first to any policy and then to this optimizer proves $\widetilde V=g$. For the learned policy,
+\[
+ g(t,s)-\widetilde J^\pi(t,s)
+ =\E^\pi_{t,s}\int_t^\tau e^{-\rho(r-t)}\{H_g^*-R_\pi g\}(r,S_r)\,dr.
+\]
+The action-independent terms cancel. At $k=2$ the adjustment term completes the square to $(\theta+.02(u-2))^2$. The other two action differences are exactly those bounded in Section~\ref{r8:geometry}. Their all-state interval upper bound times $C_\rho(1-t)$ gives the recorded continuous regret certificate. Policy sup-norm errors are separate interval consequences, not inferred by reversing a regret inequality. \qed
+
+\section{Policy iteration and finite gain accounting}\label{r8:proof:operators}
+\subsection{The exact separated-operator limit}
+Let $V_j=\mathcal E\pi_j$ and $\pi_{j+1}=\mathcal I(V_j)$. The selector inequality implies $R_{\pi_{j+1}}V_j\geq0$, so exact comparison and verification yield $V_{j+1}\geq V_j$. Precompactness of the evaluation image bounds the sequence. Its pointwise increasing limit is denoted $\overline V$.
+
+Every subsequence has a further subsequence converging in the declared norm of the function, time derivative, gradient, and Hessian. The function component of any such limit must equal $\overline V$, by pointwise monotonicity. Its derivative components are the derivatives of that same function limit. Thus the whole value sequence converges in that strong norm: otherwise a subsequence separated from the unique possible strong cluster point would contradict precompactness.
+
+Along a policy subsequence $\pi_{j_m}\to p$, continuity of evaluation gives $\mathcal Ep=\overline V$. Continuity of the selector at this cluster point gives $\pi_{j_m+1}\to\mathcal I(\overline V)$, and continuity of evaluation gives $\mathcal E(\mathcal I(\overline V))=\overline V$. The evaluation equation of the improved limiting policy therefore reads
+\[
+ R_{\mathcal I(\overline V)}\overline V=0.
+\]
+The defining maximizing property of that selector implies $\sup_aR_a\overline V=0$. Boundary comparison identifies $\overline V=V^*$. The proof establishes equality of limiting values, not equality of consecutive limiting policies. Compactness, selector closure, and strong evaluation continuity are hypotheses, not properties of an arbitrary neural architecture or Adam trajectory. \qed
+
+\subsection{Proof of Theorem~\ref{r8:finite}}
+Positivity and substochasticity give
+$\|\mathcal T_n^av-\mathcal T_n^aw\|_\infty\leq\delta\|v-w\|_\infty$.
+The maximized operator has the same Lipschitz constant. Since the candidate set includes the enacted action,
+\[
+ \|v_n-\max_a\mathcal T_n^av_{n+1}\|_\infty\leq e_n+\eta_n.
+\]
+Comparing this approximate equation with optimal backward induction yields
+\[
+ \|v_n-V_{h,n}^*\|_\infty
+ \leq\delta^{N-n}b+\sum_{j=n}^{N-1}\delta^{j-n}(e_j+\eta_j).
+\]
+Comparing instead with policy evaluation gives the same inequality with only $e_j$ in the sum. Add the two bounds to prove \eqref{r8:finitebound}.
+
+For the localized bound let $d_n=V_{h,n}^*-V_{h,n}^{\pi}$. Exact evaluation implies $g_n\geq0$. For every state, the elementary maximum-difference inequality gives
+\[
+ d_n\leq g_n+\delta\max_aP_n^ad_{n+1}.
+\]
+Starting with $d_N=0$, induction and positivity give $d_n\leq B_n$. The reference optimal value is unnecessary in this recursion: only policy evaluation, transition matrices, and feasible gains are used. \qed
+
+\subsection{Threshold correction and arithmetic scope}
+If every recomputed gain is at most $\gamma$, Theorem~\ref{r8:finite} gives a regret bound at most $\gamma\sum_n\delta^n$. Thus \eqref{r8:threshold} is sufficient with margin when this uniform condition holds. Correcting a subset of decisions does not by itself guarantee that condition, since the re-evaluated continuation changes. The implementation therefore re-evaluates and re-audits rather than declaring success after a fixed number of replacements. Its stopping certificate is the actual envelope of the corrected policy.
+
+For Proposition~\ref{r8:overrides}, let $I_m$ indicate $g_m>\gamma$. Then $\gamma I_m\leq g_m$, so $M^{-1}\sum_mI_m\leq(M\gamma)^{-1}\sum_mg_m$. The fixed- and shrinking-threshold implications follow directly. This statement measures the correction share under the audit measure; it does not imply that all reachable-state losses have small occupation-weighted averages or that a full audit is computationally free. \qed
+
+The finite envelopes reported in the numerical tables are float64 quantities with independent operator-agreement and regression tests. They are not outward-rounded enclosures of every finite arithmetic operation. To make a machine-rigorous finite certificate one must add roundoff and inner-solve enclosures to $e_n$ and $\eta_n$, or evaluate their analogues with validated arithmetic. The continuous witness and learned-geometry certificates do use outward interval arithmetic, and are identified separately for this reason.
+
+\subsection{Proof of the continuous semigroup error decomposition}
+With settlement fixed inside each step, the exact surviving-continuation map has Lipschitz constant at most $\delta$: survival probabilities are at most one and continuation is received at the full step end. Taking a supremum over all admissible within-step controls preserves this bound. Write $E_n^*=\|V_n-w_n^*\|_\infty$ and $E_n^\pi=\|J_n^\pi-w_n^\pi\|_\infty$. Then
+\[
+ E_n^*\leq\kappa_n^*+\delta E_{n+1}^*,\qquad
+ E_n^\pi\leq\kappa_n^\pi+\delta E_{n+1}^\pi.
+\]
+Backward iteration and the positive norm-one lift of the finite gap prove \eqref{r8:totalbudget}. If $\mathcal B^{(0)},\ldots,\mathcal B^{(m)}$ form an intermediate operator chain from the exact semigroup to the lifted numerical operator, the triangle inequality bounds its discrepancy on a specified continuation $w$ by $\sum_i\|(\mathcal B^{(i)}-\mathcal B^{(i+1)})w\|_\infty$. Every term must have a verified bound; changing the tested continuation between adjacent differences without controlling that change invalidates the telescoping argument. \qed
+
+\section{Proofs for economic comparisons}\label{r8:proof:economics}
+For a fixed policy, $A(\pi)-kB(\pi)$ is affine and nonincreasing in $k$. The supremum is therefore convex and nonincreasing. The budget is bounded by $.02C_\rho(T-t)$ because $|\theta|\leq.2$. If $\pi$ attains the value at $k$, for every other price $k'$,
+\[
+ V(k')\geq A(\pi)-k'B(\pi)=V(k)-(k'-k)B(\pi).
+\]
+Thus $-B(\pi)$ is a subgradient of $V$ at $k$. At a differentiability point every attained optimizer has budget $-V'(k)$.
+
+\subsection{Proof of Theorem~\ref{r8:cost}}
+Approximate optimality and feasibility of the rival candidate policy give
+\begin{align*}
+ A(\pi_1)-k_1B(\pi_1)&\geq A(\pi_2)-k_1B(\pi_2)-\varepsilon_1,\\
+ A(\pi_2)-k_2B(\pi_2)&\geq A(\pi_1)-k_2B(\pi_1)-\varepsilon_2.
+\end{align*}
+Adding and collecting terms yields
+$(k_2-k_1)\{B(\pi_2)-B(\pi_1)\}\leq\varepsilon_1+\varepsilon_2$.
+The exact monotonicity statement is the zero-error case. Adding the two budget measurement discrepancies yields the stated observable-error inequality. Feasible-set independence of $k$ is essential: otherwise a policy used in the crossed comparison might not be available.
+
+For sharpness in the class of affine policy-value problems, take two policies with $B_1=0$, $B_2=(\varepsilon_1+\varepsilon_2)/(k_2-k_1)$, $A_1=0$, and $A_2=k_1B_2+\varepsilon_1$. At $k_1$, policy 1 is exactly $\varepsilon_1$ suboptimal; at $k_2$, policy 2 is exactly $\varepsilon_2$ suboptimal. Equality holds in the budget-reversal bound. Choose errors small enough to respect any prescribed positive upper bound on $B_2$. This construction proves that the coefficient cannot be improved without more structure; it is not a claim that these two artificial policies have been realized in the particular NDU dynamics. \qed
+
+\subsection{Proof of Proposition~\ref{r8:intervalecon}}
+Use the subgradient inequality with the optimizer at $k$ and prices $k_+$ and $k_-$. Rearrangement gives
+\[
+ \frac{V(k)-V(k_+)}{k_+-k}\leq B(\pi_k)
+ \leq\frac{V(k_-)-V(k)}{k-k_-}.
+\]
+Replacing each numerator by its appropriate outer value enclosure gives \eqref{r8:budgetinterval}, and intersecting with the primitive budget range is valid. Inclusion of restricted policies in the flexible set gives $V_F-V_R\geq0$. The interval subtraction rule gives the other endpoints. No optimizer differentiability, common selected policy, or pointwise action ordering is required. \qed
+
+\section{Recursive and equilibrium gain bounds}\label{r8:proof:recursive}
+Suppose a verified interval of continuation values is invariant under all action operators, each operator is monotone on it, and each has Lipschitz constant at most $L_n\geq0$. The maximized operator is also $L_n$-Lipschitz. Repeating the two approximate-equation comparisons in the finite proof gives
+\begin{align*}
+ \|V_n^*-v_n\|_\infty&\leq e_n+\eta_n+L_n\|V_{n+1}^*-v_{n+1}\|_\infty,\\
+ \|V_n^\pi-v_n\|_\infty&\leq e_n+L_n\|V_{n+1}^\pi-v_{n+1}\|_\infty.
+\end{align*}
+Iteration proves the product-weighted error formula stated in the text. These hypotheses must be verified for the actual recursive discretization. In particular, the sign condition $bV>0$ does not exclude arbitrarily large derivatives of the driver close to zero and does not supply a uniform $L_n$.
+
+For a game, fix rivals' strategies and regard player $i$'s unilateral deviations over all future dates as a control problem with its own payoff and transition law. The preceding certificate then bounds $V_i^{\mathrm{BR}(\pi_{-i})}-V_i^{\pi}$. Requiring this bound for every player gives an approximate Nash condition at every initial state included in the norm. Checking only a single-date action deviation or only states visited in one rollout does not replace the all-future-date best-response calculation.
+
+For sophisticated temporal selves the acting self's criterion uses the $\beta$-weighted continuation in \eqref{r8:selves}, but ordinary continuation evaluation uses $\delta$. A unilateral deviation certificate must use the acting self's criterion, with future selves held fixed. Substituting a geometrically $\beta$-discounted evaluation equation changes that equilibrium problem, so its small residual would certify the wrong object. The preserved supplement supplies the full two-date algebra and the executed finite-model conventions. \qed
+
+\section{Trace estimation and limitations of local training}\label{r8:proof:trace}
+For a symmetric matrix $A$ and $z\sim N(0,I)$, diagonalize $A$ orthogonally. Rotational invariance and independence of the coordinates imply $\E z'Az=\operatorname{tr}A$ and $\operatorname{Var}(z'Az)=2\|A\|_F^2$. The mean of $K$ independent probes has variance $2\|A\|_F^2/K$. Bias--variance decomposition of $(c-\bar q_K/2)^2$ proves \eqref{r8:trace}.
+
+Averaging the $K$ quantities $(c-z_k'Az_k/2)^2$ leaves the expectation equal to $(c-\operatorname{tr}A/2)^2+\|A\|_F^2/2$. With two independent probe means $\bar q$ and $\bar q'$, independence instead gives
+\[
+ \E[(c-\bar q/2)(c-\bar q'/2)]=(c-\operatorname{tr}A/2)^2.
+\]
+The latter sample objective may be negative and may have high variance. None of these expectation identities is a uniform residual enclosure over state space. \qed
+
+A local actor stationary point also cannot substitute for a global feasible action maximum. For $H(a)=-(a^2-1)^2+.2a$ on $[-2,2]$, the local maximum near $-.973994$ and the global maximum near $1.024120$ are both isolated stationary points, with objective gap about $.399875$. Exact critic evaluation and isolated actor stationary points do not eliminate this difference. Concavity in the action would give the global supporting-hyperplane gap, but concavity in an action argument does not imply concavity in shared network weights.
+
+The retained viscosity counterexample has the same logical role. A small integrated strong residual for a smooth approximation of $|x|-1$ does not select the viscosity solution $1-|x|$ of the appropriate eikonal boundary problem. Missing viscosity inequalities cannot be replaced by a loss plot. The previous derivations, exact boundary specifications, and regression checks for these examples are reproduced unchanged in the preservation supplement.
+
+Likewise, a two-timescale stochastic-approximation theorem requires bounded iterates, appropriate regularity, stable fast evaluation dynamics, martingale-noise control, and step-size conditions. Its generic conclusion is an invariant-set statement for the limiting slow dynamics. An optimal-policy conclusion needs an additional argument ruling out nonoptimal attractors. The current regret theorems do not rely on asserting that every observed gradient trajectory has such an optimal limit.
