@@ -1,0 +1,72 @@
+name: R8 clean referee build
+on:
+  push:
+    branches: [revision/econometrica-r8-verified-manuscript-2026-09-22]
+    paths: [.github/workflows/r8-review-build.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r8-review-build
+  cancel-in-progress: false
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Exact source identity
+        run: git rev-parse HEAD > R8_REVIEW_SOURCE_COMMIT.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r8-review-sources
+          path: |
+            ECTA_R8.tex
+            SUPP_R8.tex
+            R8_REVIEW.md
+            R8_REVIEW_SOURCE_COMMIT.txt
+            revisions/2026-09-22-r8
+          retention-days: 30
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install manuscript build dependencies
+        run: |
+          python -m pip install numpy==2.3.5
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends texlive-latex-extra texlive-fonts-recommended poppler-utils
+      - name: Validate evidence and compile canonical manuscripts
+        run: bash revisions/2026-09-22-r8/build.sh
+      - name: Record PDF structure
+        run: |
+          pdfinfo ECTA_R8.pdf > revisions/2026-09-22-r8/build_logs/ECTA_R8_pdfinfo.txt
+          pdfinfo SUPP_R8.pdf > revisions/2026-09-22-r8/build_logs/SUPP_R8_pdfinfo.txt
+          pdftotext -layout ECTA_R8.pdf revisions/2026-09-22-r8/build_logs/ECTA_R8_text.txt
+          pdftotext -layout SUPP_R8.pdf revisions/2026-09-22-r8/build_logs/SUPP_R8_text.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r8-review-delivery
+          path: |
+            .
+            !.git
+            !**/__pycache__
+            !*.aux
+            !*.log
+            !*.out
+            !*.toc
+            !*.fls
+            !*.fdb_latexmk
+          include-hidden-files: true
+          retention-days: 30
+      - name: Commit generated review artifacts on the R8 branch only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f ECTA_R8.pdf SUPP_R8.pdf R8_REVIEW_SOURCE_COMMIT.txt
+          git add -f revisions/2026-09-22-r8/paper/tables revisions/2026-09-22-r8/validation_report.json revisions/2026-09-22-r8/build_manifest.json revisions/2026-09-22-r8/build_logs
+          git commit -m 'paper(r8): deliver source-bound Econometrica main, preservation supplement and verified tables'
+          git pull --rebase origin revision/econometrica-r8-verified-manuscript-2026-09-22
+          git push origin HEAD:revision/econometrica-r8-verified-manuscript-2026-09-22
