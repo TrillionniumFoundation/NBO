@@ -1,0 +1,23 @@
+name: R18 immutable manuscript input
+on:
+  push:
+    branches: [revision/econometrica-r18-certificate-aligned-2026-09-23]
+    paths: [.github/workflows/r18-source-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Archive exact manuscript and review inputs
+        run: |
+          git archive HEAD ECTA_R16.tex SUPP_R16.tex revisions/2026-09-23-r16/paper reviews/2026-09-23-econometrica-r16 revisions/2026-09-23-r16/RESPONSE_TO_R14.md | gzip -n > r18-manuscript-input.tar.gz
+          git rev-parse HEAD > SOURCE_COMMIT.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r18-manuscript-input
+          path: |
+            r18-manuscript-input.tar.gz
+            SOURCE_COMMIT.txt
+          retention-days: 14
