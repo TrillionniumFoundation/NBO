@@ -1,27 +1,13 @@
-# Canonical revision: R14 — Neural Bellman Operators
+# Neural Bellman Operators — current revision index
 
-The current scientific manuscript is **R14**. Start at R14_REVIEW.md.
+## Current review object: R16
 
-| Object | Current path |
-|---|---|
-| Main paper | `ECTA_R14.pdf` / `ECTA_R14.tex` |
-| Current technical supplement | `SUPP_R14.pdf` / `SUPP_R14.tex` |
-| Point-by-point response | `revisions/2026-09-22-r14/response_to_referee.md` |
-| Machine-readable canonical identity | `revisions/2026-09-22-r14/canonical_manifest.json` |
-| Source/result/build receipt | `revisions/2026-09-22-r14/publication_receipt.json` |
-| Numerical evidence | `revisions/2026-09-22-r14/results/` |
-| Replication and scope | `revisions/2026-09-22-r14/README.md` |
+Start with [R16_REVIEW.md](R16_REVIEW.md). The current main manuscript is [ECTA_R16.pdf](ECTA_R16.pdf), with [SUPP_R16.pdf](SUPP_R16.pdf) as its current supplement. Their LaTeX entries and all numerical/proof sources are materialized in this branch.
 
-## Publication status
+The current [point-by-point response](revisions/2026-09-23-r16/RESPONSE_TO_R14.md) addresses the complete R14 referee report at immutable commit `bb09ac177fc766aea8aba26cb6a40b8aff68528c`. The [publication manifest](revisions/2026-09-23-r16/PUBLICATION_MANIFEST.json) identifies source/result commits, PDF checksums, complete validation, and scientific scope. The [preservation manifest](revisions/2026-09-23-r16/PRESERVATION_MANIFEST.json) verifies that all historical scientific files remain unchanged.
 
-R14 is published on GitHub on revision/econometrica-r14-independent-state-audit-2026-09-22 and mirrored on revision/econometrica-r14-referee-copy-2026-09-22. Both descend from the latest R13 review input at 857bfeab28ca1b7a7f732edf180126f3ded6b451; main, the review branches, and earlier revision branches were not overwritten. The scientific tree was materialized on the remote review ancestry and revalidated on GitHub Actions before publication.
+R16 retains the neural numerical-method objective and the original nonlinear economy. Its new proofs and computations are substantive additions. A valid certificate is not relabeled as a passed tolerance: the original full-horizon nonlinear neural 0.01 gate remains unmet by the retained checkpoints. The coupled inventory neural success and sharp price-library bounds are stated with their own domains and policies.
 
-## Immutable predecessor identities
+## Preserved historical entry
 
-| Role | Remote commit |
-|---|---|
-| Last actual manuscript, R12 | `4ff0404833a6d6773bcf7afab361013d732df686` |
-| R12 review / purported R13 aliases (no new manuscript) | `442ef9be75e620b53f923cdc476be50edaa64ca7` |
-| Latest R13 review input / required publication base | `857bfeab28ca1b7a7f732edf180126f3ded6b451` |
-
-R12, R11, R10, R9, R8 and earlier sources, PDFs, results and failure archives remain in the repository as dated historical material. They are not additional current canonical versions. The previous mixed-version navigation index is preserved verbatim at `revisions/2026-09-22-r14/archive/REVISION_INDEX_before_R14.md`.
+The previous authoritative index is copied unchanged to [archive/REVISION_INDEX_R14.md](revisions/2026-09-23-r16/archive/REVISION_INDEX_R14.md). Every earlier manuscript, supplement, experiment, failed run, and review remains at its original path. The incomplete R15 source staging remains confined to its original branch and is not treated as a materialized scientific revision.
