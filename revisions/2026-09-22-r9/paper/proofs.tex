@@ -1,0 +1,202 @@
+\section{Verification and computational error}\label{r9:proof:verification}
+\subsection{Selection, stopped comparison, and the neural bridge}
+\begin{proof}[Proof of Proposition~\ref{r9:selection}]
+For a fixed jet the three controls enter additively. The consumption objective has derivative $c^{-u}-v_x$ and second derivative $-uc^{-u-1}<0$. If $v_x\leq0$ it is increasing; otherwise its unconstrained maximizer is $v_x^{-1/u}$. The adjustment objective is $\theta v_u-k\theta^2/2$, which is strictly concave for $k>0$. The portfolio objective is $h_1p+h_2p^2/2$. A negative $h_2$ gives the projected vertex. A nonnegative $h_2$ gives a maximum at an endpoint, including the linear and constant cases. Compactness and the stated tie rule give a feasible measurable selection. These are control-space statements at a fixed jet, not parameter-space convergence statements.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{r9:pair}]
+Localize the process on interior compact sets and apply discounted It\^o's formula to an upper witness on each time slab. The discounted terminal witness plus accumulated reward equals the initial witness, the expected integral of $R_aU$, and the expected sum of discounted forward jumps. The latter sum is nonpositive. Boundary comparison gives $g\leq U+b_U$. Nonnegativity of discounting and the deterministic bound $\tau\leq T$ therefore imply
+\[
+ J_k^a(t,s)\leq U(t,s)+b_U+\epsilon_U\E\int_t^\tau e^{-\rho(r-t)}\,dr
+ \leq U(t,s)+b_U+C_\rho(T-t)\epsilon_U.
+\]
+Uniform integrability permits removal of localization. Taking the supremum over all admissible controls proves the optimal-value bound; attainment is unnecessary. Apply the same identity to $L$ along the implemented policy. Its forward jumps are nonnegative, $g\geq L-b_L$, and $R_\pi L\geq-\epsilon_L$, giving the lower bound. Subtraction proves the regret statement. The process is stopped at the economic exit; there is no use of an unproved interior trace of the optimal value.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{r9:bridge}]
+The cover and representative intervals imply $|R_\pi v|\leq e$ and $0\leq\Gamma\leq q$ everywhere. Hence $\sup_aR_av=R_\pi v+\Gamma\leq e+q$ and $R_\pi v\geq-e$. Apply Theorem~\ref{r9:pair} with $U=L=v$, $b_U=b_L=b$, $\epsilon_U=e+q$, and $\epsilon_L=e$. A derivative bound with respect to the chosen cell norm gives the two moduli by integration along segments, or along a specified path inside the cell. In a nonconvex cell, a verified path-length radius must replace the Euclidean radius. The vanishing-allowance assertion follows directly from the bound and does not require a compact set of network parameters.
+\end{proof}
+The finite counterpart follows from positivity of the continuation operators: propagate the evaluation error with one factor $\delta$, propagate the optimality error with one factor $\delta$, and add the candidate gain. Backward induction from terminal error $b$ gives \eqref{r9:finite}. The full state-dependent induction, correction rule, and recursive-operator versions are reproduced in the preservation supplement. Unlike this finite identity, a continuous interpretation additionally needs either verified operator discrepancy terms or an independent continuous verification route. The present original-payoff calculation uses the latter.
+
+\subsection{Arithmetic convention}
+The mathematical constants specifying the economy are exact decimals. Stored network weights, policy constants, and fitted coefficients are interpreted as exact binary64 numbers. Constant formation and polynomial coefficient conversion use 70-digit interval arithmetic; scalar optimization bounds use at least 50 digits. Vectorized interval addition, subtraction, multiplication, division by a strictly positive interval, and pairwise summation round both endpoints outwards with the adjacent binary64 number. An interval square may be enclosed by ordinary interval multiplication; this is conservative even when its lower endpoint is negative. No transcendental library approximation is treated as a rigorous interval merely because its output was subsequently rounded once. Exponentials in vectorized routines are replaced by Taylor polynomials with analytic remainders; interval logarithms, trigonometric constants, and square roots are formed in the multiprecision layer.
+
+All derivative and residual claims concern the mathematical function represented by the stored constants, not the real-time floating-point implementation of an arbitrary neural policy. The original time controls are themselves stored constants, so their continuous implementation is unambiguous. External-network rollouts are explicitly floating-point performance estimates. This distinction is retained in every numerical table.
+
+\section{Original-economy fitted witnesses}\label{r9:proof:upper}
+\subsection{Global fallback and localized upper bound}
+For $G=-.02(u-2)^2+.1\log x$, consumption and portfolio selection give $c=.8$ and $p=.8$. The adjustment gain is bounded above by $.000512/k\leq.001024$ for $k\geq.5$. The preference part of $-\rho G$ is at most $.000512$. Consumption utility is maximized at the upper endpoint $u=2.8$ on the stated domain. The portfolio drift and diffusion contributions at $p=.8$ are $.00352$. Maximizing $-.08/x-.004\log x$ over $[.5,2]$ gives $-.04-.004\log2$. Consequently
+\[
+ \sup_aR_aG\leq\frac{.8^{-1.8}}{-1.8}+.000512+.001024+.00195+.00352-.04-.004\log2<-.8659.
+\]
+Also $G\geq g$. Stopped verification gives $V_k\leq G$ globally on the original domain, including as a continuation bound at an artificial verification face.
+
+\begin{proof}[Proof of Proposition~\ref{r9:upper}]
+The derivatives of $G+F$ in $x$ coincide with those of $G$. Thus the same $c$ and $p$ selection applies. The residual after maximizing over wealth is precisely \eqref{r9:reduced}. For $z=8h\exp\{\lambda(u-u_0)+\kappa h\}$, where $h=1-t$,
+\[
+ (\partial_t+\mathcal L^a-\rho)z
+ =8e^{\lambda(u-u_0)+\kappa h}
+ \{-1+h(-\kappa+\lambda\theta+.00125\lambda^2-\rho)\}.
+\]
+The choices $(|\lambda|,\kappa)=(120,42),(160,64)$ satisfy $\kappa=.2|\lambda|+.00125\lambda^2$. Both terms therefore have nonpositive killed generators for every admissible control. Moreover $(\partial_t-\rho)C_\rho(1-t)=-1$. It follows that $U$ has nonpositive residual inside the verification domain.
+
+At $t=1$, $F=Z=C_\rho=0$, and $U=G$. At an actual wealth exit, $F\geq-8h$ implies $U\geq G-8h=g$. At either artificial preference face, one summand of $Z$ is at least $8h$, so $U\geq G$. Stop first at the economic exit or an artificial face. If the artificial face occurs first, the remaining original-model payoff is bounded by $G$ under every admissible continuation, by the global fallback just proved. Concatenated stopped verification gives the asserted bound without modifying the original dynamics or opportunity set.
+\end{proof}
+
+\subsection{Polynomial source enclosure and refinement}
+Write $u-1=A+Bz$, where $A=1.05$, $B=.55$, and $|z|\leq1$. Let $D=(A^2-B^2)^{1/2}$ and $q=B/(A+D)<1$. The uniformly convergent expansion
+\[
+ \frac1{A+Bz}=\frac1D\left[1+2\sum_{n=1}^{\infty}(-q)^nT_n(z)\right]
+\]
+has truncation error at degree 16 bounded by $2q^{17}/\{D(1-q)\}$. If $L=-\log(.8)$, approximate $e^{L(A+Bz)}$ by $e^{LA}$ times the degree-eight Taylor polynomial of $e^{LBz}$. Its remainder is at most $e^{L(A+B)}(LB)^9/9!$. Multiplying the two enclosures, with the relevant sup-norm bounds, gives the stored uniform error below $2.117\times10^{-9}$ for $-.8^{-(u-1)}/(u-1)$. This error is added to the residual upper bound, not fitted away.
+
+The $H_k$ branches are $-.2q-.02k$ for $q\leq-.2k$, $q^2/(2k)$ for $|q|\leq.2k$, and $.2q-.02k$ for $q\geq.2k$. On each box, interval Bernstein coefficients enclose $q$ and every potentially applicable residual polynomial. A box touching a switching threshold includes both adjoining branches. The comparison uses outward threshold intervals; binary64 representation of $.2k$ cannot exclude a true branch. A tensor polynomial lies between its minimum and maximum Bernstein coefficients. De Casteljau subdivision preserves this enclosure and is repeated on boxes whose upper coefficient exceeds the prescribed ceiling. The independent check of $F/h\geq-8$ uses the same convex-hull property.
+
+For a fixed polynomial whose true residual lies strictly below a ceiling, Bernstein refinement eventually verifies that ceiling, up to the explicitly accounted source and arithmetic allowances. This is a certification statement about a fixed candidate with slack. It is not a theorem that residual fitting, a wealth-independent ansatz, or arbitrary Adam training produces approximants converging to the optimal value. The executed ceiling sequence and all visited-cell counts are retained. The separate wealth-sensitive linear-programming pilot has not received this validation and contributes no upper endpoint to the reported results.
+
+\section{Independent evaluation of the learned time policy}\label{r9:proof:policy}
+The projected policy has constant $c_j,\theta_j$ on each of sixteen slabs, $p=0$, and $0\leq\theta_j\leq.2$. Training chooses these constants, but the subsequent evaluator reads only the frozen policy. The exact wealth formula in the main text and the outward budget check show $x_1>.5$. Since $c_j>.025$ and $x_0=1.25$, wealth is decreasing throughout the horizon and never reaches the upper boundary. Neither Brownian correlation nor a wealth discretization affects this conclusion when $p=0$.
+
+Without preference stopping, $u_t=2+\mu(t)+.05W_t^u$, with $\mu(t)=\int_0^t\theta_rdr\in[0,.2]$. An upper-boundary exit requires $W_t^u\geq12$ at some $t\leq1$; a lower exit requires $W_t^u\leq-16$ and is also contained in $\{\sup_{t\leq1}|W_t^u|\geq12\}$. The exponential martingale maximal inequality on each side gives
+\[
+ p_{\rm exit}\leq2e^{-72}<1.077\times10^{-31}.
+\]
+The original preference diffusion is still stopped at exact first exit. Its rare-exit correction is not set to zero.
+
+Put $r=u-2$ and $L_j=-\log c_j$. Before exit, $|r|\leq.8$ and utility is $-e^{L_j}e^{L_jr}/(1+r)$. Replace the reciprocal by $\sum_{m=0}^{80}(-r)^m$ and the exponential by its degree-ten Taylor polynomial. The geometric remainder is at most $.8^{81}/.2$; the exponential remainder is at most $e^{.8L_j}(.8L_j)^{11}/11!$. The product bound, including the reciprocal and exponential suprema, yields a uniform error for the degree-90 polynomial $P_j$. This bound holds on the whole original preference interval, not just at training quadrature nodes.
+
+For a Gaussian random variable with mean $\mu$ and variance $v$, its raw moments satisfy $M_0=1$, $M_1=\mu$, and
+\[
+ M_n=\mu M_{n-1}+(n-1)vM_{n-2}.
+\]
+Hence $\E P_j(u_t-2)$ is evaluated by this recurrence with $v=.0025t$, and the terminal quadratic preference settlement has an exact Gaussian expectation. On each time rectangle the intervals for $\mu$, $v$, discounting, and the polynomial coefficients enclose the entire integrand. Outward sums of interval range times interval length therefore enclose its integral. These ranges are not quadrature-error estimates inferred from two discretizations. The three resolutions are independent enclosures of the same integral.
+
+To compare this free-Gaussian polynomial calculation with the stopped economic payoff, let $E$ be the event of preference exit. Off $E$ the two paths agree through $T$. On $E$, the omitted polynomial tail is bounded using
+\[
+ \E[\mathbf1_E|P_j(u_t-2)|]\leq\sqrt{p_{\rm exit}}\,
+ \|P_j(u_t-2)\|_2,
+ \qquad \|P_j\|_2\leq\sum_m|b_{jm}|\sqrt{M_{2m}}.
+\]
+Even Gaussian moments are bounded uniformly by evaluating their nonnegative coefficient formulas at $\mu=.2$ and $v=.0025$. The same argument bounds the free terminal settlement, while actual exit settlement has magnitude below $8.1$. Discounted adjustment cost omitted after exit is at most $.02k\mathbf1_E$. One valid total stopping allowance is thus
+\[
+ \sqrt{p_{\rm exit}}\left\{\max_j\|P_j\|_2+\|G(u_1,x_1)\|_2\right\}
+       +p_{\rm exit}(.02k+8.1).
+\]
+The uniform utility approximation allowance is added separately, multiplied by $C_\rho(1)$. At $k=2$ the stopping allowance is below $5.388\times10^{-16}$; the utility approximation allowance is below $1.151\times10^{-7}$ before multiplying by $C_\rho(1)$. The larger remaining width comes from the explicitly enclosed time integration, not from ignoring a boundary event.
+
+The free adjustment budget is exactly $\sum_j(\theta_j^2/2)\int_{j/16}^{(j+1)/16}e^{-.04t}dt$. Stopping can reduce this quantity by at most $.02p_{\rm exit}$. Its interval, and the strictly positive wealth-feasibility margin, are retained at full precision. Tight budget intervals describe these deployed policies, not optimal-budget identification.
+
+\section{Economic comparison and the restricted dual}\label{r9:proof:dual}
+\subsection{Cost ordering and value enclosures}
+\begin{proof}[Proof of Theorem~\ref{r9:cost}]
+For each policy, $J_k(\pi)=A(\pi)-kB(\pi)$ is affine and nonincreasing because $B(\pi)\geq0$. The supremum is convex and nonincreasing. The two approximate optimality inequalities give
+\[
+ A_1-k_1B_1\geq A_2-k_1B_2-\varepsilon_1,
+ \qquad A_2-k_2B_2\geq A_1-k_2B_1-\varepsilon_2.
+\]
+Adding and dividing by $k_2-k_1>0$ gives \eqref{r9:reversal}. Zero allowances give budget ordering for any optimizers at distinct prices. If $\pi_k$ is optimal at $k$, feasibility at $k_+$ implies $V(k_+)\geq V(k)-(k_+-k)B(\pi_k)$; feasibility at $k_-$ implies $V(k_-)\geq V(k)+(k-k_-)B(\pi_k)$. Substitute the appropriate value-enclosure endpoints and intersect with the primitive budget range to obtain \eqref{r9:secant}.
+\end{proof}
+The access lower bound follows from $V_k\geq J_k$ and $V_R\leq\overline V_R$. Its nonnegativity follows because the restricted policy set is contained in the flexible policy set. Likewise $V_k-V_R\leq\overline V_k-\underline J_R$. These inequalities compare two optimal values even though the feasible policies supplying the lower bounds need not be optimal.
+
+\subsection{Cancellation of the portfolio and stopped localization}
+\begin{proof}[Proof of Theorem~\ref{r9:restricted}]
+For $Y$ as specified, quadratic covariation gives
+\[
+ d(Y_tx_t)=(.04Y_tx_t-Y_tc_t)dt+\text{local martingale}.
+\]
+The $.06pYx$ portfolio drift cancels the $-.06pYx$ covariation term for every adaptive $p$. Including $-.5Y$, the discount term, and the preference quadratic yields
+\[
+ R_{c,p}W_0=\frac{c^{1-u}}{1-u}-yc+.01y-.00005-.004\log(.5)+.0008(u-2)^2\leq S(u,y).
+\]
+There is no $W_0$ mixed $u$--$x$ or $u$--$y$ derivative. Correlation is retained in the transition law of $(U,Y)$ used to evaluate the source potential.
+
+For a source lower bound use the feasible consumption $.35$: its utility on $u\in[1.5,2.6]$ is bounded below by $-2/\sqrt{.35}$, while $-.35y\geq-4.2$. The remaining terms sum to a nonnegative quantity on this rectangle. Thus $S>-7.581>-8$. For an upper bound discard $-yc$, maximize utility at $c=.8,u=2.6$, use $.01y\leq.12$, and bound the remaining terms by $.0033$. This gives $S<-.7698<0$. The clipped extension is bounded in $[-8,0]$, so $-8h\leq F_R\leq0$.
+
+The discounted Feynman--Kac potential satisfies the conditional expectation identity for its remaining source integral. Consequently $e^{-\rho r}F_R(h-r,U_r,Y_r)+\int_0^r e^{-\rho s}\widetilde S(U_s,Y_s)ds$ is a martingale. Stopping this identity on a bounded verification rectangle is legitimate because the source is bounded. Inside the rectangle $\widetilde S=S$, so adding the identity to discounted It\^o verification for $W_0$ cancels its residual majorant. This argument does not require an assumed globally smooth optimal value, or differentiability of the clipped source at its outer faces.
+
+Preference localization with $\theta=0$ uses $\kappa=.00125\lambda^2$, giving 50 and 72 for $|\lambda|=200$ and 240. For $l=\log Y$, $dl=-.025dt-.3dZ^x$. Each exponential localization term with $|\lambda|=22$ has nonpositive killed generator because $22.33=.025(22)+.045(22)^2$ dominates either sign of the log drift. As before, the factor $8h$ supplies at least $8h$ at its associated artificial face.
+
+For $x\in[.5,2]$ and $y\geq.2$,
+\[
+ W_0-G=y(x-.5)+.1\log(.5/x)\geq0:
+\]
+the expression is zero at $.5$ and has derivative $y-.1/x\geq0$. At an actual wealth exit the source term is at least $-8h$, so $W_0+F_R+Z_R\geq g$. At a terminal time it is at least $G$. At any artificial $u$ or $y$ face a localization term pays for the entire possible source deficit, giving continuation value at least $G$. Actual preference exit cannot precede these inner preference faces. Invoke the global fallback $V_R\leq G$ after an artificial exit and apply the stopped identity before it. This proves \eqref{r9:restrictedupper} over all original adaptive consumption and portfolio controls. The value of $Y_0$ is an auxiliary witness parameter, not an imposed wealth price or policy restriction.
+\end{proof}
+
+\subsection{Validated evaluation of the restricted witness}
+Let $z_1,z_2$ be independent standard Gaussians and put $r=v^2$. At the central state,
+\[
+ u=2+.05v\{- .25z_1+\sqrt{.9375}\,z_2\},\qquad
+ l=\log(1.55)-.025v^2-.3vz_1.
+\]
+The source expectation is integrated with weight $2ve^{-.04v^2}\varphi(z_1)\varphi(z_2)$ on $v\in[0,1]$. The box $z_1,z_2\in[-6,6]$ lies strictly inside the stated $u,y$ verification rectangle under this transformation. The omitted probability is at most $4e^{-18}$. Since the extended source lies in $[-8,0]$, omission contributes an interval $[-8C_\rho(1)4e^{-18},0]$, whose width is less than $4.778\times10^{-7}$. The initial localization addition is less than $2.200\times10^{-9}$.
+
+For completeness, the Hessian used by the evaluator is explicit. Let $c=\operatorname{proj}_{[.05,.8]}e^{-l/u}$, $L=-\log c$, $y=e^l$, and let $\chi$ be one for an interior consumption solution and zero for a strictly constrained solution. Across a switching box use $\chi\in[0,1]$. With $Q=c^{1-u}/(1-u)$,
+\begin{align*}
+ Q_u&=\frac{e^{L(u-1)}\{1-L(u-1)\}}{(u-1)^2},&
+ Q_{uu}&=-\frac{e^{L(u-1)}[\{L(u-1)-1\}^2+1]}{(u-1)^3},\\
+ S_u&=Q_u+.0016(u-2),&S_l&=-yc+.01y,\\
+ S_{uu}&=Q_{uu}+\chi ycL^2/u+.0016,&S_{ul}&=-\chi ycL/u,\\
+ S_{ll}&=-yc+\chi yc/u+.01y.&&
+\end{align*}
+The envelope is continuously differentiable across clipping surfaces; its gradient is locally Lipschitz and these piecewise second derivatives give a valid integral Taylor bound across such a surface. Differentiate the displayed $(u,l)$ transformation by the chain rule to obtain a Hessian in $(v,z_1,z_2)$. Every intermediate expression is enclosed on the entire box. Bounds on the absolute Hessian entries give the usual one-half diagonal and full mixed-term Taylor remainder.
+
+The constant and linear Taylor terms are integrated exactly for their polynomial approximation to the weight. Gaussian weighted moments through order two use 111 terms of $e^{-z^2/2}$ and remainder bounded on $|z|\leq6$ by $e^{18}18^{111}/111!$. Time moments use thirteen terms of $e^{-.04v^2}$ with their analytic remainder. Source exponentials are evaluated with degree-40 Taylor polynomials on arguments in $[-3,3]$, with error at most $e^3 3^{41}/41!$. All antiderivatives, remainders, interval additions, and sums are rounded outward. The two diagonal second moments are nonnegative; intersecting their enclosures with the nonnegative half-line is valid. Mixed moments are conservatively bounded by cell-radius products times probability mass.
+
+The successive box counts are 16,384, 131,072, and 1,048,576. Their intervals enclose the same initial \emph{dual witness}. Only an upper endpoint is used to bound the restricted optimum. Combining the final upper endpoint with the independently certified restricted-policy lower gives a true optimal-value interval of width less than $.009047$. The distinct width below $.000320$ describes integration of the witness, not the primal--dual gap.
+
+\section{Continuous action and absolute-value certification}\label{r9:proof:action}
+\subsection{The scalar global action bound and interval neural jets}
+\begin{proof}[Proof of Theorem~\ref{r9:actionthm}]
+For any action with $\sum_i a_i=z$ and any real $\lambda$,
+\[
+ \sum_i f_i(a_i)=\sum_i\{f_i(a_i)-\lambda a_i\}+\lambda z
+ \geq D(\lambda)+\lambda z.
+\]
+The second derivative of $.3\sin z$ is bounded below by $-.3$. For $z=z_0+e$, $|e|\leq r$, its quadratic Taylor minorant gives
+\[
+ \lambda z+.3\sin z\geq\lambda z_0+.3\sin z_0
+       +(\lambda+.3\cos z_0)e-.15e^2,
+\]
+which implies \eqref{r9:actionlower}. Each scalar $f_i$ has second derivative $(2+.2\cos2s)/d\geq1.8/d=m$. Thus $q=f_i-\lambda s$ is $m$-strongly convex. Its tangent quadratic at any feasible $s_0$ gives a lower bound $q(s_0)-q'(s_0)^2/(2m)$. At an endpoint, only a feasible descent direction is relevant: an outward-pointing minimization direction contributes zero, while an inward-pointing direction contributes the derivative magnitude. This follows either by minimizing the tangent quadratic over the half-line or directly from the sign of the linear term. The stated lower bound remains valid if the quadratic minimizer lies beyond the opposite endpoint, because relaxing the displacement can only lower it.
+
+The sum of these scalar lower bounds is no larger than $D(\lambda)$. A feasible action gives a rigorous upper bound by direct interval evaluation. The scalar interval $[-d,d]$ covers every possible action sum. Subdivision, pruning only a box whose lower bound exceeds a feasible upper bound, and taking the minimum surviving lower bound preserve a global enclosure. Root finding affects efficiency but not validity. Finally $|H_p(a)-H_{\widehat p}(a)|\leq2\sum_i\delta_i$ on the action box. The true candidate upper and true minimum lower can each worsen by at most this amount, giving the $4\sum_i\delta_i$ gap correction.
+\end{proof}
+
+For an affine layer with stored weights, interval automatic differentiation propagates both activations and spatial derivatives. A tanh layer is evaluated as $(e^{2z}-1)/(e^{2z}+1)$ with a strictly positive denominator and derivative $1-\tanh^2z$, all in multiprecision intervals. The terminal embedding is differentiated as its mathematical formula, including the exact $\sqrt d$, not as a previously rounded autograd constant. This gives a componentwise interval for the derivative of the represented network. Subtracting the stored floating-point gradient gives the $\delta_i$. The two executed tests use the inherited eight- and sixteen-dimensional learned checkpoints and the same jets as the action certificates. The summed errors are below $4.584\times10^{-17}$ and $7.877\times10^{-17}$ respectively. These are local jet checks, not whole-state residual bounds.
+
+\subsection{A lower bound retaining the nonquadratic terminal payoff}
+\begin{proof}[Proof of Proposition~\ref{r9:lower}]
+For $|a|\leq1$, $\sin(a)/a\geq\sin1$, with the continuous value at zero. Consequently $a^2+.1\sin^2a\geq r_0a^2$, where $r_0=1+.1\sin^21$. Also $.3\sin(\sum_i a_i)\geq-.3$. Replacing running cost by $r_0\|a\|^2/d-.3$ decreases every original control's cost; allowing all $a\in\R^d$ decreases the infimum further. The original terminal payoff $q_d$ is unchanged.
+
+The relaxed HJB equation is
+\[
+ v_t+\frac{\sigma^2}{2}\Delta v-\frac{d}{r_0}|\nabla v|^2-.3=0,
+ \qquad v(1,x)=q_d(x),\qquad \sigma^2=.32.
+\]
+Put $\lambda=\sigma^2r_0/(2d)$ and use the logarithmic heat representation. At $X_0=0$ it gives
+\[
+ v(0,0)=-.3-\lambda\log\E\exp\{-q_d(\sigma Z)/\lambda\},
+ \qquad Z\sim N(0,I_d).
+\]
+The bounded cosine and coercive quadratic terminal terms give finite positive expectations. The Gaussian heat solution is smooth before the terminal date and has at most quadratic growth. Standard localization of its verification identity, or truncation followed by monotone Gaussian integration, validates the relaxed lower bound without assuming a smooth solution of the original bounded-control problem.
+
+Complete the square for the quadratic terminal component. Its Gaussian normalization contributes
+\[
+ \frac{.25r_0}{r_0+4}+\frac{\sigma^2r_0}{4}\log(1+4/r_0)-.3.
+\]
+Under the tilted Gaussian law the scalar sum divided by $\sqrt d$ has mean $m=2\sqrt d/(r_0+4)$ and variance $s^2=\sigma^2r_0/(r_0+4)$. Orthogonal coordinates disappear, leaving
+\[
+ v(0,0)=\frac{.25r_0}{r_0+4}+\frac{\sigma^2r_0}{4}\log(1+4/r_0)-.3
+       -\lambda\log\E\exp\{-(.2/\lambda)\cos(m+sZ_1)\}.
+\]
+This is the representation in the proposition. An upper enclosure for the positive scalar expectation gives a lower enclosure for $v$, because $-\lambda\log$ is decreasing. That lower endpoint is therefore a lower bound for the original value.
+\end{proof}
+For the scalar integral let $\eta=.2/\lambda$ and $R=\lceil\sqrt{2(\eta+50)}\rceil$. The omitted Gaussian contribution is no larger than $2e^{\eta-R^2/2}$. Interval ranges of the positive integrand times cell lengths enclose the integral on $[-R,R]$. The successive 1,024, 4,096, and 16,384-cell calculations add this analytic tail allowance and then apply the decreasing logarithm with outward rounding. Their widths measure integration uncertainty in the relaxed value. Relaxing the action bound and the running sine can leave a large structural gap even when this quadrature width is small.
+
+\section{Replication and scope ledger}\label{r9:proof:ledger}
+The central economic certificate is independent of the inherited killed-Euler discretization. Its fitted upper has a verified continuous-generator residual, an explicit source-polynomial remainder, a stopped-trace inequality, and exponentially bounded artificial-face continuation. Its feasible lower has exact deterministic wealth, interval Gaussian polynomial moments, an explicit utility approximation remainder, outward time integration, and an exact-exit probability correction. The restricted upper cancels continuous portfolio controls algebraically and evaluates a bounded-source stochastic potential with Taylor, Gaussian-tail, and localization allowances. These routes do not establish the still-uncomputed operator discrepancy budget for the old finite scheme.
+
+The external experiment has a different status. Each declared sample-and-hold policy is a feasible continuous control in the stated additive-noise dynamics. Real-arithmetic transitions are exact per holding slab, but the stored path estimates use floating-point network evaluations and a finite Monte Carlo sample. The rigorous lower bound supplies an absolute reference; subtracting it from a sampled mean does not create an outward policy-regret certificate. Paired path errors, seed variation, completed-update clock overshoot, setup, and warmup are recorded separately. The exact sign test concerns the frozen joint training-and-audit pipeline under independent seed draws. It does not certify an underlying PDE or imply that the six panels represent six independent problem families.
+
+Every new table is generated from raw JSON or path records; display endpoints are rounded in the conservative direction. The frozen external protocol, all tuning trials, all 72 holdout pairs, all checkpoints, and all path arrays are retained. The validation program checks coverage of the declared panels, matching initialization hashes, pinned author revision, finite outputs, refinement ordering, primitive feasibility, the positive access lower bounds, and the explicitly false flexible $.01$ precision flags. The complete R8, R4, and delivered R5 textual and numerical material is included in the preservation supplement, and earlier source files remain byte-for-byte unchanged. Neither a failed pilot nor a historical manufactured-payoff test is used as new original-economy evidence.
