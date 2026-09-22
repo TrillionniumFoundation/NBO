@@ -1,0 +1,94 @@
+\section{Numerical evidence}\label{r8:numerics}
+The experiments distinguish numerical validity, achieved precision, and comparative performance. The original-payoff NDU certificate in Table~\ref{r8:tab:continuum} is an outward-interval bound for a continuous diffusion. The finite gain envelopes in this section are float64 calculations for their declared candidate economies. The learned-geometry experiment has a rigorous continuous verification pair but a deliberately modified running payoff. The external comparison estimates realized costs and sampling uncertainty; it does not know the optimal value. These distinctions are part of the interpretation of the results, not alternative names for the same error.
+
+The complete new panel was executed from source commit \texttt{14ecbd48} in a clean Python 3.11 environment, with PyTorch 2.10.0, NumPy 2.3.5, SciPy 1.17.0, and mpmath 1.3.0. Numerical work used one CPU thread. The ledger retains the processor description, exact versions, source hashes, external-code hashes, checkpoint weights, rollout arrays, all seed-level records, and execution logs. Table generation reads those committed records and fails on missing cells. The local integration runs are development checks, not extra independent confirmatory seeds.
+
+\subsection{Preserving a learned policy through thresholded correction}
+Table~\ref{r8:tab:safeguard} re-audits two retained policies without retraining or selecting a new policy using the reference optimum. The twelve-date seed-10 policy had a raw localized envelope of $.0922420$. The preceding all-positive-gain safeguard replaced $54.6602$ percent of interior state-date decisions and obtained a $.00544535$ envelope. The threshold in \eqref{r8:threshold}, at target $.05$, replaces only $.8746$ percent and obtains a $.00682279$ envelope. At target $.01$, the correction share is $4.9350$ percent and the envelope is $.00676060$. Thus most of the earlier replacements were unnecessary for meeting the declared finite-economy tolerance in this sample.
+
+\input{revisions/2026-09-22-r8/paper/tables/safeguard.tex}
+
+This improvement addresses the role of correction rather than concealing it. The corrected rule differs from the raw rule, and every audit still enumerates 125 grid actions plus the neural proposal. For the twelve-date runs, two audits use 2,362,200 value-action evaluations and 2,343,600 envelope-action evaluations, each with four transition branches. The new policy is not obtained by a cheap constant-cost acceptance test. Table~\ref{r8:tab:safeguard} includes evaluation, gain calculation, envelope propagation, and re-audit time. Historical training time is retained separately because it was measured in a different run and environment; adding it to current audit time would not be a same-machine end-to-end timing experiment.
+
+The six-date policy already passes the $.05$ target without correction. At $.01$, it requires an $8.7956$ percent correction share. These are deterministic post-review re-audits of the specified seed-10 policies, not a new population estimate of raw training success. Proposition~\ref{r8:overrides} explains the condition under which correction shares vanish, but this two-policy exercise does not demonstrate a training-dose convergence curve. Neither its finite envelope nor its smaller correction share closes the continuous NDU error budget.
+
+\subsection{Separating time, state, and action approximation}
+Table~\ref{r8:tab:mesh} varies one approximation factor at a time. The time experiment fixes a $25\times31$ lattice and five points per action component; the state experiment fixes 48 dates and five action points; the action experiment fixes 48 dates and the $25\times31$ lattice. All retain the original four-sign shock rule and the straight-segment liquidation treatment. The latter two approximations are not independently refined in this panel.
+
+\input{revisions/2026-09-22-r8/paper/tables/mesh.tex}
+
+The time-only sequence is not evidence of convergence. Its central value moves from $-1.45149$ at 24 dates to $-1.60853$ at 96 dates, while the exit probability rises substantially. Keeping the spatial mesh fixed makes $h^2/\Delta$ increase, rather than shrink; the experiment exposes this interaction instead of fitting an unjustified time order. Conversely, refining the state lattice at 48 dates moves the value from $-1.54979$ to $-1.39165$. Action refinement improves the finite optimum, but the three approximation factors cannot be conflated. The operator-agreement regression is close to machine precision; agreement of two implementations of the same approximation is not an enclosure of its continuous-model bias.
+
+A further panel uses 96 dates, a $49\times61$ lattice, and nine points in each action component, or 729 actions. Each adjustment-cost economy is re-solved. Table~\ref{r8:tab:cost} shows the same ordering of adjustment expenditure as Theorem~\ref{r8:cost}, with an active preference margin. This is a stronger finite-action resolution than the earlier five-point panel, but still not a verified continuous welfare difference. The first-exit and quadrature terms in \eqref{r8:totalbudget} remain unbounded by these calculations. Accordingly, neither a Richardson remainder nor a continuous policy-convergence rate is inferred from this table.
+
+\input{revisions/2026-09-22-r8/paper/tables/cost.tex}
+
+\subsection{A learned actor on the full NDU control and exit geometry}\label{r8:geometry}
+To test whether continuous verification transfers from an analytic example to an actually trained control, retain \eqref{r8:dynamics}, the three-dimensional action box, correlated shocks, state domain, and settlement exactly. Change only the running payoff to
+\begin{equation}
+ \widetilde\ell(t,s,a)=\ell_2(s,a)-\sup_{b\in A}R_b g(t,s).\label{r8:manufactured}
+\end{equation}
+The subtracted term is independent of the chosen action, but depends on state and time. Thus it generally changes optimal behavior relative to the original-payoff economy; it is not an innocuous preference normalization. In the modified problem $\sup_a\widetilde R_ag=0$ and the explicit feasible maximizer is $(.8,-.02(u-2),.8)$. It\^o verification proves that the modified value is $g$ with the original stopping contract.
+
+We train a four-parameter actor with constant bounded sigmoid consumption and portfolio outputs and an affine-tanh adjustment output. The actor maximizes the Hamiltonian of the known witness, with no optimal-action labels. Six declared seeds each receive 4,000 Adam steps at learning rate $.02$ and 256 random states per step. This is a controlled verification experiment, not a deep-network capacity or high-dimensional scaling claim. The witness is known rather than learned; the actor and all of its achieved errors are learned.
+
+For the frozen weights, the control gap is bounded over the entire state domain by outward interval arithmetic. The consumption gain is bounded using
+\[
+ \int_c^{.8}z^{-u}\,dz-.1(.8-c)/x
+ \leq(.8-c)\{c^{-2.8}-.05\},
+\]
+the portfolio gain is the exact quadratic difference, and the adjustment gain equals $(\theta+.02(u-2))^2$ at $k=2$. A 2,048-cell interval partition in $u$ encloses the latter. The full regret is bounded by $C_\rho(1)$ times the summed action-gap enclosure. The time discretization of a rollout and a numerical first-exit probability do not enter this certificate, because its proof is for the original continuous generator.
+
+\input{revisions/2026-09-22-r8/paper/tables/geometry.tex}
+
+Every seed meets the $.01$ modified-problem target, with continuous regret bounds between $.00081053$ and $.00112263$. Table~\ref{r8:tab:geometry} separately reports componentwise control errors rather than treating value accuracy as policy sup-norm accuracy. This is the desired transfer test with a learned actor and the original first-exit/control geometry. It does not identify the original NDU value, and does not tighten Table~\ref{r8:tab:continuum} merely by sharing the state equation.
+
+\subsection{Coupled nonconvex control and an external author implementation}\label{r8:external}
+The new comparison does not use the Cole--Hopf quadratic-control model or regress to an analytic greedy target. Starting from $X_0=0$ in $\mathbb R^d$, minimize
+\begin{align}
+ \E\left[\int_0^1 f(a_t)\,dt+q(X_1)\right],\qquad
+ dX_t&=2a_tdt+\sqrt{2}(.4)dW_t,\quad a_t\in[-1,1]^d,\\
+ f(a)&=d^{-1}\sum_{i=1}^d(a_i^2+.1\sin^2a_i)+.3\sin\!\left(\sum_i a_i\right),\\
+ q(x)&=d^{-1}\sum_i(x_i-.5)^2+.2\cos\!\left(d^{-1/2}\sum_i x_i\right).\label{r8:nonconvex}
+\end{align}
+The sine term couples all control components. For example, at an interior vector whose sum is $\pi/2$, the Hessian of the running cost has a negative direction along the all-ones vector for both tested dimensions. Hence the problem is genuinely nonconvex in the action. No closed-form maximizer or optimal-control labels are supplied to either method, and the quadratic exponential transformation does not eliminate this Hamiltonian.
+
+The external comparator is the unmodified \texttt{SOCMartNet.train} routine in the authors' repository \texttt{sx-fang/MartNet}, pinned at commit \texttt{991ea8dd}. Its complete module hashes are in the execution manifest. The integration consists of model and network adapters and a scheduler that stops after a completed update at the time budget. The authors' solver is not rewritten as a bespoke PINN comparator. The pinned implementation uses a Hessian-free Hamiltonian interface; we therefore use constant diffusion in this comparison. This is a restriction of the implemented interface used here, not an assertion that the published SOC-MartNet framework excludes volatility control.
+
+Both methods receive identical initial actor and critic weights within each seed. Both use two tanh hidden layers of width 48, bounded actor outputs, a terminal-exact critic, 16 training time intervals, and one CPU thread. NBO uses three evaluation updates per improvement update, 256 sampled states, four Gaussian successors, and Adam with learning rate $.003$. SOC-MartNet retains its additional test network, RMSprop updates, and the declared martingale and Hamiltonian losses. Its actor/value learning rate is $.003/\sqrt d$, the test-network learning rate is $.01$, and the remaining adapter settings are fixed in the protocol. The test network has 600 outputs; its parameters and all setup costs are reported rather than excluded from the method description.
+
+The primary budget is ten seconds of training per method, allowing the final update to complete. Setup time is outside this primary budget and is reported separately. This matters: the mean setup-plus-training time is approximately 10.69 seconds for NBO and 10.02 seconds for SOC-MartNet on this worker. Therefore the experiment is not described as an exactly matched ten-second end-to-end race. NBO is evaluated first in each process, so one-time framework initialization is included in its measured setup cost. Table~\ref{r8:tab:resources} makes the distinction visible.
+
+\input{revisions/2026-09-22-r8/paper/tables/external.tex}
+\input{revisions/2026-09-22-r8/paper/tables/resources.tex}
+
+At dimension eight, the paired mean NBO-minus-SOC cost is $-1.71785$, with a six-seed Student interval $[-2.13823,-1.29747]$. At dimension sixteen it is $-2.24732$, with interval $[-2.51288,-1.98176]$. Thus the new evidence favors NBO under the specified adapter and short training budget. This is a demonstrated benefit in a coupled nonconvex problem, in contrast to the retained R5 quadratic-control comparison. It is not a theorem of computational dominance, a replication of the published SOC-MartNet hardware or learning curves, or a statement that either computed policy is near optimal.
+
+\subsection{Uncertainty, mesh diagnostics, and retained failures}
+Each paired policy audit uses 4,096 paths with common Brownian increments for the two policies and an independent seed for each training seed. The primary outcome uses 128 time steps. A nested 64-step audit aggregates adjacent increments, so its difference from the finer audit is a matched time-mesh diagnostic. Table~\ref{r8:tab:external} reports the maximum paired path standard error separately from the across-seed interval. The interval is based on six independent training/audit seeds, with a Student approximation rather than a distribution-free coverage claim. Paths are not counted as independent training runs.
+
+The average 128-minus-64 cost changes are about $-.00149$ and $-.00243$ for NBO and SOC-MartNet at dimension eight, and $-.00176$ and $.00951$ at dimension sixteen. These changes are much smaller than the observed paired cost differences, but they are not certified bounds on the remaining time-discretization error. A matched-accuracy computational frontier and longer-budget learning curves would answer additional questions not identified by the present fixed-budget design.
+
+All prior outcomes remain part of the evidence. The R5 ten-seed baseline had ten raw finite-target passes, whereas its three twelve-date raw policies failed. Its recursive raw policies missed their own target, and its eight/sixteen/thirty-two-dimensional quadratic-control NBO means were worse than those of the in-house PINN-PI comparator. Those results are neither relabeled as successes nor removed after observing the new comparison. The R4 Merton, nonlinear NDU, cost, boundary, recursive, temporal-self, game, and coupled linear--quadratic calculations, including failed pilots and incomplete runs, are reproduced in the preservation supplement. The new external experiment changes the tested model and comparator; it does not retrospectively change those historical results.
+
+\section{Relation to neighboring numerical methods}\label{r8:related}
+Table~\ref{r8:tab:literature} separates the relevant methodological axes. Its entries summarize the cited analyses and the implemented comparison; they are not a ranking by paper title. In particular, an interior PDE error theorem with unknown outer data, a stopped-control regret theorem with a contractual boundary, and a finite candidate-action gain envelope address different mathematical objects.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Related methods and the objects compared}\label{r8:tab:literature}
+\begin{tabularx}{\textwidth}{@{}p{.20\textwidth}XX@{}}
+\toprule
+Method & Principal mechanism or guarantee & Relation to the present evidence\\
+\midrule
+Exploratory PINN policy iteration & Soft policy updates for entropy-regularized HJB equations; iteration, policy-network, and PDE residual errors & Neighboring policy-evaluation/improvement analysis; not the external implementation tested here\\
+Interior physics-informed policy iteration & Stationary interior error control with residual and outer-information contributions under stated regularity conditions & Clarifies what interior collocation can control without supplying the stopped NDU boundary data\\
+PI--DeepONet & Policy iteration and reusable operator approximation across terminal data & Representation reuse is a different performance target from one trained policy at a fixed budget\\
+SOC-MartNet & Martingale training of value and control without an explicit Hamiltonian infimum & Pinned author routine tested on coupled constrained nonconvex controls in $d=8,16$\\
+NBO in this paper & Separated evaluation, improvement, and independent gain or witness verification & Continuous stopped-model theorem, explicit economic error calibration, finite correction costs, and paired author-code experiment\\
+\bottomrule
+\end{tabularx}
+\par\smallskip\footnotesize Sources: \citet{kim2026explore,kim2026interior,lee2025,cai2025published}. The new external benchmark uses constant diffusion and a ten-second training budget. Its scope does not establish a general ranking for recursive utilities, games, or higher dimensions.
+\end{table}
+
+For an analyst choosing a method, the distinction between state dimension and action dimension is crucial. Neural state representations avoid a tensor state grid during the high-dimensional training experiment, while the finite NDU safeguard still has tensor action cost. The exact component selection in Proposition~\ref{r8:selection} is specific to that economic Hamiltonian. The coupled sine-control problem deliberately removes that separability. Likewise, none of the numerical comparisons establishes that a small sampled training loss satisfies the uniform hypotheses of the continuous certificate. The contribution is a verifiable separation of these issues, with one favorable external comparison and one original-economy precision test whose conservative outcome remains visible.
