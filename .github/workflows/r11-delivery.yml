@@ -1,0 +1,182 @@
+name: R11 canonical manuscript, independent accuracy and historical preservation
+on:
+  push:
+    branches: [revision/econometrica-r11-accuracy-and-robustness-2026-09-22]
+    paths: [.github/workflows/r11-delivery.yml]
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r11-delivery
+  cancel-in-progress: false
+env:
+  R11_BRANCH: revision/econometrica-r11-accuracy-and-robustness-2026-09-22
+  R11_DIR: revisions/2026-09-22-r11
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    outputs:
+      source: ${{ steps.pin.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore checksum-verified ordinary manuscript sources
+        run: |
+          python - <<'PY'
+          import pathlib,base64,hashlib,io,json,subprocess,tarfile
+          base='d633bd60818998e53051cee6e7ad351c52a61795'
+          rev=pathlib.Path('revisions/2026-09-22-r11')
+          parts=pathlib.Path('.github/r11-delivery')
+          if parts.exists():
+              data=base64.b64decode(''.join((parts/f'part-{i}.b64').read_text().strip() for i in range(4)),validate=True)
+              assert hashlib.sha256(data).hexdigest()=='7017f1797a7af9a6f260481c8102181645d8cd7dc25b191d7c848e7cc6108767'
+              def allowed(name):
+                  p=pathlib.PurePosixPath(name)
+                  return not p.is_absolute() and '..' not in p.parts and (name in {'ECTA_R11.tex','SUPP_R11.tex','R11_REVIEW.md','REVISION_INDEX.md'} or name.startswith(str(rev)+'/'))
+              with tarfile.open(fileobj=io.BytesIO(data),mode='r:xz') as t:
+                  assert len(t.getmembers())==20
+                  for m in t.getmembers():
+                      assert m.isfile() and allowed(m.name),m.name
+                      p=pathlib.Path(m.name);p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(t.extractfile(m).read())
+              rp=rev/'_transport_recipes.json'
+              for dest,recipe in json.loads(rp.read_text()).items():
+                  assert allowed(dest) and allowed(recipe['source']) or recipe['source'].startswith('revisions/2026-09-22-r10/') or recipe['source']=='REVISION_INDEX.md'
+                  raw=subprocess.check_output(['git','show',base+':'+recipe['source']])
+                  assert hashlib.sha256(raw).hexdigest()==recipe['source_sha256']
+                  lines=raw.decode().splitlines(keepends=True)
+                  new=''.join(''.join(lines[c[0]:c[1]]) if isinstance(c,list) else c for c in recipe['chunks']).encode()
+                  assert hashlib.sha256(new).hexdigest()==recipe['sha256'],dest
+                  p=pathlib.Path(dest);p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(new)
+              rp.unlink()
+              subprocess.check_call(['git','rm','-r',str(parts)])
+          raw=subprocess.check_output(['git','archive','--format=tar',base])
+          with tarfile.open(fileobj=io.BytesIO(raw),mode='r:') as t:
+              files={m.name:hashlib.sha256(t.extractfile(m).read()).hexdigest() for m in t.getmembers() if m.isfile()}
+          assert len(files)==1037,len(files)
+          manifest={'source_commit':base,'files':files,'archived_replacement':{'REVISION_INDEX.md':str(rev/'archive/REVISION_INDEX_before_R11.md')}}
+          (rev/'inherited_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          PY
+      - name: Pin canonical manuscript source before numerical execution
+        id: pin
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -f ECTA_R11.tex SUPP_R11.tex R11_REVIEW.md REVISION_INDEX.md "$R11_DIR"
+          if ! git diff --cached --quiet; then
+            git commit -m 'manuscript(r11): canonical Econometrica paper, full preservation supplement and fourteen-point referee response'
+            git push origin HEAD:"$R11_BRANCH"
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  verify:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      result: ${{ steps.results.outputs.sha }}
+    env:
+      R11_MANUSCRIPT_SOURCE: ${{ needs.publish.outputs.source }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.publish.outputs.source }}
+          fetch-depth: 0
+      - name: Initialize permanent failure status before dependency setup
+        run: |
+          mkdir -p "$R11_DIR/ci_results"
+          python - <<'PY'
+          import json,pathlib,os
+          pathlib.Path('revisions/2026-09-22-r11/ci_results/status.json').write_text(json.dumps({'status':'NOT_EXECUTED','phase':'dependency_setup','source_commit':os.environ['R11_MANUSCRIPT_SOURCE']},indent=2)+'\n')
+          PY
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned numerical dependencies
+        run: |
+          pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install numpy==2.3.5 scipy==1.17.0 mpmath==1.3.0
+      - name: Independently execute thirty absolute certificates and three original-economy refinements
+        run: python "$R11_DIR/replication/ci_check.py"
+      - name: Permanently preserve every numerical outcome before aggregate acceptance
+        if: always()
+        id: results
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -f "$R11_DIR/ci_results"
+          for path in "$R11_DIR/results/accuracy" "$R11_DIR/results/original_recheck" "$R11_DIR/validation_report.json" "$R11_DIR/validation_tests.json"; do
+            if [ -e "$path" ]; then git add -f "$path"; fi
+          done
+          if ! git diff --cached --quiet; then
+            git commit -m 'verification(r11): record independently executed accuracy certificates, economic rechecks and all validation outcomes'
+            git push origin HEAD:"$R11_BRANCH"
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: NBO-R11-independent-numerical-checks
+          path: |
+            revisions/2026-09-22-r11/ci_results/
+            revisions/2026-09-22-r11/validation_report.json
+            revisions/2026-09-22-r11/validation_tests.json
+      - name: Require independently completed checks after evidence preservation
+        run: |
+          python - <<'PY'
+          import json,pathlib
+          s=json.loads(pathlib.Path('revisions/2026-09-22-r11/ci_results/status.json').read_text())
+          assert s['status']=='PASS',s
+          PY
+  build:
+    needs: [publish,verify]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.verify.outputs.result }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install manuscript build and data validation dependencies
+        run: |
+          pip install numpy==2.3.5 scipy==1.17.0
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended poppler-utils
+      - name: Regenerate manuscript tables from canonical executed evidence
+        run: python "$R11_DIR/replication/make_tables.py"
+      - name: Build Econometrica main paper and complete preserved supplement
+        run: bash "$R11_DIR/replication/build.sh"
+      - name: Validate PDFs, references, raw evidence and all 1037 inherited files
+        run: python "$R11_DIR/replication/validate_revision.py"
+      - name: Publish immutable PDF build and separate provenance receipt
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          python "$R11_DIR/replication/write_receipt.py" --source '${{ needs.publish.outputs.source }}' --result '${{ needs.verify.outputs.result }}'
+          git add -f ECTA_R11.pdf SUPP_R11.pdf "$R11_DIR/build_logs" "$R11_DIR/paper/tables" "$R11_DIR/source_manifest.json" "$R11_DIR/validation_report.json"
+          git commit -m 'paper(r11): publish fully rebuilt main manuscript and complete historical supplement with verified evidence'
+          git push origin HEAD:"$R11_BRANCH"
+          BUILD_SHA=$(git rev-parse HEAD)
+          python "$R11_DIR/replication/write_receipt.py" --source '${{ needs.publish.outputs.source }}' --result '${{ needs.verify.outputs.result }}' --build "$BUILD_SHA"
+          git add "$R11_DIR/publication_receipt.json" "$R11_DIR/source_manifest.json"
+          git commit -m 'review(r11): pin independent source, result and PDF identities for the next referee'
+          git push origin HEAD:"$R11_BRANCH"
+          git archive --format=tar.gz --output=/tmp/NBO-R11-repository.tar.gz HEAD
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: NBO-R11-referee-package
+          path: |
+            /tmp/NBO-R11-repository.tar.gz
+            ECTA_R11.pdf
+            SUPP_R11.pdf
+            R11_REVIEW.md
+            revisions/2026-09-22-r11/publication_receipt.json
+            revisions/2026-09-22-r11/validation_report.json
+            revisions/2026-09-22-r11/response_to_referee.md
+            revisions/2026-09-22-r11/build_logs/
+          if-no-files-found: error
