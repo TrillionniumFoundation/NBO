@@ -1,0 +1,52 @@
+name: R8 exact final commit verification
+on:
+  push:
+    branches: [build/econometrica-r8-exact-commit-check-2026-09-22]
+    paths: [.github/workflows/r8-exact-commit-check.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  exact-review-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 939b612ff57794a2127f0b0adeb74ab7eef9e72e
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install fixed build prerequisites
+        run: |
+          python -m pip install numpy==2.3.5
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends texlive-latex-extra texlive-fonts-recommended poppler-utils
+      - name: Rebuild exact final manuscript commit from plaintext and raw evidence
+        run: |
+          test "$(git rev-parse HEAD)" = 939b612ff57794a2127f0b0adeb74ab7eef9e72e
+          rm -f ECTA_R8.pdf SUPP_R8.pdf
+          rm -f revisions/2026-09-22-r8/paper/tables/*.tex
+          bash revisions/2026-09-22-r8/build.sh
+          git diff --exit-code -- ECTA_R8.tex SUPP_R8.tex revisions/2026-09-22-r8/paper
+          python - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('revisions/2026-09-22-r8')
+          manifest=json.loads((p/'build_manifest.json').read_text())
+          assert manifest['build_source_commit']=='939b612ff57794a2127f0b0adeb74ab7eef9e72e'
+          for name in ['ECTA_R8','SUPP_R8']:
+              log=(p/'build_logs'/f'{name}_pass3.txt').read_text()
+              assert 'Overfull' not in log
+              assert 'There were undefined references' not in log
+          print('EXACT FINAL COMMIT REBUILD PASSED: plaintext, generated tables, reference resolution and page fit.')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r8-exact-commit-verification
+          path: |
+            revisions/2026-09-22-r8/build_manifest.json
+            revisions/2026-09-22-r8/validation_report.json
+            revisions/2026-09-22-r8/build_logs
+          retention-days: 30
