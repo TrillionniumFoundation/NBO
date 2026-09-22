@@ -1,0 +1,79 @@
+\section{Policy-value-separated neural updates}\label{sec:r19policy}
+For a policy $\pi$ and initial state $z$, write $L_\pi(z)\leq J_\pi(z)\leq U_\pi(z)$ for independently established payoff enclosures. Write $\overline V(z)\geq V(z)$ for an optimal upper comparison. The two upper bounds have different meanings: $U_\pi$ evaluates one policy, whereas $\overline V$ ranges over every admissible policy. A better $\overline V$ can sharpen a certificate without improving $\pi$.
+
+\begin{proposition}[Separated acceptance and observable progress]\label{prop:r19accept}
+Let the preceding bounds hold on a set $K$. A proposal $\pi'$ satisfying
+\begin{equation}
+ \inf_{z\in K}\{L_{\pi'}(z)-U_\pi(z)\}>0
+ \label{eq:r19accept}
+\end{equation}
+strictly improves the true payoff at every $z\in K$. More strongly, if, for some $0<\kappa<1$,
+\begin{equation}
+ L_{\pi'}-U_\pi\ \geq\ \kappa(\overline V-L_\pi)
+ \quad\hbox{on }K,
+ \label{eq:r19progress}
+\end{equation}
+then $V-J_{\pi'}\leq(1-\kappa)(V-J_\pi)$ on $K$. If instead a verified gain $J_{\pi'}-J_\pi\geq d>0$ and final regret bound $V-J_{\pi'}\leq B$ hold uniformly, then
+\begin{equation}
+ \frac{V-J_{\pi'}}{V-J_\pi}\leq\frac{B}{B+d}.
+ \label{eq:r19ratio}
+\end{equation}
+\end{proposition}
+All inequalities compare economic payoffs. An increase in $L_\pi$ alone does not imply improvement: both the policy and the width of its evaluation interval can change. Equation~\eqref{eq:r19progress} is a checkable sufficient progress condition, not an assumption that Adam always produces such a proposal. Its numerical use below is an a posteriori certificate for retained transitions, not an a priori optimization rate.
+
+The evaluator need not be neural. For example, a smooth fixed-policy evaluation function $q$ obeys the stopped identity
+\[
+ J_\pi(z)=q(z)+\E_z^\pi\!\int_0^\tau e^{-\rho s}\cR_\pi q(s,Z_s)\,ds
+       +\E_z^\pi[e^{-\rho\tau}(g-q)(\tau,Z_\tau)].
+\]
+Separate upper and lower enclosures of these two terms yield $L_\pi,U_\pi$. A distinct supersolution, relaxation, or monotone comparison can produce $\overline V$. These roles cannot be interchanged merely because both calculations involve a value function.
+
+\subsection{The executed neural policy block}
+The new actor has two hidden tanh layers of width 16 and 338 trainable parameters. It maps the midpoints of 16 time slabs to two outputs $N_c,N_\theta$. Let
+\[
+ w_j=\int_{j/16}^{(j+1)/16}e^{-.02s}\,ds,\quad
+ Q_r=\sum_jw_j,\quad b=1.25-.5e^{-.02}-10^{-7}.
+\]
+At the reference wealth its mathematical controls are
+\begin{align}
+ c_j&=\frac b{Q_r}+.006\left\{\tanh N_c(t_j)
+       -\frac{\sum_iw_i\tanh N_c(t_i)}{Q_r}\right\},\label{eq:r19actor}\\
+ \theta_j&=.1+.1\tanh N_\theta(t_j),\qquad p_j=0.\notag
+\end{align}
+The exact budget equation implies terminal wealth $.5+10^{-7}e^{.02}$. For an initial wealth $x\in[1.24,1.26]$, add $(x-1.25)/Q_r$ to every consumption slab. Terminal wealth is then unchanged. The implementation serializes the compiled binary64 controls, checks their actual budget and action bounds by directed arithmetic, and treats these exact dyadic controls as the delivered policy. It does not assume that floating-point network compilation is exact.
+
+The initial-state map is held fixed after initialization. Thus this experiment is a neural-generated time-control subclass of the original adapted policy set, not the state-feedback architecture of the complete-cover study. The upper bound still concerns the unrestricted original problem. Keeping these two facts together permits a genuine optimality certificate for the delivered neural policy without asserting a whole-domain feedback result.
+
+Seeds 19100--19104, budgets $0,50,200,800$, learning rate $.003$, and the payoff gate were declared before execution. Full-batch proposal quadrature uses 16 time nodes and 40 Gaussian nodes per slab. It evaluates the original CRRA expectation, adjustment cost, and terminal reward; it does not use an inherited policy or an optimal-value label. This ordinary floating-point objective generates proposals only. At each retained checkpoint, the independent rational-Gauss evaluator, with Cauchy remainders, normal-tail bounds, and an original-stopping correction, establishes the policy-value interval. The final reproduction executes this value gate before the next Adam update; rejected proposals would restore the incumbent network and optimizer state. Every prescribed proposal is retained. All fifteen noninitial proposals pass the strict gate at the reference state.
+
+\subsection{Transferring policy improvement to initial states}
+Separate Lipschitz bounds for two values can overwhelm a small but economically meaningful improvement. We instead control their difference under common shocks. Let $a,b$ denote two feasible slab policies with the same wealth-transfer rule. On a common refinement of their time partitions define
+\[
+ d_c=\sup_s|c_s^b-c_s^a|,\quad
+ d_m=\sup_s\left|\int_0^s(\theta_v^b-\theta_v^a)\,dv\right|,\quad
+ d_T=\left|\int_0^1(\theta_v^b-\theta_v^a)\,dv\right|.
+\]
+The differences are computed from the exact stored controls. No bound on the unknown optimal policy is required.
+
+Let $H_{uu},H_{uc},H_{cc}$ bound the absolute utility Hessian entries on $[1.78,2.42]\times[.7,.8]$, and let $A_u,A_c$ bound its first derivatives on $[1.2,2.8]\times[.7,.8]$. Put
+\begin{align}
+ P_4&=\frac{e^{-8}}{2\sqrt{2\pi}},\qquad
+ D_4=\min\{12,2(A_ud_m+A_cd_c)\},\notag\\
+ \Omega(a,b)&=C_\rho(1)\left[.02(H_{uu}d_m+H_{uc}d_c)
+    +\frac{.01}{Q_r}(H_{uc}d_m+H_{cc}d_c)+D_4P_4\right]\notag\\
+ &\qquad+.04e^{-\rho}(.02)d_T+4\epsilon_{\rm stop}.
+ \label{eq:r19modulus}
+\end{align}
+Here $\epsilon_{\rm stop}$ is the uniform fixed-policy stopping allowance from the original-payoff evaluator. The same allowance is valid for both policies and all initial states in $K$.
+
+\begin{theorem}[Coupled-payoff initial-state transfer]\label{thm:r19transfer}
+Suppose both policies satisfy the checked consumption, preference, zero-portfolio, and wealth-feasibility conditions above. For $z_*=(2,1.25)$ and $z\in K$,
+\begin{equation}
+ \left|\{J_b(z)-J_a(z)\}-\{J_b(z_*)-J_a(z_*)\}\right|
+ \leq\Omega(a,b).
+ \label{eq:r19transfer}
+\end{equation}
+Consequently, a directed central value-difference interval $[d_-,d_+]$ gives the uniform interval
+$[d_--\Omega,d_++\Omega]$ for the true policy gain on $K$.
+\end{theorem}
+The proof uses a central normal event, a Lipschitz tail allowance, and exact cancellation of the initial-wealth dependence of terminal wealth. The constants are evaluated with directed arithmetic, not fitted to observed state samples. The four corner payoff evaluations used for optimality certification are an additional calculation; they are not used as empirical evidence for the policy-improvement modulus.
