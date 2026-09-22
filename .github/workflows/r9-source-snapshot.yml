@@ -1,0 +1,21 @@
+name: R9 source snapshot
+on:
+  push:
+    branches: ['revision/econometrica-r9-constructive-certification-2026-09-22']
+    paths: ['.github/workflows/r9-source-snapshot.yml']
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 9749c3cf28f9438315b8f504a358bbe307ea89a5
+          fetch-depth: 1
+      - name: Freeze inherited tracked files
+        run: git archive --format=tar.gz --output=NBO-r9-inherited.tar.gz HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NBO-r9-inherited
+          path: NBO-r9-inherited.tar.gz
