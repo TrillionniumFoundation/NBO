@@ -1,0 +1,226 @@
+name: R12 continuum cost certificate, full manuscript and preserved history
+on:
+  push:
+    branches: [revision/econometrica-r12-uniform-cost-certification-2026-09-22]
+    paths: [.github/workflows/r12-delivery.yml]
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r12-delivery
+  cancel-in-progress: false
+env:
+  R12_BRANCH: revision/econometrica-r12-uniform-cost-certification-2026-09-22
+  R12_DIR: revisions/2026-09-22-r12
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    outputs:
+      source: ${{ steps.pin.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore checked ordinary manuscript and evidence files
+        run: |
+          python - <<'PY'
+          import pathlib,base64,hashlib,io,json,subprocess,tarfile
+          base='85e27ad0c9cdcb68645d62788e1fad2f59ea1a48'
+          rev=pathlib.Path('revisions/2026-09-22-r12')
+          parts=pathlib.Path('.github/r12-delivery')
+          allowed_roots={'ECTA_R12.tex','SUPP_R12.tex','R12_REVIEW.md','REVISION_INDEX.md'}
+          allowed_sources={'ECTA_R11.tex','SUPP_R11.tex','REVISION_INDEX.md','revisions/2026-09-22-r11/paper/main.tex','revisions/2026-09-22-r11/review_input/referee_report.md'}
+          def allowed(name):
+              p=pathlib.PurePosixPath(name)
+              return not p.is_absolute() and '..' not in p.parts and (name in allowed_roots or name.startswith(str(rev)+'/'))
+          if parts.exists():
+              data=base64.b64decode(''.join((parts/f'part-{i}.b64').read_text().strip() for i in range(6)),validate=True)
+              assert hashlib.sha256(data).hexdigest()=='274d143de20a4100de0a89ddd78c8a251a626eb22ffd504903019b8a53a245c1'
+              with tarfile.open(fileobj=io.BytesIO(data),mode='r:xz') as t:
+                  assert len(t.getmembers())==167
+                  for m in t.getmembers():
+                      assert m.isfile() and allowed(m.name),m.name
+                      p=pathlib.Path(m.name);p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(t.extractfile(m).read())
+              rp=rev/'_transport_recipes.json'
+              for dest,recipe in json.loads(rp.read_text()).items():
+                  assert allowed(dest) and recipe['source'] in allowed_sources
+                  raw=subprocess.check_output(['git','show',base+':'+recipe['source']])
+                  assert hashlib.sha256(raw).hexdigest()==recipe['source_sha256']
+                  lines=raw.decode().splitlines(keepends=True)
+                  new=''.join(''.join(lines[c[0]:c[1]]) if isinstance(c,list) else c for c in recipe['chunks']).encode()
+                  assert hashlib.sha256(new).hexdigest()==recipe['sha256'],dest
+                  p=pathlib.Path(dest);p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(new)
+              rp.unlink()
+              subprocess.check_call(['git','rm','-r',str(parts)])
+          raw=subprocess.check_output(['git','archive','--format=tar',base])
+          with tarfile.open(fileobj=io.BytesIO(raw),mode='r:') as t:
+              files={m.name:hashlib.sha256(t.extractfile(m).read()).hexdigest() for m in t.getmembers() if m.isfile()}
+          assert len(files)==1505,len(files)
+          manifest={'source_commit':base,'files':files,'archived_replacement':{'REVISION_INDEX.md':str(rev/'archive/REVISION_INDEX_before_R12.md')}}
+          (rev/'inherited_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          PY
+      - name: Pin readable canonical source before reexecution
+        id: pin
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -f ECTA_R12.tex SUPP_R12.tex R12_REVIEW.md REVISION_INDEX.md "$R12_DIR"
+          if ! git diff --cached --quiet; then
+            git commit -m 'manuscript(r12): full Econometrica revision with uniform cost certification and fourteen-point response'
+            git push origin HEAD:"$R12_BRANCH"
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  verify:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [0,1,2,3,4,5]
+    env:
+      R12_SOURCE_COMMIT: ${{ needs.publish.outputs.source }}
+      R12_GROUP: ${{ matrix.group }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.publish.outputs.source }}
+      - name: Initialize all planned cells before dependency installation
+        run: |
+          python - <<'PY'
+          import json,pathlib,os,sys
+          sys.path.insert(0,'revisions/2026-09-22-r12/replication')
+          import price_envelope as e
+          for i,n in enumerate(e.load_nodes()):
+              if i%6==int(os.environ['R12_GROUP']):
+                  e.dump(e.REV/f"ci_results/k{n['k']:g}/status.json",{'price':n['k'],'status':'not_executed','phase':'dependency_setup','source_commit':os.environ['R12_SOURCE_COMMIT']})
+          PY
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy==2.3.5 mpmath==1.3.0
+      - name: Independently enclose every frozen policy and dual in this group
+        run: python "$R12_DIR/replication/recheck.py" --group "$R12_GROUP"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: NBO-R12-check-${{ matrix.group }}
+          path: revisions/2026-09-22-r12/ci_results/
+          if-no-files-found: error
+  collect:
+    needs: [publish,verify]
+    if: ${{ always() && needs.publish.result == 'success' }}
+    runs-on: ubuntu-latest
+    outputs:
+      result: ${{ steps.results.outputs.sha }}
+    env:
+      R12_SOURCE_COMMIT: ${{ needs.publish.outputs.source }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.publish.outputs.source }}
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: NBO-R12-check-*
+          merge-multiple: true
+          path: revisions/2026-09-22-r12/ci_results/
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy==2.3.5 mpmath==1.3.0
+      - name: Require all eighteen outcomes and recertify the full real interval
+        run: python "$R12_DIR/replication/recheck.py" --collect
+      - name: Test exact geometry, counterfactual signs and historical preservation
+        run: |
+          python "$R12_DIR/replication/test_revision.py"
+          python "$R12_DIR/replication/validate_revision.py" --skip-pdf --require-ci
+      - name: Commit all outcomes even if a matrix cell or aggregation failed
+        if: always()
+        id: results
+        run: |
+          python - <<'PY'
+          import pathlib,json,os
+          p=pathlib.Path('revisions/2026-09-22-r12/ci_results/status.json')
+          if not p.exists():
+              p.parent.mkdir(parents=True,exist_ok=True)
+              p.write_text(json.dumps({'status':'FAIL','phase':'collection_not_completed','source_commit':os.environ['R12_SOURCE_COMMIT']},indent=2)+'\n')
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -f "$R12_DIR/ci_results"
+          for path in "$R12_DIR/validation_report.json" "$R12_DIR/validation_tests.json"; do
+            if [ -e "$path" ]; then git add -f "$path"; fi
+          done
+          if ! git diff --cached --quiet; then
+            git commit -m 'verification(r12): preserve eighteen clean-checkout outcomes and exact continuum certificate'
+            git push origin HEAD:"$R12_BRANCH"
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: NBO-R12-independent-checks
+          path: |
+            revisions/2026-09-22-r12/ci_results/
+            revisions/2026-09-22-r12/validation_report.json
+            revisions/2026-09-22-r12/validation_tests.json
+      - name: Accept only after permanent evidence retention
+        run: |
+          python - <<'PY'
+          import json,pathlib
+          s=json.loads(pathlib.Path('revisions/2026-09-22-r12/ci_results/status.json').read_text())
+          assert s['status']=='PASS' and len(s['cells'])==18,s
+          PY
+  build:
+    needs: [publish,collect]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.collect.outputs.result }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned numerical and official-class build dependencies
+        run: |
+          pip install numpy==2.3.5 mpmath==1.3.0
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended poppler-utils
+      - name: Generate exact-evidence tables and complete Econometrica PDFs
+        run: |
+          python "$R12_DIR/replication/make_tables.py"
+          bash "$R12_DIR/replication/build.sh"
+          python "$R12_DIR/replication/test_revision.py"
+          python "$R12_DIR/replication/validate_revision.py" --require-ci
+      - name: Publish PDF build and separately pinned provenance receipt
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -f ECTA_R12.pdf SUPP_R12.pdf "$R12_DIR/build_logs" "$R12_DIR/paper/tables" "$R12_DIR/results/envelope.json" "$R12_DIR/results/frontier.json" "$R12_DIR/results/query_examples.json" "$R12_DIR/validation_report.json" "$R12_DIR/validation_tests.json"
+          git commit -m 'paper(r12): publish complete Econometrica manuscript and full preservation supplement after independent verification'
+          git push origin HEAD:"$R12_BRANCH"
+          BUILD_SHA=$(git rev-parse HEAD)
+          python "$R12_DIR/replication/write_receipt.py" --source '${{ needs.publish.outputs.source }}' --result '${{ needs.collect.outputs.result }}' --build "$BUILD_SHA"
+          git add "$R12_DIR/publication_receipt.json"
+          git commit -m 'review(r12): pin immutable source, result and PDF build for the next referee'
+          git push origin HEAD:"$R12_BRANCH"
+          git archive --format=tar.gz --output=/tmp/NBO-R12-repository.tar.gz HEAD
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: NBO-R12-referee-package
+          path: |
+            /tmp/NBO-R12-repository.tar.gz
+            ECTA_R12.pdf
+            SUPP_R12.pdf
+            R12_REVIEW.md
+            revisions/2026-09-22-r12/publication_receipt.json
+            revisions/2026-09-22-r12/validation_report.json
+            revisions/2026-09-22-r12/response_to_referee.md
+            revisions/2026-09-22-r12/build_logs/
+          if-no-files-found: error
