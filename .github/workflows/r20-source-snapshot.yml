@@ -1,0 +1,25 @@
+name: R20 immutable review-source snapshot
+on:
+  push:
+    branches: [revision/econometrica-r20-policy-value-certification-2026-09-23]
+    paths: [.github/workflows/r20-source-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Archive reviewed manuscript, evidence and historical derivations
+        run: |
+          git archive --format=tar HEAD | gzip -n > NBO-R20-input.tar.gz
+          git rev-parse HEAD > SOURCE_COMMIT.txt
+          sha256sum NBO-R20-input.tar.gz > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NBO-R20-immutable-input
+          path: |
+            NBO-R20-input.tar.gz
+            SOURCE_COMMIT.txt
+            SHA256SUMS.txt
+          retention-days: 14
