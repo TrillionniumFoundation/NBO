@@ -21,7 +21,7 @@ jobs:
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
-      - name: Materialize exact audited source bytes
+      - name: Materialize exact audited source bytes and checked proof corrections
         shell: bash
         run: |
           set -euo pipefail
@@ -31,39 +31,46 @@ jobs:
           prefix='revisions/2026-09-23-r19/'
           transport=Path(prefix)/'publication'
           repairs=json.loads((transport/'transport_repairs.json').read_text())
+          corrections={r['path']:r for r in json.loads((transport/'source_corrections.json').read_text())}
           for name,r in repairs.items():
-              p=transport/name
-              text=p.read_text()
-              digest=hashlib.sha256(text.encode()).hexdigest()
+              p=transport/name;text=p.read_text();digest=hashlib.sha256(text.encode()).hexdigest()
               if digest!=r['after']:
                   assert digest==r['before'],('Unexpected transport bytes',name)
-                  for lo,hi,replacement in reversed(r['patches']):
-                      text=text[:lo]+replacement+text[hi:]
+                  for lo,hi,replacement in reversed(r['patches']):text=text[:lo]+replacement+text[hi:]
                   assert hashlib.sha256(text.encode()).hexdigest()==r['after'],name
                   p.write_text(text)
           raw=base64.b64decode(''.join((transport/f'payload_{i:02d}.b64').read_text() for i in range(5)),validate=True)
           assert hashlib.sha256(raw).hexdigest()=='de66d37b2bedc06b607b91344aa7ac62dde4e00955b25a86f21592d71b30582a','Source bundle checksum mismatch'
           allowed={'ECTA_R19.tex','SUPP_R19.tex','RESPONSE_R19.tex','R19_REVIEW.md'}
           with tarfile.open(fileobj=io.BytesIO(raw),mode='r:gz') as archive:
-              members=archive.getmembers()
-              assert len(members)==26
+              members=archive.getmembers();assert len(members)==26
               for item in members:
                   path=PurePosixPath(item.name)
                   assert item.isfile() and not path.is_absolute() and '..' not in path.parts
                   assert item.name in allowed or item.name.startswith(prefix)
                   target=Path(item.name);data=archive.extractfile(item).read()
                   if target.exists():
-                      assert target.read_bytes()==data,('Refuse unexpected overwrite',item.name)
+                      existing=target.read_bytes()
+                      assert existing==data or (item.name in corrections and hashlib.sha256(existing).hexdigest()==corrections[item.name]['after']),('Refuse unexpected overwrite',item.name)
                   else:
                       target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
-          print('Verified source SHA256; materialized 26 new source files.')
+          for name,r in corrections.items():
+              p=Path(name);data=p.read_bytes();digest=hashlib.sha256(data).hexdigest()
+              if digest==r['after']:continue
+              assert digest==r['before'],('Unexpected source before correction',name)
+              lines=data.decode().splitlines(keepends=True)
+              for lo,hi,addition in reversed(r['edits']):lines[lo:hi]=[addition]
+              data=''.join(lines).encode()
+              assert hashlib.sha256(data).hexdigest()==r['after'],('Corrected source checksum mismatch',name)
+              p.write_bytes(data)
+          print('Verified source bundle and exact corrected proof/validation sources.')
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           test "$(git ls-remote origin "refs/heads/${GITHUB_REF_NAME}" | cut -f1)" = "$GITHUB_SHA"
           git add -f ECTA_R19.tex SUPP_R19.tex RESPONSE_R19.tex R19_REVIEW.md revisions/2026-09-23-r19
           if ! git diff --cached --quiet; then
-            git commit -m 'revision(r19): policy-value-separated neural learning, continuation proofs and complete R18 response'
+            git commit -m 'revision(r19): verify discounted continuation curvature and policy-value-separated source'
             git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
           echo "R19_SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
