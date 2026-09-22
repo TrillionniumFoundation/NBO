@@ -1,0 +1,97 @@
+name: R9 frozen external holdout
+on:
+  push:
+    branches: ['revision/econometrica-r9-constructive-certification-2026-09-22']
+    paths: ['.github/workflows/r9-external-holdout.yml']
+permissions:
+  contents: write
+env:
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+jobs:
+  tune:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        d: [8,16,32]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: sx-fang/MartNet
+          ref: 991ea8dde5bad6ba912eb8cc48b0cb48dbdd6c2a
+          path: martnet-author
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install numpy==2.3.5 scipy==1.17.0
+      - run: python revisions/2026-09-22-r9/replication/external_suite.py tune --dimension ${{ matrix.d }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r9-tuning-d${{ matrix.d }}
+          path: revisions/2026-09-22-r9/results/external/
+  holdout:
+    needs: tune
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        d: [8,16,32]
+        budget: [10,30]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: sx-fang/MartNet
+          ref: 991ea8dde5bad6ba912eb8cc48b0cb48dbdd6c2a
+          path: martnet-author
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install numpy==2.3.5 scipy==1.17.0
+      - uses: actions/download-artifact@v4
+        with:
+          name: r9-tuning-d${{ matrix.d }}
+          path: revisions/2026-09-22-r9/results/external/
+      - run: python revisions/2026-09-22-r9/replication/external_suite.py run --dimension ${{ matrix.d }} --seconds ${{ matrix.budget }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r9-holdout-d${{ matrix.d }}-b${{ matrix.budget }}
+          path: revisions/2026-09-22-r9/results/external/
+  collect:
+    needs: holdout
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install numpy==2.3.5 scipy==1.17.0
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r9-holdout-*
+          merge-multiple: true
+          path: revisions/2026-09-22-r9/results/external/
+      - run: python revisions/2026-09-22-r9/replication/external_suite.py summarize
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r9-complete-holdout
+          path: revisions/2026-09-22-r9/results/external/
+      - name: Commit complete evidence only to R9
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add revisions/2026-09-22-r9/results/external
+          git commit -m 'evidence(r9): retain every frozen holdout seed, checkpoint, path sample and summary'
+          git pull --rebase origin revision/econometrica-r9-constructive-certification-2026-09-22
+          git push origin HEAD:revision/econometrica-r9-constructive-certification-2026-09-22

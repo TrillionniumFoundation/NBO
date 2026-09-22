@@ -1,0 +1,21 @@
+{
+  "version": "R9 holdout protocol, frozen before tuning and holdout execution",
+  "review_source": "9749c3cf28f9438315b8f504a358bbe307ea89a5",
+  "author_repository": "sx-fang/MartNet",
+  "author_commit": "991ea8dde5bad6ba912eb8cc48b0cb48dbdd6c2a",
+  "objective": "Unchanged R8 coupled nonconvex continuous-time control family; no manufactured value or payoff modification",
+  "dimensions": [8,16,32],
+  "training_budgets_seconds": [10,30],
+  "training_threads": 1,
+  "tuning": {"seeds":[600,601],"multipliers":[0.3333333333333333,1.0,3.0],"seconds_per_trial":10,"trials_per_method_per_dimension":6,"validation_paths":1024,"rule":"Minimum mean validation cost across two seeds; ties to smaller multiplier; multiplier applied to each method's native actor/critic learning rate, not SOC adversary rate"},
+  "holdout_seeds": [720,721,722,723,724,725,726,727,728,729,730,731],
+  "warmup_seed": 599,
+  "run_order": "Fixed seed-randomized NBO/SOC order after method-specific warmup; separate setup-plus-training and training-only clocks",
+  "initialization": "Identical actor and critic initial parameters within each pair; digests asserted equal; independent method training streams with same reset seed",
+  "other_comparator": "Clipped Riccati feedback for the corresponding quadratic running/terminal problem; evaluated on the unchanged nonquadratic objective without training",
+  "audit": {"paths":4096,"common_noise":true,"deployment_dates":[128,64],"deployment":"sample-and-hold action; Gaussian transitions and running cost are exact per slab in real arithmetic; 64/128 difference compares two policies, not an Euler-error estimate","arithmetic":"float32 policy rollout with float64 summaries; Monte Carlo, not outward-rounded certification"},
+  "primary_contrast": "NBO minus author SOC-MartNet expected realized cost under the declared training-and-audit pipeline",
+  "inference": "All 12 seed differences, means, median, IQR, descriptive Student interval; one-sided exact sign test and Bonferroni correction over six dimension-budget panels. No general computational-dominance claim; no Gaussian-seed assumption for sign inference.",
+  "development_disclosure": "Model family and base adapters are inherited from R8; seed599 smoke tests preceded freeze. Original-economy and action-certificate development are not presented as preregistered. Holdout seeds were not used for method selection.",
+  "failure_policy": "Preserve every run and fail the aggregate on missing/nonfinite output. Never select seeds or budgets after observing outcomes. Any necessary implementation correction must be separately documented."
+}
