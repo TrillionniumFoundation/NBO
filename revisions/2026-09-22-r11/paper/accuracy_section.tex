@@ -1,0 +1,64 @@
+\section{From implemented actor errors to absolute-accuracy frontiers}\label{r11:accuracy}
+The original stopped economy establishes economically resolved optimality bounds. A complementary experiment asks a different question: how much computation is required to attain a common absolute accuracy when the continuous optimum is independently known? This experiment changes neither the economy in Section~\ref{r9:economy} nor the coupled nonconvex comparison. It adds reference-solvable mechanisms with different drift, noise, and control-cost conditioning. An exact reference is not replaced by the best realized cost of a competing policy.
+
+Consider independent coordinates with
+\begin{equation}\label{r11:lq}\begin{aligned}
+ dX^j_t&=(a_jX^j_t+b_ju^j_t)dt+\sigma_jdW^j_t,\\
+ J(u)&=\frac1d\E\left[\int_0^1\sum_{j=1}^d(q_j(X^j_t)^2+r_j(u^j_t)^2)dt+\sum_{j=1}^dw_j(X^j_1)^2\right],
+\end{aligned}\end{equation}
+where $q_j\geq0$, $r_j,w_j>0$, and $b_j>0$. Controls are unbounded, adapted, and square integrable. The action constraints and nonconvex running cost of the external comparison are \emph{not} silently imposed on this linear-quadratic problem. Rather, the latter supplies an independently solvable accuracy experiment. The implemented actor observes $X_{i/N}$ and holds $u_t=-K_iX_{i/N}$ until the next decision date. It is a linear output map with time gates, not a continuous-feedback deployment of $-K_iX_t$ and not the width-48 tanh actor used in the external comparison.
+
+\begin{proposition}[Two independent error decompositions]\label{r11:decomposition}
+Let $p_j(1)=w_j$ and $-\dot p_j=q_j+2a_jp_j-b_j^2p_j^2/r_j$. The continuous optimum is
+\begin{equation}\label{r11:reference}
+ V^*=\frac1d\sum_j\left[p_j(0)(X^j_0)^2+\sigma_j^2\int_0^1p_j(t)dt\right],
+\end{equation}
+and every admissible control satisfies
+\begin{equation}\label{r11:continuousdefect}
+ J(u)-V^*=\frac1d\sum_j\E\int_0^1r_j\left(u^j_t+\frac{b_jp_j(t)}{r_j}X^j_t\right)^2dt.
+\end{equation}
+For decision interval $h=1/N$, let $J_h^*$ be the optimum over held-action rules, with Riccati coefficients $P_{ij}$, optimal gains $K^*_{ij}$, and positive action curvatures $D_{ij}$ specified in Appendix~\ref{r11:proof}. For any implemented held-action rule, including a nonlinear neural rule,
+\begin{equation}\label{r11:twodefect}
+ J(u)-V^*=(J_h^*-V^*)+
+ \frac1d\sum_{i,j}D_{ij}\E\left[(u^j_i+K^*_{ij}X^j_{ih})^2\right].
+\end{equation}
+Consequently, output-error bounds $\E[(u_i^j+K^*_{ij}X^j_{ih})^2]\leq\varepsilon_{ij}^2$ give a quantitative optimization allowance $d^{-1}\sum_{i,j}D_{ij}\varepsilon_{ij}^2$, in addition to the separately evaluated deployment error $J_h^*-V^*$. No convergence assumption on Adam or on shared neural parameters is used.
+\end{proposition}
+
+The proposition is a specialization of quadratic verification and Bellman completion of squares, not a new general Riccati theorem. Its role is to connect an \emph{implemented} policy error to an absolute economic objective. The finite-horizon quadratic Bellman construction requires exactly $N$ backward improvements per coordinate. In this output class, evaluation and improvement are closed operations, and the backward recursion solves the held-action problem rather than merely decreasing a stochastic training loss. The alternative Adam implementation optimizes the same gain outputs using an independently coded exact-moment objective. Its errors are assessed after the recorded updates; a universal stochastic-optimization convergence theorem is not inferred.
+
+\subsection{Independent reference and deployment verification}
+Write $c_j=b_j^2/r_j$, $\lambda_j^2=a_j^2+c_jq_j$, and $s=1-t$. Define
+\begin{align*}
+ A_j(s)&=\cosh(\lambda_js)+\frac{\sinh(\lambda_js)}{\lambda_j}(-a_j+c_jw_j),\\
+ B_j(s)&=w_j\cosh(\lambda_js)+\frac{\sinh(\lambda_js)}{\lambda_j}(q_j+a_jw_j).
+\end{align*}
+The continuous Riccati solution is $p_j(t)=B_j(1-t)/A_j(1-t)$, with the continuous limit when $\lambda_j=0$. Its integral equals $(\log A_j(1)+a_j)/c_j$. Thus the reference needs no time-stepping solver or simulated paths. Sixty-decimal interval arithmetic encloses the exponentials, logarithms, and divisions. Every coefficient in the certificate is the exact binary64 number stored in the instance file, and every gain is the exact stored policy output. Exported interval endpoints are enlarged by one binary64 unit in the outward direction.
+
+A different calculation evaluates the original continuous cost of each held-action policy. Conditional on the state at a decision date,
+\[
+ X^j_{ih+s}=\left(e^{a_js}-b_jK_{ij}\int_0^s e^{a_jv}dv\right)X^j_{ih}
+       +\sigma_j\int_0^s e^{a_j(s-v)}dW^j_{ih+v}.
+\]
+Exact second-moment propagation and the integrated running cost therefore determine $J(u)$. Appendix~\ref{r11:proof} gives all coefficients and the verification proof. This is not an Euler approximation, and a difference between two meshes is not used as an error estimate. In particular, the reported interval $[\underline J-\overline V,\overline J-\underline V]$ encloses absolute regret in \eqref{r11:lq}, including deployment error. Stored policies, model coefficients, source hashes, and the two independent evaluators are supplied in the replication package.
+
+\subsection{Reference-solvable mechanisms and executed accuracy}
+The prospective protocol specifies three cases. Tracking has $d=8$, $a=0$, $b=2$, $q=0$, $r=w=1$, initial centered state $-.5$, and $\sigma=.5656854249492381$. The mean-reverting case has $d=8$, $a=-1$, $b=q=w=1$, $r=.25$, $\sigma=.4$, and initial state one. The ill-conditioned case has $d=16$ and linearly spaced $a\in[-1,.5]$, $b\in[.5,2]$, $q\in[.1,2]$, $\sigma\in[.15,.65]$, $w\in[.5,2]$, and initial states in $[-1,1]$, with geometrically spaced $r\in[.1,4]$. The last case contains both stable and unstable uncontrolled coordinates. Exact stored coefficients, rather than rounded endpoints in this description, define each computation.
+
+The quadratic Bellman constructor is evaluated at $N=4,8,16,32,64,128$. Adam uses $N=32$, initially zero gains, learning rate $.05$, standard moment coefficients $(.9,.999)$, and checkpoints at 0, 25, 100, and 400 updates. The deterministic optimizer configuration is recorded with the executed instances; no tuning search is performed for this reference suite. No holdout claim is attached to these analytical test cases. All checkpoints are retained, including those that miss a stated accuracy threshold.
+
+\begin{table}[t]\centering\small
+\caption{Absolute continuous-model regret: outward upper endpoints}\label{r11:tab:accuracy}
+\input{revisions/2026-09-22-r11/paper/tables/accuracy}
+\par\smallskip\footnotesize Each entry is rounded upward from an interval certificate of the original continuous cost of the stored actor. Columns B denote quadratic Bellman construction at the stated decision count. Adam uses 32 decisions and 400 updates. These are structured-policy accuracy results, not a substitution for the external neural comparison.
+\end{table}
+
+Table~\ref{r11:tab:accuracy} shows that refinement reduces deployment error in every case. At 128 decisions, all three absolute regret upper bounds are below $.003$. At 32 decisions, all three are below $.01$. Adam approaches the same 32-decision optimum: increasing its updates cannot eliminate the deployment floor at that fixed decision count. This distinction is observed directly, not inferred from a nearly flat training curve. The $.001$ target is attained on the planned mesh sequence for the mean-reverting case, but not for tracking or the ill-conditioned case; these outcomes remain in the package rather than being removed from the frontier.
+
+\begin{table}[t]\centering\small
+\caption{First certified attainment on the recorded computation paths}\label{r11:tab:frontier}
+\input{revisions/2026-09-22-r11/paper/tables/accuracy_frontier}
+\par\smallskip\footnotesize Time includes all earlier generation and certificate checks on the indicated path, but excludes dependency installation and one-time optimizer construction. B is the quadratic Bellman constructor; A is Adam on gain outputs. A dash means the target was not attained among the predeclared checkpoints. Timing is a single-machine descriptive measurement, not a confidence interval or a hardware-independent complexity comparison.
+\end{table}
+
+The accuracy axis is the same original-cost regret for both policy generators within each case. The computation axis includes rejected earlier meshes or checkpoints rather than reporting only the final inexpensive verification. The exact quadratic constructor uses analytic model structure that the general tanh and SOC implementations do not exploit; its faster times do not establish a neural-versus-SOC efficiency ranking. Together with the unchanged stopped economy and coupled nonconvex family, the added cases test first-exit verification, adapted adjustment, nonconvex coupling, mean reversion, and differing control-cost conditioning. They do not supply new recursive-utility or game experiments. Those extensions retain their explicit assumptions and complete historical material.
