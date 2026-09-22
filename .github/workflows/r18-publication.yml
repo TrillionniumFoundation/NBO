@@ -1,0 +1,124 @@
+name: R18 validated Econometrica publication
+on:
+  push:
+    branches: [revision/econometrica-r18-certificate-aligned-2026-09-23]
+    paths:
+      - .github/workflows/r18-publication.yml
+      - revisions/2026-09-23-r18/bootstrap/**
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r18-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+      - name: Reconstruct and SHA-check every new manuscript source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, hashlib, json, lzma
+          from pathlib import Path, PurePosixPath
+          root=Path('.')
+          prefix='revisions/2026-09-23-r18/'
+          parts=[root/prefix/'bootstrap'/f'source{i:02d}.b64' for i in range(8)]
+          raw=base64.b64decode(''.join(p.read_text().strip() for p in parts),validate=True)
+          assert hashlib.sha256(raw).hexdigest()=='01a42ab8bc43df008bc4e51faaf5422450062b28fc1e1f8e77856b5fe53fdb50', 'Payload SHA mismatch'
+          payload=json.loads(lzma.decompress(raw))
+          assert payload['format']=='R18_SHA256_checked_new_files_v1'
+          names={'ECTA_R18.tex','SUPP_R18.tex','RESPONSE_R18.tex','R18_REVIEW.md'}
+          for item in payload['files']:
+              path=item['path']; rel=PurePosixPath(path)
+              assert not rel.is_absolute() and '..' not in rel.parts
+              assert path in names or path.startswith(prefix),path
+              if 'content' in item:
+                  text=item['content']
+              else:
+                  base=PurePosixPath(item['base'])
+                  assert not base.is_absolute() and '..' not in base.parts
+                  old=(root/str(base)).read_bytes()
+                  assert hashlib.sha256(old).hexdigest()==item['base_sha256'],str(base)
+                  lines=old.decode('utf-8').splitlines(keepends=True)
+                  for lo,hi,addition in reversed(item['edits']):
+                      lines[lo:hi]=[addition]
+                  text=''.join(lines)
+              data=text.encode('utf-8')
+              assert hashlib.sha256(data).hexdigest()==item['sha256'],path
+              dest=root/path
+              if dest.exists():
+                  assert dest.read_bytes()==data,'Unexpected existing content: '+path
+              else:
+                  dest.parent.mkdir(parents=True,exist_ok=True)
+                  dest.write_bytes(data)
+          print('Verified and materialized',len(payload['files']),'new R18 source files; historical sources unchanged.')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f ECTA_R18.tex SUPP_R18.tex RESPONSE_R18.tex R18_REVIEW.md revisions/2026-09-23-r18
+          if ! git diff --cached --quiet; then
+            git commit -m 'revision(r18): materialize certificate-aligned manuscript, proofs and complete R16 response'
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+          echo "R18_SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned numerical and manuscript dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libmpfr-dev gcc texlive-latex-extra texlive-fonts-recommended poppler-utils
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Reexecute R18 scientific checks against immutable R17 objects
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p revisions/2026-09-23-r18/results
+          python revisions/2026-09-23-r18/replication/reproduce.py | tee revisions/2026-09-23-r18/results/validation_run.log
+      - name: Compile and validate all three Econometrica documents
+        run: python revisions/2026-09-23-r18/replication/build_pdfs.py
+      - name: Pin scientific evidence, source and historical preservation
+        run: python revisions/2026-09-23-r18/replication/publish_manifest.py
+      - name: Commit validated publication on the new revision branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -f ECTA_R18.pdf SUPP_R18.pdf RESPONSE_R18.pdf revisions/2026-09-23-r18/results revisions/2026-09-23-r18/build_logs revisions/2026-09-23-r18/PUBLICATION_MANIFEST.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'publication(r18): validated manuscript PDFs, complete objective audit and preservation manifest'
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+          git rev-parse HEAD > R18_PUBLICATION_COMMIT.txt
+          python revisions/2026-09-23-r18/replication/make_review_archive.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r18-review-publication
+          path: |
+            NBO_R18_review_package.zip
+            R18_PUBLICATION_COMMIT.txt
+          retention-days: 30
+      - name: Preserve diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r18-publication-diagnostics
+          path: |
+            revisions/2026-09-23-r18/results/
+            revisions/2026-09-23-r18/build_logs/
+            ECTA_R18.log
+            SUPP_R18.log
+            RESPONSE_R18.log
+          retention-days: 14
