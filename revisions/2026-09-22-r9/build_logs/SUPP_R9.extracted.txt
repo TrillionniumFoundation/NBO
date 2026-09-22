@@ -1,0 +1,3169 @@
+Submitted to Econometrica
+
+NEURAL BELLMAN OPERATORS: TECHNICAL AND PRESERVATION SUPPLEMENT
+TO REVISION R9
+Q IAN QI
+Peking University
+This supplement preserves the complete R8 manuscript and proofs, the complete R4
+exposition and derivations, and all six delivered R5 numerical tables without altering their
+source text. It also specifies the R9 replication and evidence map. Recursive utility, temporal
+selves, dynamic games, Merton benchmarks, stochastic-trace identities, finite safeguards,
+manufactured-payoff tests, and unsuccessful numerical attempts remain available for review.
+The new original-economy welfare bounds, constructive certificates, and frozen external
+comparison are developed in the R9 main paper and its mathematical appendix.
+
+PART I: READING AND REPLICATION MAP
+
+The current manuscript is ECTA_R9.tex; its Appendix proves the new results. The accompanying response addresses the September 22, 2026 R8 numerical-methods report at commit
+9749c3c. The new work is isolated on the R9 constructive-certification branch. Earlier main
+and review branches have not been advanced by this revision.
+The R9 replication directory contains the original-payoff actor and moment evaluator, fittedupper construction and Bernstein verifier, restricted market-deflator verifier, scalar global action
+certifier, interval neural-jet evaluator, absolute-value relaxation, and frozen external-comparison
+driver. Numerical tables are generated from their retained JSON records. Every new trained
+external network and all 4,096-path samples for each of the 72 holdout pairs are retained. Source
+and preservation hashes, exact commands, scope checks, and failed-pilot status are in the R9
+replication and validation records.
+The following material is historical but preserved in full. References to a preceding revision, its
+new experiment, its current target, or its conclusions refer to that historical record. In particular,
+the R8 manufactured-payoff result is not evidence for original-payoff precision, and its six-seed
+external comparison is superseded for current inference by the frozen R9 holdout. Neither
+passage is deleted or silently rewritten. Historical finite safeguards remain distinct from the new
+continuous-action oracle. The R4 recursive, temporal-self, and game derivations retain their own
+assumptions and equilibrium concepts; no new large-scale extension result is inferred from the
+additive-control computations.
+
+Qian QI: qiqian@pku.edu.cn
+
+2
+PART II: COMPLETE R8 MANUSCRIPT AND PROOFS
+
+1. INTRODUCTION
+How accurately must an economic decision rule be computed before a welfare comparison is
+informative? This question is especially consequential when the decision maker changes not
+only consumption and investment but also a preference state. A small error in a fitted value
+function need not imply a small policy loss, and a numerically stable policy surface need not
+distinguish an adjustment-cost effect from an approximation error. The difficulty is compounded
+when an economic boundary is an actual termination event rather than an artificial edge of a
+training domain.
+This paper develops Neural Bellman Operators (NBO) as a model-based framework for
+separating policy evaluation, feasible policy improvement, and verification of the implemented
+decision rule. The economic application combines stochastic risk aversion, consumption, portfolio choice, and costly preference adjustment. Its stopping and settlement contract is specified as
+part of the economy. The mathematical results identify three distinct objects: an exact policyimprovement sequence, its neural implementation, and an independently evaluated policy. None
+is substituted for another in the error bounds.
+Our first result provides a continuous-time verification pair. A supersolution controls the value
+of every admissible policy, whereas a subsolution controls the payoff of the particular policy
+to be implemented. Their difference, together with explicitly signed residual and boundary
+terms, bounds regret. The argument uses smooth test functions, not smoothness of the optimal
+value. It therefore does not require continuity of the optimal value at an irregular controlled
+exit boundary. We give both a direct continuous-generator implementation and an operatorenclosure decomposition for a discretized implementation. The latter separates time, action,
+state interpolation, quadrature, exit, inner-solve, and arithmetic errors; a refinement difference is
+not one of these bounds.
+The second result connects computational accuracy to an economic comparative static. Raising
+the price of preference adjustment lowers the optimal discounted adjustment budget. For policies
+that are only approximately optimal, the possible reversal in this ordering is bounded by the
+sum of their regret bounds divided by the change in price. Value enclosures also bound optimal
+adjustment budgets through secants and bound the welfare gain from access to the adjustment
+technology. These statements make the required numerical precision depend on the economic
+comparison, rather than on a common uncalibrated stopping tolerance.
+The computational analysis has complementary components. We re-evaluate the retained
+neural NDU policies, price the full finite-action safeguard, and separate time, state, and action
+refinements. We construct outward-interval verification pairs for their deployment in the original
+continuous diffusion. Those pairs are valid but too conservative to resolve the stated economic
+precision target. A second, explicitly modified-payoff experiment trains a bounded actor on
+exactly the same state, control, covariance, and exit geometry and obtains an all-state continuous
+regret certificate. Finally, a coupled nonconvex control problem in eight and sixteen dimensions
+is compared at a fixed CPU budget with the pinned author implementation of SOC-MartNet. The
+comparison uses actual neural controls, no analytical greedy-action labels, paired independent
+policy rollouts, and a declared six-seed design. Its outcome measures realized cost at that budget,
+not distance to an unknown optimum.
+Policy iteration, neural PDE evaluation, and their combination have important antecedents.
+Jacka and Mijatović (2015) study continuous-time policy improvement. Kim, Cho, Kim, and
+Kim (2026) alternate soft evaluation and improvement for entropy-regularized stochastic control
+and separate iteration, policy-network, and residual errors. The updated interior analysis of
+Kim, Kim, Kim, and Cho (2026) treats stationary second-order equations with bounded-domain
+
+3
+
+NBO: R9 SUPPLEMENT
+
+training and unresolved outer information; its interior bounds and its discussion of collocation–
+closed-loop mismatch are directly relevant. Lee and Kim (2025) combine policy iteration with
+operator learning to reuse a representation across terminal data. Cai, Fang, and Zhou (2025)
+train stochastic control and value networks through martingale conditions without explicitly
+computing the Hamiltonian infimum. NBO does not claim priority for neural policy iteration or
+for residual verification. Its contribution here is the combination of stopped economic-model
+verification, explicitly costed feasible correction, and error-calibrated preference-adjustment
+comparisons. Section 7 gives the comparison at the level of assumptions and implemented
+experiments.
+Recursive utility, sophisticated temporal selves, and dynamic games remain part of the
+framework. They do not share an identical evaluation equation or an identical optimality notion.
+We retain their aggregators, equilibrium conventions, proofs, and computational records, and
+state precisely how a gain bound changes when the evaluation operator is nonlinear or when rivals
+are frozen. The supplementary material preserves the complete preceding R4 manuscript and
+technical derivations; the current manuscript integrates the R5 evidence and the new continuous
+verification and external-comparison results.
+2. AN ECONOMY WITH COSTLY PREFERENCE ADJUSTMENT
+The state is s = (u, x), where u is relative risk aversion and x is financial wealth. An
+admissible control is a progressively measurable process a = (c, θ, p) taking values in
+A = [.05, .8] × [−.2, .2] × [−.5, .8].
+
+Before termination the state satisfies
+dut = θt dt + .05 dZtu ,
+
+(1)
+x
+t
+
+dxt = [(.02 + .06pt )xt − ct ]dt + .2pt xt dZ ,
+
+u
+
+x
+
+d⟨Z , Z ⟩t = −.25 dt.
+
+(2)
+
+The horizon is T = 1, the open state domain is D = (1.2, 2.8) × (.5, 2), and the discount rate
+is ρ = .04. The process is stopped at τ = T ∧ inf{r ≥ t : Sr ∈
+/ D}. Its running payoff and
+settlement are
+ℓk (u, c, θ) =
+
+c1−u
+k
+− θ2 ,
+1−u 2
+
+k > 0,
+
+G(u, x) = −.02(u − 2)2 + .1 log x,
+
+(3)
+g(t, u, x) = G(u, x) − 8(1 − t).
+
+(4)
+
+Thus
+π
+k
+
+π
+t,s
+
+Z τ
+
+J (t, s) = E
+
+e
+t
+
+−ρ(r−t)
+
+ℓk (Sr , ar ) dr + e
+
+−ρ(τ −t)
+
+
+g(τ, Sτ ) ,
+
+Vk (t, s) = sup Jkπ (t, s).
+π
+
+(5)
+The feasible controls, state dynamics, stopping rule, and settlement do not depend on k. Bounded
+controls and locally Lipschitz state coefficients give a well-defined stopped state equation for
+the feedbacks used below. Bounded payoffs on the stated domain give finite values. The cardinal
+normalization and consumption units are held fixed across comparisons. A transformation of
+utility depending on the controlled state u is generally a different economy.
+The early termination fee is a specified liquidation covenant, not an estimated preference
+parameter. At termination there is no subsequent wealth injection or continuation consumption.
+This distinction is essential: a constant preference diffusion cannot be confined to the stated
+
+4
+rectangle by merely clipping simulated states. At the lower wealth boundary the largest admissible drift is −.016, so that the original consumption floor cannot support a silently viable
+self-financing rectangle. We do not replace this economy by reflection.
+At the upper wealth boundary, the admissible choice p = 0 has zero wealth diffusion and
+inward drift .04 − c < 0. Consequently, a theorem that assumes boundary regularity uniformly
+over all controls cannot simply be applied to this model. We neither identify the interior trace of
+Vk with the prescribed immediate-settlement value without proof nor assume a globally smooth
+optimal value. The verification pair in Section 4 uses inequalities on the actual stopped trace
+and remains meaningful in this setting.
+For a smooth test function v, define
+La v = θvu + [(.02 + .06p)x − c]vx + .00125vuu + .02p2 x2 vxx − .0025pxvux ,
+
+(6)
+
+Ra v = vt + La v + ℓk − ρv.
+
+(7)
+
+The interior HJB equation is supa∈A Ra Vk = 0 in the appropriate solution sense. All covariance
+terms, including the mixed derivative, are retained. A negative shock correlation by itself does
+not establish the sign of the optimal portfolio response, and dividing a re-solved Vu by k does
+not establish a pointwise ordering of adjustment policies.
+P ROPOSITION 1—Complete control selection for a fixed jet: Let v have the derivatives in
+(7). A global maximizer of Ra v is obtained separately in the three control components. If vx > 0,
+c∗ = proj[.05,.8] (vx−1/u ); otherwise c∗ = .8. Also θ∗ = proj[−.2,.2] (vu /k). Write
+h1 = .06xvx − .0025xvux ,
+
+h2 = .04x2 vxx .
+
+If h2 < 0, then p∗ = proj[−.5,.8] (−h1 /h2 ). If h2 ≥ 0, choose an endpoint maximizing h1 p +
+h2 p2 /2, with a fixed tie rule.
+This selection rule includes nonpositive marginal wealth value, zero curvature, convex portfolio objectives, and constrained optima. It removes action discretization from a continuousgenerator audit for this particular model. It is not a closed-form optimizer of the killed-Euler,
+interpolated, finite-step Bellman target, and it is not a global convergence theorem for shared
+neural parameters. The underlying derivative rule was present in the retained derivations; the
+present implementation tests every curvature branch explicitly.
+3. EVALUATION, IMPROVEMENT, AND FINITE CORRECTION
+For a fixed policy π, policy evaluation solves Rπ v = 0 with the economic stopping contract.
+Improvement chooses a feasible control maximizing the Hamiltonian of that fixed evaluation.
+The exact operators are denoted E and I, and exact policy iteration is πj+1 = I(Eπj ). If a
+classical evaluation exists, Rπj+1 (Eπj ) ≥ 0. Verification then gives J πj+1 ≥ J πj .
+An exact limiting argument requires more than this monotonicity. Under compactness of
+the policy class, continuity of evaluation into a precompact C 1,2 jet class, closure under improvement, continuity of the chosen selector at cluster points, and comparison for the optimality
+equation, each cluster-point value is optimal. These are hypotheses on the exact operators.
+They do not follow from successful stochastic-gradient training. Appendix B gives the limiting
+argument and retains the distinctions between parameter stationarity, policy convergence, and
+value convergence.
+
+5
+
+NBO: R9 SUPPLEMENT
+
+3.1. The raw neural algorithm
+A critic vξ is trained against fixed-policy targets. In a continuous-generator implementation
+these are Rπ vξ ; in a discrete implementation they are the appropriate one-step conditional
+expectations. The actor improves a frozen critic. Freezing the critic’s parameters does not mean
+deleting the derivative of its output with respect to the controlled next state. Conversely, no actor
+update may change the critic parameters or a rival’s policy parameters through the improvement
+objective. Independent policy evaluation is a third operation and supplies neither optimal-action
+nor optimal-value training labels.
+In the NDU implementation inherited from R5, the raw actor has three bounded outputs
+and two tanh hidden layers. It is trained without enumerating actions, but its training states
+lie on a lattice. It is therefore a continuous-action, lattice-trained implementation, not a meshfree experiment. The high-dimensional experiment below instead uses sampled states and
+Gaussian successor samples. The two implementations share the separation of evaluation and
+improvement; their verification costs are different.
+3.2. A certificate for the declared finite economy
+Let T w = r + δPna w, where Pna is a positive substochastic continuation matrix and δ =
+. Termination payoffs are included in rna . Let π
+b be a feasible policy and vn a critic, with
+e
+terminal discrepancy at most b. Define
+−ρ∆
+
+a
+n
+
+a
+n
+
+en = ∥vn − Tnπbn vn+1 ∥∞ ,
+
+ηn = ∥ max Tna vn+1 − Tnπbn vn+1 ∥∞ .
+a
+
+T HEOREM 1—Finite gain accounting: On this finite economy,
+N −1
+
+∥V
+
+∗
+h,n
+
+−V
+
+π
+b
+h,n ∞
+
+∥
+
+≤ 2δ
+
+N −n
+
+b+
+
+X
+
+δ j−n (2ej + ηj ).
+
+(8)
+
+j=n
+
+If v = Vhπb is independently evaluated with the exact finite terminal data, ej = b = 0. A statedependent bound is obtained by setting BN = 0 and
+Bn (s) = gn (s) + δ max(Pna Bn+1 )(s),
+
+π
+b
+π
+b
+gn = max Tna Vh,n+1
+− Vh,n
+.
+
+a
+
+Then 0 ≤ V
+
+∗
+h,n
+
+−V
+
+π
+b
+h,n
+
+a
+
+≤ Bn .
+
+Here the maximum must range over the entire declared candidate economy. For the retained
+NDU audit this is the 125-point action grid together with the frozen continuous neural proposal
+at every state and date. The certificate does not cover all continuous controls merely because
+one candidate originated in a neural network. Floating-point computation of the finite envelope
+is recorded separately from the real-arithmetic statement of the theorem.
+3.3. The safeguarded algorithm and its cost
+The safeguarded algorithm first evaluates the raw policy, computes all candidate gains, and
+corrects states with gain above a specified threshold. It re-evaluates the corrected policy and
+stops only when its reported envelope meets the target. In the new re-audit the threshold is
+γ=
+
+ε
+X
+
+.
+
+N −1
+
+2
+
+n=0
+
+δ
+
+n
+
+(9)
+
+6
+The factor two leaves a margin relative to the sufficient condition maxn,s gn (s) ≤ γ. The actual
+stopping test remains the recomputed envelope, not an optimal reference value. A stopped run
+that does not meet that test is a failed precision test.
+P ROPOSITION 2—When corrections can become infrequent: For M audited state-date
+P decisions with nonnegative gains gm , the share whose gain exceeds γ > 0 is at most (M γ)−1 m gm .
+Thus a vanishing mean gain is sufficient for a vanishing
+P correction share at a fixed threshold.
+For thresholds γj ↓ 0, the sufficient condition is Mj−1 m gj,m = o(γj ).
+This is a conditional mechanism, not evidence that longer training has already made the
+retained corrections negligible. It distinguishes a useful limit statement from an unmeasured
+training-dose claim. Every audit still enumerates the candidate actions. With N dates, S lattice
+states, and A grid actions, the implementation uses N S(A + 2) value-action evaluations per
+audit, including policy evaluation and the extra proposal, and N S(A + 1) envelope-action
+evaluations. Each NDU action uses four shock branches and bilinear interpolation. There is no
+dimension-free cost claim for this safeguard.
+4. VERIFICATION OF THE CONTINUOUS ECONOMY
+The object implemented in continuous time must be stated before it can be certified. For the
+retained NDU proposals, we use their feasible bilinear interpolation on the exact uniform state
+grid. On each decision interval the feedback function is frozen in time, but is evaluated at the
+current state continuously: ar = πn (Sr ). This is not a simulation that holds the initial action
+until the next date. It defines a bounded, piecewise-time, Lipschitz state-feedback rule for the
+original Brownian dynamics and exact first-exit contract.
+Write Cρ (h) = (1 − e−ρh )/ρ, with C0 (h) = h.
+A SSUMPTION 1—Admissible verification witnesses: U and L are bounded, continuous
+up to the stopped trace, and C 1,2 in the interior of each time slab. Their derivatives permit
+localized Itô verification and the stopped expectations are uniformly integrable. The policy π
+has a well-defined stopped state equation. At interior slab interfaces either the witnesses are
+continuous or they satisfy U (t− , s) ≥ U (t+ , s) and L(t− , s) ≤ L(t+ , s).
+T HEOREM 2—A one-sided continuous verification pair: Under Assumption 1, suppose
+throughout the open domain
+sup Ra U ≤ ϵU ,
+
+Rπ L ≥ −ϵL ,
+
+a∈A
+
+and on the actual terminal and exit trace U ≥ g − bU and L ≤ g + bL , where all four constants
+are nonnegative. Then
+V (t, s) ≤ U (t, s) + bU + Cρ (T − t)ϵU ,
+
+(10)
+
+π
+
+(11)
+
+J (t, s) ≥ L(t, s) − bL − Cρ (T − t)ϵL ,
+0 ≤ V − J π ≤ U − L + bU + bL + Cρ (T − t)(ϵU + ϵL ).
+
+(12)
+
+The true value need not belong to C 1,2 or be continuous at every controlled boundary point.
+The two witnesses need not be neural networks, and need not have the same approximation
+error. A trained network can propose either witness, but verification requires an enclosure
+
+7
+
+NBO: R9 SUPPLEMENT
+
+over the entire stated domain and the full control set. Passing a random test set is not such an
+enclosure. The symmetric residual certificate is recovered by taking U = L = v, with |Rπ v| ≤ e,
+supa Ra v − Rπ v ≤ η, and |v − g| ≤ b: regret is at most 2b + Cρ (2e + η).
+Spatially localized errors can be handled without replacing them by a sampled mean. If
+supa Ra U ≤ qU (s, t), choose a nonnegative potential zU with zero-or-positive terminal/exit
+trace such that zU,t + La zU − ρzU ≤ −qU for every action. Then U + zU is an exact upper
+witness. The analogous potential for the fixed policy converts L into a lower witness. These
+occupation-sensitive potentials identify a constructive route to tighten conservative global
+certificates; they themselves must be verified rather than estimated on favorable trajectories.
+4.1. An explicit original-payoff construction
+For G in (4), Proposition 1 gives c = .8, p = .8, and θ = −.02(u − 2) when k = 2. A 160-by160 outward-interval partition bounds sups,a Ra G above by −α, with α > 0. For each frozen
+policy we likewise bound Rπ g below by −β on every state cell and time slab. Consequently,
+U = G − αCρ (1 − t),
+
+L = g − βCρ (1 − t)
+
+(13)
+
+are valid exact-sign witnesses. Since α < 8, U ≥ g on the stopped trace, while L ≤ g. Their
+date-zero difference is
+8 + (β − α)Cρ (1).
+
+(14)
+
+The interval program encloses logarithms, powers, products, and all bilinear-action component
+ranges. Input network outputs are frozen binary64 constants interpreted as exact real numbers;
+the state grid is the exact uniform rational grid. The returned bound is rounded outward again
+when converted to binary64. This certifies the specified real-arithmetic feedback, not every
+floating-point implementation of the stochastic differential equation.
+TABLE I
+O RIGINAL - PAYOFF CONTINUOUS NDU WITNESS BOUNDS
+
+N
+
+Interval cells
+
+α
+
+β
+
+Regret upper bound
+
+6
+12
+
+4320
+8640
+
+0.864832
+0.864832
+
+7.078878
+1.211230
+
+14.091405
+8.339561
+
+Retained raw seed-10 nodal policies, deployed as continuously reevaluated bilinear feedback on each time slab.
+Bounds cover the original continuous Brownian model and exact first exit using outward interval arithmetic. Both
+bounds exceed the .01 precision target.
+
+The original-payoff bounds in Table I are numerically wide. They replace an absent continuous
+certificate by an executed, valid certificate, but do not establish regret below .01 or .05. In
+particular they are not a substitute for a sufficiently narrow welfare enclosure. The theorem and
+its implementation make that distinction testable rather than hiding it in a missing discretization
+term.
+4.2. A complete discretization accounting route
+There is a second route to continuous verification. Let Bn∗ be the exact continuous-time
+optimal Bellman semigroup over one decision interval, allowing all admissible within-interval
+controls, and let Bnπ be the exact semigroup for the declared continuously implemented policy.
+
+8
+Lift the finite optimal and finite policy values to bounded functions wn∗ and wnπ by a positive
+norm-one extension. Suppose certified enclosures give
+∗
+∥wn∗ − Bn∗ wn+1
+∥∞ ≤ κ∗n ,
+
+π
+∥wnπ − Bnπ wn+1
+∥∞ ≤ κπn ,
+
+with terminal discrepancies b∗ and bπ . A telescoping semigroup argument yields
+N −1
+
+∥V0 − J0π ∥∞ ≤ Bh + δ N (b∗ + bπ ) +
+
+X
+
+δ n (κ∗n + κπn ),
+
+(15)
+
+n=0
+
+where Bh bounds the lifted finite optimal–policy gap. Each κ can be enclosed by a declared chain
+of intermediate operators separating time freezing (including within-step feedback), restriction of
+actions, state interpolation, shock quadrature, first exit and settlement timing, inner optimization,
+and roundoff. The sum is valid when each adjacent operator difference is bounded on the
+same lifted continuation function. A null term is unknown, not zero. A coarse–fine solution
+difference alone bounds none of the uncomputed tails. Nor does a regular-domain scheme
+theorem automatically apply at an irregular controlled exit boundary. The direct generator pair
+(12) bypasses these scheme errors by auditing the continuous implemented policy itself; it does
+not assert that the errors of the training scheme vanish.
+5. ECONOMIC COMPARISONS AT FINITE NUMERICAL ACCURACY
+Fix an initial state and suppress it from the notation. For each feasible policy write
+Z τ
+A(π) = E
+t
+
+e−ρ(r−t)
+
+
+r
+c1−u
+r
+dr + e−ρ(τ −t) g(τ, Sτ ) ,
+1 − ur
+
+Z τ
+θ2
+B(π) = E
+e−ρ(r−t) r dr.
+2
+t
+
+Then V (k) = supπ {A(π) − kB(π)}, and 0 ≤ B(π) ≤ .02Cρ (T − t).
+T HEOREM 3—Adjustment costs and approximate optimality: If the feasible policies and
+termination contract are independent of k, V is convex and nonincreasing. For k1 < k2 , optimal
+policies satisfy B(π2 ) ≤ B(π1 ). More generally, if V (ki ) − Jkπii ≤ εi , then
+B(π2 ) − B(π1 ) ≤
+
+ε1 + ε2
+.
+k2 − k1
+
+(16)
+
+bi − B(πi )| ≤ ξi , their possible reversal is bounded by the right side
+If measured budgets satisfy |B
+of (16) plus ξ1 + ξ2 . At a differentiability point with an attained optimizer, V ′ (k) = −B(πk ).
+The coefficient in (16) is sharp without further restrictions on the feasible policy set. The
+conclusion concerns discounted adjustment expenditure, not pointwise values of θ(t, u, x). The
+exact monotonicity statement is an economic theorem for the original continuous contract; the
+numerical experiment must still establish sufficient accuracy to quantify its magnitude.
+P ROPOSITION 3—Value intervals, budgets, and access to adjustment: Suppose L(k) ≤
+V (k) ≤ U (k) and k− < k < k+ . Every attained optimal adjustment budget at k belongs to
+
+
+
+
+
+L(k) − U (k+ )
+U (k− ) − L(k)
+max 0,
+, min .02Cρ (T − t),
+.
+(17)
+k+ − k
+k − k−
+If [LF , UF ] and [LR , UR ] enclose the flexible and the restricted θ ≡ 0 values, the value of access
+to adjustment belongs to [LF − UR , UF − LR ], intersected with [0, ∞).
+
+9
+
+NBO: R9 SUPPLEMENT
+
+These bounds determine meaningful numerical targets. To resolve a budget difference of size
+dB across prices separated by ∆k, an error budget of order ∆k dB is required, together with a
+budget-evaluation enclosure. An arbitrary .05 value target need not suffice. Likewise, a positive
+measured flexible-minus-restricted value is not a certified welfare gain unless its lower interval
+endpoint is positive. The utility units here are explicitly normalized lifetime utility; they have
+not been converted into an empirically calibrated consumption-equivalent welfare metric.
+6. NUMERICAL EVIDENCE
+The experiments distinguish numerical validity, achieved precision, and comparative performance. The original-payoff NDU certificate in Table I is an outward-interval bound for a
+continuous diffusion. The finite gain envelopes in this section are float64 calculations for their
+declared candidate economies. The learned-geometry experiment has a rigorous continuous
+verification pair but a deliberately modified running payoff. The external comparison estimates
+realized costs and sampling uncertainty; it does not know the optimal value. These distinctions
+are part of the interpretation of the results, not alternative names for the same error.
+The complete new panel was executed from source commit 14ecbd48 in a clean Python 3.11
+environment, with PyTorch 2.10.0, NumPy 2.3.5, SciPy 1.17.0, and mpmath 1.3.0. Numerical
+work used one CPU thread. The ledger retains the processor description, exact versions, source
+hashes, external-code hashes, checkpoint weights, rollout arrays, all seed-level records, and
+execution logs. Table generation reads those committed records and fails on missing cells. The
+local integration runs are development checks, not extra independent confirmatory seeds.
+6.1. Preserving a learned policy through thresholded correction
+Table II re-audits two retained policies without retraining or selecting a new policy using the
+reference optimum. The twelve-date seed-10 policy had a raw localized envelope of .0922420.
+The preceding all-positive-gain safeguard replaced 54.6602 percent of interior state-date decisions and obtained a .00544535 envelope. The threshold in (9), at target .05, replaces only
+.8746 percent and obtains a .00682279 envelope. At target .01, the correction share is 4.9350
+percent and the envelope is .00676060. Thus most of the earlier replacements were unnecessary
+for meeting the declared finite-economy tolerance in this sample.
+TABLE II
+T HRESHOLDED CORRECTION OF RETAINED NDU POLICIES
+
+N
+
+Target
+
+Raw bound
+
+Final bound
+
+Override (%)
+
+Audits
+
+Seconds
+
+6
+6
+12
+12
+
+0.05
+0.01
+0.05
+0.01
+
+0.042805
+0.042805
+0.092242
+0.092242
+
+0.042805
+0.003278
+0.006823
+0.006761
+
+0.000
+8.796
+0.875
+4.935
+
+1
+2
+2
+2
+
+0.472
+0.849
+1.641
+1.630
+
+Float64 finite-candidate envelopes, not continuous-model certificates. Seconds include all listed audits and envelope
+calculations on the current worker. Each audit still enumerates the full 125-action grid plus the proposal. Historical
+training time is not added across different environments.
+
+This improvement addresses the role of correction rather than concealing it. The corrected
+rule differs from the raw rule, and every audit still enumerates 125 grid actions plus the neural
+proposal. For the twelve-date runs, two audits use 2,362,200 value-action evaluations and
+2,343,600 envelope-action evaluations, each with four transition branches. The new policy is not
+
+10
+obtained by a cheap constant-cost acceptance test. Table II includes evaluation, gain calculation,
+envelope propagation, and re-audit time. Historical training time is retained separately because
+it was measured in a different run and environment; adding it to current audit time would not be
+a same-machine end-to-end timing experiment.
+The six-date policy already passes the .05 target without correction. At .01, it requires an
+8.7956 percent correction share. These are deterministic post-review re-audits of the specified
+seed-10 policies, not a new population estimate of raw training success. Proposition 2 explains
+the condition under which correction shares vanish, but this two-policy exercise does not
+demonstrate a training-dose convergence curve. Neither its finite envelope nor its smaller
+correction share closes the continuous NDU error budget.
+6.2. Separating time, state, and action approximation
+Table III varies one approximation factor at a time. The time experiment fixes a 25 × 31 lattice
+and five points per action component; the state experiment fixes 48 dates and five action points;
+the action experiment fixes 48 dates and the 25 × 31 lattice. All retain the original four-sign
+shock rule and the straight-segment liquidation treatment. The latter two approximations are not
+independently refined in this panel.
+TABLE III
+O NE - FACTOR NDU APPROXIMATION DIAGNOSTICS
+
+Factor
+
+N
+
+State nodes
+
+na
+
+Value
+
+Exit prob.
+
+h2 /∆
+
+time
+time
+time
+state
+state
+state
+action
+action
+action
+
+24
+48
+96
+48
+48
+48
+48
+48
+48
+
+25 × 31
+25 × 31
+25 × 31
+25 × 31
+37 × 46
+49 × 61
+25 × 31
+25 × 31
+25 × 31
+
+5
+5
+5
+5
+5
+5
+3
+5
+9
+
+-1.451486
+-1.549787
+-1.608530
+-1.549787
+-1.444048
+-1.391646
+-1.606541
+-1.549787
+-1.536711
+
+0.104315
+0.193358
+0.227492
+0.193358
+0.151095
+0.102389
+0.245260
+0.193358
+0.182784
+
+0.1067
+0.2133
+0.4267
+0.2133
+0.0948
+0.0533
+0.2133
+0.2133
+0.2133
+
+All entries use k = 2 and evaluate (u, x) = (2, 1.25). na is the number of nodes per action component. Four-sign
+quadrature and straight-segment liquidation are unchanged; these differences do not bound continuous-model error.
+
+The time-only sequence is not evidence of convergence. Its central value moves from
+−1.45149 at 24 dates to −1.60853 at 96 dates, while the exit probability rises substantially.
+Keeping the spatial mesh fixed makes h2 /∆ increase, rather than shrink; the experiment exposes this interaction instead of fitting an unjustified time order. Conversely, refining the state
+lattice at 48 dates moves the value from −1.54979 to −1.39165. Action refinement improves
+the finite optimum, but the three approximation factors cannot be conflated. The operatoragreement regression is close to machine precision; agreement of two implementations of the
+same approximation is not an enclosure of its continuous-model bias.
+A further panel uses 96 dates, a 49 × 61 lattice, and nine points in each action component,
+or 729 actions. Each adjustment-cost economy is re-solved. Table IV shows the same ordering
+of adjustment expenditure as Theorem 3, with an active preference margin. This is a stronger
+finite-action resolution than the earlier five-point panel, but still not a verified continuous welfare
+difference. The first-exit and quadrature terms in (15) remain unbounded by these calculations.
+Accordingly, neither a Richardson remainder nor a continuous policy-convergence rate is inferred
+from this table.
+
+11
+
+NBO: R9 SUPPLEMENT
+TABLE IV
+F INER FINITE - ACTION PREFERENCE - ADJUSTMENT COMPARISON
+
+k
+
+Value
+
+Budget B
+
+Exit prob.
+
+θ0
+
+p0
+
+0.5
+2
+8
+
+-1.416240
+-1.437379
+-1.468043
+
+0.016811
+0.011583
+0.001888
+
+0.162725
+0.162286
+0.158876
+
+0.2000
+0.2000
+0.1000
+
+0.3125
+0.3125
+0.3125
+
+N = 96, a 49 × 61 state lattice, and nine nodes per action component (729 actions). Central consumption is .8 in these
+rows. Values and budgets belong to the declared numerical liquidation economy, without a continuous error enclosure.
+
+6.3. A learned actor on the full NDU control and exit geometry
+To test whether continuous verification transfers from an analytic example to an actually
+trained control, retain (2), the three-dimensional action box, correlated shocks, state domain,
+and settlement exactly. Change only the running payoff to
+e s, a) = ℓ2 (s, a) − sup Rb g(t, s).
+ℓ(t,
+
+(18)
+
+b∈A
+
+The subtracted term is independent of the chosen action, but depends on state and time. Thus
+it generally changes optimal behavior relative to the original-payoff economy; it is not an
+ea g = 0 and the explicit
+innocuous preference normalization. In the modified problem supa R
+feasible maximizer is (.8, −.02(u − 2), .8). Itô verification proves that the modified value is g
+with the original stopping contract.
+We train a four-parameter actor with constant bounded sigmoid consumption and portfolio
+outputs and an affine-tanh adjustment output. The actor maximizes the Hamiltonian of the
+known witness, with no optimal-action labels. Six declared seeds each receive 4,000 Adam steps
+at learning rate .02 and 256 random states per step. This is a controlled verification experiment,
+not a deep-network capacity or high-dimensional scaling claim. The witness is known rather
+than learned; the actor and all of its achieved errors are learned.
+For the frozen weights, the control gap is bounded over the entire state domain by outward
+interval arithmetic. The consumption gain is bounded using
+Z .8
+
+z −u dz − .1(.8 − c)/x ≤ (.8 − c){c−2.8 − .05},
+
+c
+
+the portfolio gain is the exact quadratic difference, and the adjustment gain equals (θ + .02(u −
+2))2 at k = 2. A 2,048-cell interval partition in u encloses the latter. The full regret is bounded
+by Cρ (1) times the summed action-gap enclosure. The time discretization of a rollout and a
+numerical first-exit probability do not enter this certificate, because its proof is for the original
+continuous generator.
+Every seed meets the .01 modified-problem target, with continuous regret bounds between
+.00081053 and .00112263. Table V separately reports componentwise control errors rather than
+treating value accuracy as policy sup-norm accuracy. This is the desired transfer test with a
+learned actor and the original first-exit/control geometry. It does not identify the original NDU
+value, and does not tighten Table I merely by sharing the state equation.
+
+12
+TABLE V
+A LL - STATE CONTINUOUS CERTIFICATE FOR TRAINED NDU- GEOMETRY ACTORS
+
+Seed
+
+Regret bound
+
+c error
+
+θ error
+
+p error
+
+Train (s)
+
+300
+301
+302
+303
+304
+305
+
+0.00081494
+0.00103566
+0.00081053
+0.00112262
+0.00112212
+0.00099308
+
+0.0004555
+0.0005788
+0.0004532
+0.0006277
+0.0006273
+0.0005551
+
+0.0000318
+0.0000344
+0.0000308
+0.0000397
+0.0000635
+0.0000334
+
+0.0007034
+0.0007415
+0.0005803
+0.0005607
+0.0006387
+0.0007077
+
+2.774
+2.749
+2.778
+2.761
+2.794
+2.780
+
+All-state upper bounds use outward interval arithmetic and the same state, action, covariance, and first-exit geometry
+as the economic model. Only the running payoff is manufactured. Four actor parameters are trained for 4,000 steps
+without optimal-action labels; the critic witness is known.
+
+6.4. Coupled nonconvex control and an external author implementation
+The new comparison does not use the Cole–Hopf quadratic-control model or regress to an
+analytic greedy target. Starting from X0 = 0 in Rd , minimize
+Z 1
+
+√
+E
+f (at ) dt + q(X1 ) ,
+dXt = 2at dt + 2(.4)dWt , at ∈ [−1, 1]d ,
+(19)
+0
+
+f (a) = d
+
+−1
+
+d
+X
+
+!
+2
+i
+
+2
+
+(a + .1 sin ai ) + .3 sin
+
+X
+
+ai ,
+
+i=1
+
+i
+
+X
+
+X
+
+(20)
+
+!
+q(x) = d−1
+
+i
+
+(xi − .5)2 + .2 cos d−1/2
+
+xi .
+
+(21)
+
+i
+
+The sine term couples all control components. For example, at an interior vector whose sum is
+π/2, the Hessian of the running cost has a negative direction along the all-ones vector for both
+tested dimensions. Hence the problem is genuinely nonconvex in the action. No closed-form
+maximizer or optimal-control labels are supplied to either method, and the quadratic exponential
+transformation does not eliminate this Hamiltonian.
+The external comparator is the unmodified SOCMartNet.train routine in the authors’
+repository sx-fang/MartNet, pinned at commit 991ea8dd. Its complete module hashes
+are in the execution manifest. The integration consists of model and network adapters and
+a scheduler that stops after a completed update at the time budget. The authors’ solver is
+not rewritten as a bespoke PINN comparator. The pinned implementation uses a Hessianfree Hamiltonian interface; we therefore use constant diffusion in this comparison. This is a
+restriction of the implemented interface used here, not an assertion that the published SOCMartNet framework excludes volatility control.
+Both methods receive identical initial actor and critic weights within each seed. Both use
+two tanh hidden layers of width 48, bounded actor outputs, a terminal-exact critic, 16 training
+time intervals, and one CPU thread. NBO uses three evaluation updates per improvement
+update, 256 sampled states, four Gaussian successors, and Adam with learning rate .003. SOCMartNet retains its additional test network, RMSprop updates,
+and the declared martingale and
+√
+Hamiltonian losses. Its actor/value learning rate is .003/ d, the test-network learning rate is .01,
+and the remaining adapter settings are fixed in the protocol. The test network has 600 outputs;
+its parameters and all setup costs are reported rather than excluded from the method description.
+
+13
+
+NBO: R9 SUPPLEMENT
+
+The primary budget is ten seconds of training per method, allowing the final update to
+complete. Setup time is outside this primary budget and is reported separately. This matters: the
+mean setup-plus-training time is approximately 10.69 seconds for NBO and 10.02 seconds for
+SOC-MartNet on this worker. Therefore the experiment is not described as an exactly matched
+ten-second end-to-end race. NBO is evaluated first in each process, so one-time framework
+initialization is included in its measured setup cost. Table VII makes the distinction visible.
+TABLE VI
+PAIRED NONCONVEX - CONTROL COMPARISON AT A FIXED TRAINING BUDGET
+
+d
+
+NBO cost
+
+SOC cost
+
+Difference
+
+Paired 95% interval
+
+8
+16
+
+0.59567
+0.48067
+
+2.31352
+2.72799
+
+-1.71785
+-2.24732
+
+[−2.13823, −1.29747]
+[−2.51288, −1.98176]
+
+Difference is NBO minus SOC-MartNet realized cost at 128 audit steps; negative favors NBO. Each dimension has six
+independent training/audit seeds, 4,096 common-random-number paths per pair, and ten seconds of training per
+method. Student intervals describe across-seed uncertainty, not optimality loss. Maximum paired path standard errors
+are 0.01098, 0.00900, respectively.
+
+TABLE VII
+M EASURED TRAINING AND SETUP RESOURCES
+
+d
+
+Method
+
+Train (s)
+
+Setup + train (s)
+
+Outer updates
+
+8
+8
+16
+16
+
+NBO
+SOC-MartNet
+NBO
+SOC-MartNet
+
+10.003
+10.012
+10.004
+10.012
+
+10.692
+10.015
+10.689
+10.014
+
+1536.7
+465.3
+1477.3
+458.0
+
+Single-thread CPU means over six seeds. Identical actor/critic parameter counts within each dimension: 3,224/2,881 at
+d = 8, and 4,000/3,265 at d = 16. SOC-MartNet also trains its 600-output test network. Paired policy audit means are
+approximately .379 and .440 seconds. Outer-update definitions differ across algorithms and are not equal units of work.
+
+At dimension eight, the paired mean NBO-minus-SOC cost is −1.71785, with a six-seed
+Student interval [−2.13823, −1.29747]. At dimension sixteen it is −2.24732, with interval
+[−2.51288, −1.98176]. Thus the new evidence favors NBO under the specified adapter and
+short training budget. This is a demonstrated benefit in a coupled nonconvex problem, in contrast
+to the retained R5 quadratic-control comparison. It is not a theorem of computational dominance,
+a replication of the published SOC-MartNet hardware or learning curves, or a statement that
+either computed policy is near optimal.
+6.5. Uncertainty, mesh diagnostics, and retained failures
+Each paired policy audit uses 4,096 paths with common Brownian increments for the two
+policies and an independent seed for each training seed. The primary outcome uses 128 time
+steps. A nested 64-step audit aggregates adjacent increments, so its difference from the finer audit
+is a matched time-mesh diagnostic. Table VI reports the maximum paired path standard error
+separately from the across-seed interval. The interval is based on six independent training/audit
+seeds, with a Student approximation rather than a distribution-free coverage claim. Paths are not
+counted as independent training runs.
+
+14
+The average 128-minus-64 cost changes are about −.00149 and −.00243 for NBO and SOCMartNet at dimension eight, and −.00176 and .00951 at dimension sixteen. These changes
+are much smaller than the observed paired cost differences, but they are not certified bounds
+on the remaining time-discretization error. A matched-accuracy computational frontier and
+longer-budget learning curves would answer additional questions not identified by the present
+fixed-budget design.
+All prior outcomes remain part of the evidence. The R5 ten-seed baseline had ten raw finitetarget passes, whereas its three twelve-date raw policies failed. Its recursive raw policies missed
+their own target, and its eight/sixteen/thirty-two-dimensional quadratic-control NBO means
+were worse than those of the in-house PINN-PI comparator. Those results are neither relabeled
+as successes nor removed after observing the new comparison. The R4 Merton, nonlinear
+NDU, cost, boundary, recursive, temporal-self, game, and coupled linear–quadratic calculations,
+including failed pilots and incomplete runs, are reproduced in the preservation supplement. The
+new external experiment changes the tested model and comparator; it does not retrospectively
+change those historical results.
+7. RELATION TO NEIGHBORING NUMERICAL METHODS
+Table VIII separates the relevant methodological axes. Its entries summarize the cited analyses
+and the implemented comparison; they are not a ranking by paper title. In particular, an interior
+PDE error theorem with unknown outer data, a stopped-control regret theorem with a contractual
+boundary, and a finite candidate-action gain envelope address different mathematical objects.
+TABLE VIII
+R ELATED METHODS AND THE OBJECTS COMPARED
+
+Method
+
+Principal mechanism or guarantee
+
+Relation to the present evidence
+
+Exploratory PINN
+policy iteration
+
+Soft policy updates for entropyregularized HJB equations; iteration,
+policy-network, and PDE residual errors
+Stationary interior error control with
+residual and outer-information contributions under stated regularity conditions
+Policy iteration and reusable operator
+approximation across terminal data
+
+Neighboring
+policyevaluation/improvement
+analysis;
+not the external implementation tested
+here
+Clarifies what interior collocation can
+control without supplying the stopped
+NDU boundary data
+
+Interior
+informed
+iteration
+
+physicspolicy
+
+PI–DeepONet
+
+SOC-MartNet
+
+NBO in this paper
+
+Martingale training of value and control without an explicit Hamiltonian infimum
+Separated evaluation, improvement,
+and independent gain or witness verification
+
+Representation reuse is a different performance target from one trained policy
+at a fixed budget
+Pinned author routine tested on coupled
+constrained nonconvex controls in d =
+8, 16
+Continuous stopped-model theorem,
+explicit economic error calibration, finite correction costs, and paired authorcode experiment
+
+Sources: Kim, Cho, Kim, and Kim (2026), Kim, Kim, Kim, and Cho (2026), Lee and Kim (2025), Cai, Fang, and
+Zhou (2025). The new external benchmark uses constant diffusion and a ten-second training budget. Its scope does not
+establish a general ranking for recursive utilities, games, or higher dimensions.
+
+For an analyst choosing a method, the distinction between state dimension and action dimension is crucial. Neural state representations avoid a tensor state grid during the high-dimensional
+
+NBO: R9 SUPPLEMENT
+
+15
+
+training experiment, while the finite NDU safeguard still has tensor action cost. The exact
+component selection in Proposition 1 is specific to that economic Hamiltonian. The coupled
+sine-control problem deliberately removes that separability. Likewise, none of the numerical
+comparisons establishes that a small sampled training loss satisfies the uniform hypotheses of
+the continuous certificate. The contribution is a verifiable separation of these issues, with one
+favorable external comparison and one original-economy precision test whose conservative
+outcome remains visible.
+8. RECURSIVE UTILITY AND STRATEGIC DECISIONS
+8.1. Recursive utility
+Let a = 1 − 1/ψ, b = 1 − γ, and bV > 0. The retained Epstein–Zin normalization is
+ρb
+ρ
+f (c, V ) = ca (bV )1−a/b − V,
+a
+a
+
+(22)
+
+with the appropriate logarithmic limit when a = 0; see Epstein and Zin (1989), Duffie and
+Epstein (1992). Evaluation is Vt + Lc,p V + f (c, V ) = 0, not an additive-reward equation with
+the preference parameters renamed. The transform V = exp(W )/b enforces the sign domain.
+A compact positive margin for bV , bounds on consumption, and a monotone implicit step are
+additionally needed for a finite Lipschitz bound on the evaluation operator.
+The gain argument extends beyond affine evaluation. If the action operators Tna are monotone
+and uniformly Lipschitz with Q
+constants Ln on a verified continuation-value
+QN −1 interval, then (8)
+holds with δ j−n replaced by j−1
+L
+,
+and
+the
+terminal
+factor
+by
+m=n m
+m=n Lm . Appendix D
+proves this statement. A sign-enforcing architecture alone does not verify the required compact
+interval or monotonicity.
+The supplementary record retains the stationary homothetic anchors p = .3 and c/x = .0455
+at the declared parameters, the executed implicit recursive reference, and the R5 trained recursive
+runs. In the latter, raw losses around .0425 and .0502 against a .01 target were corrected using a
+961-action reference. Those corrected results establish finite-model performance of the corrected
+rule; they do not establish small correction cost or a scaled neural recursive-portfolio solution.
+These experiments and their limitations are preserved rather than replaced by an additive-control
+result.
+8.2. Sophisticated temporal selves
+For a sophisticated acting self with present-bias parameter β and ordinary discount δ, the
+improvement and evaluation equations differ:
+cn (s) ∈ arg max{u(c)∆ + βδE[Vn+1 (F (s, c, ε))]},
+
+(23)
+
+Vn (s) = u(cn (s))∆ + δE[Vn+1 (F (s, cn (s), ε))].
+
+(24)
+
+c
+
+Only improvement carries the extra β. With two consumption dates, terminal log wealth, zero
+interest, and δ = 1, the sophisticated first-date share is 1/(1 + 2β), hence .4166667 at β = .7.
+Replacing ordinary evaluation by geometric-β evaluation gives .4566210, a different behavioral
+model. The retained derivation, executed residual check, and feasible-deviation calculation
+remain part of the supplement. Equilibrium verification concerns each acting self’s feasible
+deviation with future selves fixed, not a fictitious commitment planner who can change all future
+selves’ preferences.
+
+16
+8.3. Dynamic games
+For player i, fix the rivals’ feedbacks and solve both the induced policy-evaluation problem
+and a unilateral best-response problem over all subsequent dates and states. Applying the finite
+or continuous gain certificate to this best-response problem bounds player i’s exploitability. A
+Nash certificate requires this test for every player. Differentiating joint profits, allowing gradients
+through rivals, or checking only realized-path deviations is a different operation.
+The retained static Cournot and three-date stochastic capacity-game records test these distinctions. The dynamic game has two firms, capacity investment, stochastic demand, and multiple
+equilibrium selections. The R5 neural game adds actual actor training, but its eighteen states
+and analytic best-response verification remain small-scale. Neither experiment establishes general equilibrium scalability or a competitive limit. The operator formulation, nonzero present
+bias, recursive aggregator, and strategic state transitions are retained as substantive extensions;
+larger certified experiments on these objects remain a separate quantitative requirement, not a
+consequence of the new additive nonconvex benchmark.
+9. COMPUTATION WITH STOCHASTIC TRACES
+P
+If A is symmetric and zk are independent standard Gaussian probes, put q̄K = K −1 k zk′ Azk .
+Then
+∥A∥2F
+.
+(25)
+E(c − q̄K /2)2 = (c − tr A/2)2 +
+2K
+Averaging separately squared one-probe residuals retains a variance penalty that does not
+decrease with K. Two independent probe means give an unbiased cross-product estimator
+of the squared exact residual, but not a nonnegative sample objective or a uniform residual
+enclosure. The proof, variance accounting, and the retained Monte Carlo regression are given in
+the supplement and Appendix E.
+For a diffusion loading with m columns, an exact contraction can use m directional second
+derivatives; a randomized contraction uses K probe operations and the loading operations.
+Network size, parameter differentiation, collocation coverage, optimization iterations, and the
+accuracy-dependent probe budget all enter total cost. Avoiding a dense Hessian is useful, but
+does not imply a universal dimensional crossover or eliminate the cost of verification. The
+retained coupled linear–quadratic tests with off-diagonal drift, rewards, and shocks are useful
+regression checks, while their known quadratic value family and faster Riccati comparator
+preclude a general performance conclusion.
+10. CONCLUSION
+NBO makes a policy-evaluation approximation, an improvement rule, and a verification
+calculation separately inspectable. In a stopped preference–portfolio economy, this separation
+leads to a complete constrained Hamiltonian audit, one-sided continuous value witnesses, and
+quantitative conditions for adjustment-cost comparisons at finite numerical accuracy. The new
+learned-geometry certificate and paired author-code comparison address different questions:
+transfer of a verification method and realized performance on coupled nonconvex controls.
+Neither is used to erase the conservative original-payoff certificate or the substantial cost of a
+finite safeguard.
+The economic scope continues to include recursive utility, sophisticated temporal selves, and
+strategic interaction, with their distinct evaluation and equilibrium conditions. The remaining
+numerical task is concrete: construct sufficiently narrow original-model witnesses, or enclose
+
+17
+
+NBO: R9 SUPPLEMENT
+
+every term of the declared semigroup error budget, so that the economic effect exceeds the
+verified approximation error. Complete current source, retained derivations, executed records,
+and a source-bound build make this requirement available for the next independent review.
+APPENDIX A: P ROOFS OF THE CONTINUOUS VERIFICATION RESULTS
+A.1. Proof of Theorem 2
+For a smooth witness w and a fixed admissible policy a, localized discounted Itô calculus
+gives
+
+
+Z σ
+Z σ
+E e−ρ(σ−t) w(σ, Sσ ) +
+e−ρ(r−t) ℓ(Sr , ar ) dr = w(t, s) + E
+e−ρ(r−t) Rar w(r, Sr ) dr,
+t
+
+t
+
+(26)
+where σ first stops on a compact interior localization or at the economic stopping time. Localization also bounds the stochastic integral. The hypotheses on the witness and uniform integrability
+permit passage to τ ; no regularity of the optimal value is invoked.
+For w = U , Ra U ≤ ϵU for every admissible action. The terminal inequality g ≤ U + bU and
+e−ρ(τ −t) ≤ 1 yield
+a
+
+Z τ
+
+J (t, s) ≤ U (t, s) + bU + ϵU E
+
+e−ρ(r−t) dr ≤ U (t, s) + bU + Cρ (T − t)ϵU .
+
+t
+
+Take the supremum over policies; attainment is unnecessary. For w = L, use the specified policy
+π, the inequalities Rπ L ≥ −ϵL and g ≥ L − bL , and the same integration identity to obtain the
+lower bound. Subtraction proves the regret bound, and nonnegativity follows from the definition
+of the supremum.
+For multiple time slabs, apply (26) on each slab and sum. Forward-time jumps contribute
+U (t+ , St ) − U (t− , St ) to the upper-witness identity. They are nonpositive under Assumption 1,
+so the upper inequality is preserved. Lower-witness jumps have the opposite sign. This explains
+why a piecewise-time approximation may not silently omit its interface errors. The actual policy
+can be only piecewise continuous in time because Itô’s formula is applied to the witnesses, not
+to a derivative of the policy.
+Q.E.D.
+A.2. Spatial residual potentials
+Suppose the upper residual satisfies Ra U ≤ qU and a nonnegative potential obeys
+zU,t + La zU − ρzU ≤ −qU
+
+for every a.
+
+Then Ra (U + zU ) ≤ 0 by the affine dependence of Ra on the witness. Its boundary inequality is
+preserved by nonnegativity of zU . Similarly, if Rπ L ≥ −qL and zL,t + Lπ zL − ρzL ≤ −qL , then
+Rπ (L − zL ) ≥ 0. Theorem 2 applies to U + zU and L − zL . A potential solving an occupation
+problem exactly would weight residuals by reachable discounted occupation; an approximate
+potential is usable only after the displayed differential inequality is enclosed. This construction
+does not turn an empirical occupancy histogram into a theorem.
+A.3. Verification of the explicit original-economy witnesses
+Since ∂t Cρ (1 − t) = −e−ρ(1−t) and ρCρ (1 − t) = 1 − e−ρ(1−t) ,
+(∂t − ρ)[−aCρ (1 − t)] = a
+
+18
+for a constant a. Hence supa Ra G ≤ −α implies supa Ra U ≤ 0, and Rπ g ≥ −β implies
+Rπ L ≥ 0. On the stopped boundary,
+U − g = 8(1 − t) − αCρ (1 − t) ≥ (8 − α)(1 − t) ≥ 0,
+
+L − g = −βCρ (1 − t) ≤ 0.
+
+Both witnesses equal G at maturity. They are smooth and bounded on the closed state rectangle
+because x ≥ .5. The bilinear policy is globally Lipschitz on this compact rectangle, componentwise feasible, and piecewise constant in its time index. The stopped coefficients are bounded and
+have the required state regularity, so the discounted stochastic integrals are integrable. The sign
+enclosure therefore proves a statement about the original continuously stopped policy, including
+policies for which the optimal boundary regularity conditions of a different PDE theorem fail.
+The interval calculation bounds all a in the upper witness through the exact maximizing
+rule for G. It bounds the lower witness on every time-state cell by the convex range of the
+four policy corners, enlarged to a Cartesian box; enlarging the action range can only make the
+lower bound more conservative. Interval dependency can likewise enlarge the bound, never
+certify a narrower true range. No assertion of floating-point simulation conformance is needed:
+the mathematical policy is defined by the stored constants and exact interpolation weights. A
+separate deployment-error allowance would be required for another implementation.
+A.4. Proof of Proposition 1
+The action-dependent part of Ra v is the sum of
+c1−u
+− vx c,
+1−u
+
+vu θ −
+
+k 2
+θ ,
+2
+
+h1 p +
+
+h2 2
+p .
+2
+
+The mixed state derivative changes h1 but introduces no product between control components.
+The consumption objective has derivative c−u − vx and strictly negative second derivative
+−uc−u−1 . If vx ≤ 0, its derivative is positive everywhere. Otherwise its unique unconstrained
+stationary point is vx−1/u , and projection gives the constrained optimum. The adjustment objective is a strictly concave quadratic because k > 0. The portfolio objective is strictly concave
+when h2 < 0, linear when h2 = 0, and convex when h2 > 0; the stated vertex or endpoint rule is
+complete in all cases. Compact product feasibility and additivity make these separate maximizers
+a global joint maximizer.
+Q.E.D.
+A.5. A learned-geometry regret bound
+For (18), let Hg∗ (t, s) = supa Ra g(t, s) for the original running payoff. The modified residual
+ea g = Ra g − H ∗ ≤ 0, with equality for the feasible explicit optimizer. Applying (26) first to
+is R
+g
+any policy and then to this optimizer proves Ve = g. For the learned policy,
+g(t, s) − Jeπ (t, s) = Eπt,s
+
+Z τ
+
+e−ρ(r−t) {Hg∗ − Rπ g}(r, Sr ) dr.
+
+t
+
+The action-independent terms cancel. At k = 2 the adjustment term completes the square to
+(θ + .02(u − 2))2 . The other two action differences are exactly those bounded in Section 6.3.
+Their all-state interval upper bound times Cρ (1 − t) gives the recorded continuous regret
+certificate. Policy sup-norm errors are separate interval consequences, not inferred by reversing
+a regret inequality.
+Q.E.D.
+
+NBO: R9 SUPPLEMENT
+
+19
+
+APPENDIX B: P OLICY ITERATION AND FINITE GAIN ACCOUNTING
+B.1. The exact separated-operator limit
+Let Vj = Eπj and πj+1 = I(Vj ). The selector inequality implies Rπj+1 Vj ≥ 0, so exact
+comparison and verification yield Vj+1 ≥ Vj . Precompactness of the evaluation image bounds
+the sequence. Its pointwise increasing limit is denoted V .
+Every subsequence has a further subsequence converging in the declared norm of the function,
+time derivative, gradient, and Hessian. The function component of any such limit must equal V ,
+by pointwise monotonicity. Its derivative components are the derivatives of that same function
+limit. Thus the whole value sequence converges in that strong norm: otherwise a subsequence
+separated from the unique possible strong cluster point would contradict precompactness.
+Along a policy subsequence πjm → p, continuity of evaluation gives Ep = V . Continuity
+of the selector at this cluster point gives πjm +1 → I(V ), and continuity of evaluation gives
+E(I(V )) = V . The evaluation equation of the improved limiting policy therefore reads
+RI(V ) V = 0.
+
+The defining maximizing property of that selector implies supa Ra V = 0. Boundary comparison
+identifies V = V ∗ . The proof establishes equality of limiting values, not equality of consecutive
+limiting policies. Compactness, selector closure, and strong evaluation continuity are hypotheses,
+not properties of an arbitrary neural architecture or Adam trajectory.
+Q.E.D.
+B.2. Proof of Theorem 1
+Positivity and substochasticity give ∥Tna v − Tna w∥∞ ≤ δ∥v − w∥∞ . The maximized operator
+has the same Lipschitz constant. Since the candidate set includes the enacted action,
+∥vn − max Tna vn+1 ∥∞ ≤ en + ηn .
+a
+
+Comparing this approximate equation with optimal backward induction yields
+∗
+∥vn − Vh,n
+∥∞ ≤ δ N −n b +
+
+N
+−1
+X
+
+δ j−n (ej + ηj ).
+
+j=n
+
+Comparing instead with policy evaluation gives the same inequality with only ej in the sum.
+Add the two bounds to prove (8).
+∗
+π
+For the localized bound let dn = Vh,n
+− Vh,n
+. Exact evaluation implies gn ≥ 0. For every
+state, the elementary maximum-difference inequality gives
+dn ≤ gn + δ max Pna dn+1 .
+a
+
+Starting with dN = 0, induction and positivity give dn ≤ Bn . The reference optimal value is
+unnecessary in this recursion: only policy evaluation, transition matrices, and feasible gains are
+used.
+Q.E.D.
+B.3. Threshold correction and arithmetic scope
+P
+If every recomputed gain is at most γ, Theorem 1 gives a regret bound at most γ n δ n . Thus
+(9) is sufficient with margin when this uniform condition holds. Correcting a subset of decisions
+does not by itself guarantee that condition, since the re-evaluated continuation changes. The
+
+20
+implementation therefore re-evaluates and re-audits rather than declaring success after a fixed
+number of replacements. Its stopping certificate is the actual envelope of the corrected
+P policy.
+−1
+For Proposition
+2,
+let
+I
+indicate
+g
+>
+γ.
+Then
+γI
+≤
+g
+,
+so
+M
+m
+m
+m
+m
+m Im ≤
+P
+(M γ)−1 m gm . The fixed- and shrinking-threshold implications follow directly. This
+statement measures the correction share under the audit measure; it does not imply that
+all reachable-state losses have small occupation-weighted averages or that a full audit is
+computationally free.
+Q.E.D.
+The finite envelopes reported in the numerical tables are float64 quantities with independent
+operator-agreement and regression tests. They are not outward-rounded enclosures of every
+finite arithmetic operation. To make a machine-rigorous finite certificate one must add roundoff
+and inner-solve enclosures to en and ηn , or evaluate their analogues with validated arithmetic.
+The continuous witness and learned-geometry certificates do use outward interval arithmetic,
+and are identified separately for this reason.
+B.4. Proof of the continuous semigroup error decomposition
+With settlement fixed inside each step, the exact surviving-continuation map has Lipschitz
+constant at most δ: survival probabilities are at most one and continuation is received at the
+full step end. Taking a supremum over all admissible within-step controls preserves this bound.
+Write En∗ = ∥Vn − wn∗ ∥∞ and Enπ = ∥Jnπ − wnπ ∥∞ . Then
+∗
+En∗ ≤ κ∗n + δEn+1
+,
+
+π
+Enπ ≤ κπn + δEn+1
+.
+
+Backward iteration and the positive norm-one lift of the finite gap prove (15). If B (0) , . . . , B (m)
+form an intermediate operator chain from the exact semigroup to the lifted numerical
+P operator,
+the triangle inequality bounds its discrepancy on a specified continuation w by i ∥(B (i) −
+B (i+1) )w∥∞ . Every term must have a verified bound; changing the tested continuation between
+adjacent differences without controlling that change invalidates the telescoping argument. Q.E.D.
+APPENDIX C: P ROOFS FOR ECONOMIC COMPARISONS
+For a fixed policy, A(π) − kB(π) is affine and nonincreasing in k. The supremum is therefore
+convex and nonincreasing. The budget is bounded by .02Cρ (T − t) because |θ| ≤ .2. If π attains
+the value at k, for every other price k ′ ,
+V (k′ ) ≥ A(π) − k′ B(π) = V (k) − (k′ − k)B(π).
+
+Thus −B(π) is a subgradient of V at k. At a differentiability point every attained optimizer has
+budget −V ′ (k).
+C.1. Proof of Theorem 3
+Approximate optimality and feasibility of the rival candidate policy give
+A(π1 ) − k1 B(π1 ) ≥ A(π2 ) − k1 B(π2 ) − ε1 ,
+A(π2 ) − k2 B(π2 ) ≥ A(π1 ) − k2 B(π1 ) − ε2 .
+Adding and collecting terms yields (k2 − k1 ){B(π2 ) − B(π1 )} ≤ ε1 + ε2 . The exact monotonicity statement is the zero-error case. Adding the two budget measurement discrepancies yields
+the stated observable-error inequality. Feasible-set independence of k is essential: otherwise a
+policy used in the crossed comparison might not be available.
+
+NBO: R9 SUPPLEMENT
+
+21
+
+For sharpness in the class of affine policy-value problems, take two policies with B1 = 0,
+B2 = (ε1 +ε2 )/(k2 −k1 ), A1 = 0, and A2 = k1 B2 +ε1 . At k1 , policy 1 is exactly ε1 suboptimal;
+at k2 , policy 2 is exactly ε2 suboptimal. Equality holds in the budget-reversal bound. Choose
+errors small enough to respect any prescribed positive upper bound on B2 . This construction
+proves that the coefficient cannot be improved without more structure; it is not a claim that these
+two artificial policies have been realized in the particular NDU dynamics.
+Q.E.D.
+C.2. Proof of Proposition 3
+Use the subgradient inequality with the optimizer at k and prices k+ and k− . Rearrangement
+gives
+V (k− ) − V (k)
+V (k) − V (k+ )
+.
+≤ B(πk ) ≤
+k+ − k
+k − k−
+
+Replacing each numerator by its appropriate outer value enclosure gives (17), and intersecting
+with the primitive budget range is valid. Inclusion of restricted policies in the flexible set
+gives VF − VR ≥ 0. The interval subtraction rule gives the other endpoints. No optimizer
+differentiability, common selected policy, or pointwise action ordering is required.
+Q.E.D.
+APPENDIX D: R ECURSIVE AND EQUILIBRIUM GAIN BOUNDS
+Suppose a verified interval of continuation values is invariant under all action operators, each
+operator is monotone on it, and each has Lipschitz constant at most Ln ≥ 0. The maximized
+operator is also Ln -Lipschitz. Repeating the two approximate-equation comparisons in the finite
+proof gives
+∗
+∥Vn∗ − vn ∥∞ ≤ en + ηn + Ln ∥Vn+1
+− vn+1 ∥∞ ,
+π
+∥Vnπ − vn ∥∞ ≤ en + Ln ∥Vn+1
+− vn+1 ∥∞ .
+
+Iteration proves the product-weighted error formula stated in the text. These hypotheses must be
+verified for the actual recursive discretization. In particular, the sign condition bV > 0 does not
+exclude arbitrarily large derivatives of the driver close to zero and does not supply a uniform Ln .
+For a game, fix rivals’ strategies and regard player i’s unilateral deviations over all future
+dates as a control problem with its own payoff and transition law. The preceding certificate
+BR(π−i )
+then bounds Vi
+− Viπ . Requiring this bound for every player gives an approximate Nash
+condition at every initial state included in the norm. Checking only a single-date action deviation
+or only states visited in one rollout does not replace the all-future-date best-response calculation.
+For sophisticated temporal selves the acting self’s criterion uses the β-weighted continuation
+in (24), but ordinary continuation evaluation uses δ. A unilateral deviation certificate must
+use the acting self’s criterion, with future selves held fixed. Substituting a geometrically βdiscounted evaluation equation changes that equilibrium problem, so its small residual would
+certify the wrong object. The preserved supplement supplies the full two-date algebra and the
+executed finite-model conventions.
+Q.E.D.
+APPENDIX E: T RACE ESTIMATION AND LIMITATIONS OF LOCAL TRAINING
+For a symmetric matrix A and z ∼ N (0, I), diagonalize A orthogonally. Rotational invariance
+and independence of the coordinates imply Ez ′ Az = tr A and Var(z ′ Az) = 2∥A∥2F . The mean
+
+22
+of K independent probes has variance 2∥A∥2F /K. Bias–variance decomposition of (c − q̄K /2)2
+proves (25).
+Averaging the K quantities (c − zk′ Azk /2)2 leaves the expectation equal to (c − tr A/2)2 +
+∥A∥2F /2. With two independent probe means q̄ and q̄ ′ , independence instead gives
+E[(c − q̄/2)(c − q̄ ′ /2)] = (c − tr A/2)2 .
+
+The latter sample objective may be negative and may have high variance. None of these
+expectation identities is a uniform residual enclosure over state space.
+Q.E.D.
+A local actor stationary point also cannot substitute for a global feasible action maximum.
+For H(a) = −(a2 − 1)2 + .2a on [−2, 2], the local maximum near −.973994 and the global
+maximum near 1.024120 are both isolated stationary points, with objective gap about .399875.
+Exact critic evaluation and isolated actor stationary points do not eliminate this difference.
+Concavity in the action would give the global supporting-hyperplane gap, but concavity in an
+action argument does not imply concavity in shared network weights.
+The retained viscosity counterexample has the same logical role. A small integrated strong
+residual for a smooth approximation of |x| − 1 does not select the viscosity solution 1 − |x| of
+the appropriate eikonal boundary problem. Missing viscosity inequalities cannot be replaced by
+a loss plot. The previous derivations, exact boundary specifications, and regression checks for
+these examples are reproduced unchanged in the preservation supplement.
+Likewise, a two-timescale stochastic-approximation theorem requires bounded iterates, appropriate regularity, stable fast evaluation dynamics, martingale-noise control, and step-size
+conditions. Its generic conclusion is an invariant-set statement for the limiting slow dynamics.
+An optimal-policy conclusion needs an additional argument ruling out nonoptimal attractors.
+The current regret theorems do not rely on asserting that every observed gradient trajectory has
+such an optimal limit.
+
+NBO: R9 SUPPLEMENT
+
+23
+
+PART III: RETAINED COMPLETE R4 EXPOSITION
+
+1. INTRODUCTION
+Dynamic economic models increasingly place the formation of preferences, the allocation of
+financial risk, and the adjustment of physical resources inside the same decision problem. The
+relevant computational object is then a controlled operator: a policy changes both the payoff and
+the law under which continuation utility is evaluated. A useful approximation must preserve
+this distinction. In particular, reducing a joint scalar training objective need not improve an
+economic policy, and a small error in a value representation need not identify the policy at a
+nearly flat optimum.
+This paper develops Neural Bellman Operators (NBO) as a separated evaluation–improvement
+method for such problems. The critic approximates the continuation value of a specified feasible
+policy. The actor improves that policy against a frozen continuation object. A third, independent
+calculation evaluates the enacted policy and its feasible deviation gains. We study both the
+continuous generator formulation and a positive finite-horizon operator formulation. The latter
+makes the stochastic transition and the action maximization explicit and provides a reference
+against which a trained neural representation can be assessed.
+There are three substantive results. First, we give a quantitative connection between policy
+evaluation, boundary approximation, feasible improvement, and loss of economic value. The
+continuous-time bound applies to a stopped controlled diffusion and requires uniform, rather
+than merely sampled, residual bounds. Its finite-horizon counterpart is directly computable
+on a finite state–action approximation. Second, we establish a comparative-static result for
+endogenous preference formation. When the adjustment cost enters as a price of a discounted
+adjustment budget, an increase in that price reduces the optimal budget. This conclusion holds
+for any optimizers and does not require differentiability of the value function or a pointwise
+sign restriction on preference adjustment. Third, we implement the separated method, including
+automatic differentiation of a continuous HJB benchmark and trained nonlinear actor and critic
+networks for a stochastic preference–portfolio problem. Independent policy evaluation separates
+value accuracy from agreement of the full policy vector.
+The economic application preserves the interior preference and wealth dynamics of the
+original model. It completes the model at the boundary by an explicit early-liquidation contract.
+The preference coefficient has nonzero diffusion, so a bounded drift cannot keep it in a closed
+interval with probability one. Likewise, the original consumption floor is incompatible with a
+self-financing wealth process constrained to the lower endpoint. Liquidation is an economically
+different boundary condition from reflection or a capital injection; it is specified as such,
+including the settlement fee and its sensitivity. No transition replenishes wealth and then
+continues consumption.
+The numerical evidence has distinct roles. A continuous-time Merton benchmark tests the HJB
+derivatives and the separated gradient graph. A two-state NDU problem tests a trained nonlinear
+neural representation against an independent exhaustive stochastic Bellman solver. A re-solved
+adjustment-cost panel evaluates the economic comparative static. Recursive utility, sophisticated
+temporal selves, and a dynamic capacity game exercise additional operator interfaces. A coupled
+stochastic linear–quadratic problem checks dynamic cross-state dependence at dimensions 4, 8,
+and 16. These experiments retain the general economic scope without conflating an algebraic
+identity, a finite-model equilibrium, and a trained solution of a continuous nonlinear economy.
+1.1. Relation to the literature
+The closest methodological antecedents already combine policy improvement and neural
+approximation. Kim, Kim, Kim, and Cho (2025) study physics-informed neural policy iteration
+
+24
+with policy-error analysis. Lee and Kim (2024) combine Hamilton–Jacobi policy iteration with
+deep operator learning. Cai, Fang, and Zhou (2025, preprint) learn value and control through
+a martingale formulation without requiring an explicit Hamiltonian optimizer. Direct neural
+approximation of stochastic control policies is developed by Han and E (2016). Continuous-time
+policy improvement and its hypotheses are analyzed by Jacka and Mijatović (2015). Accordingly,
+neural approximation, operator factorization, and the absence of an analytical maximizer are not
+claimed here as inventions in themselves.
+The contribution relative to these approaches is the particular combination of boundary-aware
+value-loss control, an economically interpretable preference-adjustment result, and an executable
+separation of the evaluation, improvement, and policy-certification objects. The finite-operator
+realization also permits a distinction between errors of neural representation and errors of the
+numerical economy. The bounds below are not presented as a priority claim for residual-based
+verification in general; they specify the conditions and constants used by this implementation
+and its application.
+Our economic formulation connects portfolio choice (Merton, 1969), recursive preferences
+(Epstein and Zin, 1989, Duffie and Epstein, 1992), and the motivating endogenous-preference
+model of Qi (2025). Grid and projection methods remain important comparators in computational
+economics (Judd, 1998, Brumm and Scheidegger, 2017). In our two-state experiment, exhaustive
+backward induction is faster than neural training. That result is reported, not converted into
+an unobserved scalability advantage. A neural representation can nevertheless be evaluated as
+a function approximation to a controlled operator, and an independently measured value loss
+supplies a meaningful test of that representation.
+The distinction from Deep BSDE methods (Han, Jentzen, and E, 2018) is about the equations
+and training objects, not about whether an analyst can write a closed-form control. Semilinearity
+concerns dependence on the highest-order derivative. Eliminating a control analytically can
+leave nonlinear Hessian dependence. Conversely, an admissible BSDE representation need not
+be a Pontryagin adjoint system. Section 7 states the differentiation costs conditionally, including
+the diffusion rank and the accuracy demanded of a trace approximation.
+2. THE ECONOMIC PROBLEM AND ITS BOUNDARY
+Let S be a Markov state in an open bounded domain D ⊂ Rd , let A(s) be a compact feasible
+action correspondence, and let π be an admissible feedback. Up to τ = T ∧ inf{r ≥ t : Sr ∈
+/ D},
+the state satisfies
+dSr = b(r, Sr , πr ) dr + Σ(r, Sr , πr ) dWr .
+
+(1)
+
+Admissibility includes existence of the stopped process and integrability of the stated payoff.
+For a time-separable payoff with nonnegative discount rate ρ, define
+Z τ
+
+J π (t, s) = Et,s
+e−ρ(r−t) ℓ(r, Sr , πr ) dr + e−ρ(τ −t) g(τ, Sτ ) ,
+V ∗ = sup J π . (2)
+π
+
+t
+
+The settlement g is data of the problem, not an output of a projection routine. At T , it equals the
+terminal endowment utility. The operator is
+La v = ba · ∇v + 12 tr(Σa (Σa )′ D2 v),
+
+Ra (v) = vt + La v + ℓa − ρv.
+
+Where a classical representation is valid, fixed-policy evaluation has Rπ (V π ) = 0, while optimality has supa Ra (V ∗ ) = 0. Both have the same declared parabolic-boundary data. A reflected
+model would instead include regulators and an appropriate derivative boundary condition; the
+results are not obtained by replacing that condition with a value penalty.
+
+25
+
+NBO: R9 SUPPLEMENT
+
+A SSUMPTION 1—Well-defined evaluation and verification: The feasible controls yield a
+stopped state process; the payoff and stochastic integrals used below are integrable. For each
+fixed policy under discussion, evaluation is well defined. Comparison and the relevant verification inequalities hold for the specified generator and boundary operator. Whenever derivatives
+are used, the test function belongs to C 1,2 up to the relevant stopped boundary and its discounted
+Itô formula is valid.
+These hypotheses state the mathematical object to which a residual refers. They do not assert
+that an arbitrary smooth network or an arbitrary compact computational rectangle verifies them.
+2.1. Recursive utility and Markov closure
+For recursive preferences, fixed-policy utility is defined before optimization. On a domain of
+its value argument where the driver is admissible, it solves
+−dYrπ = f (r, Sr , πr , Yrπ ) dr − Zrπ dWr ,
+
+Yτπ = g(τ, Sτ ).
+
+(3)
+
+Existence, uniqueness, comparison, and integrability of this policy-wise equation are prerequisites for taking its supremum. The Markov state must contain any variable on which the
+driver or future opportunities depend. A general continuous martingale is not replaced by a
+Gaussian shock merely because its quadratic variation is known; the executed models here use
+the stated Brownian or finite Markov specifications. The recursive extension and its sign domain
+are developed in Section 6.1.
+3. SEPARATED NEURAL BELLMAN OPERATORS
+In the continuous realization, a critic vξ is trained for a fixed enacted policy by its evaluation
+residual and the appropriate boundary loss. The actor parameters ψ are updated against a
+detached critic jet:
+LE (ξ; π) = Eν Rπ (vξ )2 + λB EνB |vξ − g|2 ,
+
+(4)
+
+LI (ψ; ξ) = −EνI Hπψ [stopgrad(vξ , ∇vξ , D2 vξ )].
+
+(5)
+
+Feasibility is imposed by the actor parameterization or by explicit constrained maximization. A
+penalty for a general constraint is an approximation and must be accompanied by a feasibility
+error. During actor improvement no parameter gradient reaches ξ. In a game no player-i gradient
+reaches the parameters of a frozen rival.
+The actor loss is a local improvement surrogate. It is not generally the lifetime-objective
+gradient under an arbitrary sampling measure. Such an identification requires the appropriate occupancy or adjoint weighting and differentiability conditions. Likewise, minimizing a
+weighted sum of (4) and (5) over both parameter blocks solves a different optimization problem. Appendix E retains the composite-loss and viscosity counterexamples and states what the
+approximation argument does establish.
+3.1. A positive finite-operator realization
+For the numerical economy, let Sh be a finite state set and Ah a finite feasible action set.
+Liquidation proceeds are included in rna and surviving transitions in a substochastic kernel Pna .
+With δ = e−ρ∆ ,
+Tna w = rna + δPna w,
+
+Tn w = max Tna w.
+a∈Ah
+
+(6)
+
+26
+The factor δ applies to surviving full steps; an intra-step liquidation has its own fractional-step
+discount in rna . Boundary states are settled immediately.
+The finite NBO algorithm works backward. It freezes the next critic, computes each feasible
+action’s continuation using the declared stochastic operator, and trains the current actor against
+these action values. It then trains the current critic to evaluate the actor’s enacted hard action.
+The numerical experiment uses a cross-entropy term for the maximizing action of the neural
+continuation, together with its softmax-weighted action-value regret. Optimal reference values
+or labels never enter this training loss. At deployment the actor chooses its hard argmax,
+not a mixture. All continuation targets are detached. This is a finite-horizon neural Bellman
+factorization, not a claim that one Adam update performs exact policy iteration.
+The reference solver is an independently coded NumPy backward induction with exhaustive
+action evaluation and positive bilinear interpolation. The neural operator is implemented separately in PyTorch. An operator-agreement test precedes training. The trained policy is then
+re-evaluated by the reference operator; this evaluation is different from reading the critic’s
+prediction. All maxima used for finite-model certificates range over the entire stated finite set.
+3.2. Exact improvement and quantitative approximation
+P ROPOSITION 1—Exact separated-operator limit: Let the policy space Π be compact in the
+uniform topology. Let evaluation E be continuous into a precompact subset of C 1,2 , endowed
+with the uniform norm on the function, its time derivative, gradient, and Hessian. Assume a
+maximizing selector I maps Π into itself, is continuous at accumulation points, and satisfies the
+comparison and verification conditions of Assumption 1. If πj+1 = I(πj ), every accumulation
+point p satisfies E(p) = V ∗ , and the common limiting value solves the HJB boundary problem.
+The decisive step is equality of limiting values, not equality of successive limiting policies.
+The full proof is in Appendix A. Closure under the exact selector is a real hypothesis and is not
+automatic for a finite neural class.
+T HEOREM 1—Boundary-aware policy-value certificate: Under Assumption 1, let v be a test
+function and π a feasible policy. Suppose, uniformly on the stopped domain,
+|Rπ (v)| ≤ ϵ,
+
+0 ≤ sup {Ra (v) − Rπ (v)} ≤ η,
+
+|v − g| ≤ b
+
+on the parabolic boundary.
+
+a∈A(s)
+
+Then, with Cρ (h) = (1 − e−ρh )/ρ and C0 (h) = h,
+0 ≤ V ∗ (t, s) − J π (t, s) ≤ 2b + Cρ (T − t)(2ϵ + η).
+
+(7)
+
+No smoothness of V ∗ , and no claim that an actor stationary point is a maximizer, is required for
+this inequality.
+The boundary term is not discounted at the terminal date: exit can occur earlier. Theorem 1
+turns three separately meaningful errors into a value loss. A sampled mean-square loss does not
+supply its uniform hypotheses. A verified residual Lipschitz constant and a covering radius can
+bridge a finite audit to a uniform bound; such constants must be established, not inferred from a
+plot.
+T HEOREM 2—Finite-horizon neural-policy certificate: For the finite operators (6), let vbN
+have terminal error at most b. For an enacted policy π, define
+en = ∥b
+vn − Tnπ vbn+1 ∥∞ ,
+
+ηn = ∥Tn vbn+1 − Tnπ vbn+1 ∥∞ .
+
+27
+
+NBO: R9 SUPPLEMENT
+
+Then
+N −1
+
+∥Vn∗ − Vnπ ∥∞ ≤ 2δ N −n b +
+
+X
+
+δ j−n (2ej + ηj ).
+
+(8)
+
+j=n
+
+If the enacted policy is re-evaluated exactly on this finite model, take vb = V π ; then ej = b = 0
+and the same bound uses only the independently evaluated feasible improvement gaps.
+This theorem bounds a finite model, not automatically the underlying diffusion. Time, interpolation, quadrature, action coverage, and boundary-crossing errors remain distinct. An additional
+verified comparison between the finite and continuous economies would be needed to add them
+to (8).
+3.3. Global action improvement versus parameter stationarity
+The Hamiltonian H(a) = −(a2 − 1)2 + .2a on [−2, 2] has a stable local ascent attractor near
+−.973994 and a global maximum near 1.024120. Their payoff gap is .3998746. Both stationary
+points are isolated. Thus an exact fast critic, diminishing two-timescale steps, and isolated actor
+stationary points do not imply a policy-improvement fixed point.
+A usable sufficient condition concerns the action maximization. If H is differentiable and
+concave on a convex compact feasible set, then
+H ∗ − H(a0 ) ≤ max⟨∇H(a0 ), a − a0 ⟩.
+a∈A
+
+(9)
+
+The right-hand side is a global supporting-hyperplane gap and handles boundary optima. Pointwise concavity does not imply concavity in shared neural parameters. Our finite implementation
+therefore audits the maximizing finite action directly. The separate asymptotic stochasticapproximation statement, with its invariant-set conclusion and additional optimality conditions,
+is given in Appendix E.
+4. ENDOGENOUS PREFERENCES AND PORTFOLIO CHOICE
+The preference state u is the coefficient of relative risk aversion and X is financial wealth.
+The controls are consumption c, preference adjustment θ, and the risky portfolio share π. Before
+liquidation,
+du = θ dt + .05 dZ u ,
+
+(10)
+
+dX = [(.02 + .06π)X − c]dt + .2πX dZ X ,
+
+d⟨Z u , Z X ⟩ = −.25 dt.
+
+(11)
+
+The domain is (1.2, 2.8) × (.5, 2) and the control box is [.05, .8] × [−.2, .2] × [−.5, .8]. The
+horizon is one year and ρ = .04. Utility is cardinally fixed as
+ℓk (u, c, θ) =
+
+c1−u
+k
+− θ2 ,
+1−u 2
+
+G(u, X) = −.02(u − 2)2 + .1 log X.
+
+Consumption units and this normalization are held fixed throughout the cost panel. An affine
+transformation that depends on the controlled preference state generally changes the economic
+problem.
+
+28
+4.1. The liquidation contract
+The process stops when it first reaches the domain boundary or the horizon. Settlement is
+g(t, u, X) = G(u, X) − F (1 − t),
+
+F = 8.
+
+(12)
+
+The early termination fee represents the utility cost of closing the investment and preferenceadjustment arrangement before maturity. This is an explicit covenant/liquidation specification,
+not a calibrated estimate of such a fee. Its size is varied separately below. The fee vanishes at
+maturity and does not depend on k. No additional wealth is supplied after settlement because
+the problem has terminated.
+This completes rather than disguises the boundary economics. Constant preference diffusion
+rules out the earlier viable-rectangle interpretation. At X = .5, even the largest wealth drift
+under the original action box is −.016. Keeping the original interior process and the original
+control floor therefore requires exit, reflection with an explicit regulator, or a different resource
+model. We choose exit. Economic statements about this contract must not be interpreted as
+statements about a silently reflected self-financing economy.
+The interior HJB is
+ 1−u
+c
+k
+0 = Vt + sup
+− θ2 + θVu + [(.02 + .06π)X − c]VX − ρV
+1−u 2
+c,θ,π
+
++ 21 (.05)2 Vuu + 21 (.2πX)2 VXX − .25(.05)(.2)πXVuX ,
+(13)
+with (12) on the parabolic boundary. All three second-order contributions are retained.
+4.2. Policies and economic interpretation
+Where the maximizer is interior and the indicated derivatives have the required signs,
+c = VX−1/u ,
+
+θ = Vu /k,
+
+π=−
+
+.06VX
+.05(−.25)VuX
+−
+.
+.2XVXX
+.22 XVXX
+
+(14)
+
+These are candidates, not substitutes for constrained maximization. Consumption and adjustment have concave action objectives. The portfolio objective is concave only when VXX ≤ 0;
+otherwise endpoint comparisons are essential. Appendix B gives the full selection rule, including
+zero curvature and nonpositive marginal wealth value.
+The cross derivative produces a hedge against preference shocks correlated with returns. Its
+sign is endogenous: neither a negative shock correlation nor an assumed positive VuX alone
+establishes a global portfolio comparative static. Likewise, dividing Vu by k does not determine
+how the re-solved derivative changes with k. The following result gives a global economic
+conclusion without either shortcut.
+T HEOREM 3—The price of preference adjustment: Suppose the feasible policy set, stopping
+rule, and settlement contract do not depend on k. Write
+Z τ
+A(π) = E
+t
+
+e−ρ(r−t)
+
+
+r
+c1−u
+r
+dr + e−ρ(τ −t) g(τ, Sτ ) ,
+1 − ur
+
+Z τ
+B(π) = E
+t
+
+θ2
+e−ρ(r−t) r dr.
+2
+
+Then V (k) = supπ {A(π) − kB(π)} is convex and nonincreasing. If k1 < k2 and optimal
+policies π1 , π2 exist, B(π2 ) ≤ B(π1 ). At a differentiability point with an attained optimizer,
+V ′ (k) = −B(πk ). The flexible-preference value weakly exceeds the value under the feasible
+restriction θ ≡ 0.
+
+NBO: R9 SUPPLEMENT
+
+29
+
+The theorem concerns the optimal discounted adjustment budget, not a pointwise ordering of
+θ(t, u, X). The same proof applies to the finite stochastic economy, so the numerical panel tests
+a precise economic restriction rather than an unverified policy-surface narrative.
+5. NUMERICAL IMPLEMENTATION AND RESULTS
+5.1. Continuous HJB benchmark
+We first solve the stationary Merton economy with CRRA coefficient 2, discount .04, riskless
+return .02, excess return .06, and volatility .2. A homothetic critic is v(x) = − exp(w)/x and
+a two-logit actor represents m = c/x ∈ [.005, .07] and π ∈ [−.5, 1]. First and second wealth
+derivatives are obtained by automatic differentiation. Critic optimization minimizes the scaled
+fixed-policy HJB residual. Actor optimization holds these derivatives fixed. Neither loss receives
+the analytical optimal controls or value as a label.
+Independent evaluation gives Aπ = 1/(mD) for J π = −Aπ /x, where D = .04 + .02 +
+.06π − m − .04π 2 > 0. The optimum has m∗ = .04125, π ∗ = .75. Across seeds 0, 1, and 2
+the executed actor recovers m within 8.25 × 10−8 and π within 8.29 × 10−10 . The maximum
+independently evaluated value loss on [.5, 2] is 4.70 × 10−9 . The scaled HJB residual is at most
+1.38 × 10−8 . A graph assertion verifies that actor backpropagation leaves the critic gradient
+disconnected. This is a homothetic neural benchmark with three trained parameters, not evidence
+for a deep high-dimensional approximation theorem. Its value is that the continuous generator,
+automatic derivatives, evaluation, and actor graph can all be checked independently.
+5.2. Stochastic NDU transition and neural architecture
+For the preference–portfolio model, four equiprobable branches use independent signs z1 , z2 ∈
+{−1, 1}:
+√
+∆u = θ∆ + .05 ∆z1 ,
+(15)
+√ 
+√
+
+∆X = [(.02 + .06π)X − c]∆ + .2πX ∆ −.25z1 + 1 − .252 z2 .
+(16)
+If the straight segment exits, it settles at its first intersection and terminates; otherwise continuation uses positive bilinear interpolation. The running payoff is integrated with the exact
+discount factor for the elapsed fractional step while holding the current flow fixed. This defines
+a killed-Euler numerical economy, not exact Brownian first-passage integration. Interior drift
+and covariance tests are run before boundary corrections.
+The nonlinear actor and critic each have two hidden layers of width 48 with tanh activations.
+The actor has 125 outputs, representing five values for each of the three controls. The critic uses
+normalized states and log distances to the four boundary faces; it is represented as G + (1 − t)Nξ
+away from boundary nodes, with exact prescribed settlement at boundary nodes. The finite
+model does not require this boundary-switched representation to be a globally C 2 function.
+Consequently, the numerical certificate applied to it is Theorem 2, not an unverified use of
+Theorem 1.
+At each of six dates, training uses all interior nodes of a 25 × 31 lattice, 500 actor Adam steps
+and 1,000 critic Adam steps, followed by critic L-BFGS refinement. The learning rate is .004.
+Next-date critics and actor targets are frozen. This experiment is a lattice-trained finite-operator
+realization, not a mesh-free sampling experiment. Seeds 0, 1, and 2 are reported without selecting
+the best seed.
+
+30
+TABLE I
+I NDEPENDENT EVALUATION OF THE TRAINED NDU POLICY
+Quantity
+
+Seed 0
+
+Seed 1
+
+Seed 2
+
+Maximum date-zero value loss
+Mean interior date-zero value loss
+Maximum critic–policy value difference
+Finite gain-based upper bound
+Training seconds
+
+.011291
+.001583
+.144195
+.259331
+19.039
+
+.023526
+.001803
+.070268
+.264491
+19.609
+
+.012797
+.001540
+.104457
+.520503
+20.737
+
+Values compare the independently re-evaluated hard actor with exhaustive optimization on the identical finite
+stochastic economy. The gain bound uses maxima at all dates and is conservative. Times are local single-thread CPU
+measurements, not universal complexity constants.
+
+All three completed runs meet the stated finite-model date-zero value-loss target of .05.
+The critic’s own error is larger than the enacted policy loss, illustrating why a critic prediction is not a policy-evaluation certificate. Boundary discrepancies are at most 4.80 × 10−7 in
+the float32 neural output. For seed 0 the maximum component differences in (c, θ, π) from
+the finite optimal action are (.375, .2, .975); the corresponding interior mean differences are
+(.00183, .00335, .11028). The portfolio policy is therefore not uniformly accurate even when
+value regret is small. Every seed’s complete component vector is retained in the ledger.
+Exhaustive reference backward induction takes about .60 seconds in the seed-0 comparison,
+versus 19.04 seconds for training and .65 seconds for independent policy evaluation. There is no
+measured speed advantage in this two-state task. The result instead establishes that a genuinely
+trained actor and critic implement the stated stochastic operator with small independently
+evaluated finite-model policy loss. Whether representation reuse or higher-dimensional nonlinear
+models reverse the cost comparison requires matched experiments on those objects.
+The initial neural pilot failed: its maximum policy value loss was 4.10, its critic error 4.49,
+and its boundary representation was inaccurate. The failure and its executed source are retained.
+Two attempted twelve-date runs reached training output but timed out before completing their
+final audit; they are recorded as incomplete, not successful runs. These records are not included
+in the three-seed success count.
+5.3. Re-solved preference-adjustment costs
+The cost panel uses twelve dates, the 25 × 31 state lattice, and the 125-action stochastic
+operator. Each k is independently re-solved, along with the restricted θ = 0 economy. Table II
+evaluates (u, X) = (2, 1.25). The budget falls by approximately 86 percent between k = .5 and
+TABLE II
+C OSTLY PREFERENCE FORMATION UNDER THE LIQUIDATION CONTRACT
+
+Value
+Discounted adjustment budget B
+Value of permitting adjustment
+Date-zero adjustment θ
+Exit probability
+Interior share with nonzero θ
+
+k = .5
+
+k=2
+
+k=8
+
+−1.351522
+.016520
+.064480
+.2
+.248935
+.896927
+
+−1.372708
+.011921
+.043293
+.2
+.249938
+.764993
+
+−1.404420
+.002309
+.011582
+.1
+.249920
+.475637
+
+The budget includes the factor θ2 /2 and time discounting. Exit probabilities refer to this numerical liquidation
+contract. Nonzero-action shares average over all decision dates and interior lattice states, not over a population.
+
+NBO: R9 SUPPLEMENT
+
+31
+
+k = 8. Value monotonicity, budget monotonicity, and dominance over the zero-adjustment policy
+hold at all audited finite states and dates, up to the implementation tolerance. The preference
+margin is economically active rather than grid-locked. The result is conditional on the cardinal
+normalization and settlement contract; it is not identification of these primitives from observed
+consumption or portfolios.
+5.4. Discretization and boundary sensitivity
+Separate refinements are deliberately not labeled solution-error certificates. At the same
+central state, values for (N, nu , nX , na ) are
+(6, 13, 16, 5) −1.423383
+(12, 13, 16, 5) −1.564151
+(12, 25, 31, 5) −1.372708
+(24, 25, 31, 5) −1.451486
+(24, 49, 61, 5) −1.344458
+(12, 25, 31, 7) −1.359628
+
+Here na is the number of values per control. The changes are material. Refining time alone while
+holding a positive interpolation grid fixed need not improve a diffusion approximation: the interpolation contribution to a generator can scale as h2 /∆. Action refinement and boundary-crossing
+approximation also matter. We therefore report a verified finite-model neural approximation and
+a re-solved finite-model cost panel, but not a numerically certified continuous-diffusion value
+error. The analytical comparison in Theorem 3 does apply to the continuous contract under its
+stated existence conditions.
+Changing the settlement fee from 8 to 6 or 10, with the twelve-date baseline discretization held
+fixed, changes central value to −1.363909 or −1.379622. These are different contracts rather
+than alternative numerical corrections to the same contract. The complete exit and adjustment
+calculations are retained so that subsequent boundary refinements can be evaluated without
+treating post-correction feasibility as a zero-error result.
+6. RECURSIVE UTILITY AND EQUILIBRIUM EXTENSIONS
+6.1. Recursive utility
+Let a = 1 − 1/ψ, b = 1 − γ, and bV > 0. In the normalization used here, the Epstein–Zin
+continuous-time aggregator is
+ρ
+ρb
+f (c, V ) = ca (bV )1−a/b − V,
+a
+a
+
+(17)
+
+with the logarithmic limit when a = 0. The architecture V = exp(W )/b enforces the sign
+domain when b ̸= 0. A compact positive margin for bV , along with consumption bounds,
+supplies local driver regularity; a sign assertion without executing the transform is not a domain
+audit.
+The full portfolio evaluation equation is Vt + Lc,π V + f (c, V ) = 0. Formal stationary homothetic ratios at (ρ, γ, ψ, µ, r, σ) = (.04, 5, 1.5, .08, .02, .2) are π = .3 and m = .0455. An algebraic
+ratio is distinct from a verified infinite-horizon solution. We retain these anchors and add an
+executed finite-horizon implicit recursive-utility calculation. The latter has horizon .5, ten dates,
+101 wealth points and 80 consumption fractions, and solves each fixed-action implicit value
+equation on its negative-value branch. Its maximum implicit-equation residual is 2.46 × 10−13 ;
+the minimum bV is .0625; the executed terminal sign transform differs from the terminal target
+
+32
+by at most 8.89 × 10−16 . Its continuation outside the wealth grid uses the specified homothetic
+numerical boundary data. This calculation is a recursive reference, not a trained neural portfolio
+solution. Appendix C supplies the equation, normalization, and verification requirements for the
+broader recursive application.
+6.2. Sophisticated temporal selves
+For discrete dates and δ = e−ρ∆ , a sophisticated acting self takes the continuation policy of
+future selves as given:
+c∗n (s) ∈ arg max{u(c)∆ + βδE[Vn+1 (F (s, c, ε))]},
+
+(18)
+
+Vn (s) = u(c∗n (s))∆ + δE[Vn+1 (F (s, c∗n (s), ε))].
+
+(19)
+
+c
+
+Only improvement carries the extra factor β. For two consumption dates followed by terminal
+log wealth, zero interest and δ = 1, ordinary continuation has coefficient 2 on log wealth at
+the first decision. The sophisticated initial consumption share is 1/(1 + 2β). At β = .7 this is
+.4166667, whereas geometric-β evaluation gives .4566210. The corrected executed evaluation
+residual is below 8.89 × 10−16 and a dense feasible one-shot search finds no positive gain. Strict
+concavity and the analytical first-order condition establish global optimality for this particular
+interior log example; the finite search alone would provide only a lower bound on exploitability.
+The β = 1 check is retained but is not used to detect an error that vanishes at β = 1.
+6.3. Dynamic capacity competition
+For player i, a frozen-rival policy defines both the evaluation operator and an independent
+unilateral best-response problem. The static Cournot benchmark has Nash output 1/3 and jointprofit output 1/4; an automatic-differentiation test confirms that the rival gradient is absent from
+player i’s actor update.
+We also solve a genuinely dynamic finite game. Two firms have capacities in {0, .5, 1}, output
+in half-unit increments up to capacity, and investment i ∈ {0, 1} that adds .5 capacity when
+feasible. Demand intercept is z ∈ {2.5, 3.5} with transition matrix having diagonal .8 and
+off-diagonal .2. Per-period profit is qi (z − qi − qj ) − .2i, discount is .96, and the horizon is
+three production dates. Backward enumeration selects a pure Nash equilibrium in every state;
+lexicographic selection resolves multiplicity in three state-date problems. The maximum feasible
+one-shot deviation gain is computed as zero in this finite game. The full profile and selection
+rule are stored, including asymmetric equilibria. This is not a neural dynamic-game training
+result or a competitive-limit calculation. The latter would require a market-size normalization
+and a separately solved limiting economy; the operator formulation and its economic questions
+are retained in the appendix.
+7. STOCHASTIC TRACES AND COUPLED DYNAMICS
+For symmetric A and Gaussian probes zk , write qk = zk′ Azk and q̄K = K −1
+squared-residual objective satisfies
+E(a − q̄K /2)2 = (a − tr A/2)2 +
+
+∥A∥2F
+.
+2K
+
+P
+
+qk . The
+
+(20)
+
+Averaging (a − qk /2)2 instead leaves a variance penalty independent of K. With A = ( 21 13 ) and
+a = 3.5, the desired expectation is 1 + 7.5/K, not 8.5 for every K. The replication runs 30,000
+
+NBO: R9 SUPPLEMENT
+
+33
+
+independent batches for each K ∈ {1, 2, 8, 64} and records Monte Carlo standard errors. All
+desired-objective mean checks fall within five reported standard errors. Appendix D gives an
+unbiased two-probe cross-product correction and explains why unbiased trace estimation does
+not imply an unchanged training objective after squaring.
+A dense Hessian need not be materialized. For diffusion loading with m columns, the exact
+contraction is a sum of m directional second derivatives; stochastic contraction requires K
+such probe operations plus loading costs. Network size, parameter differentiation, sample count,
+optimization iterations, and the probe budget needed for accuracy all enter total cost. There is
+no model-independent crossover at state dimension 50 or 100.
+Finally, the coupled dynamic check has d ∈ {4, 8, 16}, eight dates, xn+1 = Axn +an +Sεn+1 ,
+A = .8I + .04 Adj, Q = I + .1211′ /d, R = .3I, and S = .1I + .0211′ /d. A linear neural actor
+is improved against a frozen quadratic policy evaluator, and compared with an independent
+Riccati solution. Off-diagonal transition, payoff, and shock terms are retained. Maximum
+held-out value errors at the three dimensions are respectively 6.60 × 10−14 , 1.55 × 10−14 , and
+3.32 × 10−14 . This is an unconstrained linear–quadratic dynamic regression, not the earlier static
+quadratic program. Riccati evaluation is faster, and the known quadratic value family makes the
+test structurally favorable. No constrained sparse-grid superiority or general high-dimensional
+complexity conclusion follows from it.
+8. CONCLUSION
+NBO treats policy evaluation, feasible improvement, and independent economic evaluation as
+different computational objects. The distinction yields explicit value-loss bounds and prevents
+a critic residual or an actor stationary point from being mistaken for a solution certificate.
+In the preference–portfolio application, an explicit liquidation contract makes the stochastic
+model and its numerical transition agree; the re-solved adjustment-cost panel implements
+a global comparative static for the discounted preference-adjustment budget. Actual neural
+updates, policy evaluation, diffusion moments, temporal-self recursion, trace estimands, and
+rival-gradient conventions are now executable.
+The economic scope includes recursive utility and strategic interaction without assigning them
+identical mathematical hypotheses. Further accuracy must be earned through the declared error
+terms: the current NDU runs certify the finite stochastic economy, while continuous-diffusion
+refinement remains material. All historical models, derivations, figures, and prior reports remain
+in the repository, with a retention map distinguishing corrected equations, supplementary
+material, archival arrays, and executed evidence. This structure permits the next review to assess
+the mathematics and the numerical economy rather than reconstruct their intended relationship.
+APPENDIX A: P ROOFS AND THE SCOPE OF THE VALUE CERTIFICATES
+A.1. Proof of Proposition 1
+Write Vj = E(πj ). The pointwise selector inequality is HI(πj ) [Vj ] ≥ Hπj [Vj ]. Comparison
+and the assumed verification inequality imply Vj+1 ≥ Vj . Precompactness of the evaluation
+image implies boundedness. Therefore at each state-time point the monotone sequence has a
+limit V̄ .
+Every subsequence of Vj has a further convergent subsequence in the declared strong norm.
+Its uniform function limit must be V̄ , by monotonicity and pointwise uniqueness of the limit.
+Consequently the whole sequence converges uniformly to V̄ ; in fact it converges in the declared
+strong norm because otherwise a subsequence separated from its unique possible strong cluster
+point would contradict precompactness. Derivatives of any strong cluster point are the derivatives
+
+34
+of its function limit. This observation includes the time derivative, which must be controlled
+when passing an evaluation equation to the limit.
+Let πjm → p along a policy subsequence. Continuity of evaluation gives E(p) = V̄ . Continuity of I at p and of E gives
+E(I(p)) = lim E(I(πjm )) = lim Vjm +1 = V̄ .
+m
+
+m
+
+The policy I(p) attains the Hamiltonian maximum evaluated at E(p) = V̄ . Its evaluation at this
+same value therefore gives
+−V̄t = HI(p) [V̄ ] = sup Ha [V̄ ].
+a∈A
+
+The boundary condition passes to the limit in the declared topology. Comparison identifies
+the value, and verification gives optimality. In particular E(p) = V ∗ , even if p and I(p) differ
+on ties. No step identifies successive limiting policies merely from a small difference of their
+values.
+This proposition concerns an exact operator on a compact, selector-closed policy class. Neither
+a finite tanh network nor a finite-sample optimizer automatically meets those assumptions. The
+implemented finite policy is instead assessed by Theorem 2. For recursive drivers the comparison
+assumptions have to be supplied for that driver and value domain; the proof does not obtain
+comparison from the word “recursive.”
+A.2. Proof of Theorem 1
+Apply discounted Itô’s formula to the test function under any feasible policy a and stop at τ .
+Taking expectations yields the identity
+
+
+Z τ
+a
+−ρ(τ −t)
+−ρ(r−t)
+J (t, s) − v(t, s) = Et,s e
+(g − v)(τ, Sτ ) +
+e
+Ra (v)(r, Sr ) dr .
+(21)
+t
+
+If necessary, localization followed by the integrability hypothesis justifies removal of the
+localizing sequence. For the enacted policy, Rπ (v) ≥ −ϵ and the boundary difference is at least
+−b. Hence J π ≥ v − b − Cρ (T − t)ϵ. For every feasible alternative, Ra (v) ≤ Rπ (v) + η ≤ ϵ + η
+and the boundary difference is at most b. Thus J a ≤ v + b + Cρ (T − t)(ϵ + η). Taking a
+supremum over alternatives and subtracting proves (7). Attainment of that supremum is not
+required.
+The proof does not need differentiability of the true value or differentiability of the policy with
+respect to its parameters. It does need a legitimate test function, a legitimate stopped process,
+and bounds valid wherever any competing policy can travel. A residual measured under the
+actor’s occupancy alone need not control an alternative policy. This is why an off-policy uniform
+audit, or an explicitly proved change-of-measure bound, is essential for the displayed worst-case
+guarantee.
+A.2.0.1. Boundary and domain qualifications. The theorem bounds the stopped payoff as
+defined, even when the optimal value lacks a classical extension to every boundary face. The
+NDU diffusion can be degenerate in wealth under π = 0. We do not assert that all boundary
+points are regular for every controlled diffusion, or that the continuous NDU value belongs to
+C 1,2 up to all faces. The scalar payoff at a boundary starting state is settlement by definition;
+an interior limiting value may require a generalized viscosity boundary interpretation. The
+theorem’s test-function and residual hypotheses would still have to be verified before numerical
+use. The finite boundary-switched critic is not used to bypass this requirement.
+
+NBO: R9 SUPPLEMENT
+
+35
+
+A.2.0.2. Sampling and covering errors. Suppose a residual R is known to be LR -Lipschitz
+on a compact set and audit nodes form a dh -net. Then
+∥R∥∞ ≤ max |R(sj )| + LR dh .
+j
+
+The same argument applies to a feasible improvement gap if its Lipschitz constant is established.
+Finite action coverage gives an additional LA hA term only when a uniform action Lipschitz
+bound LA is known. These inequalities are deterministic covering statements, not consequences
+of a large sample size. No such global constants have been computed for the NDU neural critic,
+and no continuum certificate is reported for it.
+A.3. Proof of Theorem 2
+Positivity and row sums at most one imply that Tnπ and Tn are monotone and δ-Lipschitz in
+the sup norm. Let dπn = ∥b
+vn − Vnπ ∥∞ . The evaluation defect gives dπn ≤ en + δdπn+1 , and hence
+dπn ≤ δ N −n b +
+
+N
+−1
+X
+
+δ j−n ej .
+
+j=n
+
+For the optimal value, the residual with respect to Tn is at most en + ηn in absolute value,
+because vbn − Tn vbn+1 = (b
+vn − Tnπ vbn+1 ) − (Tn vbn+1 − Tnπ vbn+1 ). The same backward estimate
+gives
+∥b
+vn − Vn∗ ∥∞ ≤ δ N −n b +
+
+N
+−1
+X
+
+δ j−n (ej + ηj ).
+
+j=n
+
+The triangle inequality proves the result. For exact re-evaluation, both e and b vanish; the code
+computes each date’s maximum feasible gain and accumulates it with the factor δ.
+Early liquidation creates no additional continuation coefficient: its payoff, including the
+fractional-step discount, is already in rna . The substochastic surviving row sums remain at most
+one. Boundary nodes are replaced by their immediate settlement operator in both the optimizer
+and policy evaluator. The theorem therefore applies to the finite model even though its boundary
+policy outputs are not economically enacted.
+A.3.0.1. Adding a verified numerical-economy error. Suppose, for the same policies and
+initial states, an independent argument establishes |J π − Jhπ | ≤ ζ uniformly and |V ∗ − Vh∗ | ≤ ζ∗ .
+Then V ∗ − J π ≤ ζ∗ + (Vh∗ − Jhπ ) + ζ. This decomposition identifies the missing bridge without
+assigning it a zero. In particular, a coarse–fine value difference is neither ζ nor ζ∗ without a
+further error argument.
+A.4. Proof of Theorem 3
+For each admissible policy, Jk (π) = A(π) − kB(π) is affine and nonincreasing in k, since
+B ≥ 0. The supremum of these affine functions is convex; the pointwise supremum of nonincreasing functions is nonincreasing. At an initial state where optimizers exist, their optimality
+gives
+A(π1 ) − k1 B(π1 ) ≥ A(π2 ) − k1 B(π2 ),
+A(π2 ) − k2 B(π2 ) ≥ A(π1 ) − k2 B(π1 ).
+
+36
+Adding gives (k2 − k1 )[B(π1 ) − B(π2 )] ≥ 0. This holds for any choices of the two optimizers,
+including multiple optimal policies. Moreover −B(πk ) is a subgradient of V at k because
+V (e
+k) ≥ V (k) − (e
+k − k)B(πk ). At a differentiability point this subgradient equals V ′ (k). Finally
+the unrestricted feasible policy set contains the set with θ = 0, so its supremum is no smaller.
+The argument survives the killed finite approximation because its transition, discounting, and
+settlement do not depend on k, while the per-action cost remains exactly k times its discounted
+adjustment exposure. It would not apply without modification if changing k also changed the
+liquidation fee, the feasible action set, the utility normalization, or the law of preference shocks.
+It says nothing about a pointwise ordering of θ, a portfolio-share ordering, or identification of
+the model from observed data.
+APPENDIX B: G LOBAL ACTION SELECTION AND THE NDU STOCHASTIC OPERATOR
+B.1. Constrained Hamiltonian maximization
+At a fixed critic jet, the NDU maximand separates across c, θ, π. Let their bounds be (c− , c+ ),
+(θ− , θ+ ), and (π− , π+ ). Consumption maximizes c1−u /(1 − u) − VX c, whose second derivative
+is −uc−u−1 < 0. If VX > 0, its optimum is the projection of VX−1/u onto [c− , c+ ]. If VX ≤ 0,
+the objective is increasing and the optimum is c+ . Adjustment maximizes Vu θ − kθ2 /2 and
+therefore selects the projection of Vu /k.
+Write the portfolio objective as a1 π + a2 π 2 /2, where
+a1 = .06XVX + .2(.05)(−.25)XVuX ,
+
+a2 = .22 X 2 VXX .
+
+If a2 < 0, select the projected value −a1 /a2 . If a2 > 0, compare the two endpoints. If a2 = 0,
+choose the endpoint indicated by the sign of a1 , with any feasible action optimal when a1 = 0.
+Thus a nonconcave portfolio slice need not create an inaccessible local search problem in this
+particular model. The finite algorithm instead enumerates its declared action grid; it never labels
+a stationary neural parameter as a global action optimum.
+For a general differentiable concave maximand, concavity gives H(a) ≤ H(a0 ) +
+⟨∇H(a0 ), a − a0 ⟩. Taking a supremum proves (9). If an interior maximizer and an mstrongly concave objective are known, the familiar gradient-square bound H ∗ − H(a0 ) ≤
+∥∇H(a0 )∥2 /(2m) follows by completing the square. The supporting-hyperplane formulation is
+preferable at constrained optima. Neither argument transfers concavity from actions to shared
+network parameters.
+B.2. Local consistency and preference reachability
+Let b = (θ, (r + eπ)X − c) and let C denote the covariance matrix of the two-dimensional
+diffusion. Before the exit correction, (16) satisfies
+E∆S = b∆,
+
+Cov(∆S) = C∆,
+
+CuX = σu σX πXρuX .
+
+The six polynomial tests 1, u, X, u2 , X 2 , uX give the correct constant and linear generators
+exactly, and quadratic-generator errors O(∆) from the drift outer product. At (u, X) = (2, 1)
+and (c, θ, π) = (.4, .13, .65), the continuous generators are
+(0, .13, −.341, .5225, −.6651, −.553625).
+
+The executable checks step sizes .1, .05, .025, .0125. The covariance error is below 10−12 and
+the quadratic-generator discrepancy declines at the predicted rate. These tests include, rather
+than infer, the cross term. At a zero-adjustment interior state, the generator contribution of u2 is
+.0025, not zero.
+
+NBO: R9 SUPPLEMENT
+
+37
+
+There is no nearest-neighbor rounding of the next preference state. The mean preference
+displacement is θ∆ and bilinear continuation varies between nodes. A smooth test function
+linear in u therefore sees every nonzero feasible adjustment even when |θ|∆ is less than half a
+grid spacing. Preference reachability is not inferred from the existence of a control parameter in
+metadata.
+Positive bilinear interpolation on a smooth function has error of order h2u + h2X under appropriate derivative bounds. Dividing by ∆ produces a generator contribution of order (h2u + h2X )/∆.
+Thus an interior consistency limit requires a coupled choice such as (h2u + h2X )/∆ → 0, together
+with vanishing action and time errors. Near the killed boundary, additional exit-time consistency and boundary regularity are needed. The four-branch linear-segment rule is not an exact
+Brownian-bridge crossing calculation. These qualifications explain why the displayed separate
+refinements are informative diagnostics but not a continuum error certificate.
+B.3. Boundary cash flows and recorded exits
+For a proposed increment d, the exit fraction is the minimum positive fraction at which s + λd
+reaches a domain face, capped at one. At a crossing the continuation value is g(t + λ∆, s + λd),
+the flow receives discount integral [1 − exp(−ρλ∆)]/ρ, and there is no continuation policy
+after settlement. A regression starts at X = .51, chooses c = .8, π = 0, and verifies that every
+branch reaches X = .5 with fraction strictly below one and then terminates. The program never
+changes wealth to .5 and permits another consumption date under the pre-exit contract.
+The exit ledger distinguishes an exit event from a post-correction state. The adjustment budget
+is accumulated only until settlement. For a surviving branch interpolated to a boundary node, the
+next-date boundary settlement is part of the finite kernel. This interpolation effect is a numerical
+feature, not a physical reflection. The settlement fee is a model primitive; comparing fees 6, 8,
+and 10 is explicitly labeled a comparison of contracts.
+APPENDIX C: R ECURSIVE AGGREGATION , TEMPORAL SELVES , AND STRATEGIC
+INTERACTION
+
+C.1. The recursive aggregator and its domain
+For a = 1 − 1/ψ, b = 1 − γ, and bV > 0, expand the aggregator as in (17). Its consumption
+derivative is
+fc (c, V ) = ρca−1 (bV )1−a/b > 0.
+
+Its value derivative is
+fV (c, V ) =
+
+ρ
+ρb
+(b − a)ca (bV )−a/b − .
+a
+a
+
+On compact ranges with consumption bounded away from zero and bV bounded away from
+zero, these derivatives are bounded. This is a local Lipschitz conclusion on the specified range,
+not a global sign or existence theorem for all values. The transform V = eW /b enforces bV > 0,
+but cannot by itself verify integrability, terminal compatibility, comparison, or transversality.
+A policy-wise recursive evaluation solves (3); in the Markov setting its equation is vt + Lπ v +
+f (cπ , v) = 0. When f is Lipschitz in v with constant L, standard comparison of a perturbed
+evaluation with a verified evaluation gives a finite-horizon error envelope of the form
+eL(T −t) b +
+
+Z T
+t
+
+eL(r−t) ϵ dr
+
+38
+under the relevant comparison and integrability hypotheses. A decreasing driver can give a
+sharper dissipative estimate, but monotonicity must be checked from fV on the actual range. The
+time-separable discounted bound in Theorem 1 is not silently applied to an arbitrary Epstein–Zin
+driver.
+C.2. Executed implicit recursive reference
+The supplementary calculation fixes γ = 5, ψ = 1.5, and ρ = .04 on a deterministic saving
+problem with ten steps of length .05. At each wealth node x ∈ [.5, 2], consumption is c = mx
+with 80 fractions in [.01, .6], and the next wealth is the stated saving transition in the code. For
+each action the scalar evaluation equation is
+y = Ih Vn+1 (x′ ) + ∆f (c, y),
+
+by > 0.
+
+The negative-value root is bracketed and solved numerically before maximizing over the action
+grid. The terminal target is xb /b. Outside the wealth lattice, continuation uses the specified
+terminal homothetic tail as numerical boundary data at that date. It is not a solution on an
+unbounded wealth domain. At the central node the recorded value is −.29658656 and the
+selected consumption fraction is the lower bound .01. This active bound is reported rather than
+described as an interior stationary ratio.
+The sign-domain and implicit-equation residual tests are actual evaluated quantities. Neural
+solution error is null because this experiment solves scalar implicit reference equations rather
+than training a recursive neural policy. The general recursive portfolio model remains part of the
+paper’s operator formulation and analytical derivations; its stationary ratios .3 and .0455 remain
+algebraic anchors until their full infinite-horizon verification is supplied.
+C.3. Ordinary continuation and acting-self utility
+For a fixed continuation policy, ordinary log-wealth utility in the two-consumption-date
+example has form Vn (w) = An log w + Bn . Starting from AN = 1, BN = 0, the sophisticated
+self chooses
+αn =
+
+1
+,
+1 + βδAn+1
+
+cn = αn w,
+
+An = 1 + δAn+1 ,
+
+Bn = log αn + δ[An+1 log(1 − αn ) + Bn+1 ].
+
+Evaluation uses δ, while improvement uses βδ. With δ = 1 and two decisions, A1 = 2 and
+α0 = 1/(1 + 2β). Substituting β into the evaluation coefficient instead produces the different
+expression 1/(1 + β + β 2 ). At β = 1 the two formulas coincide, so this special case cannot
+diagnose the distinction.
+A one-shot deviation is evaluated against the same frozen continuation policy whose equilibrium is being claimed. Replacing its continuation with a different grid’s optimized value changes
+the estimand. For a general finite sophisticated-self computation, all feasible actions can be
+enumerated at each date using the correctly evaluated future policy. For continuous actions a
+local search gives only a feasible deviation lower bound unless concavity, a global oracle, or an
+explicit upper-bound calculation closes the search gap.
+C.4. Dynamic games and equilibrium selection
+Let Ji (πi , π−i ) denote player i’s payoff with its own objective and transition law. A Nash
+certificate bounds
+sup Ji (e
+πi , π−i ) − Ji (πi , π−i ),
+π
+ei
+
+NBO: R9 SUPPLEMENT
+
+39
+
+not a joint-profit improvement. An actor graph that differentiates through rivals is not the
+unilateral derivative graph. In the static benchmark qi (1 − qi − qj ), the derivative with a detached
+rival is 1 − 2qi − qj . It vanishes at qi = qj = 1/3, whereas joint optimization selects 1/4 and
+leaves a profitable deviation. The executable graph regression verifies both the own gradient and
+the absence of a rival parameter gradient.
+The three-date capacity game has an exogenous Markov demand state and endogenous future
+capacity. At each state-date pair, enumerate the two players’ current feasible output–investment
+actions using continuation values from the already selected future equilibria. A pure equilibrium
+is an action pair that is a best response for each player against the other current action and the
+fixed future policy profile. Every enumerated state has at least one pure equilibrium in this
+particular game. Lexicographic tie selection is recorded, and the full profile includes asymmetric
+choices. In a finite-horizon game, this backward best-response construction establishes subgame
+perfection on the finite state space; no uniqueness follows from it.
+For large-population or competitive-limit analysis, the demand and capacity scaling, investment technology, and equilibrium concept must be fixed before taking a limit. Symmetric
+initialization is neither a proof of equilibrium nor an equilibrium-selection theorem. Those
+questions are retained as model extensions rather than filled with the historical illustrative
+N -series. No claim about a trained high-dimensional game or a solved competitive limit is
+attached to the current exact finite game.
+APPENDIX D: T RACE ESTIMANDS AND COMPUTATIONAL COST
+For standard Gaussian z and symmetric A, diagonalization and the independent squarednormal moments give Ez ′ Az = tr A and Var(z ′ Az) = 2∥A∥2F . Independence across K probes
+yields variance 2∥A∥2F /K for their mean. Expanding the squared residual then proves (20).
+For Rademacher probes the diagonal contribution to variance vanishes, so the formula must be
+changed rather than reused uncritically.
+For K ≥ 2, define the cross-product correction
+UK = a2 − aq̄K +
+
+X
+1
+qi qj .
+4K(K − 1) i̸=j
+
+(22)
+
+Independence of distinct probes gives EUK = (a − tr A/2)2 . The statistic is unbiased but can
+be negative in a finite batch and may have a different variance and optimization behavior.
+It is therefore an additional estimand, not a blanket replacement justified by unbiasedness
+alone. The audit reports its empirical mean and standard error separately. When A depends on
+network parameters, the uncorrected variance term itself varies with those parameters; a squared
+stochastic trace can consequently change the expected minimizer.
+Let Cjet denote the actual cost of a directional second derivative and its parameter gradient for
+the chosen network. If Σ has m columns, exact contraction can be organized as m directional
+second derivatives, with loading and batching costs. A K-probe contraction costs roughly KCjet
+plus those costs; it is not an unconditional O(d) solver. Total work additionally multiplies by
+collocation samples, training iterations, and any restarts. Peak memory, warm-up, and accelerator
+synchronization must be measured for a hardware comparison. The current CPU timers do not
+measure peak memory, so that metric remains null.
+D.0.0.1. The coupled dynamic regression. For the finite-horizon quadratic-cost economy,
+a policy a = W x gives a quadratic value x′ P x + c. Given a frozen next evaluator, the actor
+minimizes the expected quadratic stage-plus-continuation cost. Gaussian shocks contribute
+
+40
+tr(P SS ′ ); the value recursion includes this constant. A matrix-valued linear neural actor
+is trained against the frozen evaluator by L-BFGS, while an independent Riccati recursion
+computes the benchmark. Both use identical A, Q, R, S, horizon and terminal cost. Correlation
+is a state-transition covariance here, not a metadata label on a static objective.
+The known quadratic family makes this a favorable regression. At dimensions 4, 8, and
+16, Riccati times are approximately .00060, .00040, .00043 seconds and actor times are
+1.319, .0323, .0384 seconds. The first timing includes startup effects. These numbers neither
+establish a dimension scaling law nor compare against adaptive sparse grids. The original static
+coupled quadratic program is retained in the R3 archive as a small linear-algebra check, separate
+from this dynamic experiment.
+APPENDIX E: A PPROXIMATION , COUNTEREXAMPLES , AND OPTIMIZATION LIMITS
+E.1. A composite objective can bias evaluation
+Consider a one-state terminal evaluation problem whose true value is zero and whose critic is
+a scalar v. The exact evaluation residual is v. A joint surrogate v 2 − λv has minimizer v = λ/2,
+not the evaluated value, for every λ ̸= 0. The example isolates the logical issue: optimizing
+performance and evaluation over the same value parameter need not preserve the evaluation
+equation. Adding a positive residual weight changes the bias but does not prove exact evaluation.
+The separated actor has no gradient into that value parameter, so it does not create this particular
+bias.
+Similarly, zero-centering a residual is not a stability theorem. The derivative of R2 /2 is
+R∇R and its Jacobian, conditioning, sampling, and step sizes govern a finite optimizer. Value
+dependence in a recursive driver remains inside this derivative. A zero target does not make the
+objective independent of the value level.
+E.2. A small squared residual does not select a viscosity solution
+On (−1, 1) with boundary values zero, consider |v ′ | = 1. The nonnegative distance function
+1 − |x| is the viscosity solution. The function |x| − 1 has the same boundary values and satisfies
+|v ′ | = 1 almost everywhere, but it fails the viscosity supersolution test at zero: the constant test
+′
+function −1 touches it from below and
+√ has |ϕ | −√1 = −1 < 0.
+Smooth approximations vε (x) = x2 + ε2 − 1 +Rε2 have exactly the boundary data and
+1
+converge uniformly to |x| − 1. Their squared residual −1 (|vε′ | − 1)2 dx tends to zero by dominated convergence, although the limit is not the viscosity solution. Thus boundary agreement,
+smooth networks, and an L2 residual do not establish viscosity selection. Monotone, stable,
+consistent schemes with appropriate comparison can provide a different route (Barles and
+Souganidis, 1991); positivity of an interior interpolation alone does not verify all of those
+hypotheses at a killed boundary.
+Smooth nonpolynomial neural networks can approximate a sufficiently smooth function and
+derivatives on compact subsets under the relevant approximation hypotheses. This does not
+create derivatives at a kink, ensure global boundary regularity, close a finite policy class under a
+maximizing selector, or prove that stochastic optimization finds the approximant. The retained
+derivative-approximation motivation is used only in that conditional sense.
+E.3. Two-timescale statements and suboptimal attractors
+For projected stochastic approximation, a conventional ODE analysis requires bounded
+iterates, suitable continuity and stability, martingale-difference noise with bounded conditional
+
+NBO: R9 SUPPLEMENT
+
+41
+
+second moments, step sizes satisfying infinite sums, finite squared sums, and a vanishing slow-tofast step-size ratio, plus a globally attracting critic equilibrium for each frozen actor. Under the
+appropriate additional technical conditions, the actor limit set is governed by the corresponding
+limiting ODE and its internally chain-transitive sets.
+This is not a global optimality statement. For H(a) = −(a2 −1)2 +.2a, the negative local maximizer is an asymptotically stable isolated stationary point with strictly positive global improvement gap. The audit solves the cubic stationarity equation and evaluates the gap .3998745872.
+Exact critic evaluation and zero noise do not remove that attractor. To conclude optimality one
+must establish, for the actual actor dynamics, that every relevant limiting set has zero feasible
+improvement gap, or use an applicable global concavity or gradient-domination argument. The
+finite runs use Adam and L-BFGS and are assessed by their measured errors; they are not
+examples of a diminishing-step asymptotic theorem.
+APPENDIX F: I MPLEMENTATION , EVIDENCE CLASSES , AND REPRODUCIBILITY
+F.1. Executed parameterizations and data flow
+The continuous Merton critic has one learned log-amplitude and its actor has two learned
+logits. It uses float64 automatic differentiation through the value with respect to wealth, including
+the Hessian; critic and actor optimizers are separate. Its independently evaluated policy has
+positive transversality decay D. Analytical controls are used only after training to measure error.
+The NDU run is different: time-specific nonlinear networks represent a finite Bellman operator.
+Its actor maps two normalized states to 125 logits through two 48-unit tanh layers. Its critic
+maps six features, including log distances to boundary faces, through two 48-unit tanh layers to
+a scalar adjustment to terminal utility. Next-date critics are frozen, the actor target uses only their
+continuation predictions, and the current critic is fitted to the enacted actor’s policy-evaluation
+target. The independent NumPy optimizer and evaluator are not imported as training labels.
+Training residuals are not out-of-sample certificates because all interior finite states are
+collocation points. The independent evaluator changes the computational path, not the economic
+grid. The source contains separate NumPy and PyTorch implementations of the transition and
+interpolation, whose equality is tested on deterministic data. Cross-grid reference calculations
+are discretization diagnostics; they have not been relabeled a held-out neural accuracy result.
+F.2. Interpreting metrics
+A value error against the finite optimal reference, a critic error against the evaluated policy, a
+coarse–fine value difference, and a unilateral gain are different estimands. Policy component
+differences are retained for consumption, adjustment, and portfolio share. Boundary-node actor
+outputs are not enacted after settlement; full-grid maxima and interior summaries must be
+distinguished when interpreting them. A finite exhaustive best-response maximum is a finitemodel certificate. A feasible search over only some continuous deviations is merely a lower
+bound on exploitability.
+Execution status and tolerance status are separate fields. A program that completes can miss
+its target; a timed-out audit has no final solution certificate. A null numerical error has an explicit
+reason, such as an unmeasured continuous-diffusion error or a recursive reference that did not
+train a neural policy. A numerical zero is used only for a quantity actually calculated, such as
+the finite game deviation maximum or a tested monotonicity violation.
+The initial failed neural source and its weights, metrics, and raw arrays are retained in the
+local review bundle. The successful three-seed sources and weights are separate. The attempted
+twelve-date runs are marked incomplete. Wall-clock times are metadata and are excluded from
+
+42
+scientific payload hashes. Source hashes identify the exact executed script; the reachable review
+commit identifies the historical base, not a fictitious commit containing the subsequently created
+scripts. The final manifest maps every delivered source to its actual file hash and repository path.
+F.3. Retained material and revision lineage
+The new authoritative entry is ECTA_R4.tex. The original ECTA.tex, the R3-authoritative
+ECTA_R2.tex, its standalone supplement, embedded arrays, earlier reports, and R3 numerical
+artifacts are left unchanged. Core model formulations, constrained policy derivations, recursive
+aggregation, temporal-self and game extensions, trace analysis, and theoretical qualifications
+appear in the current text and these appendices. Historical unexecuted plots are retained as
+archival objects, not presented again as learned current outcomes. The retention map identifies
+their source locations and the corresponding corrected discussion. This preserves the scientific
+record without repeating incompatible equations as simultaneous current specifications.
+
+43
+
+NBO: R9 SUPPLEMENT
+PART IV: DELIVERED R5 NUMERICAL RECORD
+
+The tables below reproduce all six delivered R5 TeX tables without changing their entries.
+They refer to the source and protocols reviewed on September 21, 2026. The R8 main paper gives
+the current interpretation: finite candidate certificates are not continuous certificates; safeguarded
+rules are distinct from raw rules; the in-house PINN–PI comparison is not the new author-code
+comparison; and these historical extension panels have only two seeds. The execution data, raw
+arrays, checkpoints, and failed or incomplete attempts remain in the corresponding revision
+directories.
+TABLE I
+R ETAINED R5 NDU PANEL
+
+Configuration
+
+n
+
+Raw
+
+Safeguarded
+
+Max. bound
+
+Seconds
+
+baseline
+longer horizon
+width 32
+width 64
+lr 0.002
+lr 0.008
+actor steps 300
+critic steps 400
+
+10
+3
+2
+2
+2
+2
+2
+2
+
+10
+0
+1
+2
+0
+2
+0
+1
+
+10
+3
+2
+2
+2
+2
+2
+2
+
+0.0496
+0.0064
+0.0471
+0.0461
+0.0050
+0.0339
+0.0065
+0.0440
+
+18.19
+34.64
+16.86
+20.03
+18.52
+17.95
+13.66
+15.70
+
+In this table, n denotes the number of runs, not the number of time steps. Pass counts use the historical finite-candidate
+target. Seconds are the historical recorded training measure; this is not the new full safeguard re-audit timing.
+
+TABLE II
+R ETAINED R5 QUADRATIC - CONTROL COMPARISON
+
+d
+
+Method
+
+Mean loss
+
+Sampling upper
+
+Train (s)
+
+Audit (s)
+
+MiB
+
+8
+8
+16
+16
+32
+32
+
+NBO
+PINN–PI
+NBO
+PINN–PI
+NBO
+PINN–PI
+
+0.0010
+-0.0001
+0.0037
+0.0013
+0.0102
+0.0075
+
+0.0018
+0.0007
+0.0055
+0.0032
+0.0145
+0.0117
+
+14.93
+12.59
+14.29
+11.67
+16.29
+13.34
+
+3.45
+6.61
+3.84
+5.69
+3.72
+5.64
+
+377.5
+376.9
+378.6
+377.7
+381.3
+382.1
+
+This is the two-seed Cole–Hopf/QMC benchmark with an analytic greedy control and an in-house PINN–PI
+comparator. The small negative estimated loss reflects reference or simulation uncertainty, not performance exceeding
+a true optimum. NBO has higher mean loss in each row pair. This result is retained despite the favorable R8
+nonconvex-control comparison.
+
+44
+TABLE III
+R ETAINED R5 MANUFACTURED STOPPED - DIFFUSION TEST
+
+N
+
+Endpoint value
+
+Bridge value
+
+Action sup error
+
+Policy-loss bound
+
+16
+32
+64
+128
+256
+
+0.0392
+0.0616
+0.0623
+0.0538
+0.0436
+
+0.0581
+0.0308
+0.0159
+0.0080
+0.0040
+
+0.3783
+0.4653
+0.5033
+0.5346
+0.5502
+
+0.1691
+0.0737
+0.0366
+0.0219
+0.0106
+
+The historical one-dimensional solver has an analytically manufactured verification pair and no trained actor. It is
+distinct from the new learned NDU-geometry test, which also explicitly modifies the running payoff.
+
+TABLE IV
+R ETAINED R5 COUPLED NDU REFINEMENTS
+
+N
+
+State grid
+
+na
+
+h2 /∆
+
+V0
+
+B0
+
+Exit
+
+12
+24
+48
+96
+
+13 × 16
+25 × 31
+49 × 61
+97 × 121
+
+3
+3
+5
+5
+
+0.2133
+0.1067
+0.0533
+0.0267
+
+-1.624355
+-1.510132
+-1.391646
+-1.353683
+
+0.012266
+0.012248
+0.011969
+0.012234
+
+0.1543
+0.1558
+0.1024
+0.0987
+
+Multiple discretization factors change in this historical panel. The table supplies numerical differences, not validated
+continuous error bounds or a separated convergence order.
+
+TABLE V
+R ETAINED R5 RECURSIVE - UTILITY POLICIES
+
+Seed
+51
+52
+
+Raw log loss
+
+Final bound
+
+Final log loss
+
+m0
+
+p0
+
+0.0425
+0.0502
+
+0.0000
+0.0000
+
+0.0000
+0.0000
+
+2.506
+2.442
+
+0.955
+1.093
+
+Both raw neural policies miss the historical .01 log-value target. The final candidate-set bounds use repeated
+961-action safeguards; the raw failures are not relabeled as neural successes.
+
+TABLE VI
+R ETAINED R5 NEURAL GAME
+
+Seed
+61
+62
+
+Player 1, t = 0
+
+Player 2, t = 0
+
+All subgames
+
+Seconds
+
+0.00245
+0.00312
+
+0.00673
+0.00305
+
+0.00673
+0.00368
+
+13.87
+14.04
+
+This is a small finite-state, three-date game with exact continuous best-response auditing for the declared finite
+operator, not a continuous-state equilibrium scalability result.
+
+NBO: R9 SUPPLEMENT
+
+45
+
+REFERENCES
+Barles, G., and P. E. Souganidis (1991): “Convergence of Approximation Schemes for Fully Nonlinear Second Order
+Equations,” Asymptotic Analysis, 4, 271–283. [40]
+Brown, D. B., J. E. Smith, and P. Sun (2010): “Information Relaxations and Duality in Stochastic Dynamic Programs,”
+Operations Research, 58(4, Part 1), 785–801. DOI: 10.1287/opre.1090.0796. []
+Brown, D. B., and J. E. Smith (2011): “Dynamic Portfolio Optimization with Transaction Costs: Heuristics and Dual
+Bounds,” Management Science, 57, 1752–1770. DOI: 10.1287/mnsc.1110.1377. []
+Brumm, J., and S. Scheidegger (2017): “Using Adaptive Sparse Grids to Solve High-Dimensional Dynamic Models,”
+Econometrica, 85, 1575–1612. [24]
+Cai, W., S. Fang, and T. Zhou (2025): “SOC-MartNet: A Martingale Neural Network for the Hamilton–Jacobi–Bellman
+Equation without Explicit inf u∈U H in Stochastic Optimal Controls,” SIAM Journal on Scientific Computing, 47(4),
+C795–C819. DOI: 10.1137/24M1681033. [3, 14]
+Cai, W., S. Fang, and T. Zhou (2025): “SOC-MartNet: A Martingale Neural Network for the Hamilton–Jacobi–Bellman
+Equation without Explicit inf H in Stochastic Optimal Controls,” arXiv:2405.03169, version 4, March 15. Historical
+preprint citation retained for the preservation supplement. [24]
+Duffie, D., and L. G. Epstein (1992): “Stochastic Differential Utility,” Econometrica, 60, 353–394. [15, 24]
+Epstein, L. G., and S. E. Zin (1989): “Substitution, Risk Aversion, and the Temporal Behavior of Consumption and
+Asset Returns: A Theoretical Framework,” Econometrica, 57, 937–969. [15, 24]
+Han, J., and W. E (2016): “Deep Learning Approximation for Stochastic Control Problems,” arXiv:1611.07422. [24]
+Han, J., A. Jentzen, and W. E (2018): “Solving High-Dimensional Partial Differential Equations Using Deep Learning,”
+Proceedings of the National Academy of Sciences, 115, 8505–8510. [24]
+Jacka, S. D., and A. Mijatović (2015): “On the Policy Improvement Algorithm in Continuous Time,” arXiv:1509.09041.
+[2, 24]
+Judd, K. L. (1998): Numerical Methods in Economics. MIT Press. [24]
+Kim, Y., N. Cho, M. Kim, and Y. Kim (2026): “Physics-Informed Approach for Exploratory Hamilton–Jacobi–Bellman
+Equations via Policy Iterations,” Proceedings of the AAAI Conference on Artificial Intelligence, 40(27), 22609–22616.
+DOI: 10.1609/aaai.v40i27.39421. [2, 14]
+Kim, Y., M. Kim, Y. Kim, and N. Cho (2026): “Physics-Informed Policy Iteration for High-Dimensional Hamilton–
+Jacobi–Bellman Equations: Interior Error Bounds without Boundary Data,” arXiv:2508.01718, version 2, August 9.
+[2, 14]
+Kim, Y., Y. Kim, M. Kim, and N. Cho (2025): “Neural Policy Iteration for Stochastic Optimal Control: A PhysicsInformed Approach,” arXiv:2508.01718, version 1. Historical citation retained for the preservation supplement; see
+the updated 2026 entry for the current title and author order. [23]
+Kushner, H. J., and P. G. Dupuis (2001): Numerical Methods for Stochastic Control Problems in Continuous Time,
+second edition. Springer. DOI: 10.1007/978-1-4613-0007-6. []
+Lasserre, J. B., D. Henrion, C. Prieur, and E. Trélat (2008): “Nonlinear Optimal Control via Occupation Measures and
+LMI-Relaxations,” SIAM Journal on Control and Optimization, 47, 1643–1666. DOI: 10.1137/070685051. []
+Lee, J. Y., and Y. Kim (2025): “Hamilton-Jacobi Based Policy-Iteration via Deep Operator Learning,” Neurocomputing,
+646, 130515. DOI: 10.1016/j.neucom.2025.130515. [3, 14]
+Lee, J. Y., and Y. Kim (2024): “Hamilton-Jacobi Based Policy-Iteration via Deep Operator Learning,” arXiv:2406.10920.
+Historical preprint citation retained for the preservation supplement. [24]
+Merton, R. C. (1969): “Lifetime Portfolio Selection under Uncertainty: The Continuous-Time Case,” Review of
+Economics and Statistics, 51, 247–257. [24]
+Qi, Q. (2025): “Neural Foundations of Endogenous Risk Aversion,” unpublished manuscript, Peking University;
+motivating manuscript identified in the retained NBO source. [24]
+
+
