@@ -1,0 +1,160 @@
+name: R11 frozen method-specific tuning and independent holdout
+on:
+  push:
+    branches: [revision/econometrica-r11-accuracy-and-robustness-2026-09-22]
+    paths: [.github/workflows/r11-study.yml]
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r11-study
+  cancel-in-progress: false
+env:
+  R11_BRANCH: revision/econometrica-r11-accuracy-and-robustness-2026-09-22
+  R11_DIR: revisions/2026-09-22-r11
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    outputs:
+      source: ${{ steps.pin.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore and verify prospectively frozen ordinary source files
+        run: |
+          python - <<'PY'
+          import pathlib,base64,hashlib,io,tarfile,subprocess
+          p=pathlib.Path('.github/r11-study-payload.b64')
+          if p.exists():
+              data=base64.b64decode(p.read_text().strip(),validate=True)
+              assert hashlib.sha256(data).hexdigest()=='4710bb67318269d12c5f77214d6e2eb77afb7d8f919494a6e85f0caf89990211'
+              allowed={'revisions/2026-09-22-r11/replication/robustness.py','revisions/2026-09-22-r11/protocol.json'}
+              with tarfile.open(fileobj=io.BytesIO(data),mode='r:xz') as f:
+                  assert {m.name for m in f.getmembers()}==allowed
+                  for m in f.getmembers():
+                      assert m.isfile()
+                      out=pathlib.Path(m.name);out.parent.mkdir(parents=True,exist_ok=True);out.write_bytes(f.extractfile(m).read())
+              subprocess.check_call(['git','rm',str(p)])
+          PY
+      - name: Pin source before the first tuning and holdout run
+        id: pin
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -f "$R11_DIR/protocol.json" "$R11_DIR/replication/robustness.py"
+          if ! git diff --cached --quiet; then
+            git commit -m 'protocol(r11): canonical method-specific grids, boundary expansion and unopened holdout'
+            git push origin HEAD:"$R11_BRANCH"
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  holdout:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        dimension: [8,16,32]
+    env:
+      R11_SOURCE_COMMIT: ${{ needs.publish.outputs.source }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.publish.outputs.source }}
+      - name: Initialize failure-preserving status before dependency setup
+        run: |
+          mkdir -p cell
+          python - <<'PY'
+          import pathlib,json,os
+          pathlib.Path('cell/status.json').write_text(json.dumps({'dimension':${{ matrix.dimension }},'status':'not_executed','phase':'dependency_setup','source_commit':os.environ['R11_SOURCE_COMMIT']},indent=2)+'\n')
+          PY
+      - uses: actions/checkout@v4
+        with:
+          repository: sx-fang/MartNet
+          ref: 991ea8dde5bad6ba912eb8cc48b0cb48dbdd6c2a
+          path: martnet-author
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned CPU numerical dependencies
+        run: |
+          pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install numpy==2.3.5 scipy==1.17.0
+      - name: Execute tuning and all prospectively specified holdout seeds
+        run: python "$R11_DIR/replication/robustness.py" run --dimension '${{ matrix.dimension }}' --source martnet-author --out cell
+      - name: Preserve author identity and workflow outcome
+        if: always()
+        run: |
+          mkdir -p cell
+          git -C martnet-author rev-parse HEAD > cell/author_commit.txt || true
+          git -C martnet-author diff --exit-code > cell/author_source_diff.txt || true
+          python - <<'PY'
+          import pathlib,json
+          pathlib.Path('cell/workflow_status.json').write_text(json.dumps({'job_status':'${{ job.status }}','run_id':'${{ github.run_id }}','dimension':${{ matrix.dimension }}},indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r11-d${{ matrix.dimension }}
+          path: cell/
+          if-no-files-found: error
+  collect:
+    if: ${{ always() && needs.publish.result == 'success' }}
+    needs: [publish,holdout]
+    runs-on: ubuntu-latest
+    env:
+      R11_SOURCE_COMMIT: ${{ needs.publish.outputs.source }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.publish.outputs.source }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install numpy==2.3.5 scipy==1.17.0
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: r11-d*
+          path: downloaded
+      - name: Retain every planned cell including explicit missing-cell failures
+        run: python "$R11_DIR/replication/robustness.py" collect --downloads downloaded --out "$R11_DIR/results/robustness"
+      - name: Version raw evidence before testing aggregate validity
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -f "$R11_DIR/results/robustness"
+          git commit -m 'evidence(r11): retain all method-specific tuning trials and all new holdout cells'
+          git push origin HEAD:"$R11_BRANCH"
+          RESULT_SHA=$(git rev-parse HEAD)
+          python - "$RESULT_SHA" <<'PY'
+          import os,sys,pathlib,json
+          p={'source_commit':os.environ['R11_SOURCE_COMMIT'],'result_commit':sys.argv[1],'workflow_run':'${{ github.run_id }}','author_commit':'991ea8dde5bad6ba912eb8cc48b0cb48dbdd6c2a'}
+          pathlib.Path('revisions/2026-09-22-r11/results/robustness_receipt.json').write_text(json.dumps(p,indent=2)+'\n')
+          PY
+          git add "$R11_DIR/results/robustness_receipt.json"
+          git commit -m 'review(r11): bind completed robustness evidence to its frozen source'
+          git push origin HEAD:"$R11_BRANCH"
+          git archive --format=tar.gz --output=/tmp/NBO-R11-study.tar.gz HEAD "$R11_DIR"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: NBO-R11-study-evidence
+          path: |
+            /tmp/NBO-R11-study.tar.gz
+            revisions/2026-09-22-r11/results/robustness/summary.json
+            revisions/2026-09-22-r11/results/robustness_receipt.json
+      - name: Reject incomplete evidence only after permanent preservation
+        run: |
+          python - <<'PY'
+          import json,pathlib
+          s=json.loads(pathlib.Path('revisions/2026-09-22-r11/results/robustness/summary.json').read_text())
+          assert s['status']=='PASS',s
+          PY
