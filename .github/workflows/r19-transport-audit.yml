@@ -1,0 +1,24 @@
+name: R19 source transport audit
+on:
+  push:
+    branches: [revision/econometrica-r19-policy-sensitive-continuation-2026-09-23]
+    paths: [.github/workflows/r19-transport-audit.yml]
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record staged source bytes
+        run: |
+          git rev-parse HEAD > R19_TRANSPORT_COMMIT.txt
+          sha256sum revisions/2026-09-23-r19/publication/payload_*.b64 > R19_TRANSPORT_SHA256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r19-source-transport
+          path: |
+            revisions/2026-09-23-r19/publication/payload_*.b64
+            R19_TRANSPORT_COMMIT.txt
+            R19_TRANSPORT_SHA256.txt
+          retention-days: 14
