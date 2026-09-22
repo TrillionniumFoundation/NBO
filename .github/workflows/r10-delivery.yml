@@ -1,0 +1,218 @@
+name: R10 canonical paper, independent certificates and preserved evidence
+on:
+  push:
+    branches: ['revision/econometrica-r10-referee-resolution-2026-09-22']
+    paths: ['.github/workflows/r10-delivery.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+env:
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  R10_BRANCH: revision/econometrica-r10-referee-resolution-2026-09-22
+  R10_DIR: revisions/2026-09-22-r10
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    outputs:
+      source: ${{ steps.canonical.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Import byte-verified ordinary sources and pinned report
+        run: |
+          python - <<'PY'
+          import base64,hashlib,io,json,pathlib,subprocess,tarfile
+          root=pathlib.Path('.'); rev=root/'revisions/2026-09-22-r10'
+          transport=root/'.github/r10-delivery'
+          if transport.exists():
+              parts=sorted(transport.glob('part-*.b64'))
+              assert len(parts)==9
+              encoded=''.join(p.read_text() for p in parts)
+              encoded=encoded.replace('Dev6FozPtStStSTdnaa','Dev6FozPtStSTdnaa')
+              data=base64.b64decode(encoded,validate=True)
+              assert hashlib.sha256(data).hexdigest()=='04a4d755f236977a0cd4d64d3815a89ffe076ad7eece4807a227675fb986a63e'
+              allowed={'ECTA_R10.tex','SUPP_R10.tex','R10_REVIEW.md','REVISION_INDEX.md'}
+              with tarfile.open(fileobj=io.BytesIO(data),mode='r:xz') as tf:
+                  members=tf.getmembers(); assert len(members)==41
+                  for m in members:
+                      p=pathlib.PurePosixPath(m.name)
+                      assert m.isfile() and not p.is_absolute() and '..' not in p.parts
+                      assert m.name in allowed or m.name.startswith('revisions/2026-09-22-r10/')
+                      dst=root/m.name;dst.parent.mkdir(parents=True,exist_ok=True)
+                      dst.write_bytes(tf.extractfile(m).read())
+              recipes=rev/'_transport_recipes.json'
+              for name,r in json.loads(recipes.read_text()).items():
+                  p=pathlib.PurePosixPath(name)
+                  assert not p.is_absolute() and '..' not in p.parts
+                  assert name in allowed or name.startswith('revisions/2026-09-22-r10/')
+                  old=subprocess.check_output(['git','show','23f40e730fcea04efe3d84690d4f0fff5ae466e8:'+r['source']])
+                  assert hashlib.sha256(old).hexdigest()==r['source_sha256']
+                  lines=old.decode().splitlines(keepends=True)
+                  value=''.join(''.join(lines[c[0]:c[1]]) if isinstance(c,list) else c for c in r['chunks']).encode()
+                  assert hashlib.sha256(value).hexdigest()==r['sha256']
+                  dst=root/name;dst.parent.mkdir(parents=True,exist_ok=True);dst.write_bytes(value)
+              recipes.unlink()
+              old=subprocess.check_output(['git','archive','--format=tar','23f40e730fcea04efe3d84690d4f0fff5ae466e8'])
+              with tarfile.open(fileobj=io.BytesIO(old),mode='r:') as tf:
+                  hashes={m.name:hashlib.sha256(tf.extractfile(m).read()).hexdigest() for m in tf.getmembers() if m.isfile()}
+              assert len(hashes)==948
+              manifest={'source_commit':'23f40e730fcea04efe3d84690d4f0fff5ae466e8','files':hashes,'archived_replacement':{'REVISION_INDEX.md':'revisions/2026-09-22-r10/archive/REVISION_INDEX_before_R10.md'}}
+              (rev/'inherited_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+              subprocess.check_call(['git','rm','-r','.github/r10-delivery'])
+          report='251ad29668788b2a911c4ca6f9c0a226886518d6:reviews/2026-09-22-econometrica-r9-numerical-methods/referee_report.md'
+          raw=subprocess.check_output(['git','show',report])
+          blob=hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
+          assert blob=='42cee0954515e5578dc579a4ca0428bb4e399b2e'
+          dst=rev/'review_input/referee_report.md';dst.parent.mkdir(parents=True,exist_ok=True);dst.write_bytes(raw)
+          PY
+      - name: Commit canonical manuscript and proof inputs before execution
+        id: canonical
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -f ECTA_R10.tex SUPP_R10.tex R10_REVIEW.md REVISION_INDEX.md "$R10_DIR"
+          if ! git diff --cached --quiet; then
+            git commit -m 'paper(r10): sub-0.01 original-continuum certificates, full proofs and point-by-point revision'
+            git push origin HEAD:"$R10_BRANCH"
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  certificates:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        k: ['0.5', '2', '8']
+    env:
+      R10_SOURCE_COMMIT: ${{ needs.publish.outputs.source }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.publish.outputs.source }}
+      - name: Initialize planned-cell status before dependency installation
+        run: |
+          mkdir -p "cell"
+          python - <<'PY'
+          import json,os,pathlib
+          p={'cell':'k${{ matrix.k }}','source_commit':os.environ['R10_SOURCE_COMMIT'],'status':'not_executed','phase':'dependency_setup'}
+          pathlib.Path('cell/status.json').write_text(json.dumps(p,indent=2)+'\n')
+          PY
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install only pinned verification dependencies
+        run: pip install numpy==2.3.5 mpmath==1.3.0
+      - name: Re-execute all planned policy and dual resolutions
+        run: python "$R10_DIR/replication/run_cell.py" --k '${{ matrix.k }}' --output cell
+      - name: Retain workflow outcome even after a failed certificate
+        if: always()
+        run: |
+          mkdir -p cell
+          python - <<'PY'
+          import json,pathlib
+          pathlib.Path('cell/workflow_status.json').write_text(json.dumps({'job_status':'${{ job.status }}','cell':'k${{ matrix.k }}','run_id':'${{ github.run_id }}'},indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r10-cell-k${{ matrix.k }}
+          path: cell/
+          if-no-files-found: error
+  collect:
+    if: ${{ always() && needs.publish.result == 'success' }}
+    needs: [publish, certificates]
+    runs-on: ubuntu-latest
+    outputs:
+      result: ${{ steps.record.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.publish.outputs.source }}
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: r10-cell-*
+          path: downloaded
+      - name: Collect every planned cell and preserve invalid raw files
+        run: python "$R10_DIR/replication/collect_evidence.py" --downloads downloaded --destination "$R10_DIR/ci_results" --source '${{ needs.publish.outputs.source }}' --preserve-only
+      - name: Version evidence before rejecting a missing or invalid aggregate
+        id: record
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -f "$R10_DIR/ci_results"
+          git commit -m 'evidence(r10): preserve all planned certificate cells and independent execution status'
+          git push origin HEAD:"$R10_BRANCH"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Enforce complete and valid evidence after preservation
+        run: |
+          python - <<'PY'
+          import json,pathlib
+          r=json.loads(pathlib.Path('revisions/2026-09-22-r10/ci_results/ci_recheck.json').read_text())
+          assert r['status']=='PASS',r
+          PY
+  build:
+    needs: [publish, collect]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.collect.outputs.result }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install manuscript and validation tools
+        run: |
+          pip install numpy==2.3.5 mpmath==1.3.0
+          sudo apt-get update
+          sudo apt-get install -y texlive-latex-extra texlive-fonts-recommended poppler-utils
+      - name: Verify preservation, fault injection, equations, tables and PDFs
+        run: |
+          python "$R10_DIR/replication/test_pipeline.py"
+          python "$R10_DIR/replication/validate_evidence.py" --skip-pdf
+          python "$R10_DIR/replication/make_tables.py"
+          bash "$R10_DIR/replication/build.sh"
+          python "$R10_DIR/replication/validate_evidence.py"
+          python "$R10_DIR/replication/write_manifest.py" --source '${{ needs.publish.outputs.source }}' --result '${{ needs.collect.outputs.result }}'
+      - name: Commit built manuscript, then noncircular immutable review receipt
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -f ECTA_R10.pdf SUPP_R10.pdf "$R10_DIR/build_logs" "$R10_DIR/pipeline_tests.json" "$R10_DIR/validation_report.json" "$R10_DIR/source_manifest.json" "$R10_DIR/paper/tables"
+          git commit -m 'build(r10): verified Econometrica manuscript and complete preserved supplement'
+          BUILD_SHA=$(git rev-parse HEAD)
+          git push origin HEAD:"$R10_BRANCH"
+          python "$R10_DIR/replication/write_manifest.py" --source '${{ needs.publish.outputs.source }}' --result '${{ needs.collect.outputs.result }}' --build "$BUILD_SHA"
+          git add "$R10_DIR/publication_receipt.json"
+          git commit -m 'review(r10): pin separate source, result, manuscript-build and review-input identities'
+          git push origin HEAD:"$R10_BRANCH"
+          git archive --format=tar.gz --output=/tmp/NBO-R10-repository.tar.gz HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NBO-R10-referee-package
+          path: |
+            /tmp/NBO-R10-repository.tar.gz
+            ECTA_R10.pdf
+            SUPP_R10.pdf
+            R10_REVIEW.md
+            revisions/2026-09-22-r10/response_to_referee.md
+            revisions/2026-09-22-r10/publication_receipt.json
+            revisions/2026-09-22-r10/validation_report.json
+            revisions/2026-09-22-r10/ci_results/ci_recheck.json
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: NBO-R10-build-diagnostics
+          path: |
+            revisions/2026-09-22-r10/build_logs
+            revisions/2026-09-22-r10/validation_report.json
+            revisions/2026-09-22-r10/pipeline_tests.json
+            ECTA_R10.log
+            SUPP_R10.log
