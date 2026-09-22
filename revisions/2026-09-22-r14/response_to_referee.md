@@ -8,7 +8,7 @@ We agree that a revision branch name cannot establish a scientific revision. R14
 
 The distinction between a completed calculation and an achieved accuracy is essential in the responses below. The full-domain neural certificate has now been executed, but its current bound is not 0.01. The sharp time-control/dual certificates are not assigned to that neural feedback. Likewise, the new classical experiment is not described as two matched-accuracy state-space baselines. These remaining empirical conditions are identified, rather than marked resolved by a change in terminology.
 
-All paths below are relative to `revisions/2026-09-22-r14/` unless stated otherwise. The canonical local evidence entry point is root `R14_REVIEW.md`. Remote publication is **not** claimed: this session could read GitHub and download the complete R12 workflow archive, but exposed no repository-write action, and direct Git access failed DNS resolution. The delivery contains a patch and a fail-closed publishing helper for applying the actual changes on the exact latest review commit, not for force-pushing the reconstructed local history.
+All paths below are relative to revisions/2026-09-22-r14/ unless stated otherwise. The canonical evidence entry point is root R14_REVIEW.md. R14 is published on revision/econometrica-r14-independent-state-audit-2026-09-22 and mirrored on revision/econometrica-r14-referee-copy-2026-09-22. Both remote branches descend from the exact latest review commit 857bfeab28ca1b7a7f732edf180126f3ded6b451; no existing review, revision, or main branch was force-updated.
 
 ## R13-F0 — No actual scientific delta in purported R13
 
@@ -16,7 +16,7 @@ All paths below are relative to `revisions/2026-09-22-r14/` unless stated otherw
 
 **Evidence.** `paper/main.tex`, `paper/proofs.tex`, `paper/supplement.tex`, `replication/`, `results/`, this response, the canonical manifest, and the publication receipt. The local scientific commit and the local receipt commit are distinct from the actual remote R12/R13 commits. PDF and source identities are content-pinned.
 
-**Status.** An actual local scientific revision now exists. The separate requirement to publish it remotely remains unmet in this tool session; no remote branch or commit is represented as created.
+**Status.** Resolved procedurally: an actual scientific revision exists and has been published on two new remote revision branches. Neither the prior review branches nor main were overwritten.
 
 ## R13-F1 — The sharp certificate is not a neural Bellman policy certificate
 
@@ -154,4 +154,4 @@ Historical extensions and studies are preserved at their original paths, not con
 
 R14 is a real, data-bearing revision. It completes the missing whole-domain neural *execution*, independently audits the sharp original-economy library, tests all nodes under perturbed witnesses and larger allowances, and supplies a nontrivial continuous state–price guarantee and exact economic-resolution map. It also supplies a fresh actual-policy-richness frontier and explicit resource accounting.
 
-It does **not** establish useful-accuracy whole-domain neural control, the requested finer flagship tolerance sequence, two matched-accuracy classical state-space baselines, or the identical-pipeline exact-reference suite. These conditions remain visible to the next referee. A successful build or a valid but large neural bound is not represented as their closure. The remote publication limitation is likewise stated as a delivery limitation, not hidden behind a revision branch name.
+It does **not** establish useful-accuracy whole-domain neural control, the requested finer flagship tolerance sequence, two matched-accuracy classical state-space baselines, or the identical-pipeline exact-reference suite. These conditions remain visible to the next referee. A successful build or a valid but large neural bound is not represented as their closure. Remote publication is complete; it does not alter those substantive unresolved conditions.

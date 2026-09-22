@@ -44,7 +44,7 @@ The audit of the inherited price library starts from frozen historical proposals
 
 The complete R12 archive was obtained through the GitHub workflow artifact. All 1,830 files matched it before revision work. A synthetic local root commit reconstructs that archive for a portable local branch; **it is not the original Git commit**. The original R12 and R13 review commit IDs are separately pinned.
 
-Remote writes were unavailable in this session and direct Git access failed DNS resolution. The local branches and downloadable patch are real; their existence is not a claim that GitHub has been updated. Use the publishing helper with the patch to apply the changes onto the exact latest remote review commit. It refuses to overwrite branches, does not force-push, does not execute repository workflows explicitly, and never asks for credentials in a file. It does not push the synthetic reconstructed history.
+The delivered R14 tree has now been published on two new GitHub revision branches: revision/econometrica-r14-independent-state-audit-2026-09-22 and revision/econometrica-r14-referee-copy-2026-09-22. Both descend from the exact latest remote review commit 857bfeab28ca1b7a7f732edf180126f3ded6b451. The earlier publishing helper and local reconstructed commits remain provenance records; no synthetic reconstructed history was force-pushed over existing branches.
 
 ## Preservation
 

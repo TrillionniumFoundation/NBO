@@ -1,6 +1,6 @@
 # Canonical revision: R14 — Neural Bellman Operators
 
-The current local scientific manuscript is **R14**. Start at [`R14_REVIEW.md`](R14_REVIEW.md).
+The current scientific manuscript is **R14**. Start at R14_REVIEW.md.
 
 | Object | Current path |
 |---|---|
@@ -14,7 +14,7 @@ The current local scientific manuscript is **R14**. Start at [`R14_REVIEW.md`](R
 
 ## Publication status
 
-The R14 branches exist **locally**. No remote R14 branch or commit is claimed. This session exposed GitHub read/download capabilities but no write action; direct Git access failed DNS resolution. The downloadable patch is intended to be applied on the latest remote review commit below, not to replace remote history with the synthetic local archive reconstruction.
+R14 is published on GitHub on revision/econometrica-r14-independent-state-audit-2026-09-22 and mirrored on revision/econometrica-r14-referee-copy-2026-09-22. Both descend from the latest R13 review input at 857bfeab28ca1b7a7f732edf180126f3ded6b451; main, the review branches, and earlier revision branches were not overwritten. The scientific tree was materialized on the remote review ancestry and revalidated on GitHub Actions before publication.
 
 ## Immutable predecessor identities
 
