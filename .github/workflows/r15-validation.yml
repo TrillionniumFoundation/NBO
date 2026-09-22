@@ -1,0 +1,28 @@
+name: R15 reproducible revision validation
+on:
+  push:
+    branches:
+      - revision/econometrica-r15-boundary-consistent-neural-2026-09-22
+    paths:
+      - .github/workflows/r15-validation.yml
+      - revisions/2026-09-22-r15/**
+      - ECTA_R15.tex
+      - SUPP_R15.tex
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Export exact tracked source
+        run: |
+          git rev-parse HEAD > /tmp/source_commit.txt
+          git archive --format=tar.gz HEAD > /tmp/nbo-source.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r15-source-snapshot
+          path: |
+            /tmp/source_commit.txt
+            /tmp/nbo-source.tar.gz
+          retention-days: 7
