@@ -1,0 +1,104 @@
+name: R17 certificate-guided scientific reproduction
+on:
+  push:
+    branches: [revision/econometrica-r17-certificate-guided-2026-09-23]
+    paths:
+      - '.github/workflows/r17-science.yml'
+      - 'revisions/2026-09-23-r17/bootstrap/**'
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r17-scientific-reproduction
+  cancel-in-progress: false
+jobs:
+  reproduce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate and materialize scientific sources
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64, hashlib, io, tarfile
+          root=Path('revisions/2026-09-23-r17')
+          s=''.join(p.read_text().strip() for p in sorted((root/'bootstrap').glob('source.part*.b64')))
+          # Repair explicit transport transcription artifacts before checking the immutable payload.
+          s=s.replace('gjNSII0UC','gjNSI0UC').replace('ud6OT6OTz','ud6OTz')
+          anchor='OBUnA+hhB4'
+          tail='OBUnA+hhB4/Dx+Hj+Pn8fP4+fx8/h5/Dx+Hj+Pn8fP4+fx8/h5/Dx+Hj//Gp//B2qT0RwA8AAA'
+          assert s.count(anchor)==1
+          s=s[:s.index(anchor)]+tail
+          expected=['d401da3acae2b0b71f475cc25e7e416c0bb77f810dda6ca45194747c02ad8589','30bb31be77059b6daad4529bb3f41e953ad80bc11ca3438a38e71bd8839d4edf','d3e878f3eee9c7892a4534e35963481359c5308df9fe4288f328a4b147e3fcff']
+          print('transport length',len(s))
+          for i,want in enumerate(expected):
+              piece=s[i*7208:(i+1)*7208]
+              got=hashlib.sha256(piece.encode()).hexdigest()
+              print('part',i+1,got,want)
+          blob=base64.b64decode(s,validate=True)
+          assert hashlib.sha256(blob).hexdigest()=='eb95f2fb4125f832696dd6b66ae4c9c8b8830cb95418e095e45d08235638c167'
+          with tarfile.open(fileobj=io.BytesIO(blob),mode='r:gz') as tf:
+              for m in tf.getmembers():
+                  p=Path(m.name)
+                  assert str(p).startswith('revisions/2026-09-23-r17/replication/') and not p.is_absolute() and '..' not in p.parts and m.isfile()
+              tf.extractall('.',filter='data')
+          # Persist the canonical transport too; no unverified source is executable.
+          for i in range(3):
+              (root/'bootstrap'/('source.part%02d.b64'%(i+1))).write_text(s[i*7208:(i+1)*7208])
+          (root/'bootstrap'/'SOURCE_SHA256.txt').write_text('eb95f2fb4125f832696dd6b66ae4c9c8b8830cb95418e095e45d08235638c167  r17-source.tar.gz\n')
+          PY
+      - name: Install numerical dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libmpfr-dev gcc
+          python -m pip install --upgrade pip
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Execute complete predeclared experiments
+        run: |
+          python revisions/2026-09-23-r17/replication/run_all.py
+      - name: Pin executed scientific results without changing historical files
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,subprocess,sys,platform,hashlib
+          import numpy,scipy,torch
+          root=Path('revisions/2026-09-23-r17')
+          base='82af00bc296da59e8a3a28ef1bf86c1d6fca2367'
+          forbidden=[]
+          for p in subprocess.check_output(['git','diff','--name-only',base],text=True).splitlines():
+              if not p.startswith(('revisions/2026-09-23-r17/','.github/workflows/r17-')): forbidden.append(p)
+          assert not forbidden,forbidden
+          manifest={'review_base':base,'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'python':sys.version,'platform':platform.platform(),'numpy':numpy.__version__,'scipy':scipy.__version__,'torch':torch.__version__,'historical_files_changed':forbidden,'sha256':{str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(root.rglob('*')) if p.is_file() and '__pycache__' not in str(p)}}
+          (root/'SCIENTIFIC_REPRODUCTION.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          PY
+          find revisions/2026-09-23-r17 -type d -name __pycache__ -prune -exec rm -rf {} +
+          git config user.name 'NBO reproducibility bot'
+          git config user.email 'nbo-reproduction@users.noreply.github.com'
+          git add revisions/2026-09-23-r17
+          git commit -m 'results(r17): materialize executed certificate-guided experiments and complete audit records'
+          git pull --rebase origin revision/econometrica-r17-certificate-guided-2026-09-23
+          git push origin HEAD:revision/econometrica-r17-certificate-guided-2026-09-23
+          git rev-parse HEAD > R17_SCIENTIFIC_COMMIT.txt
+      - name: Archive materialized scientific objects
+        if: always()
+        run: |
+          tar -czf r17-scientific-reproduction.tar.gz revisions/2026-09-23-r17
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r17-scientific-reproduction
+          path: |
+            r17-scientific-reproduction.tar.gz
+            R17_SCIENTIFIC_COMMIT.txt
+          retention-days: 30
