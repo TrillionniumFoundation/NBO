@@ -1,0 +1,159 @@
+name: R23 verified Econometrica referee publication
+on:
+  push:
+    branches: [revision/econometrica-r23-referee-resolution-2026-09-23]
+    paths:
+      - .github/workflows/r23-publication.yml
+      - revisions/2026-09-23-r23/source_transport/publication.part*.b64
+      - revisions/2026-09-23-r23/source_transport/publication_corrections.json
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: nbo-r23-referee-publication
+  cancel-in-progress: false
+jobs:
+  publication:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONHASHSEED: '0'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Validate and materialize exact publication sources
+        run: |
+          mkdir -p revisions/2026-09-23-r23/build_logs
+          python - <<'PY' | tee revisions/2026-09-23-r23/build_logs/publication_transport.log
+          from pathlib import Path,PurePosixPath
+          import base64,gzip,hashlib,json
+          rev=Path('revisions/2026-09-23-r23');transport=rev/'source_transport'
+          expected=['59428c5d00b79d18887e3fdc48b6405a8722e0f8bd35f607b6a481c2c7537223','195b659a1282b1727c811a303d3509e0efc0a610e5a89aef626a2ab3c920f8ea','331f92eec30c5b90048b3d27ef6715525cac32ab609fac86de79c0b56514b089']
+          correction_file=transport/'publication_corrections.json'
+          corrections=json.loads(correction_file.read_text()) if correction_file.exists() else {}
+          pieces=[]
+          for i,wanted in enumerate(expected,1):
+              p=transport/f'publication.part{i}.b64';s=p.read_text().strip()
+              for old,new in corrections.get(str(i),[]):
+                  assert s.count(old)==1,(i,'ambiguous transport correction')
+                  s=s.replace(old,new)
+              actual=hashlib.sha256(s.encode()).hexdigest()
+              print('part',i,'length',len(s),'sha256',actual,flush=True)
+              assert actual==wanted,('publication transport mismatch',i)
+              p.write_text(s+'\n');pieces.append(s)
+          raw=base64.b64decode(''.join(pieces),validate=True)
+          assert hashlib.sha256(raw).hexdigest()=='99ce16ca5654830a40a2245d80bd23fadcc98fff81741916c86d7c9d2c834918'
+          files=json.loads(gzip.decompress(raw))
+          allowed={'paper/introduction.tex','paper/method.tex','paper/proofs.tex','paper/conclusion.tex','paper/results.tex','paper/supplement.tex','paper/response.tex','replication/build_publication.py','replication/continuous_budget_brackets.py','replication/interpolation_certificate.py'}
+          assert set(files)==allowed
+          hashes={}
+          for name,content in files.items():
+              assert not PurePosixPath(name).is_absolute() and '..' not in PurePosixPath(name).parts
+              p=rev/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(content,encoding='utf-8')
+              hashes[name]=hashlib.sha256(p.read_bytes()).hexdigest()
+          (transport/'PUBLICATION_SOURCE_SHA256.json').write_text(json.dumps(hashes,indent=2,sort_keys=True)+'\n')
+          print('All ten exact publication sources verified and materialized.',flush=True)
+          PY
+      - name: Recover immutable R22 execution without changing its scientific records
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/TrillionniumFoundation/NBO/actions/artifacts/10730632886/zip > /tmp/nbo-r22-frozen.zip
+          echo '0893e5c3fc285019fd37774b4b1474c1fcc318adc2df7dc331439a56bbe6a6d7  /tmp/nbo-r22-frozen.zip' | sha256sum --check
+          python - <<'PY'
+          from pathlib import Path,PurePosixPath
+          import hashlib,json,subprocess,zipfile
+          old=Path('revisions/2026-09-23-r22');rev=Path('revisions/2026-09-23-r23');archive=rev/'archive';archive.mkdir(parents=True,exist_ok=True)
+          with zipfile.ZipFile('/tmp/nbo-r22-frozen.zip') as z:
+              manifest=json.loads(z.read('source_transport/SOURCE_MANIFEST.json'))
+              assert len(manifest['files'])==21
+              for name,row in manifest['files'].items():
+                  assert hashlib.sha256((old/name).read_bytes()).hexdigest()==row['materialized_sha256'],('R22 source mismatch',name)
+              frozen={}
+              for entry in z.infolist():
+                  name=PurePosixPath(entry.filename)
+                  assert not name.is_absolute() and '..' not in name.parts
+                  if entry.is_dir() or name.parts[0] not in {'results','build_logs'}:continue
+                  target=old/entry.filename;data=z.read(entry)
+                  if target.exists():assert target.read_bytes()==data,('existing R22 evidence differs',str(target))
+                  target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
+                  if name.parts[0]=='results':frozen[entry.filename]=hashlib.sha256(data).hexdigest()
+              assert len(frozen)==360
+          (archive/'R22_FROZEN_RESULTS_SHA256.json').write_text(json.dumps(frozen,indent=2,sort_keys=True)+'\n')
+          (archive/'R22_SOURCE_MANIFEST.json').write_text(json.dumps(manifest,indent=2,sort_keys=True)+'\n')
+          base='9c6faca40fb204494d1e0f53be1468a7ee37341a'
+          (archive/'BASELINE_BLOBS.txt').write_bytes(subprocess.check_output(['git','ls-tree','-r',base]))
+          (archive/'REVISION_INDEX_before_R23.md').write_bytes(subprocess.check_output(['git','show',base+':REVISION_INDEX.md']))
+          metadata={'review_commit':'fc16c4fb27b54e11c67ce1983b6830a39038f063','inherited_head':base,'snapshot_commit':'223d01d6e3e6e1367c1f491119c85d70b841df16','r22_source_commit':'9527f219df4fe82d3e9d81fc9ab3ac968613437b','r22_workflow_commit':'78490dbec7f4d89d25d92df86512d49fdb88ce37','r22_run_id':'35813098721','r22_artifact_id':10730632886,'r22_artifact_sha256':'0893e5c3fc285019fd37774b4b1474c1fcc318adc2df7dc331439a56bbe6a6d7','verified_source_files':21,'frozen_scientific_files':360,'inherited_environment_has_run_id':False,'inherited_results_retrained':False,'r23_protocol_commit':'f0ab87bec39e4ba96a49bd01ba5608a7de739bed','failed_recovery_diagnosis':'The first publication caught a changed historical bytecode cache; the next assumed a nonexistent run_id key in environment.json. This clean checkout preserves caches, and run/artifact identities are pinned externally to the archive digest.'}
+          (archive/'INHERITED_EXECUTION.json').write_text(json.dumps(metadata,indent=2)+'\n')
+          print(json.dumps(metadata,indent=2))
+          PY
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.15'
+      - name: Install pinned arithmetic and publication dependencies
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libmpfr6 texlive-latex-extra texlive-fonts-recommended texlive-science texlive-publishers poppler-utils
+      - name: Recheck inherited invariants without replacing any frozen output
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,subprocess,sys
+          old=Path('revisions/2026-09-23-r22/results/proof_checks.json');frozen=old.read_bytes()
+          try:
+              subprocess.run([sys.executable,'revisions/2026-09-23-r22/replication/proof_checks.py'],check=True)
+              checked=old.read_bytes();assert json.loads(checked)['status']=='PASS'
+              Path('revisions/2026-09-23-r23/results/inherited_proof_recheck.json').write_bytes(checked)
+          finally:old.write_bytes(frozen)
+          PY
+      - name: Execute new directed proof instantiations on all frozen policies
+        run: |
+          BACKEND=mpfr python revisions/2026-09-23-r23/replication/continuous_budget_brackets.py | tee revisions/2026-09-23-r23/build_logs/continuous_budget_brackets.log
+          BACKEND=mpfr python revisions/2026-09-23-r23/replication/interpolation_certificate.py | tee revisions/2026-09-23-r23/build_logs/interpolation_certificate.log
+      - name: Compile and validate the complete referee object
+        run: |
+          python revisions/2026-09-23-r23/replication/build_publication.py --compile | tee revisions/2026-09-23-r23/build_logs/publication.log
+      - name: Commit only the new revision and recovered evidence
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add revisions/2026-09-23-r22 revisions/2026-09-23-r23
+          git add ECTA_R22.tex SUPP_R22.tex RESPONSE_R22.tex R22_REVIEW.md
+          git add ECTA_R23.tex SUPP_R23.tex RESPONSE_R23.tex R23_REVIEW.md REVISION_INDEX.md
+          git add -f ECTA_R23.pdf SUPP_R23.pdf RESPONSE_R23.pdf
+          git diff --cached --quiet || git commit -m 'publication(r23): complete Econometrica revision, held-out evidence, exact-price proofs and preserved history'
+          git push origin HEAD:revision/econometrica-r23-referee-resolution-2026-09-23
+          mkdir -p /tmp/nbo-r23-publication
+          git rev-parse HEAD > /tmp/nbo-r23-publication/PUBLICATION_COMMIT.txt
+          cp ECTA_R23.pdf SUPP_R23.pdf RESPONSE_R23.pdf ECTA_R23.tex SUPP_R23.tex RESPONSE_R23.tex R23_REVIEW.md /tmp/nbo-r23-publication/
+          cp revisions/2026-09-23-r23/PUBLICATION_MANIFEST.json /tmp/nbo-r23-publication/
+          cp NBO_R23_review_package.zip /tmp/nbo-r23-publication/
+      - name: Deliver complete immutable referee package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r23-referee-publication
+          path: /tmp/nbo-r23-publication
+          retention-days: 30
+      - name: Preserve transport and publication diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r23-publication-diagnostics
+          path: |
+            revisions/2026-09-23-r23/source_transport
+            revisions/2026-09-23-r23/build_logs
+            revisions/2026-09-23-r23/PUBLICATION_MANIFEST.json
+          if-no-files-found: warn
+          retention-days: 30
