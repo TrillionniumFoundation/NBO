@@ -1,0 +1,33 @@
+\section{State-feedback realization and the representation ablation}\label{sec:r21snapshot}
+The same-family comparison is a test of the neural parameterization itself, not merely another external baseline. To interpret that test correctly, we specify both the information observed by the network and the state feedback implemented by its decoder.
+
+The network input is only the normalized time-slab coordinate. Neither the current preference nor the traded factor is a network input. The factor enters the prescribed logistic consumption rule; its self-financing portfolio is supplied by conditional pricing. Within a seed, the random-number generator is reset before each of the four experts, and their initial parameter dictionaries are exactly identical. Different seeds give five different initial dictionaries. The four objectives and budget offsets differ. Thus there are five independent seed replicates, not twenty independently initialized experts. The exact equality of the initial slopes and effort vectors used in the Jensen proof is consistent with this design.
+
+\begin{proposition}[Restricted Markov realization]\label{prop:r21markov}
+Fix an expert or fixed initial-state mixture, and denote its consumption, reserve, and conditional price by $c_\lambda$, $R_\lambda$, and $F_\lambda$. Put $A_r(t)=(1-e^{-r(1-t)})/r$. For every $t<1$, the map $y\mapsto F_\lambda(t,y)$ is continuously differentiable and strictly decreasing from
+\[
+ H_\lambda(t)=R_\lambda e^{-r(1-t)}+.8A_r(t)
+ \quad\hbox{to}\quad
+ L_\lambda(t)=R_\lambda e^{-r(1-t)}+.5A_r(t).
+\]
+It has an inverse $y_\lambda(t,x)$ on this open wealth interval. Before stopping, the deployed policy consequently has the equivalent feedback representation
+\[
+ \widehat c_\lambda(t,x)=c_\lambda(t,y_\lambda(t,x)),\qquad
+ \widehat p_\lambda(t,x)=-1.5\,y_\lambda(t,x)
+ \frac{\partial_yF_\lambda(t,y_\lambda(t,x))}{x},
+ \qquad\widehat\theta_\lambda(t)=\theta_\lambda(t).
+\]
+This is a restricted wealth-feedback policy indexed by its fixed initial-state context. It is not a single trained network on all current states $(t,u,x)$.
+\end{proposition}
+\begin{proof}
+Every slab slope is strictly positive. For any positive future interval, logistic consumption is strictly decreasing in its factor argument and has limits $.8$ and $.5$. Conditional factors multiply the present factor by a strictly positive lognormal random variable. Differentiation under the bounded integrand gives $\partial_yF_i<0$ for $t<1$; the derivative is continuous at every positive $y$. Dominated convergence gives the two displayed limits. Finite convex combinations preserve strict monotonicity and these endpoint formulas, since the mixture reserve is $R_\lambda=\sum_i\lambda_iR_i$. The inverse-function theorem applies. Substitution of $X_t=F_\lambda(t,Y_t)$ proves equality of the feedback and subaccount implementations along every pre-stopping path. At $t=1$ the interval collapses to the reserve and no inverse is required. The portfolio formula agrees with the wealth-weighted mixture in \eqref{eq:r21mix}.
+\end{proof}
+The proposition identifies real feedback in the delivered controls without attributing it to an unobserved neural input. It does not execute a full-state neural Bellman solve, remove the restricted policy class, or add reactions to current preference shocks. The unrestricted value in the optimality bounds is nevertheless the original economy's value, not the optimum of that restricted class.
+
+\input{revisions/2026-09-23-r21/paper/table_representation}
+The direct parameterization has a smaller final certified regret at every vertex than every neural seed. A further interval subtraction, using the hulls of the independently recomputed payoff intervals, establishes a strict \emph{actual payoff} advantage at those vertices; the last column reports its lower bound. This is adverse evidence for the hidden-layer parameterization in the tested regime. The vertex ordering is not asserted for every interior mixture: different mixtures may have different Jensen gains. The direct mixture does have the sharper proved uniform regret bound shown earlier.
+
+\input{revisions/2026-09-23-r21/paper/table_generation}
+Pooling the common verifier cost would obscure the generation result. The direct final four-expert solve takes approximately $1.14$ seconds of generation, against $10.63$--$10.79$ seconds for a neural seed. Both are charged for all retained checkpoints. Neural training is the reported generation work, not an omitted extra offline stage. The shared dual construction, final MPFR pass, and R21 frozen-policy replay are separately charged as explained above. Missing direct process peak memory remains unreported, rather than being imputed from parameter storage.
+
+The full-state target is unchanged. The best inherited complete-domain feedback certificate remains $7.278319$, and the earlier R19 bound over $K$ is $.011816625$ despite its sub-$.01$ reference-state result. The new sub-$.003$ uniform result concerns the explicitly defined stochastic mixture and the new proof, not a revision of either historical observation. The current experiment therefore establishes useful neural-generated policy accuracy and policy improvement on $K$, but does not establish a neural representation advantage or global full-state NBO accuracy.

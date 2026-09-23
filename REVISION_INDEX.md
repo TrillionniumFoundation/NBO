@@ -1,13 +1,15 @@
 # Neural Bellman Operators — current revision index
 
-## Current review object: R16
+## Current review object: complete R21 publication
 
-Start with [R16_REVIEW.md](R16_REVIEW.md). The current main manuscript is [ECTA_R16.pdf](ECTA_R16.pdf), with [SUPP_R16.pdf](SUPP_R16.pdf) as its current supplement. Their LaTeX entries and all numerical/proof sources are materialized in this branch.
+Read [R21_REVIEW.md](R21_REVIEW.md), then [ECTA_R21.pdf](ECTA_R21.pdf), [SUPP_R21.pdf](SUPP_R21.pdf), and the combined [RESPONSE_R21.pdf](RESPONSE_R21.pdf). Their editable TeX entries are alongside the PDFs. The new mathematical, numerical, and reproducibility material is in `revisions/2026-09-23-r21/`.
 
-The current [point-by-point response](revisions/2026-09-23-r16/RESPONSE_TO_R14.md) addresses the complete R14 referee report at immutable commit `bb09ac177fc766aea8aba26cb6a40b8aff68528c`. The [publication manifest](revisions/2026-09-23-r16/PUBLICATION_MANIFEST.json) identifies source/result commits, PDF checksums, complete validation, and scientific scope. The [preservation manifest](revisions/2026-09-23-r16/PRESERVATION_MANIFEST.json) verifies that all historical scientific files remain unchanged.
+The response covers the R18 report at `074849b9aad1812b59e25e1d3833383ed11aa401` and the further R21 intermediate-snapshot report at `bc118f20f6361cdeae668141e45f64c436ee6a2a`. The latter reviewed `6951c3b01b5102ef3d743a6ab14f9cc595b08804`, not the complete present publication. Its original report is retained in this branch without edits.
 
-R16 retains the neural numerical-method objective and the original nonlinear economy. Its new proofs and computations are substantive additions. A valid certificate is not relabeled as a passed tolerance: the original full-horizon nonlinear neural 0.01 gate remains unmet by the retained checkpoints. The coupled inventory neural success and sharp price-library bounds are stated with their own domains and policies.
+The [publication manifest](revisions/2026-09-23-r21/PUBLICATION_MANIFEST.json) pins source/result identities, PDFs, and validation. The [scope ledger](revisions/2026-09-23-r21/REVIEW_STATUS.json) distinguishes the proved regional results from the unchanged full-domain objective. The [representation audit](revisions/2026-09-23-r21/results/representation_audit.json) records the adverse same-family direct comparison and verifies shared initialization within each seed.
 
-## Preserved historical entry
+The final publication is pinned on `revision/econometrica-r21-referee-copy-2026-09-23`; development is confined to `revision/econometrica-r21-policy-sensitive-2026-09-23`. Main and prior review/revision branches are untouched.
 
-The previous authoritative index is copied unchanged to [archive/REVISION_INDEX_R14.md](revisions/2026-09-23-r16/archive/REVISION_INDEX_R14.md). Every earlier manuscript, supplement, experiment, failed run, and review remains at its original path. The incomplete R15 source staging remains confined to its original branch and is not treated as a materialized scientific revision.
+## Historical preservation
+
+The entire previous index is archived byte-for-byte at [history/REVISION_INDEX_before_R21.md](revisions/2026-09-23-r21/history/REVISION_INDEX_before_R21.md). This navigation index is the only intentional edit to an inherited path. The other 3,933 inherited files, including all manuscripts, proofs, reports, data, failed experiments, and prior publication objects, remain byte-identical at their original locations. All 3,934 inherited identities are checked against the source snapshot.

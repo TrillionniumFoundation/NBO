@@ -1,0 +1,118 @@
+\section{Stochastic neural policies with separate payoff acceptance}\label{sec:r21method}
+The economy and notation are as specified above. In this section $r=.02$, the risky asset has excess drift $.06$ and volatility $.2$, and $Y_0=1$ with
+\[
+ dY_t=.02Y_t\,dt-.3Y_t\,dW^x_t.
+\]
+The equivalent martingale measure satisfies $dW^{x,Q}_t=dW^x_t+.3\,dt$. Thus $\log Y_t$ has mean $-.025t$ under the physical measure and $.065t$ under the martingale measure, in both cases with variance $.09t$.
+
+\subsection{Neural generation and exact deployment semantics}
+A $1$--$16$--$16$--$3$ network with two tanh hidden layers takes only the normalized time-slab coordinate and produces coefficients for sixteen equal time slabs. Current preference and the traded factor are not network inputs; factor dependence enters the fixed decoder. The budget offset is differentiated inside the proposal objective. For slab $j$, the deployed policy is
+\begin{equation}
+ c_j(y)=.5+.3\,\sigma(b_j-s_j\log y),\qquad
+ .1\leq s_j\leq6.5,\qquad 0\leq\theta_j\leq.2,
+ \label{eq:r21cons}
+\end{equation}
+where $\sigma(a)=(1+e^{-a})^{-1}$. The stored dyadic coefficients, not an unspecified real-number neural forward pass, define the delivered policy. The network is compiled once; the contingent-claim decoder below then acts on the observable factor. Each expert has 355 neural parameters. Four experts have 1,420 parameters, apart from the decoder. The network is trained from random weights without inherited policy or value labels. Its accuracy is established by checking its delivered policy, not by assuming convergence of Adam.
+
+For a given initial state $(u_i,x_i)$, let
+\begin{equation}
+ R_i=e^r\left(x_i-\int_0^1 e^{-rt}\E^Q[c_i(t,Y_t)]\,dt\right).
+ \label{eq:r21reserve}
+\end{equation}
+The directed price check verifies $ .5<R_i<.5001$. In particular, $R_i$ is an exact price-defined reserve enclosed by an interval; it is not an approximately balanced budget. Define
+\begin{align}
+ F_i(t,y)&=R_i e^{-r(1-t)}+
+   \int_t^1 e^{-r(s-t)}\E^Q[c_i(s,Y_s)\mid Y_t=y]\,ds,\label{eq:r21price}\\
+ X^i_t&=F_i(t,Y_t),\qquad
+ p_i(t,y)=-1.5\,y\,\partial_yF_i(t,y)/F_i(t,y).
+ \label{eq:r21hedge}
+\end{align}
+Consumption and preference drift may jump at the deterministic slab dates; wealth is continuous. The price is smooth inside each slab and has matching values at its endpoints.
+
+\begin{theorem}[Self-financing stochastic decoder]\label{thm:r21finance}
+Every policy satisfying \eqref{eq:r21cons}--\eqref{eq:r21reserve} is a progressively measurable admissible policy of the original economy. Its wealth satisfies
+\[
+ dX_t=((.02+.06p_t)X_t-c_t)\,dt+.2p_tX_t\,dW^x_t.
+\]
+For all traded-factor realizations, before preference stopping,
+\[
+ .5<X_t<1.282253<2,\qquad 0\leq p_t<.706888<.8.
+\]
+There is no wealth-boundary exit. The preference process and its stopping rule remain those of the original model.
+\end{theorem}
+The proof uses the conditional-price equation, not a simulated or time-discretized budget. It also checks the portfolio bound globally in $y>0$. Thus the nonzero portfolio is an actual admissible control, not a diagnostic evaluated only on sampled paths.
+
+\subsection{Strict acceptance of policy values}
+Let $[L_i^n,U_i^n]$ enclose the stopped expected payoff of expert $i$ at retained work level $n$. A proposed expert is accepted only if
+\begin{equation}
+ L_i^{n+1}>U_i^n.\label{eq:r21accept}
+\end{equation}
+The checker completes before further proposals. Rejection restores both the network and Adam state to the incumbent. The original experiment retains every proposal, certificate, decision, network, compiled coefficients, and cost. It contains no learned critic in the acceptance test. Therefore \eqref{eq:r21accept} proves a strict increase in that expert's actual payoff at its specified initial state. It does not assert global optimization of the neural parameters.
+
+The optimal comparator is separate. Let $\overline V_k(z)$ be the inherited unrestricted dual upper bound on the original stopped economy. A policy can be accurate because $\overline V_k(z)-L^\pi_k(z)$ is small, but merely reducing $\overline V_k-L^\pi_k$ is never substituted for \eqref{eq:r21accept}. The source identities and costs of the dual library are retained separately from neural generation.
+
+\subsection{A policy on a continuum of initial states}
+Order the four vertices $z_i=(u_i,x_i)$ of $K$ lexicographically. For $z\in K$, let $\lambda_i(z)$ be its bilinear interpolation weights. On the same Brownian paths, run the four subaccounts and set
+\begin{align}
+ u_t&=\sum_i\lambda_i u^i_t,&
+ X_t&=\sum_i\lambda_i X^i_t,&
+ c_t&=\sum_i\lambda_i c^i_t,\nonumber\\
+ \theta_t&=\sum_i\lambda_i\theta^i_t,&
+ p_t&=\frac{\sum_i\lambda_i p^i_t X^i_t}{X_t}.&&\label{eq:r21mix}
+\end{align}
+Initial wealth is exactly $x=\sum_i\lambda_i x_i$. The wealth-weighted portfolio remains in the original admissible interval. This is an adapted policy with stored initial-state context and observable subaccounts, not a claim that a single map of current $(t,u,x)$ alone represents every expert history.
+
+\begin{theorem}[Uniform optimality from verified expert payoffs]\label{thm:r21transfer}
+Let $p_E=2\exp\{- .58^2/(2\cdot .0025)\}$. For any fixed $k\in[.5,8]$, the mixture \eqref{eq:r21mix} satisfies
+\begin{equation}
+ J_k^{\rm mix}(z)\geq\sum_i\lambda_i(z)L_{i,k}-16p_E,
+ \qquad z\in K.\label{eq:r21mixlower}
+\end{equation}
+If $\overline V_k$ is convex in $z$ on $K$, then
+\begin{equation}
+ 0\leq V_k^*(z)-J_k^{\rm mix}(z)
+ \leq \max_i\{\overline V_k(z_i)-L_{i,k}\}+16p_E.
+ \label{eq:r21mixregret}
+\end{equation}
+The explicit dual upper used here is convex: its state dependence is affine, the support function of an interval slope, and a nonnegative exponential localization term. Convexity of the unknown value function is not assumed.
+\end{theorem}
+The theorem uses joint concavity of $f(u,c)=c^{1-u}/(1-u)$ on $[1.2,2.8]\times[.5,.8]$, concavity of settlement, and the common Brownian coupling. Stopping is dealt with by the explicit event correction, rather than by an invalid assertion that arbitrary stopped payoffs are globally concave.
+
+\subsection{Why expert improvement does not suffice for mixture improvement}
+Even if all four experts improve, the old mixture might have a larger Jensen benefit than the new mixture. Ordering the four corners alone therefore does not prove a policy improvement at every interior state. We address this additional identification problem directly.
+
+\begin{theorem}[Policy-sensitive continuum improvement]\label{thm:r21gain}
+Suppose $\Gamma_0$ verifies
+\[
+ J^{\rm mix,0}_2(z)\leq\sum_i\lambda_i(z)U_i^0+\Gamma_0,
+ \qquad z\in K.
+\]
+Then the final mixture has uniform payoff improvement at least
+\begin{equation}
+ d=\min_i(L_i^f-U_i^0)-\Gamma_0-16p_E.\label{eq:r21gain}
+\end{equation}
+When $d>0$ and \eqref{eq:r21mixregret} gives final regret at most $B$, true regret contracts pointwise by
+\begin{equation}
+ \frac{V_2^*(z)-J^{\rm mix,f}_2(z)}{V_2^*(z)-J^{\rm mix,0}_2(z)}
+ \leq\frac{B}{B+d},\qquad z\in K.\label{eq:r21ratio}
+\end{equation}
+For each executed initial four-expert system, the common slopes and preference drifts allow the directed Hessian construction in the appendix to compute $\Gamma_0$. This construction yields $d\geq\RXXIGain$ and $B/(B+d)\leq\RXXIRatio$ for all five seeds.
+\end{theorem}
+We distinguish the sixty strict expert transitions, the four work-level accuracy bounds on $K$, and the proved initial-to-final mixture improvement. We do not assert that every consecutive mixed policy improves throughout $K$: the small later expert gains do not by themselves establish that stronger statement.
+
+\subsection{A fixed-policy price-sensitivity theorem}
+For a fixed policy, neither the state law nor the stopping time changes with $k$. Write
+\[
+ B_i^{\rm full}=\frac12\int_0^1e^{-.04t}(\theta^i_t)^2dt.
+\]
+Then $B_i^{\rm stop}\in[B_i^{\rm full}-.02C_\rho p_E,B_i^{\rm full}]$ and
+\begin{equation}
+ J_{i,k}=J_{i,2}-(k-2)B_i^{\rm stop}.\label{eq:r21priceaffine}
+\end{equation}
+Use this interval identity with the fixed final neural coefficients; do not retrain or interpolate neural solutions in $k$. The unrestricted dual upper is bounded between its verified price nodes by convex chords. On each price segment, an affine payoff lower bound subtracted from the affine dual chord is affine at each vertex. Its maximum is therefore bounded by its endpoints. Applying Theorem~\ref{thm:r21transfer} at those endpoints proves, without a sampled price grid,
+\begin{equation}
+ \sup_{z\in K,\ k\in[1.5,2.5]}\{V_k^*(z)-J_k^{\rm mix,f}(z)\}
+ \leq\RXXIPrice<.005
+ \label{eq:r21pricesuccess}
+\end{equation}
+for every seed. This is a post-training sensitivity theorem about the fixed policies, not an additional confirmatory training experiment.

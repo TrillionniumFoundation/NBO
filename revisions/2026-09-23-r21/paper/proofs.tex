@@ -1,0 +1,119 @@
+\section{Proofs for the stochastic policy construction}\label{app:r21proofs}
+\subsection{Self-financing and admissibility}
+For each slab, the martingale-measure backward equation for \eqref{eq:r21price} is
+\[
+ F_t+.11yF_y+.045y^2F_{yy}-.02F+c=0,
+ \qquad F(1,y)=R.
+\]
+Applying It\^o's formula under the physical measure gives
+\[
+ dF=(.02F-c-.09yF_y)dt-.3yF_y\,dW^x.
+\]
+Substitution of $p=-1.5yF_y/F$ yields exactly the original wealth equation. Continuity of the conditional price at the finitely many slab boundaries eliminates any jump or unfinanced reset. Formula~\eqref{eq:r21reserve} makes $F(0,1)=x$ exactly.
+
+Let $a(y)=c(y)-.01$. Since $a\in[.49,.79]$,
+\[
+ F(t,y)=.5+(R-.5)e^{-.02(1-t)}+
+ \int_t^1 e^{-.02(s-t)}\E^Q[a(s,Y_s)\mid Y_t=y]ds.
+\]
+This implies $.5<F<X_{\max}$, where
+\[
+ X_{\max}=.5+.79\frac{1-e^{-.02}}{.02}+.0001<1.282253.
+\]
+For $q=\sigma(b-s\log y)$, elementary maximization over $q\in[0,1]$ gives
+\[
+ \frac{|yc_y|}{c-.01}=s\frac{.3q(1-q)}{.49+.3q}
+ \leq s\kappa,\qquad
+ \kappa=\frac{\sqrt{.79}-\sqrt{.49}}{\sqrt{.79}+\sqrt{.49}}.
+\]
+The conditional factor is multiplicative in $y$, so differentiation under its bounded integrand gives
+\[
+ |yF_y|\leq6.5\kappa(F-.5),\qquad F_y\leq0.
+\]
+Consequently $0\leq p\leq1.5(6.5)\kappa(1-.5/X_{\max})<.706888$. The deterministic preference drift and consumption satisfy the original action constraints. These arguments establish Theorem~\ref{thm:r21finance} for every $y>0$, not merely inside a quadrature truncation.
+
+\subsection{Concavity, common stopping event, and continuum accuracy}
+Write $r_u=u-1\in[.2,1.8]$ and $a=-\log c\in[-\log .8,\log2]$. The diagonal entries of the Hessian of $f=-e^{r_ua}/r_u$ are negative. Its determinant has the sign of
+\[
+ D(r_u,a)=r_u^2a^2-2r_u(r_u+1)a+2(r_u+1).
+\]
+Since $a<.7$, $D$ decreases in $a$. The polynomial $D(r_u,.7)$ is concave in $r_u$, so its minimum is at an endpoint. At $r_u=1.8$ it is $.1316>0$ and at $r_u=.2$ it is larger. Hence $f$ is jointly concave on the full stated rectangle. Both $-k\theta^2/2$ and $G(u,x)=-.02(u-2)^2+.1\log x$ are concave for $k\geq0$.
+
+All expert preference drifts are in $[0,.2]$. On
+\[
+ E=\{\sup_{t\leq1}|.05W^u_t|<.58\},
+\]
+all four expert preference processes, and their convex mixture, stay inside $(1.2,2.8)$. There is no wealth exit by Theorem~\ref{thm:r21finance}. The exponential maximal inequality gives $\Pr(E^c)\leq p_E$. On $E$, running and settlement concavity give the required pathwise mixture lower bound up to the common terminal time. For these particular admissible policies, the original stopped payoff lies in $[-15,1]$ for all $k\in[.5,8]$: running utility has magnitude below six, the adjustment penalty is at most $.16$, and the remaining stopping settlement fits in this conservative range. The error on $E^c$ is at most $16p_E$. This proves \eqref{eq:r21mixlower}. Convexity of the explicit dual bound gives
+\[
+ \overline V_k(z)\leq\sum_i\lambda_i\overline V_k(z_i),
+\]
+and proves \eqref{eq:r21mixregret}. The argument uses neither concavity nor a numerical approximation of $V^*$.
+
+\subsection{An upper bound for the initial mixture's Jensen gain}
+The stored initial experts have identical slope and preference-drift vectors within each seed; this is checked exactly from their serialized coefficients. The four consumption intercepts differ only by budget offsets. Thus, in slab $j$,
+\[
+ d_{c,j}:=.3\tanh\{(\max_i b_{ij}-\min_i b_{ij})/4\}
+\]
+bounds the full-factor range across the four consumptions. The preference range is $d_u=.04$ at every time. No loss in this bound is hidden by testing a few factor values.
+
+On the event $|.05W^u_t|\leq.2$, all four preferences belong to $[1.78,2.42]$. Directed interval evaluation on a 64-by-64 cover of this rectangle times $[.5,.8]$ gives
+\[
+ |f_{uu}|\leq4.436941,\quad |f_{uc}|\leq3.709523,\quad
+ |f_{cc}|\leq25.902278.
+\]
+These are enclosing Hessian evaluations over boxes, not derivative samples. For any four nonnegative weights summing to one, weighted variance of a quantity in a range of width $d$ is at most $d^2/4$. Taylor's theorem about the weighted mean and Cauchy--Schwarz therefore bound the flow Jensen gap by
+\[
+ \gamma_j=\frac{H_{uu}d_u^2+2H_{uc}d_ud_{c,j}+H_{cc}d_{c,j}^2}{8}.
+\]
+The complement of the marginal event has probability at most
+$2\phi(4)/4=e^{-8}/(2\sqrt{2\pi})$, uniformly for $t\leq1$. Its flow Jensen gap is at most six on $E$. The initial effort Jensen gap is zero because all preference drifts coincide. If $d_R$ bounds the range of exact terminal reserves, the terminal Jensen gap is at most
+\[
+ e^{-.04}\left(.005d_u^2+\frac{.0125}{.5^2}d_R^2\right).
+\]
+Integrate $\gamma_j$ using the exact discounted slab masses, add six times the marginal-tail bound integrated over the horizon, add the terminal term, and add $16p_E$ for $E^c$. The resulting directed upper endpoint is $\Gamma_0$. Each reserve range is formed from its entire enclosing interval. This proves the premise of Theorem~\ref{thm:r21gain}. Subtract the old upper bound from the final lower bound to obtain \eqref{eq:r21gain}. If final regret is $e(z)\leq B$, old regret is at least $e(z)+d$. Since $e/(e+d)$ increases in $e$, \eqref{eq:r21ratio} follows. In particular, a zero final regret creates no division problem because $d>0$ bounds the old regret away from zero.
+
+\subsection{Conditional Gaussian evaluation and analytic error bounds}\label{app:r21quad}
+The independent payoff checker does not import the neural optimizer or simulate paths. Put $t=v^2$ and represent $\log Y=-.025t+.3vz$, with $z$ standard normal. Conditional on $z$, preference minus one has mean
+\[
+ r_0=u_0-1+\int_0^t\theta_sds+.0125vz
+\]
+and independent Gaussian variance $.00234375t$. The sign of the conditional mean reflects the original negative correlation and the convention $z=-W^x_t/\sqrt t$.
+
+On $|z|,|z_2|\leq8$, the checker has $r_0\geq.88$, actual $u-1\geq.49$, actual $u-1\leq1.71$, and $|\log c|<.7$. Outside the original preference interval, define a bounded utility extension by clipping preference to $[1.2,2.8]$. The extension is an integration device only: it is never a change to the stopped economic model, whose difference is bounded below. Expand conditional utility to degree ten in the independent Gaussian increment. Its first omitted even moment gives the uniform remainder
+\[
+ 10(10395)\frac{(.00234375)^6}{(.49)^{13}}<1.836\times10^{-7}.
+\]
+For completeness, the derivative bound follows from
+\[
+ \frac{e^{ar}}r=\int_{-a}^{\infty}e^{-ry}dy,
+ \quad r>0,
+\]
+by bounding its twelfth derivative divided by $12!$. The integral on $[0,\infty)$ equals $r^{-13}$, and the integral on $[-a,0]$ is bounded by $e^{ra}a^{13}/13!$. The conservative multiplier ten bounds their sum on the stated ranges.
+
+Let $T_0=2\phi(8)/8$ and $T_{2j}=2\,8^{2j-1}\phi(8)+(2j-1)T_{2j-2}$. These bound the omitted even Gaussian tail moments. The conditional-polynomial correction is
+\[
+ \sum_{j=0}^{5}\frac{10(.00234375)^j}{.88^{2j+1}}T_{2j},
+\]
+and $12T_0$ bounds the two omitted bounded-utility tails. The price integral and its derivative have separate normal-tail bounds $.8T_0$ and $1.95T_0$. This calculation never integrates the singular unextended CRRA expression over an unrestricted Gaussian preference distribution.
+
+Each transformed time slab is subdivided to width at most $1/40$ in $v$. The normal interval $[-8,8]$ has 96 cells. Both integrals use degree-15 exact, eight-point Gauss rules, with rationally isolated nodes and outward weights. The inherited analytic rule bounds its remainder on a complex disc of radius $1/16$ in $v$ and $1/2$ in $z$. Here is an explicit justification for its common modulus bound $M=100$. On these discs the imaginary logistic arguments are respectively bounded by
+\[
+ 6.5\{(2(.065)+2.4)/16+.065/256\}<1.03,
+ \qquad 6.5(.3)/2=.975<\pi/3.
+\]
+Hence the sigmoid has no pole, its real part lies between zero and one, $\Re c\geq.5$, $|c|\leq.8$, and $|\log c|<.8$. Also $\Re r_0>.8$, $|r_0|<1.4$, and the complex independent variance has modulus below $.0027$. The conditional Taylor polynomial is bounded by
+\[
+ \sum_{j=0}^{5}\frac{10(2j-1)!!(.0027)^j}{.8^{2j+1}}<12.554.
+\]
+The coefficient estimate uses $e^{2(1.4)(.8)}<10$. Multiplication by $|2v|\leq17/8$, the discounted density bounds, and the Gaussian density modulus below $.5$ leaves a bound below fifteen. The price and price-derivative integrands are smaller. Thus $M=100$ is conservative for each analytic integrand. The quadrature remainder is charged separately from arithmetic enclosure width and from Gaussian truncation. The two arithmetic implementations may choose different outward time subdivisions; they need not have identical node counts.
+
+Finally, the full-horizon extended-flow calculation differs from the original stopped payoff only after preference exit. With
+\[
+ M_4=.22^4+6(.22)^2(.0025)+3(.0025)^2,
+\]
+the correction $20p_E+.02\sqrt{M_4p_E}$ bounds the bounded running and stopping terms and the unbounded quadratic terminal-preference term by Cauchy--Schwarz. Terminal log wealth uses the enclosed exact reserve. Each reported payoff interval includes all these errors. Independent MPFR arithmetic checks the same analytic derivation, rather than proving an unrelated theorem.
+
+\subsection{Price transport and welfare transfer}
+For fixed policies $\tau$ is independent of $k$. The adjustment integral is affine in $k$ and the omitted cost after stopping is at most $.02C_\rho p_E$, proving \eqref{eq:r21priceaffine}. The dual-node chords are upper bounds because the unrestricted value is a supremum of affine functions of $k$. Apply the appropriate sign of $k-2$ to the payoff-cost interval. On every dual-node segment the resulting vertex upper-minus-lower bound is affine; its endpoint maximum bounds the whole segment. State mixing then proves \eqref{eq:r21pricesuccess}.
+
+For compensation, apply Theorem~\ref{thm:r21transfer} to expert initial wealths $x_i+.002$, with the same weights for the original $z$. The actual initial wealth is $x+.002$. Rechecked reserves and slopes retain Theorem~\ref{thm:r21finance}. Compare the resulting policy lower bound with the convex dual upper at the original, uncompensated $z$. The smallest directed vertex margin, less $16p_E$, is $\RXXIWealthGain>0$. This proves the sufficient initial-wealth compensation without interpreting a utility gap as an unfinanced consumption gift.
