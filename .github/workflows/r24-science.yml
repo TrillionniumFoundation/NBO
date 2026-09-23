@@ -1,0 +1,77 @@
+name: R24 prospective state-geometry study
+on:
+  push:
+    branches: [revision/econometrica-r24-state-geometry-2026-09-23]
+    paths:
+      - .github/workflows/r24-science.yml
+      - revisions/2026-09-23-r24/source_transport.b64
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r24-science
+  cancel-in-progress: false
+jobs:
+  study:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify and materialize source
+        run: |
+          python - <<'PY'
+          import base64,gzip,json,hashlib
+          from pathlib import Path
+          p=Path('revisions/2026-09-23-r24/source_transport.b64')
+          s=p.read_text()
+          # Transport-only transcription repair, guarded by the pre-execution
+          # SHA-256 of the exact locally regression-tested source archive.
+          repairs={'RkgUwWNlyF5df7':'RkgUwWNlyFdf7','S5WDgGNwGNCO':'S5WDgGNwIJCO','qrKKtwZ7Txf':'qrKKtwZ6Txf','PK+YzH7lh17':'PK+YzHulh17'}
+          for a,b in repairs.items():s=s.replace(a,b)
+          expected='7f229ee403f838df37aa5aafbe3535e55733d0a0e56bf5d66fed4b9e9a9685c4'
+          actual=hashlib.sha256(s.encode()).hexdigest()
+          print('source transport bytes',len(s),'sha256',actual)
+          assert actual==expected,'Transport mismatch: no experiment is executed'
+          files=json.loads(gzip.decompress(base64.b64decode(s,validate=False)))
+          for path,text in files.items():
+              q=Path(path)
+              assert str(q).startswith('revisions/2026-09-23-r24/replication/') and '..' not in q.parts
+              q.parent.mkdir(parents=True,exist_ok=True);q.write_text(text)
+          p.write_text(s)
+          print('materialized',sorted(files))
+          PY
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install fixed numerical environment
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Regression tests and prospective study
+        run: |
+          set -o pipefail
+          mkdir -p revisions/2026-09-23-r24/results/logs
+          python revisions/2026-09-23-r24/replication/tests.py 2>&1 | tee revisions/2026-09-23-r24/results/logs/tests.log
+          python revisions/2026-09-23-r24/replication/study.py --phase all 2>&1 | tee revisions/2026-09-23-r24/results/logs/study.log
+      - name: Commit scientific sources and complete evidence
+        if: success()
+        run: |
+          git config user.name 'NBO revision build'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add revisions/2026-09-23-r24/replication revisions/2026-09-23-r24/results
+          git diff --cached --quiet || git commit -m 'results(r24): materialize prospective study, all checkpoints and dependency lock'
+          git pull --rebase origin revision/econometrica-r24-state-geometry-2026-09-23
+          git push origin HEAD:revision/econometrica-r24-state-geometry-2026-09-23
+      - name: Preserve outputs including failed attempts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r24-science-${{ github.run_id }}
+          path: revisions/2026-09-23-r24/
+          retention-days: 30
