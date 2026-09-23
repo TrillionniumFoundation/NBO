@@ -1,0 +1,117 @@
+name: R22 crossed certification and Econometrica publication
+on:
+  push:
+    branches: [revision/econometrica-r22-crossed-certification-2026-09-23]
+    paths:
+      - .github/workflows/r22-publication.yml
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: nbo-r22-referee-publication
+  cancel-in-progress: true
+jobs:
+  publication:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONHASHSEED: '0'
+      R22_WORKFLOW_COMMIT: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Materialize and commit all ordinary editable sources before execution
+        run: |
+          python3 revisions/2026-09-23-r22/materialize_sources.py
+          python3 -m compileall -q revisions/2026-09-23-r22/replication
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add revisions/2026-09-23-r22/replication/*.py revisions/2026-09-23-r22/paper/*.tex
+          git add revisions/2026-09-23-r22/fixtures revisions/2026-09-23-r22/RESPONSE.md
+          git add revisions/2026-09-23-r22/source_transport/SOURCE_MANIFEST.json
+          git diff --cached --quiet || git commit -m 'source(r22): materialize complete editable Econometrica revision and replication code'
+          git push origin HEAD:${GITHUB_REF_NAME}
+          echo "R22_SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned numerical and Econometrica build dependencies
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libmpfr-dev gcc texlive-latex-extra texlive-fonts-recommended poppler-utils
+          mkdir -p revisions/2026-09-23-r22/build_logs
+          python -m pip freeze > revisions/2026-09-23-r22/build_logs/requirements-executed.txt
+          python - <<'PY'
+          import json,os,platform,subprocess,sys
+          from pathlib import Path
+          import numpy,scipy,torch
+          out=Path('revisions/2026-09-23-r22/results');out.mkdir(exist_ok=True)
+          data={'python':sys.version,'numpy':numpy.__version__,'scipy':scipy.__version__,'torch':torch.__version__,'platform':platform.platform(),'processor':platform.processor(),'cpu':subprocess.check_output(['lscpu'],text=True),'source_commit':os.environ['R22_SOURCE_COMMIT'],'workflow_commit':os.environ['R22_WORKFLOW_COMMIT'],'run_id':os.environ['GITHUB_RUN_ID'],'scope':'clean GitHub Actions reference execution; local failure fixture is separate'}
+          (out/'environment.json').write_text(json.dumps(data,indent=2)+'\n')
+          PY
+      - name: Execute all 48 crossed configurations and active rollback stress blocks
+        run: python -u revisions/2026-09-23-r22/replication/crossed.py --part all 2>&1 | tee revisions/2026-09-23-r22/build_logs/crossed.log
+      - name: Check the unequal-initialization range theorem
+        run: python -u revisions/2026-09-23-r22/replication/continuum.py 2>&1 | tee revisions/2026-09-23-r22/build_logs/continuum.log
+      - name: Execute current-state actor and witness refinement with full-domain MPFR audits
+        run: |
+          python -u revisions/2026-09-23-r22/replication/state_refinement.py 2>&1 | tee revisions/2026-09-23-r22/build_logs/full_state.log
+          python -u revisions/2026-09-23-r22/replication/time_envelope.py
+      - name: Execute separately identified root and rejection-recovery diagnostics
+        run: python -u revisions/2026-09-23-r22/replication/repair.py 2>&1 | tee revisions/2026-09-23-r22/build_logs/repair.log
+      - name: Verify pair moments and all continuum comparisons
+        run: python -u revisions/2026-09-23-r22/replication/moment_jensen.py 2>&1 | tee revisions/2026-09-23-r22/build_logs/moments.log
+      - name: Check proof constants, counters, rollback integrity and online cost
+        run: |
+          python -u revisions/2026-09-23-r22/replication/proof_checks.py
+          python -u revisions/2026-09-23-r22/replication/runtime_cost.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=Path('revisions/2026-09-23-r22/results')
+          s=json.loads((r/'full_state/summary.json').read_text())
+          assert s['certificate_decreased'],s
+          d=json.loads((r/'moment_continuum.json').read_text())
+          for seed in [22000,22100,22200]:
+              rows=[x for x in d['rows'] if x['base_seed']==seed]
+              direct=next(x for x in rows if x['representation']=='direct' and x['optimizer']=='lbfgsb')
+              assert all(direct['K_regret_upper']<x['K_regret_upper'] for x in rows if x['representation']=='neural')
+          print('All narrative comparisons verified against this reference execution.')
+          PY
+      - name: Compile all three Econometrica PDFs, audit preservation and pin hashes
+        run: python -u revisions/2026-09-23-r22/replication/build.py
+      - name: Commit the complete verified referee object to this revision branch only
+        run: |
+          git add ECTA_R22.tex SUPP_R22.tex RESPONSE_R22.tex R22_REVIEW.md REVISION_INDEX.md
+          git add -f ECTA_R22.pdf SUPP_R22.pdf RESPONSE_R22.pdf
+          git add revisions/2026-09-23-r22
+          git reset -- revisions/2026-09-23-r22/replication/__pycache__ || true
+          git diff --cached --quiet || git commit -m 'publication(r22): verified crossed evidence, independent-initialization proofs, state witness, and referee PDFs'
+          git push origin HEAD:${GITHUB_REF_NAME}
+          git rev-parse HEAD > R22_PUBLICATION_COMMIT.txt
+      - name: Deliver the exact referee publication package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r22-referee-publication
+          path: |
+            NBO_R22_review_package.zip
+            R22_PUBLICATION_COMMIT.txt
+          retention-days: 30
+      - name: Retain diagnostics even if a publication check fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r22-publication-diagnostics
+          path: |
+            revisions/2026-09-23-r22/build_logs
+            revisions/2026-09-23-r22/results
+            revisions/2026-09-23-r22/source_transport/SOURCE_MANIFEST.json
+          if-no-files-found: warn
+          retention-days: 30
