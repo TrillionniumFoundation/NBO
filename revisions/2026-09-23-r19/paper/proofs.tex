@@ -1,0 +1,111 @@
+\section{Proofs for policy-sensitive continuation and learned work}\label{app:r19proofs}
+\subsection{Separated acceptance and regret contraction}
+\begin{proof}[Proof of Proposition~\ref{prop:r19accept}]
+The enclosure inequalities give $J_{\pi'}-J_\pi\geq L_{\pi'}-U_\pi$. Moreover, $\overline V-L_\pi\geq V-J_\pi$. Under \eqref{eq:r19progress}, subtracting the resulting gain inequality from $V-J_\pi$ proves the contraction. Under the last hypotheses, write $g=V-J_{\pi'}\geq0$ and $a=J_{\pi'}-J_\pi\geq d$. Then $g/(g+a)\leq g/(g+d)\leq B/(B+d)$. Since $d>0$, the denominator is positive even when the new policy is optimal. These arguments apply separately at each state and therefore uniformly wherever the hypotheses are uniform.
+\end{proof}
+
+\subsection{A difference-sensitive state modulus}
+\begin{proof}[Proof of Theorem~\ref{thm:r19transfer}]
+First consider the unstopped reference functional used by the independent evaluator. At time $s$, couple the two preference inputs by the same standard normal variable $Z$:
+\[
+ U_s^i=u+m_i(s)+.05\sqrt{s}Z,\qquad
+ m_i(s)=\int_0^s\theta_v^i\,dv,\qquad i\in\{a,b\}.
+\]
+For the reference functional, clip the preference input to $[1.2,2.8]$ in the running utility. Retain the analytically integrated terminal quadratic. This clipping does not change the original running payoff before a preference exit. The stopping allowance stated below controls the difference from the original stopped functional.
+
+Write $f(u,c)=c^{1-u}/(1-u)$ and $r=u-1$. Direct differentiation gives
+\begin{align*}
+ |f_{uu}|&=\frac{e^{-r\log c}}{r^3}\{(r\log c+1)^2+1\},\\
+ |f_{uc}|&=(-\log c)e^{-u\log c},\qquad
+ |f_{cc}|=u e^{-(u+1)\log c}.
+\end{align*}
+On the larger clipped rectangle, $|f_u|=e^{-r\log c}(1+r\log c)/r^2$ and $|f_c|=e^{-u\log c}$; $1+r\log c$ is positive there. The code evaluates enclosing intervals for these formulas, not derivatives estimated from network outputs.
+
+On $|Z|\leq4$, all four coupled inputs, including those at $z_*$, are in $[1.78,2.42]\times[.7,.8]$. This follows from $u\in[1.98,2.02]$, $0\leq m_i(s)\leq .2$, and $.05\sqrt{s}|Z|\leq.2$. No clipping occurs on this event. The difference between the two policies' preference derivatives is bounded by $H_{uu}d_m+H_{uc}d_c$; the corresponding consumption derivative difference is bounded by $H_{uc}d_m+H_{cc}d_c$. Integrate along the straight segment from $z_*$ to $z$. Its preference displacement is at most $.02$, and its common consumption displacement is at most $.01/Q_r$. The resulting bound on the change of the payoff difference is the central term inside the brackets of \eqref{eq:r19modulus}.
+
+On the complementary event, clipping is 1-Lipschitz. For each of the two initial states the difference of the two clipped running utilities has absolute value at most $A_ud_m+A_cd_c$. Each clipped running utility is negative and has absolute value less than 6: on this rectangle, $e^{-r\log c}/r$ decreases in $r$, and its largest value is at $r=.2,c=.7$, where it is less than 6. The oscillation of the difference between two initial states is consequently at most $D_4$. Mills' inequality gives
+\[
+ \Pr(|Z|>4)\leq 2\frac{e^{-8}}{4\sqrt{2\pi}}=P_4.
+\]
+This is a one-time normal-tail bound inside the time integral, not a bound on the maximum of a Brownian path. Integrating the two running-payoff bounds with the discount gives the first term in \eqref{eq:r19modulus}. Preference-adjustment expenditure is independent of the initial state and cancels from the state difference.
+
+The common wealth shift implies
+\[
+ X_1^i=e^{.02}\left\{x-\int_0^1e^{-.02s}
+       \left(c_s^i+\frac{x-1.25}{Q_r}\right)ds\right\}
+ =e^{.02}\left\{1.25-\int_0^1e^{-.02s}c_s^i ds\right\}.
+\]
+Thus each policy's terminal wealth is independent of $x$, even when the stored dyadic controls do not satisfy the ideal budget identity exactly. Their log-settlement difference has zero initial-state variation. The difference of their expected terminal preference settlements has initial-preference derivative $-.04(m_b(1)-m_a(1))$. Its discounted variation is at most $.04e^{-\rho}(.02)d_T$.
+
+Finally, both policies have strictly inward wealth drift and terminal wealth above $.5$, verified over $K$. Their only possible premature exit is in preference. For $0\leq\theta\leq .2$, the distance of the deterministic preference path from either boundary is at least $.58$ on $K$. The exponential Brownian maximal bound therefore gives
+\[
+ p_e=2e^{-.58^2/(2(.05)^2)}.
+\]
+The independent original-payoff argument bounds the discrepancy between the clipped reference functional and the stopped value by
+\[
+ \epsilon_{\rm stop}=15p_e+.02\sqrt{
+  \{.22^4+6(.22)^2(.0025)+3(.0025)^2\}p_e}.
+\]
+The second term uses the fourth moment and Cauchy--Schwarz for the terminal quadratic, rather than treating that unbounded random variable as uniformly bounded. There are two policies at two initial states, so the transfer calculation pays four such allowances. Adding these terms proves \eqref{eq:r19transfer}. The central quadrature enclosures are then combined with the directed modulus by interval subtraction and addition. No simulation approximation to an exit time enters this argument.
+\end{proof}
+
+\subsection{Four-corner optimality for the new actors}
+The exact lower functional in Lemma~\ref{lem:concavity} depends on feasibility, the budget-preserving shift, and the original utility, not on the algorithm that generated the controls. Each compiled neural policy passes those same conditions. Its four independently evaluated lower endpoints are bounds for the same concave covered functional after uniform quadrature, tail, and stopping allowances. The two inherited dual upper functions are convex in initial state and are valid at their respective prices. Convexity of $V$ in $k$ makes their chord a valid optimal upper comparison at $k=2$. The argument of Proposition~\ref{prop:stateprice} therefore bounds regret over all of $K$ by the largest of the four new corner gaps. This application does not interpolate raw Monte Carlo values and does not infer concavity of an arbitrarily fitted neural critic.
+
+\subsection{A constructive continuation trace}
+\begin{proof}[Proof of Proposition~\ref{prop:r19trace}]
+Fix the stored no-transfer time controls. The wealth solution is deterministic, affine in initial wealth, and continuous in that initial condition. For every $x\in[1.25,2)$, its drift satisfies $.02X_s-c_s<0$ and its terminal wealth exceeds $.5$ by the directed budget check. Thus it does not hit a wealth boundary. Preference exit depends on $u$, the Brownian motion, and the same fixed $\theta$, but not on initial wealth. The stopping time is therefore common as $x\uparrow2$. On this range the running payoff is bounded before stopping, and the wealth component of settlement is bounded and continuous. Dominated convergence proves existence of the interior limit and identifies its payoff by inserting the limiting wealth path into the same preference-stopped expectation.
+
+The independent quadrature evaluates the unclipped Gaussian representation with its normal-tail and stopping allowances. Those allowances continue to hold for this fixed control context and the limiting wealth path: consumption and preference ranges are unchanged, wealth remains in $[.5,2]$, and the sole premature exit is in preference. The evaluator's no-transfer input adapter checks these hypotheses; it does not invoke the usual $K$-dependent wealth shift at $x=2$.
+
+For uniformity in $u$, consider the covered reference payoff minus $g(0,u,2)$. Discounting leaves a positive terminal-minus-initial quadratic curvature of $.04(1-e^{-.04})$; those quadratic terms do not cancel. The running utility supplies a larger negative curvature. Indeed, on the covered region $r=u-1\leq1.8$, $c\leq.8$, so
+\[
+ -f_{uu}=\frac{e^{-r\log c}}{r^3}\{(r\log c+1)^2+1\}
+ \geq\frac{125}{729}.
+\]
+The covered normal mass is at least $1-2e^{-32}$, and $e^{-.04s}\geq e^{-.04}$. Thus the second derivative of the covered payoff minus initial settlement is at most
+\[
+ -\frac{125}{729}e^{-.04}(1-2e^{-32})
+       +.04(1-e^{-.04})<0.
+\]
+Expenditure and terminal log wealth are independent of $u$. Subtracting the common tail, quadrature, and stopping allowances preserves this strict concavity. Its minimum on $[1.98,2.02]$ is bounded below by the smaller endpoint enclosure. Directed evaluation of both endpoints for all five fixed policies gives the stated minimum; the additional center calculation is a diagnostic rather than the basis of uniformity.
+
+The process defined by immediate settlement when initialized exactly at $x=2$ is a different initial-value convention. The proposition concerns only the interior limit and makes no change to that boundary convention.
+\end{proof}
+
+\subsection{Budget-feasible neural compensation}
+\begin{proof}[Proof of Proposition~\ref{prop:r19wealth}]
+Let $Q_r(s)=\int_0^se^{-.02v}dv$. For the paired original and compensated plans the difference in wealth is
+\[
+ \widetilde X_s-X_s=e^{.02s}\delta\left(1-\frac{Q_r(s)}{Q_r(1)}\right)\geq0,
+ \qquad \widetilde X_1-X_1=0.
+\]
+The independently checked consumption ranges lie inside $[.7,.8]$ even after both the $K$ shift and the compensating increment. Both wealth paths are strictly decreasing and remain above $.5$; the compensated initial wealth is below 2. Neither can exit in wealth. Their preference paths, hence preference exit times, coincide. Logarithmic wealth settlement cannot fall at that time. Preference expenditure and preference settlement are unchanged.
+
+Before stopping, $f_c=c^{-u}\geq(.8)^{-1.2}$. Hence the running utility gain is at least $(\delta/Q_r)(.8)^{-1.2}$ per unit of discounted time. Since the probability of a premature preference exit is at most $p_e$, the expected discounted time before stopping is at least $C_\rho(1)(1-p_e)$. The directed lower bound on the gain is larger than $.0119058$, whereas every new rectangular regret upper bound is at most $\NineteenK$. Subtracting regret proves the last inequality in the proposition. This construction changes the feasible consumption policy with wealth; it is not a claim about the minimum wealth increment for a fixed policy.
+\end{proof}
+
+\subsection{Learned-gradient work}
+\begin{proof}[Proof of Theorem~\ref{thm:r19learned}]
+For fixed $x$, let $g=\nabla F_x(U)$ and $\eta=2/(m+L)$. The integral Hessian identity gives
+\[
+ \nabla F_x(U-\eta g)=
+ \left[I-\eta\int_0^1\nabla^2F_x(U-s\eta g)ds\right]g.
+\]
+The integral matrix is symmetric with spectrum in $[m,L]$. The operator norm of the bracket is at most $(L-m)/(L+m)=145/209$. Iteration and the strong-convexity bound $F_x(U)-F_x^*\leq\|\nabla F_x(U)\|^2/(2m)$ prove \eqref{eq:r19learned}. In particular the initial gradient, not merely bounded network outputs, determines this guarantee.
+
+For the state extension, write the stacked inventory trajectory as $AU+Sx$ plus its fixed offset. The model's geometric propagation gives $\|A\|_2\leq5/2$ and $\|S\|_2\leq3/4$. The nonlinear inventory potential has Hessian norm at most $29/10$; the quadratic control cost has no state cross derivative. Consequently
+\[
+ \|D_x\nabla_UF_x(U)\|_2
+ \leq(5/2)(29/10)(3/4)=87/16.
+\]
+For any covering center $x_i$,
+\begin{align*}
+ \|\nabla F_x(f_\theta(x))\|_2
+ &\leq\|\nabla F_{x_i}(f_\theta(x_i))\|_2
+       +L\|f_\theta(x)-f_\theta(x_i)\|_2
+       +(87/16)\|x-x_i\|_2\\
+ &\leq G_\theta(x_i)+(LK_\theta+87/16)h.
+\end{align*}
+A tanh activation is 1-Lipschitz. Multiplying enclosing matrix-norm bounds, including the output scale, gives a valid $K_\theta$; Frobenius norms can replace spectral norms conservatively. This statement requires a genuine cover of the asserted set. A finite query maximum instead corresponds to $h=0$ on that finite set alone.
+\end{proof}

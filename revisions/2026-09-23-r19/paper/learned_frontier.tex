@@ -1,0 +1,40 @@
+\section{Learned quality and matched online work}\label{sec:r19warm}
+The nonlinear inventory problem has strong convexity $m=4$, Hessian upper bound $L=177/8$, step $2/(m+L)=16/209$, and gradient contraction factor $r=145/209$. The existing state-uniform theorem holds for every bounded initialization, including an untrained one. Training is therefore irrelevant to that particular guarantee. To identify a contribution from learning, the initial approximation quality and the required online work must be measured separately.
+
+\begin{theorem}[Learned-gradient correction bound]\label{thm:r19learned}
+For any exact initial plan $f_\theta(x)$, let $G_\theta(x)\geq\|\nabla F_x(f_\theta(x))\|_2$. After $j$ exact-real gradient corrections,
+\begin{equation}
+ F_x(U_j)-F_x^*\leq\frac{G_\theta(x)^2}{8}\left(\frac{145}{209}\right)^{2j}.
+ \label{eq:r19learned}
+\end{equation}
+On a finite query set, the largest independently enclosed initial gradient gives a uniform bound on that set. More generally, suppose a set $S$ is covered by radius-$h$ Euclidean balls around verified queries and $f_\theta$ is $K_\theta$-Lipschitz. Then
+\[
+ \sup_{x\in S}\|\nabla F_x(f_\theta(x))\|_2
+ \leq\max_iG_\theta(x_i)+\left(\frac{177}{8}K_\theta+\frac{87}{16}\right)h
+\]
+holds, and its right-hand side is a valid uniform choice for $G_\theta$ in \eqref{eq:r19learned}.
+\end{theorem}
+The last term follows from the state-to-control-gradient cross derivative of this particular model. A directed product of matrix-norm bounds gives a valid $K_\theta$ for the stored tanh network. It may be conservative. The theorem does not claim that 32 queries cover a 128-dimensional cube, and the existing initialization-agnostic cube bound is not replaced by an unverified learned-quality estimate.
+
+\subsection{A new, predeclared finite query distribution}
+For each dimension $d=8,32,128$, 32 uniform-cube draws are fixed with seed $19200+d$ before their evaluation. All three stored neural initializers are compared with zero-start gradient descent and zero-start acceleration at target total losses $10^{-2},10^{-3},10^{-4},10^{-6}$. Each delivered floating-point plan is serialized and independently checked by its directed gradient certificate. Ordinary floating-point stopping diagnostics can request a check but cannot accept a plan. The maximum budget is 64 corrections, and no failed query is removed.
+
+For a fair work count, acceleration returns its checked search point. Thus it does not pay an artificial second gradient call merely because its internal extrapolated and unextrapolated points differ. Every method pays for one gradient per correction and one final gradient evaluation. Neural inference, corrections, final directed checking, and the recorded offline training cost are identified separately.
+\input{revisions/2026-09-23-r19/paper/tables/warm_main}
+
+The learned map reduces online gradient work substantially at 8 and 32 coordinates. At 128 coordinates and tolerance $.01$, every neural seed uses five mean corrections, compared with six for zero-start gradient descent and approximately 5.97 for acceleration; it uses fewer gradients than acceleration on 31 of 32 paired queries per seed. At $10^{-3}$ the neural and accelerated counts coincide, and at $10^{-6}$ acceleration needs fewer corrections. These outcomes identify a limited, tolerance-dependent contribution from learning rather than an initialization-independent guarantee misattributed to training.
+
+The finite-query initial-gradient theorem is evaluated as a second, separate work statement. The supplement reports the proved uniform correction budgets on each fixed query set. They can be more conservative than the actual checked stopping counts. Stored floating-point plans receive their own certificates; exact-real contraction is not used as an undocumented bound on a floating-point deployment graph.
+
+\subsection{Amortization and the cost of completeness}
+For a declared query distribution and target, let $T_{\rm train}$ be offline cost and let $\bar t_0,\bar t_\theta$ be measured mean per-query times. When $\bar t_0>\bar t_\theta$, the accounting break-even count is
+\[
+ Q_{\rm break}=\left\lfloor\frac{T_{\rm train}}{\bar t_0-\bar t_\theta}\right\rfloor+1.
+\]
+No finite break-even is reported when the measured saving is nonpositive. The supplement gives both solver-only and final-check-inclusive counts, all three seeds, and every target. The training time comes from the stored training execution; query times are five-repeat medians in the new execution. These are explicit transferred-cost estimates, not a matched-hardware retraining experiment, statistical confidence intervals, or certified speedups. In particular, no end-to-end acceleration advantage is asserted for the 128-dimensional experiment.
+
+The complete-cover feedback algorithm has a different scaling object. With $M$ boxes, state dimension $d$, depth $\ell$, and hidden width $w$, storing the value, time derivative, state gradient, and state Hessian requires $s_d=2+d+d(d+1)/2$ components. A direct dense-jet implementation costs on the order of
+\[
+ M\{s_d(dw+\ell w^2)+C_A\}
+\]
+scalar operations, where $C_A$ is the per-box cost of certified action maximization. Direct back-propagation stores on the order of $M\ell w s_d$ intermediate quantities. Streaming verification can replace $M$ by its chunk size in working memory, but does not remove the total box work. For a tensor cover, $M=N_t\prod_iN_i$; interval dependency and action subdivision can increase the required counts. These costs are not suppressed in a dimension-free complexity claim. In contrast, one correction in the sparse nonlinear inventory model costs $O(Hd)$ after neural inference.
