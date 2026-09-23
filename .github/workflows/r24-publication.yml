@@ -6,6 +6,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+concurrency:
+  group: nbo-r24-publication
+  cancel-in-progress: true
 jobs:
   publication:
     runs-on: ubuntu-24.04
@@ -30,10 +33,12 @@ jobs:
           import json
           r=Path('revisions/2026-09-23-r24/results')
           p=Path('revisions/2026-09-23-r22/results/full_state/time_envelope.json')
-          x=json.loads(p.read_text())
-          v=x['all_start_times_regret_upper']
+          entries=json.loads(p.read_text())
+          candidates=[x for x in entries if x['phase']=='candidate']
+          assert len(candidates)==1
+          x=candidates[0];v=x['all_start_times_regret_upper']
           assert abs(v-7.241462443133396)<1e-12
-          d={'schema_version':2,'authoritative_source':str(p),'all_start_times_regret_upper':v,'discounting':'discounted suffix envelope','target':0.01,'target_established':False,'new_actor_payoff_improvement_established':False,'deprecated_summary_field':'candidate_all_initial_times_bound','deprecated_field_value':7.386001245971047,'deprecated_field_interpretation':'earlier undiscounted all-times bound; not the current discounted result','historical_files_unchanged':True}
+          d={'schema_version':2,'authoritative_source':str(p),'source_phase':'candidate','all_start_times_regret_upper':v,'discounting':'discounted suffix envelope','target':0.01,'target_established':False,'new_actor_payoff_improvement_established':False,'deprecated_summary_field':'candidate_all_initial_times_bound','deprecated_field_value':x['earlier_undiscounted_all_times_bound'],'deprecated_field_interpretation':'earlier undiscounted all-times bound; not the current discounted result','historical_files_unchanged':True}
           (r/'full_state_canonical.json').write_text(json.dumps(d,indent=2)+'\n')
           PY
       - name: Install TeX environment
@@ -88,5 +93,8 @@ jobs:
           path: |
             dist/
             revisions/2026-09-23-r24/results/build/
+            ECTA_R24.log
+            SUPP_R24.log
+            RESPONSE_R24.log
           if-no-files-found: warn
           retention-days: 30
