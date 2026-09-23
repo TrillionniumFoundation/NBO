@@ -1,0 +1,101 @@
+\section{Reading the evidence}\label{supp:scope}
+Three numerical objects must be kept distinct. The original full-state actor uses $(t,u,x)$ alone in the stopped preference-adjustment economy and retains target $.01$. Its imported bound is $7.181834580823298$, with no separately certified payoff improvement. The financed central-state and regional constructions use the original economy but a restricted implementation that may store a factor and initialization weights. The manufactured unspanned-risk economy has its own state $(t,x,z)$, target $.001$, known value witness, and current-state actors. A small number in the third object is not evidence of solving the first.
+
+The latest report addressed is \path{reviews/2026-09-23-econometrica-r24/referee_report.md}, at review head \texttt{0eb0400ae311333fb77826ef9e2f067718926ae8}. It reviewed manuscript commit \texttt{14ce582e188f437cc8d99f310edd4f06515936a4}. During this revision we found the completed R25 scientific experiment, frozen at \texttt{c78d934c0b3b8d346a40c7ddcaf415e167462265}. Its results are imported and attributed as pre-existing evidence. R26's new executions are the stress/rollback study and fixed-policy second-order and exact rational verification. They are not retrospectively labeled R25 results.
+
+\section{Expanded rate calibration}\label{supp:tuning}
+Table~\ref{stab:tuning} gives every rate-level mean from the two declared tuning seeds. There are 42 rate--representation configurations and 84 underlying trajectories. Selection is by mean certified endpoint payoff lower bound, subject to feasibility at both seeds. All raw per-seed files are retained under the R25 results directory. Larger-rate deterioration brackets the selected point within this finite rate family; it does not optimize every schedule, architecture, or resource allocation.
+
+\small
+\begin{longtable}{lrrll}
+\caption{All expanded-grid tuning means}\label{stab:tuning}\\
+\toprule Representation & Rate & Mean payoff lower & Feasible & Selection\\\midrule\endfirsthead
+\toprule Representation & Rate & Mean payoff lower & Feasible & Selection\\\midrule\endhead
+\tablerows{revisions/2026-09-23-r26/paper/tuning_table.tex}
+\bottomrule
+\end{longtable}\normalsize
+
+\section{Fine-rule held-out comparison}\label{supp:fine}
+The fine rule uses the same held-out seeds and selected configurations as the coarse rule, without retuning. Its stronger quadrature is a robustness diagnostic for optimization outcomes, not a rigorous derivative-error enclosure. Every method continues to use the same independent stopped-payoff checker.
+
+\begin{table}[h]
+\caption{Held-out central-state comparison at proposal orders $(12,24)$}\centering\small
+\begin{tabular}{lrrrr}\toprule
+Method & Regret upper & Calls & Generation & Checking\\
+ & & & seconds & seconds\\\midrule
+\tablerows{revisions/2026-09-23-r26/paper/heldout_12_24.tex}
+\bottomrule\end{tabular}
+\par\footnotesize\raggedright Worst regret over two evaluation seeds and mean work. The state is $(0,2,1.25)$ in the original economy, $k=2$, under the financed implementation. These are not all-start-time certificates or hardware-normalized timings for the R26 local execution.
+\end{table}
+
+Both neural-minus-direct L-BFGS-B payoff difference intervals remain negative at the fine rule. These enclosures are computed from matched policy intervals, with outward-rounded subtraction. A solver's smaller regret upper bound alone would not establish a strict payoff ordering; the paired intervals do. The current presentation retains direct L-BFGS-B as the strongest tested central-state method.
+
+\section{Every synchronous stress decision}\label{supp:decisions}
+Each trajectory begins from a valid certified incumbent. The first block uses 200 calls at the base rate, the stress block uses 50 calls at $20.48$, and the final block uses 100 calls at the base rate or half that rate after a rejected stress proposal. Acceptance requires the candidate lower payoff to exceed the incumbent upper payoff. The proposed policy's regret in the next table is not substituted for the incumbent's regret when the proposal is rejected.
+
+\small
+\begin{longtable}{rlrrrr}
+\caption{All R26 online decisions, including rejected proposals}\\
+\toprule Seed & Arm & Block & Rate & Candidate regret & Decision\\\midrule\endfirsthead
+\toprule Seed & Arm & Block & Rate & Candidate regret & Decision\\\midrule\endhead
+\tablerows{revisions/2026-09-23-r26/paper/checkpoint_table.tex}
+\bottomrule\end{longtable}\normalsize
+
+There are 13 accepts and five restores. For every restore, the before and after canonical state files are equal, and their SHA-256 digests agree. The saved state includes parameters, moments, and the optimizer counter; the moving arm additionally includes its independent economic coordinates and carrier. A common external rate schedule is not confused with a rejected optimizer's moments. The restore decision is taken before the next block is generated.
+
+The four shadow continuations start from the rejected aggressive candidate, use the same recovery call count and rate as their actual counterpart, and never influence the production incumbent. Their final regret bounds are approximately $.009641149$ and $.051788673$ for the two neural seeds, and $.039585071$ and $.035359719$ for the direct seeds. Every shadow trajectory differs from the actual restored trajectory. Their times and state files are preserved separately. The moving arm accepts both aggressive blocks, so no aggressive-block shadow is reported for it; one later moving proposal is rejected and restored. We do not fabricate a shadow where the declared condition did not occur.
+
+\section{Whole-domain restart certificates}\label{supp:restart}
+The fixed neural actors in the auxiliary stochastic economy use only $(t,x,z)$. The certificate's proof integrates a uniform nonnegative Hamiltonian-deficit upper bound from any restart time to $1$. It neither stores initialization weights nor assumes the restart lies on a financed reachable manifold. The following numbers are evaluations of that all-time bound, not separate Monte Carlo estimates.
+
+\begin{table}[h]
+\caption{Auxiliary-economy uniform regret bounds at selected restart times}\centering\scriptsize
+\begin{tabular}{rrrrrr}\toprule Seed & $t=0$ & $t=.25$ & $t=.5$ & $t=.75$ & $t=1$\\\midrule
+\tablerows{revisions/2026-09-23-r26/paper/restart_table.tex}
+\bottomrule\end{tabular}
+\end{table}
+
+The neural certificate saves all $512+4096+32768$ cells attempted per policy. The finest new cover has $16\times64\times32$ cells. The inherited first-order stopping rule required $32\times128\times64$ cells. The minimum of the first-order and second-order action-error enclosures is used componentwise before the nonnegative quadratic deficit is formed. Taking the minimum of two valid upper bounds does not require a probabilistic selection correction. Point derivatives, however, may not substitute for interval Hessians over the complete cell.
+
+\section{Arithmetic and exact polynomial conversion}\label{supp:arithmetic}
+The interval backend is the inherited rational-Taylor binary64 implementation. Rational constants are first enclosed; elementary operations and affine transformations are outward rounded. Tanh and sigmoid bounds use the backend's exponential enclosure. Positive derivative ranges may be intersected with their analytic ranges, $0\leq\tanh'\leq1$ and $0\leq\mathrm{sigmoid}'\leq1/4$. The second derivative is then propagated by the exact chain rule. All stored weights are fixed binary64 numbers interpreted as exact reals.
+
+For the direct polynomial policy, write $P(\xi)=\sum_{j=0}^8c_j\xi^j$, with $c_j$ the exact rational value of the stored float. On a rational cell $\xi=a+(b-a)s$, local power coefficients of the residual $R=xP-1$ are
+\[
+ q_k=\sum_{j=k}^n R_j{j\choose k}a^{j-k}(b-a)^k.
+\]
+Its Bernstein coefficients are
+\[
+ \beta_i=\sum_{k=0}^i q_k\frac{{i\choose k}}{{n\choose k}}.
+\]
+Every coefficient and cell endpoint is stored as an exact rational string in \path{results/jets/direct_exact.json}. The basis convex-hull bound, the positive lower bound on $x$, nonexpansiveness of action projection, and exact portfolio cancellation give the certificate in the article. This avoids the inherited ordinary floating multiplication in derivative coefficients. We preserve that old implementation and its output as historical material rather than changing a past calculation silently.
+
+\section{Oracle precision and the original stopped gradient}\label{supp:gradient}
+An interval decision for $F(y')-F(y)$ is a statement about a finite payoff difference. Dividing by a finite step gives a secant enclosure, not a derivative enclosure. To enclose a directional derivative one additionally needs a rigorously controlled local remainder, such as a verified Hessian bound along the relevant policy segment. No such complete stopped-payoff derivative remainder is supplied for the original economy here.
+
+The article's reduced-gradient perturbation result explicitly bounds both numerical and exact derivative factors. Its root conditioning, price error, derivative errors, and offset-Lipschitz allowances must all be instantiated before it bounds the original executed economic gradient. Its proof is not an excuse to omit these quantities. Likewise, the payoff-polling theorem requires sufficiently narrow valid payoff intervals, smoothness on feasible poll segments, and an upper payoff bound. The actual online gate establishes safe accepted improvements with the available checker, while the theorem's shrinking-oracle hypotheses remain additional requirements for stationarity.
+
+The exact quadratic regression test verifies the logic of the finite-poll estimate in a setting where the oracle conditions hold exactly. It is labeled as a mathematical implementation test, not a new original-economy optimizer experiment. The stopped reference has a stronger independent exact identity, but it is a separate model.
+
+\section{Work accounting}\label{supp:cost}
+For a batch of $m$ policies, a complete cost account has the form
+\[
+ T_{\mathrm{dual}}+\sum_{i=1}^m(T_{\mathrm{setup},i}+T_{\mathrm{proposal},i}+T_{\mathrm{check},i}+T_{\mathrm{bookkeeping},i}).
+\]
+The dual cost is amortized only if the same validated dual is reused legitimately. The imported held-out table reports proposal and scheduled-checkpoint times, not this entire expression. Carrier construction and shared preprocessing have their own records. The new online table measures actual interleaving of generation and checking from initial incumbent evaluation; it excludes construction of the inherited common dual and initial model object. The shadow continuation is separately timed and excluded from the production online latency. These distinctions prevent a sub-two-second proposal from being presented as an end-to-end certified solve.
+
+R25 and R26 were executed in different recorded environments. In particular, the eightfold cell-count reduction is not reported as an eightfold wall-clock speedup. The local same-cover table includes both first-order and second-order calculations and file writing. Timings are observations of these runs, not a benchmark against an external implementation.
+
+\section{Source preservation and reproduction}\label{supp:reproduction}
+The R24 source archive contains 5,760 files. Their SHA-256 values are recorded before the new edits. The old root revision index is preserved verbatim under the new source-audit directory; all historical scientific files retain their contents. The imported R25 artifact contains 781 non-cache files, whose unchanged bytes are separately checked. The root-tree and commit identities of the frozen remote base are recorded in the delivery metadata. A local artifact or branch is not represented as remotely published unless a remote write has actually succeeded.
+
+From a complete checkout containing the frozen R25 evidence and this revision, the new computation is reproduced from the repository root with:
+\begin{verbatim}
+python revisions/2026-09-23-r26/replication/online_stress.py
+python revisions/2026-09-23-r26/replication/jet_certificate.py
+python revisions/2026-09-23-r26/replication/publication.py
+python revisions/2026-09-23-r26/replication/test_revision.py
+\end{verbatim}
+Set \texttt{PYTHONDONTWRITEBYTECODE=1} to avoid local cache files. The original R25 protocols and scripts reproduce the imported calibration, full-state continuation, stochastic training, and secants separately; the new fixed-policy verification does not retrain those actors. A fresh reproduction should preserve the frozen evidence directory or run in a separate working tree. Runtime fields and ZIP container metadata need not be bitwise identical, while the mathematical policy inputs and certificate inequalities must agree within the stated arithmetic conventions.
+
+The new checks cover the symbolic Hamiltonian completion, interval-jet chain rule against a separately computed floating derivative diagnostic, exact Bernstein identities, complete cell covers and file digests, restart bounds, all acceptance inequalities, complete rejected-state restoration, shadow isolation, original-model scope, interior tuning selection, and preservation. An initial test located the imported manifest relative to the repository root rather than the R25 directory; that test-path error and its correction are recorded. It was not a changed scientific result. The initial all-runs online command encountered an execution timeout after completing the first seed; the second seed was then executed arm by arm with the same parameters, preserving completed records. No new rate or policy was selected in response to those outcomes.

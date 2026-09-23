@@ -1,0 +1,109 @@
+\section{Overview of the revision}
+We thank the referee for identifying the numerical questions that determine whether the proposed operator solves the stated economic problem. We have not replaced that problem by a smaller one, changed its uniform $.01$ target, or removed adverse findings. The revised article retains the title \emph{Neural Bellman Operators}, the original stopped consumption--portfolio economy, and the current-state full-domain objective. The complete reviewed article and supplement are reproduced in the new supplement, with all historical scientific source files retained.
+
+The R25 branch already contained a completed scientific execution when we examined the repository. We use it at frozen commit \path{c78d934c0b3b8d346a40c7ddcaf415e167462265}; we do not attribute those executions to R26. It supplies expanded rate calibration, a moving historical-transport control, a stronger stochastic benchmark, current-state continuation, and certified secants. R26 adds complete optimizer-state rejection tests with shadow continuations, second-order interval verification of the unchanged stochastic neural policies, exact rational Bernstein verification of the unchanged classical policy, and a finite-work payoff-polling theorem with explicit hypotheses and oracle cost.
+
+These changes establish several new results, but not every requested conclusion. The original full-state bound is now $7.181834580823298$ rather than $7.241462443133396$; it does not meet $.01$. No separate original-actor payoff improvement is certified. The continuous stopped-gradient bridge is not instantiated, and direct L-BFGS-B remains the strongest tested central-state method. We do not describe those points as resolved by better exposition or by auxiliary-model certificates. The responses below state the evidence and the remaining requirement together.
+
+\section{Responses to the blocking findings}
+\subsection{R24-F1: Original full-state objective}
+\emph{Response.} The original numerical objective is retained in the abstract, model section, original-results subsection, and conclusion. The imported current-state continuation uses 85 gradient calls across four blocks. Its all-start-time certificate is $7.181834580823298$, a reduction of about $.059628$, or $.823\%$, from the reviewed value. The improvement is in the certified upper bound; the record explicitly does not establish a separate policy-payoff improvement. The target is still missed by about a factor of 718.
+
+The regional financed controller and the auxiliary stochastic model are now identified in the same paragraph or table note as their small bounds. Neither is allowed to stand in for the original actor. This finding remains a substantive research requirement. The revision provides new mechanisms and verification tools with which to pursue it, not a declaration that the requested original-state result has already been obtained.
+
+\subsection{R24-F2: Unbracketed Adam calibration}
+\emph{Response.} The expanded, prospectively declared R25 rate grid is
+\[\{.005,.02,.08,.32,1.28,5.12,20.48\}.\]
+It is applied to six first-order representations at two disjoint tuning seeds with 200 calls per rate. Selection is based on certified endpoint payoff lower bounds. Neural and whitening Adam select $.08$; direct, diagonal, static tangent, and moving transport select $.32$. Each selection is interior and has a worse larger-rate trial. No selected rate is the upper endpoint.
+
+The selected configurations are then evaluated without retuning at two held-out seeds and two proposal quadrature rules. The article reports the frontier within that declared family; the supplement retains every tuning mean and the underlying per-seed files. This addresses the specific grid-censoring objection. It does not claim that a seven-rate family is an exhaustive optimizer of all possible schedules or architectures.
+
+\subsection{R24-F3: Direct L-BFGS-B remains strongest}
+\emph{Response.} We retain and elevate this result rather than remove its competitor. In the coarse-rule held-out comparison, direct L-BFGS-B has worst regret $.0019235324$, about 123 mean gradient calls, and about $.307$ seconds of mean generation time. Neural Adam has $.0019263761$, 400 calls, and about $1.144$ seconds. Matched payoff-difference intervals are strictly negative for neural Adam minus direct L-BFGS-B at both seeds and both rules.
+
+The abstract leads with the classical comparison within the tested class. The moving-transport control does not overturn it. The stochastic direct approximation is also much more accurate than the neural approximation once both are verified rigorously. Accordingly, a neural accuracy/work improvement over the classical frontier remains unestablished. The new claims concern verified online decisions and stronger whole-domain verification, not an unsupported efficiency ranking.
+
+\subsection{R24-F4: Static geometry is not the neural Adam mechanism}
+\emph{Response.} The new moving arm maintains an explicit neural chart carrier, recomputes its quotient Jacobian at every step, pulls back the current economic gradient, maintains parameter-space Adam first and second moments, and pushes the update into the quotient. It therefore retains historical Jacobian contributions through the moment recursion and uses the current adaptive preconditioner. Its regularizer $10^{-6}$ and output step cap $.5$ were fixed before evaluation.
+
+The direct economic coordinates are advanced linearly, so the finite-step nonlinear output remainder is deliberately omitted. The paper states this difference and charges the 355-parameter carrier, its two moment arrays, and the required differentiation. The control is not a cheap autonomous 47-memory-coordinate solver or an exact neural replica. It meets the requested moving/historical-transport comparison while preserving the distinction needed to interpret any remaining performance difference.
+
+\subsection{R24-F5: Stopped-gradient error remains uncertified}
+\emph{Response.} The revised perturbation proposition explicitly bounds both exact and numerical derivative factors and includes root conditioning and offset error. Its proof is given in the article. We have not obtained verified numerical constants for every term along the original stopped optimizer trajectories, so the report's central gradient objection is not marked closed.
+
+There are two constructive additions. First, the inherited stopped-payoff checker supplies rigorous finite secants for five interpolated policies; only the first adjacent secant interval is separated from zero. Second, the new payoff-polling theorem gives a derivative-free route to a stationarity bound under explicit smoothness and shrinking-interval assumptions, including the cost of obtaining the required intervals. Neither addition is called a continuous stopped-gradient certificate. The executed online gate needs only validity of its policy intervals, while the stronger stationarity theorem requires additional hypotheses not verified for every original-economy policy.
+
+\subsection{R24-F6: Gate replay versus an actual proposal operator}
+\emph{Response.} We inspected the R25 online record rather than relying on its commit message: all 24 blocks were accepted, so that execution did not exercise rejection. R26 runs an explicit three-block stress schedule in six trajectories. Of 18 decisions, 13 accept and five reject. The gate is called synchronously before generating the next block. Each rejection restores economic coordinates, neural/carrier parameters, optimizer moments, and the counter, verified by exact equality of canonical state records and matching digests.
+
+Four rejected aggressive states are continued separately under the same recovery rate and call count as their actual counterpart. All four final states differ from the rolled-back trajectory. These shadow runs are isolated from the production incumbent and timed separately. This closes the implementation distinction between replay and actual coupling for the executed stress mechanism. We do not infer an Adam convergence theorem or an efficiency advantage from this stress design; the finite-work theorem is for the explicitly specified payoff poll.
+
+\subsection{R24-F7: Augmented memory does not solve the restart problem}
+\emph{Response.} The financed implementation remains explicitly augmented by $(Y,\lambda)$. The unrestricted-value equality is an admissible-class argument under the original filtration and is not used to certify arbitrary restricted-library restarts or off-manifold states. The original-model arbitrary-restart accuracy requirement remains unmet.
+
+The added stochastic benchmark has no initialization memory and no conditional-price decoder. Its neural actors use $(t,x,z)$ alone, and the complete interval cover plus stopped Hamiltonian identity prove a bound at every start time and state of that auxiliary economy. The selected restart table merely evaluates that all-time bound. Thus a real current-state restart experiment is supplied without misrepresenting it as a solution to the original financed-library restart problem.
+
+\subsection{R24-F8: Small favorable regional cover}
+\emph{Response.} The nine-expert, four-cell R24 regional construction and its dimensions are preserved. It is still labeled a $t=0$ initialized augmented-state patch, not high-dimensional scaling evidence. The new stochastic verification covers the full three-dimensional state--time box $[0,1]\times[.5,2]\times[-1,1]$, with independent unspanned productivity risk and no exact conditional-price financing decoder.
+
+For two unchanged neural policies, the new verifier meets tolerance $.001$ on 32,768 cells instead of the inherited 262,144. All attempted coarse covers are retained. This supplies a materially different stochastic/restart test and a verified cell-count improvement. It is not evidence of general high-dimensional scaling or original-domain success; those broader requirements remain distinct.
+
+\subsection{R24-F9: The deterministic reference is too simple}
+\emph{Response.} The stronger reference has two Brownian shocks, a nontrivial risky portfolio, an unspanned factor, first-exit and terminal stopping, and a state--time policy. An independently supplied smooth witness and an explicit transfer yield an exact Hamiltonian completion. The proof identifies the unrestricted value and the exact regret integral; the numerical computation encloses the action errors over the complete domain.
+
+This directly tests continuous stopped stochastic verification without the favorable financed decoder. The reference is nevertheless manufactured: the witness is known and used in training. It is not represented as an independently calibrated second economic application or as learning an unknown Bellman value. The earlier deterministic benchmark remains in the historical annex for its narrower purpose.
+
+\subsection{R24-F10: Reference evidence does not show neural efficiency}
+\emph{Response.} We agree with the interpretation and keep the comparison strong. The new stochastic neural bounds are $.000834337$ and $.000788415$; the exact rational direct-policy bound is approximately $1.298\times10^{-7}$. The direct policy uses its known structural advantage explicitly. The paper therefore makes no neural efficiency claim from either reference.
+
+The positive numerical result is sharper verification of the same neural weights: the $.001$ target is established on eight times fewer cells. The bound is not described as better optimization or a runtime speedup across different hardware. The exact rational direct calculation also repairs an arithmetic-enclosure defect in the inherited derivative-coefficient path without silently rewriting that historical code.
+
+\subsection{R24-F11: Equivalent-chart fragility}
+\emph{Response.} The earlier rescaling outcomes remain in full. The new moving control narrows the mechanism question by reproducing historical pullback and pushforward structure, but does not make neural Adam or L-BFGS-B invariant under equivalent parameter charts. No such empirical robustness conclusion is claimed.
+
+The new quotient poll and its payoff acceptance rule depend on economically identical output policies rather than neural weight coordinates. This gives chart-independent decisions for that component under exact policy identification and valid certificates. Its cost and regularity assumptions are stated, and it has not been run as a 47-dimensional original-economy solver. Thus the paper adds a principled chart-independent safeguard while leaving general neural-optimizer robustness open.
+
+\subsection{R24-F12: Theory should yield a numerical-method statement}
+\emph{Response.} The new finite-work theorem is more than an explanatory transport identity. At an unsuccessful complete poll of scale $h$ it bounds the quotient gradient by $(\sigma+2\kappa+L/2)h/\mu$, assuming valid intervals of width at most $\kappa h^2$, feasible segments, and Lipschitz gradient. It also bounds the number of payoff evaluations before such a poll by a constant times $h^{-2}$ and retains the oracle cost. The proof states precisely why interval uncertainty contributes $2\kappa$.
+
+The second-order verification theorem and exact rational polynomial lemma are instantiated on saved stochastic policies. The online-improvement theorem is instantiated on the new accepted decisions. The original stopped-gradient and full-state objectives are not inferred from these different results. This adds constructive theory and executed evidence while keeping its conditions visible to the referee.
+
+\section{Responses to technical findings}
+\subsection{R24-T1: Elevate rate censoring}
+The R24 endpoint result remains historical and is not called a tuned frontier. The new article instead uses the expanded, interior-selected R25 experiment, gives the actual grid and selection rule, and includes all rate-level means in the supplement. This is a design change, not merely softer wording.
+
+\subsection{R24-T2: Both numerical and exact derivative factors}
+The theorem now states $\max\{|H_a|,|H_{N,a}|\}\leq M_B$ and $\max\{\|P_y\|,\|P_{N,y}\|\}\leq M_C$. All errors are at the respective roots and include their offset-shift allowances. The proof identifies where each factor enters, with no implicit appeal to a bound available only for the exact version.
+
+\subsection{R24-T3: Interpretation of static tangent controls}
+The geometry subsection explicitly says that static tangent, diagonal, and whitening charts do not reproduce Adam's historical adaptive transport. The moving arm is described separately, including its omitted nonlinear remainder and charged carrier. No static-control failure is used to exhaust the space of direct preconditioners.
+
+\subsection{R24-T4: Trajectory counts}
+The paper separates 84 calibration trajectories, 32 held-out trajectories, the previous online study, the new stress study, and the fixed stochastic policies. Aggregate counts are not described as independent replications of one scientific effect. The two new stress seeds are not substituted for held-out evidence.
+
+\subsection{R24-T5: Stale revision index}
+The root index now names R26 and points to its article, supplement, response, and review entry. The previous index is archived verbatim. The fixed remote base is recorded, and a local branch or generated file is not called remotely published unless a push has succeeded. The new revision adds no changes to the default or existing review branches.
+
+\subsection{R24-T6: End-to-end costs}
+The tables separate generation, checking, and measured coupled time. Common dual construction and initial setup are identified where excluded; shadow costs are separate. The supplement gives the batch cost decomposition and states when a shared dual may be amortized. The theorem retains the cost of requesting narrow payoff intervals, rather than counting each certificate as a unit-cost operation. Different CI and local timings are not combined into a hardware speedup.
+
+\section{Disposition of the requested next steps}
+\subsection{N1: Bracket first-order performance}
+Executed in the frozen R25 experiment and fully incorporated: every first-order selected rate is interior with a worse larger-rate trial, followed by disjoint held-out evaluation. This resolves censoring within the declared finite family.
+\subsection{N2: Follow measured neural output geometry}
+Executed with a current-Jacobian carrier, historical first moments, adaptive second moments, declared regularization, and an output cap. Nonlinear output curvature is intentionally not reproduced; carrier work and memory are charged.
+\subsection{N3: Certify or tightly control the stopped gradient}
+The exact/numerical derivative-factor ambiguity is corrected. Rigorous secants and a conditional derivative-free poll are supplied. A complete instantiated original stopped-gradient bound is not supplied and remains a substantive requirement.
+\subsection{N4: Successful original current-state full domain}
+The original continuation bound improves to $7.181834580823298$ but remains far above $.01$, and no separate payoff improvement is proved. This requested success is not claimed.
+\subsection{N5: Nonreplicable stochastic execution}
+A manufactured model with unspanned Brownian productivity risk is executed without the conditional-price decoder. Complete state--time neural certificates are obtained. Its known witness and separate economic scope are explicit.
+\subsection{N6: Restart and state--time coverage}
+The auxiliary current-state policies are certified for all start times and the whole box. This supplies a genuine restart experiment, while original-model global restart accuracy remains unresolved.
+\subsection{N7: Stronger known-solution benchmark}
+The stochastic stopping benchmark, its exact Hamiltonian completion, and its all-face settlement conditions are provided. Neural and direct policies are independently verified, including an exact rational direct certificate.
+\subsection{N8: Decide the paper's objective}
+We retain the original Neural Bellman Operator objective and do not reframe the paper into a claim that the specialized financed construction has solved the original model. The article distinguishes the achieved algorithmic/verification results from the remaining original-domain and efficiency requirements. All earlier scientific content remains available in the historical annex and unchanged source tree.
+
+\section{What the referee can verify directly}
+The main article gives the economic model, operator, assumptions, complete proofs, and tables generated from frozen JSON results. The supplement contains every new online decision, all rate-level tuning means, all-time restart bounds, arithmetic details, cost definitions, and the complete reviewed R24 article and supplement. The new replication directory contains the actual stress and verification implementations, exact rational coefficients, every cell file, state snapshots, shadow runs, and the test suite. The response and machine-readable finding map cover every numbered item above without declaring unachieved original-economy results closed.

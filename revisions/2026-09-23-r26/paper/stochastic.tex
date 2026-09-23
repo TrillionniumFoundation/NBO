@@ -1,0 +1,77 @@
+\section{Whole-domain verification in an unspanned-risk stopped economy}\label{sec:stochastic}
+To test stochastic propagation, stopping, and current-state restart without the original financed decoder, consider a separate investment economy on
+\[
+ (t,x,z)\in[0,1]\times[.5,2]\times[-1,1],\qquad
+ a\in[0,2.2],\quad p\in[0,1],
+\]
+with independent Brownian motions $W,B$:
+\begin{equation}
+ dX=(.02X+a+.04pX)\,dt+.25pX\,dW,
+ \qquad dZ=.3\,dB.\label{eq:reference_dynamics}
+\end{equation}
+The $B$ shock is not spanned by the risky wealth exposure. Let stopping occur at first exit from the interior box or time $1$. Set $A(t)=.8+.2t$ and supply the smooth witness
+\begin{equation}
+ v(t,x,z)=A(t)(\log x+.1xz-.1z^2).\label{eq:reference_witness}
+\end{equation}
+At every stopping face, settlement equals $v$. Running reward is $b(t,x,z)-a^2/2$, where the model's transfer is
+\begin{equation}
+ b=.04v-v_t-.02xv_x-\frac{.3^2}{2}v_{zz}
+ -\frac{v_x^2}{2}+\frac{.04^2v_x^2}{2(.25)^2v_{xx}}.\label{eq:transfer}
+\end{equation}
+All these coefficients are bounded on the closed box, and $v_{xx}=-A/x^2<0$. This is a manufactured model: the transfer is chosen to make the value independently known. The experiment validates policy approximation and continuous verification in a stochastic stopped setting; it is not an exercise in discovering an unknown value function or calibrating an empirical economy.
+
+\begin{theorem}[Exact stochastic value and restart regret]\label{thm:reference}
+For the model \eqref{eq:reference_dynamics}--\eqref{eq:transfer}, the optimal current-state actions are
+\begin{equation}
+ a^*(t,x,z)=A(t)(1/x+.1z),\qquad
+ p^*(t,x,z)=.64(1+.1xz).\label{eq:reference_controls}
+\end{equation}
+They lie in the declared action bounds, and the unrestricted stopped value is $v$. For every admissible current-state policy $\pi=(a,p)$,
+\begin{equation}
+ v(t,x,z)-J^\pi(t,x,z)
+ =\E_{t,x,z}\int_t^\tau e^{-.04(s-t)}
+ \frac{(a-a^*)^2+.0625A(s)(p-p^*)^2}{2}\,ds.\label{eq:reference_regret}
+\end{equation}
+Consequently, a uniform upper bound $\overline d$ on the integrand gives
+\begin{equation}
+ 0\leq v-J^\pi\leq \overline d\frac{1-e^{-.04(1-t)}}{.04}
+ \label{eq:reference_certificate}
+\end{equation}
+at every original state of this auxiliary economy and at every restart time, without stored initialization weights or a financing root.
+\end{theorem}
+The state--time statement is stronger than a list of simulated starting states. It follows from a complete cover and a stopped verification identity. The tabulated start times below are evaluations of the same uniform formula; no interpolation between those times is used in the proof.
+
+\subsection{Centered second-order action certificates}\label{sec:jets}
+Let $e_j=\pi_j-\pi_j^*$ be an action error on a rectangular cell with center $m$ and half-widths $r_i$. Interval propagation supplies point enclosures of $e_j(m)$ and $\partial_i e_j(m)$, and whole-cell enclosures of $\partial_{ik}e_j$. Denote valid upper absolute bounds by $E_j$, $G_{ij}$, and $H_{ikj}$.
+
+\begin{theorem}[Second-order cell enclosure]\label{thm:jets}
+If $e_j$ is twice continuously differentiable on the cell, then throughout it
+\begin{equation}
+ |e_j|\leq E_j+\sum_iG_{ij}r_i
+ +\frac12\sum_iH_{iij}r_i^2+\sum_{i<k}H_{ikj}r_ir_k.\label{eq:jet}
+\end{equation}
+The minimum of this bound and a valid first-order mean-value enclosure remains valid. Substituting such componentwise error bounds into the nonnegative quadratic integrand in \eqref{eq:reference_regret}, maximizing over a complete cover, and applying \eqref{eq:reference_certificate} yields a whole-state--time certificate.
+\end{theorem}
+For each tanh or sigmoid layer, the implementation propagates
+\[
+ D(\phi\circ q)=\phi'(q)Dq,\qquad
+ D^2(\phi\circ q)=\phi'(q)D^2q+\phi''(q)Dq\,Dq'.
+\]
+All affine operations and transcendental enclosures use the inherited directed interval arithmetic. Saved binary64 network weights are interpreted as exact real coefficients; displayed economic decoder constants are exact rationals. The certificate therefore concerns the real-valued policy represented by those coefficients, not an unspecified hardware rounding path at deployment. The control scales are exact $2.2$ and $1$. A separate floating-point comparison with automatic differentiation tests the implementation of the chain rule; it does not replace the interval proof.
+
+Both neural policies are the unchanged R25 $3$--$12$--$12$--$2$ policies. They were fitted using the known actions on a $5\times9\times7$ tensor rule. R26 does not retrain them. It verifies nested covers of sizes $512$, $4096$, and $32768$, retaining the unsuccessful coarse certificates. Every endpoint and center of these covers is dyadic. The code saves every cell, its action-error bounds, its quadratic deficit bound, and a file digest. No sampled cell is substituted for an unverified remainder of the domain.
+
+\subsection{Exact rational verification of the classical reference}\label{sec:bernstein}
+The retained direct policy approximates $1/x$ by a degree-eight polynomial $P(\xi)$, $\xi=(x-1.25)/.75$, uses $a=A(P(\xi)+.1z)$ with projection onto $[0,2.2]$, and uses the exact portfolio expression in \eqref{eq:reference_controls}. Projection cannot increase distance to the feasible optimum. The polynomial coefficients are the unchanged stored binary64 coefficients, interpreted exactly as rational numbers.
+
+The inherited direct verifier formed derivative coefficients with the ordinary floating multiplication $i\,c_i$ before treating them as point intervals. That operation does not itself enclose the exact product of the stored coefficient and $i$. We do not retroactively label the old derivative-coefficient computation as a directed enclosure. Instead we remove the derivative calculation from the current certificate.
+
+\begin{lemma}[Exact residual-polynomial certificate]\label{lem:bernstein}
+Let $R(\xi)=((5+3\xi)/4)P(\xi)-1$. On a cell $[a,b]\subset[-1,1]$, express $R(a+(b-a)s)=\sum_{i=0}^n\beta_i {n\choose i}s^i(1-s)^{n-i}$ with exact rational coefficients. Then
+\begin{equation}
+ \sup_{\xi\in[a,b]}|P(\xi)-1/x|
+ \leq\frac{\max_i|\beta_i|}{(5+3a)/4}.\label{eq:bernstein}
+\end{equation}
+With $E$ the largest bound over a complete cover, the direct policy's regret is at most $\tfrac12 E^2(1-e^{-.04(1-t)})/.04$ for every starting state and time.
+\end{lemma}
+The computation uses 64 one-dimensional cells. The $t,z$ dependence is handled analytically through $A\leq1$, and portfolio error cancels exactly. The resulting bound is $1.2978908373252045\times10^{-7}$. Its small value is not a claim about superiority of a general classical Bellman solver; it is the correct strong baseline for this structured, known-value problem. In particular, it prevents a verifier improvement from being reported as neural-policy superiority.

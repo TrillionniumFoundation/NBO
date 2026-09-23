@@ -1,0 +1,70 @@
+\section{Introduction}\label{sec:introduction}
+Economic policy computation requires more than a small optimization loss. A proposed policy must be feasible in the economy being studied, its payoff must refer to the intended stopping rule, and its error must hold on the state set to which the conclusion applies. These requirements become distinct when a neural parameterization, numerical financing, and a continuation-value approximation are used together. Our objective is a Neural Bellman Operator for the stopped consumption--portfolio economy defined below, with a uniform regret tolerance of $.01$ on its original state--time domain. This objective is unchanged throughout the revision.
+
+The present contribution is a set of constructive steps toward that objective, with the evidence attached to each step. First, we couple proposal generation to certified policy improvement. A rejected proposal restores not only a deployed policy but also the optimizer's parameters, first and second moments, and iteration counter. This changes the next proposal. The distinction matters: certifying a completed trajectory and subsequently selecting its best checkpoint does not implement such an operator. Second, we give a derivative-free quotient-polling theorem with explicit accuracy and work requirements for the payoff oracle. It provides a route from verified improvement to a stationarity statement without treating an unverified proposal gradient as an economic gradient. Its smoothness and vanishing-width hypotheses are stated separately from the properties established for the current stopped-payoff checker.
+
+Third, we strengthen whole-domain verification. In a stopped investment economy with an unspanned productivity shock, an exact Hamiltonian completion converts policy regret into an integral of squared action errors. Centered second-order interval bounds certify two fixed neural policies on the entire state--time box, including arbitrary restart times. They meet a $.001$ tolerance on 32,768 cells. The same policies previously required 262,144 cells with the inherited first-order verifier. A separate exact rational Bernstein calculation certifies the direct polynomial policy without the floating derivative-coefficient shortcut identified in our audit. These are improvements in verification of fixed policies, not claims of better training.
+
+The classical comparison is essential to the economic interpretation. The expanded calibration study stored in the repository before this revision uses disjoint tuning and evaluation seeds and includes a moving historical-transport control. All six first-order selections lie strictly inside the expanded rate grid with deterioration at a larger rate. Nevertheless, direct L-BFGS-B has both a lower regret bound and strictly higher certified payoff than neural Adam in every matched central-state comparison. The manufactured stochastic benchmark likewise favors a classical approximant. These results rule out a neural-efficiency claim for the tested designs; they do not alter the policy class, economic model, or target that the paper seeks to solve.
+
+The original current-state experiment has a complete-domain bound of $7.181834580823298$, compared with the previously reviewed $7.241462443133396$. Neither number establishes the $.01$ objective. Moreover, an improved verification bound is not, by itself, evidence of improved policy payoff. The stopped-gradient bridge also remains uninstantiated for the original proposal objective. We therefore maintain separate records for a proved identity, a certified numerical result, an optimization diagnostic, and a research objective. The new stochastic result is not substituted for the original economy.
+
+Our framework draws on verification and approximation methods for continuous-time control \citep{KushnerDupuis2001}, the distinction between feasible policies and bounds \citep{BrownSmithSun2010}, and the numerical treatment of economic dynamic models \citep{Judd1998,BrummScheidegger2017}. The proofs and complete numerical records from earlier revisions remain available without deletion. The companion historical annex reproduces all 93 pages of the reviewed R24 article and all 58 pages of its technical supplement; their source files are retained at their original paths. This article presents the current argument, while the new supplement supplies the complete calibration, checkpoint, verification, and provenance records.
+
+\section{The stopped economy and the numerical objective}\label{sec:economy}
+The horizon is $T=1$. The state is $(u,x)\in D=(1.2,2.8)\times(.5,2)$, where $u$ indexes preferences and $x$ is wealth. Controls $a=(c,\theta,p)$ take values in
+\[
+ A=[.05,.8]\times[-.2,.2]\times[-.5,.8].
+\]
+Under the original Brownian filtration,
+\begin{align}
+ du_s&=\theta_s\,ds+.05\,dZ_s^u,\\
+ dx_s&=((.02+.06p_s)x_s-c_s)\,ds+.2p_sx_s\,dZ_s^x,
+ \qquad d\langle Z^u,Z^x\rangle_s=-.25\,ds.\label{eq:economy}
+\end{align}
+The adjustment price is $k\in[.5,8]$; the central comparison uses $k=2$. Let $\tau$ be the first exit from $D$, capped at $1$. Running utility, terminal preference, and settlement are
+\begin{align}
+ \ell_k(u,c,\theta)&=\frac{c^{1-u}}{1-u}-\frac{k}{2}\theta^2,\\
+ G(u,x)&=-.02(u-2)^2+.1\log x,\qquad
+ g(s,u,x)=G(u,x)-8(1-s).
+\end{align}
+For an admissible progressively measurable control,
+\begin{align}
+ J_k^a(t,u,x)&=\E_{t,u,x}\left[\int_t^\tau e^{-.04(s-t)}\ell_k(u_s,c_s,\theta_s)\,ds
+ +e^{-.04(\tau-t)}g(\tau,u_\tau,x_\tau)\right],\notag\\
+ V_k&=\sup_{a\in\cA}J_k^a.\label{eq:value}
+\end{align}
+Admissibility includes a well-defined stopped state process. The bounded state and control ranges keep payoffs bounded; neural feedbacks used in the current-state calculations are smooth before stopping. We do not assume that the unknown value is classically differentiable.
+
+For a smooth test function $v$, the controlled discounted residual is
+\begin{align}
+ \cR_k^a v={}&v_t+\theta v_u+((.02+.06p)x-c)v_x+.00125v_{uu}
+ +.02p^2x^2v_{xx}-.0025pxv_{ux}\notag\\
+ &+\ell_k(u,c,\theta)-.04v.\label{eq:residual}
+\end{align}
+The numerical objective concerns a single current-state actor $a=\pi(t,u,x)$ and a uniform bound for all starting times and all states in the original domain. An initial-state financed expert library and an auxiliary economy are distinct objects, even when their numerical bounds are smaller.
+
+\begin{proposition}[Stopped residual certificate]\label{prop:verification}
+Suppose a smooth candidate $v$ and an admissible policy $\pi$ satisfy $|v-g|\leq b$ on the stopping boundary, $|\cR_k^\pi v|\leq e$ throughout the state--time domain, and
+\[
+ \sup_{a\in A}\cR_k^a v-\cR_k^\pi v\leq q.
+\]
+Then, at every starting state,
+\begin{equation}
+ 0\leq V_k-J_k^\pi\leq 2b+(2e+q)\frac{1-e^{-.04(1-t)}}{.04}.\label{eq:residual_bound}
+\end{equation}
+The same argument applies to separate upper and lower test functions with their respective one-sided residual and boundary inequalities, and to time-dependent error envelopes integrated up to $1$.
+\end{proposition}
+The statement requires inequalities over a complete cover, not losses at training nodes. The inherited full-state certificate uses the stronger slabwise, sign-separated implementation, rather than replacing it by the constant bound in \eqref{eq:residual_bound}.
+
+\subsection{State information in the financed implementation}\label{sec:memory}
+The central experiments use sixteen time slabs and a $1$--$16$--$16$--$3$ tanh generator with 355 parameters. Its 48 node outputs determine a financed family with 47 economically distinct coordinates: a common intercept displacement is offset by the financing root. The decoder bounds consumption slopes and preference drift and reconstructs wealth through exact conditional pricing. This construction supplies admissible candidates; it is not a numerical identity between a general current-state policy and a financed library.
+
+For expert $i$, write its conditional wealth as $X_i=F_i(s,Y_s)$, where
+\[
+ dY_s=.02Y_s\,ds-.3Y_s\,dZ_s^x,\qquad
+ p_i=-\frac{1.5Y_sF_{i,y}(s,Y_s)}{F_i(s,Y_s)}.
+\]
+With fixed initialization weights $\lambda_i\geq0$, $\sum_i\lambda_i=1$, aggregate consumption and preference adjustment are weighted sums and portfolio weight is wealth-weighted. On the financed reachable set, $x=\sum_i\lambda_iX_i$ and the aggregate dynamics satisfy \eqref{eq:economy}. The deployed implementation is Markov in $(t,u,x,Y,\lambda)$, not generally in $(t,u,x)$ alone.
+
+A causal auxiliary state with no additional randomness does not enlarge the class of progressively measurable controls under the original filtration. Conversely, an original admissible control can ignore the auxiliary state. Thus unrestricted optimal values agree when the augmented admissible class is precisely this causal class. The equality says nothing about optimality of the restricted expert library. Off-manifold admissible extensions do not provide numerical accuracy at arbitrary memory states. The retained R24 regional bound below $.004281$ concerns $t=0$, $u\in[1.98,2.02]$, $x\in[1.24,1.27]$, with initialized memory and nine experts. Its economic scope is kept separate from the whole-domain current-state objective.

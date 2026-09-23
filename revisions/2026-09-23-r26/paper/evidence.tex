@@ -1,0 +1,66 @@
+\section{Numerical evidence and economic scope}\label{sec:evidence}
+The evidence has two distinct chronologies. We import the completed R25 experiment at commit \texttt{c78d934} without changing its scientific files. Its protocols precede its execution. The present R26 protocol was recorded locally after examining those results and before the new stress tests and fixed-policy verification. It is not described as a remotely preregistered or independently held-out study. The new seeds $26101,26102$ are diagnostic stress seeds; the fixed stochastic policies retain their original seeds $25201,25202$.
+
+\subsection{Expanded calibration and held-out comparison}\label{sec:calibration}
+The imported experiment expands the learning-rate grid to
+\[
+ \{.005,.02,.08,.32,1.28,5.12,20.48\}.
+\]
+At seeds $25001,25002$, every arm receives 200 objective/gradient calls per rate. Selection uses the mean certified endpoint payoff lower bound; infeasible endpoints are ineligible, and the fixed tie rule selects the smaller rate. The selected rates are $.08$ for neural and whitening Adam and $.32$ for direct, diagonal, static tangent, and moving-transport Adam. All six selections have a worse larger-rate trial and are strictly below the grid ceiling. This repairs the earlier endpoint-censoring problem for this finite design, not a proof that all schedules or all hyperparameters have been optimized.
+
+Evaluation uses seeds $25101,25102$ and proposal orders $(8,16)$ and $(12,24)$, without retuning. Each first-order arm has a 400-call cap. L-BFGS-B has the same cap, with its declared line search and tolerances; early termination is retained rather than padded into fictitious calls. The 84 tuning trajectories, 32 held-out trajectories, six earlier online trajectories, and separate reference studies have different inferential purposes. Their sum is bookkeeping, not a replication count for one effect.
+
+\begin{table}[t]
+\caption{Original economy, central state: imported held-out comparison}\label{tab:heldout}
+\centering\small
+\begin{tabular}{lrrrr}\toprule
+Method & Regret upper & Calls & Generation & Checking\\
+ & & & seconds & seconds\\\midrule
+\tablerows{revisions/2026-09-23-r26/paper/heldout_8_16.tex}
+\bottomrule\end{tabular}
+\par\footnotesize\raggedright The state is $(t,u,x)=(0,2,1.25)$, $k=2$, proposal orders $(8,16)$. Regret is the worst certified deployed bound over two evaluation seeds; work columns are seed means. These are financed policies, not whole-domain current-state actors. Checking sums scheduled checkpoint verification; it is not a measured online latency. Carrier construction and common preprocessing, and any common dual construction, are not included in the generation column. The full run records remain available.
+\end{table}
+
+Direct L-BFGS-B remains the strongest tested central-state solver. This is not merely a difference in common upper bounds: each matched interval for neural Adam payoff minus direct L-BFGS-B payoff is strictly negative. At the coarse rule the two intervals are approximately $[-2.3223,-1.5593]\times10^{-6}$ and $[-3.2620,-2.4991]\times10^{-6}$. The fine-rule comparisons have the same sign. These are certified differences, not significance tests across a population of seeds.
+
+Moving transport substantially closes the gap between the static tangent arm and neural Adam, but does not beat the direct L-BFGS-B frontier. Because its carrier incurs differentiation and storage, its generation time is charged rather than presented as costless quotient preconditioning. The retained R24 equivalent-chart and neural L-BFGS-B failures are preserved. Neither a static-chart failure nor this moving-control result establishes an irreducible neural advantage.
+
+\subsection{Actual online rejection and recovery}\label{sec:online_results}
+The new stress schedule has three blocks: 200 calls at the selected base rate, 50 calls at $20.48$, and 100 recovery calls. The recovery rate is halved after a rejected stress block. This deliberately aggressive block tests the mechanism, not the solver frontier. Neural, direct, and moving-transport arms use the original central economy and the unchanged stopped checker. Every proposal, incumbent, decision, and optimizer snapshot is retained.
+
+\begin{table}[t]
+\caption{R26 synchronous stress execution in the original central economy}\label{tab:online}
+\centering\small
+\begin{tabular}{rlrrrrr}\toprule
+Seed & Arm & A/R & Regret upper & Gen. & Check & Coupled\\\midrule
+\tablerows{revisions/2026-09-23-r26/paper/online_table.tex}
+\bottomrule\end{tabular}
+\par\footnotesize\raggedright A/R denotes accepted/rejected blocks. Times are seconds from the new local serial execution. Check includes the initial incumbent certificate. Coupled time is the measured interleaved run from initial evaluation through the final decision; it includes bookkeeping but excludes initial model construction, inherited common dual construction, and the separately timed shadow continuation. All arms use 350 block gradient calls; these stress runs are not the held-out comparison in Table~\ref{tab:heldout}.
+\end{table}
+
+Across six trajectories, 13 proposals are accepted and five rejected. Four rejected aggressive candidates produce separate shadow continuations from the rejected optimizer state. All four shadow final states differ from the actual rolled-back trajectories. The moving arm accepts both aggressive proposals, but one later recovery proposal is rejected. Thus rejection is not asserted for a branch never entered. Exact equality of the canonical before/after optimizer-state serializations is checked at every rejection, including moments and step counters. No shadow certificate is used to replace the production incumbent.
+
+These executions establish synchronous certification and actual state restoration. They do not establish an Adam convergence rate or show that the stress schedule improves production efficiency. The monotonicity theorem applies to the executed acceptance decisions; the finite-work polling theorem concerns the separately defined poll and its stated hypotheses.
+
+\subsection{Whole-state--time reference verification}\label{sec:reference_results}
+Table~\ref{tab:jet} compares first-order and second-order error enclosures on identical cells for fixed neural policies in the auxiliary stochastic economy. Each attempted cover is retained, including those above the target.
+
+\begin{table}[t]
+\caption{Fixed-policy stochastic certificates on the same cell covers}\label{tab:jet}
+\centering\small
+\begin{tabular}{rrrrr}\toprule
+Seed & Cells & First order & New certificate & Check seconds\\\midrule
+\tablerows{revisions/2026-09-23-r26/paper/jet_table.tex}
+\bottomrule\end{tabular}
+\par\footnotesize\raggedright Both methods certify the same stored neural policy over $[0,1]\times[.5,2]\times[-1,1]$ in the manufactured, unspanned-risk stopped economy. The new certificate takes the minimum of two valid componentwise error bounds. Times include both same-cover calculations and cell-file writing in the local execution. They are not a hardware-normalized speedup relative to the earlier CI run.
+\end{table}
+
+The target $.001$ is attained at 32,768 cells for both policies, whereas the retained first-order stopping rule required 262,144. The reduction is eightfold in cell count at the same declared tolerance, not an eightfold measured runtime gain. The final bounds, $.000834337$ and $.000788415$, are valid at all starting times; the earlier finer certificates may of course be numerically tighter. The policies have not changed. The exact rational direct bound, approximately $1.298\times10^{-7}$, remains much stronger. A successful stochastic neural certificate therefore demonstrates nontrivial verified approximation and restart coverage, not a neural accuracy/work victory.
+
+\subsection{Original full-state progress and stopped-payoff sensitivity}\label{sec:original_results}
+The imported continuation experiment retains the original economy, current-state actor, full domain, and $.01$ target. It uses 85 gradient calls across four blocks and delivers an all-start-time bound of $7.181834580823298$. Relative to $7.241462443133396$, the bound decreases by about $.059628$, or $.823\%$. The remaining bound is approximately 718 times the target. No separately certified actor-payoff improvement is recorded. Neither a local financed bound nor a manufactured-model certificate is used to change this conclusion.
+
+The imported secant experiment certifies five original stopped-payoff policies along a raw-coordinate interpolation between neural Adam and direct L-BFGS-B outputs. Of four adjacent secant intervals, only the first is strictly positive, approximately $[5.332,8.383]\times10^{-6}$. The remaining three contain zero. These comparisons rigorously concern finite policy differences; they do not bound every continuous derivative, prove an optimizer ordering robust to all surrogate errors, or instantiate Proposition~\ref{prop:gradient}. They provide an actionable comparison primitive while the full stopped-gradient bridge remains a separate mathematical and computational task.
+
+\subsection{Reproducibility and preservation}\label{sec:reproducibility}
+The new source contains a protocol, all three attempted covers for each fixed neural policy, exact rational Bernstein coefficients on all 64 cells, every online state snapshot, shadow records, machine-readable publication tables, and checks for the completed Hamiltonian identity, derivative propagation, exact polynomial conversion, complete cover, acceptance/rollback invariants, and historical preservation. The single root revision index is updated, with its old bytes archived. No historical scientific source or result is overwritten. The new response identifies the disposition of all twelve blocking findings, all six technical findings, and all eight requested next steps.

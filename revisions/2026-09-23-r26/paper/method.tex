@@ -1,0 +1,103 @@
+\section{Certified policy improvement and numerical geometry}\label{sec:method}
+Let $y\in\R^{47}$ parameterize the financed quotient, and let $F(y)$ denote the exact stopped payoff at a specified initial state. This section distinguishes the proposal objective, the certified payoff oracle, and the state of the optimizer. No identity between their gradients is presumed.
+
+\subsection{Synchronous improvement with complete rollback}\label{sec:rollback}
+An optimizer state $s$ contains economic coordinates, neural or chart-carrier parameters, first and second moments, and the iteration counter. Let $\Phi_h(s)$ be a block of proposal updates under a declared resource budget. The proposed policy receives a certified payoff enclosure $I(y)=[L(y),U(y)]$. If the checker fails, it returns no enclosure and the proposal is not accepted. The improvement operator is
+\begin{equation}
+ \mathcal T(s)=
+ \begin{cases}
+ \Phi_h(s),&L(y(\Phi_h(s)))>U(y(s)),\\
+ s,&\text{otherwise}.
+ \end{cases}\label{eq:online_operator}
+\end{equation}
+On rejection the entire saved state is restored. The block size and next learning rate are controlled by an external, recorded schedule; a rejected candidate's moment state is not used by the next block.
+
+\begin{proposition}[Verified improvement]\label{prop:monotone}
+If every accepted enclosure contains the exact payoff of the corresponding admissible policy, every accepted update in \eqref{eq:online_operator} strictly increases that payoff, and the deployed sequence is nondecreasing. If acceptance instead requires $L(y')>U(y)+\sigma h^2$ with $\sigma>0$, $h>0$, and $F\leq M$, then there are at most $\lfloor(M-F(y_0))/(\sigma h^2)\rfloor$ accepted updates at that fixed scale.
+\end{proposition}
+This is a safety and finite-improvement statement, not a convergence claim for Adam. If intervals overlap, failure to certify an improvement is not evidence that the candidate is worse. Restoring the optimizer is consequential only when a rejection occurs; the earlier R25 execution accepted all 24 blocks. Section~\ref{sec:online_results} therefore executes a declared stress schedule that exercises the rejection branch, retains full states, and separately continues rejected states as diagnostic shadow runs.
+
+\subsection{Precision-adaptive payoff decisions}\label{sec:precision}
+The absence of a stopped-gradient certificate does not prevent exact-payoff comparisons when sufficiently narrow payoff enclosures are available. Let the width of each policy enclosure at level $j$ be at most $w_j=w_0 2^{-j}$. For a prescribed improvement threshold $s\geq0$, compare
+\[
+ [L(y')-U(y),\,U(y')-L(y)]
+\]
+with $s$. Accept if its lower endpoint exceeds $s$, reject the threshold claim if its upper endpoint is below $s$, and otherwise refine or return \emph{undecided} at the resource cap.
+
+\begin{lemma}[Finite separation of a nonzero payoff margin]\label{lem:separation}
+Assume the enclosures above are valid at every level. If $\gamma=|F(y')-F(y)-s|>0$, the threshold decision is certified whenever $2w_j<\gamma$. It suffices to use at most
+\[
+ \max\{0,\lceil\log_2(2w_0/\gamma)\rceil+1\}
+\]
+refinements. At zero margin no finite separation is guaranteed.
+\end{lemma}
+The current original-economy checker supplies valid intervals at its executed settings. We have not proved that all its components shrink to zero along every relevant policy trajectory. That additional oracle property is a hypothesis of Lemma~\ref{lem:separation}, not an empirical conclusion from two quadrature rules. In particular, rigorous secants are not pointwise derivative enclosures.
+
+\subsection{A quotient-polling theorem with explicit verification work}\label{sec:polling}
+A finite-work result can be obtained without differentiating the proposal quadrature. Consider a direct poll in the economically identified coordinates. Let $\cD$ be a finite set of unit directions with positive cosine measure
+\[
+ \mu=\inf_{g\ne0}\max_{d\in\cD}\frac{g'd}{\norm{g}}>0.
+\]
+For the coordinate poll $\cD=\{\pm e_i:1\leq i\leq47\}$, $\mu=47^{-1/2}$. At scale $h$, accept a feasible trial $y+hd$ only if its certified lower payoff exceeds the incumbent upper payoff by $\sigma h^2$. A complete unsuccessful poll tests every direction.
+
+\begin{assumption}[Poll regularity and oracle accuracy]\label{ass:poll}
+On all poll segments under consideration, $F$ is continuously differentiable with $L$-Lipschitz gradient and is bounded above by $M$. Every prescribed poll point and segment is feasible and inside this regularity region; accepted iterates remain in it. The payoff oracle returns a valid interval of width at most $\kappa h^2$ at each point, at cost at most $W(\kappa h^2)$. Here $\sigma>0$ and $\kappa\geq0$ are fixed.
+\end{assumption}
+
+\begin{theorem}[Accuracy--work bound for a certified quotient poll]\label{thm:poll}
+Under Assumption~\ref{ass:poll}, a complete unsuccessful poll satisfies
+\begin{equation}
+ \norm{\nabla F(y)}\leq \frac{\sigma+2\kappa+L/2}{\mu}\,h.\label{eq:stationarity}
+\end{equation}
+Starting at $y_0$ and continuing fixed-scale polls until the first unsuccessful one requires no more than
+\begin{equation}
+ (|\cD|+1)\left(1+\left\lfloor\frac{M-F(y_0)}{\sigma h^2}\right\rfloor\right)
+ \label{eq:pollwork}
+\end{equation}
+payoff-oracle evaluations, with their total verification work bounded by \eqref{eq:pollwork} times $W(\kappa h^2)$. Taking $h=\mu\varepsilon/(\sigma+2\kappa+L/2)$ yields an $\varepsilon$-stationarity bound with $O(\varepsilon^{-2})$ polls, apart from the explicitly retained oracle cost.
+\end{theorem}
+The estimate is a conditional numerical-method theorem, not an assertion that the original stopped objective already meets Assumption~\ref{ass:poll}. It does not establish a global optimum, a rate for Adam, or a dimensional advantage of neural coordinates. A missing feasible direction at a boundary is not counted as an unsuccessful complete poll. In this revision the theorem is checked on an exact quadratic example; a 47-dimensional certified poll was not run on the original economy.
+
+The poll itself depends on quotient policies and certified payoffs, not on an equivalent parameter chart of the neural generator. This is an exact form of chart independence for its acceptance decisions. Chart independence of this component must not be confused with invariance of Adam or L-BFGS-B in neural weights. A complete implementation may use neural proposals first and the quotient poll as a safeguard, but its evaluation cost must include every verification required by \eqref{eq:pollwork}.
+
+\subsection{Historical neural transport and an executed control}\label{sec:geometry}
+For a raw output map $f:\R^{355}\to\R^{48}$, let $J_n=Df(\vartheta_n)$ and $g_n=\nabla_y L(f(\vartheta_n))$. With bias-corrected Adam first moment,
+\[
+ \widehat m_n=\sum_{r=1}^n a_{nr}J_r'g_r,\qquad
+ a_{nr}=\frac{(1-\beta_1)\beta_1^{n-r}}{1-\beta_1^n},
+\]
+and $D_n=\operatorname{diag}(\sqrt{\widehat v_n}+\epsilon)$, Taylor's theorem gives
+\begin{align}
+ f(\vartheta_{n+1})-f(\vartheta_n)
+ &=-\eta_n\sum_{r=1}^n a_{nr}J_nD_n^{-1}J_r'g_r+\epsilon_n,\label{eq:transport}\\
+ \norm{\epsilon_n}&\leq \frac H2\eta_n^2\norm{D_n^{-1}\widehat m_n}^2,
+\end{align}
+provided $Df$ is $H$-Lipschitz on the update segment. Current $J_nD_n^{-1}J_n'$ alone omits the historical transport. The retained static tangent, diagonal, and whitening charts do not reproduce \eqref{eq:transport}.
+
+The additional direct arm uses quotient coordinates $z\in\R^{47}$ and a separate 355-parameter chart carrier $\vartheta$. At each step it computes $B_n=Q'J_n$, pulls the direct payoff gradient back through $B_n'$, updates parameter-space Adam moments, and pushes the resulting parameter displacement forward through $B_n$. Its economic displacement is
+\begin{equation}
+ \delta z_n=B_n\delta\vartheta_n-\eta_n10^{-6}\nabla_zL,
+ \qquad \norm{\delta z_n}\leq .5,\label{eq:moving}
+\end{equation}
+where a common cap factor rescales the economic and carrier displacements. The carrier is updated in parameter space, while $z$ is updated linearly. The regularizer and cap were fixed before evaluation. The method retains historical pullbacks, adaptive second moments, and the current pushforward, but intentionally omits the finite-step nonlinear output remainder in \eqref{eq:transport}. It is therefore a moving-transport control, not an exact neural-trajectory replica. Its 355 carrier coordinates and two 355-dimensional moment arrays are real costs; calling it a memory-free 47-variable method would be incorrect.
+
+\subsection{What financing-gradient control requires}\label{sec:gradient}
+Let $P(y,a)=B_0$ be the exact financing equation, $P_N$ its numerical approximation, and $a(y),a_N(y)$ their roots on a common bracket. Let $H(y,a)$ and $H_N(y,a)$ denote exact and numerical payoff functions before root substitution. Suppose $P_a,P_{N,a}\geq d_*>0$ and $|P-P_N|\leq e_P$, so $|a-a_N|\leq\delta=e_P/d_*$. At the respective roots, let
+\[
+ \norm{H_{N,y}-H_y}\leq E_A,\quad |H_{N,a}-H_a|\leq E_B,
+ \quad \norm{P_{N,y}-P_y}\leq E_C,\quad |P_{N,a}-P_a|\leq E_D.
+\]
+Each $E$ includes fixed-offset approximation error and the applicable offset-Lipschitz allowance times $\delta$. The derivative factor bounds are explicitly two-sided in the numerical/exact distinction:
+\begin{equation}
+ \max\{|H_a|,|H_{N,a}|\}\leq M_B,\qquad
+ \max\{\norm{P_y},\norm{P_{N,y}}\}\leq M_C.\label{eq:both_versions}
+\end{equation}
+
+\begin{proposition}[Reduced-gradient perturbation]\label{prop:gradient}
+Under these assumptions and differentiability of both implicit roots,
+\begin{equation}
+ \norm{\nabla_y H_N(y,a_N(y))-\nabla_y H(y,a(y))}
+ \leq E_A+\frac{E_BM_C+M_BE_C}{d_*}+\frac{M_BM_CE_D}{d_*^2}.\label{eq:gradient}
+\end{equation}
+\end{proposition}
+The bounded proposal extension clips preference before running-utility evaluation. Its integrability and derivative implementation are not an identification of its gradient with that of \eqref{eq:value}. Neither this revision nor the imported R25 experiment supplies verified values for every term in \eqref{eq:gradient} for the original stopped payoff along the executed optimizer paths. We instead report certified payoff decisions and finite secants as such. The theorem removes an ambiguity in the previous derivative-factor statement; it does not manufacture the missing constants.
