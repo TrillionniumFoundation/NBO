@@ -1,0 +1,63 @@
+name: R29 exact-head validation
+on:
+  push:
+    branches: [revision/econometrica-r29-referee-integration-2026-09-24]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nbo-r29-exact-head-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install fixed scientific and document dependencies
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0 sympy==1.14.0 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          sudo apt-get update -qq
+          sudo apt-get install -y latexmk texlive-latex-extra texlive-fonts-recommended poppler-utils
+      - name: Check committed documents and rebuild from frozen evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          R=revisions/2026-09-24-r29
+          V=/tmp/r29-validation
+          mkdir -p "$V"
+          git rev-parse HEAD > "$V/CHECKED_COMMIT.txt"
+          python -m pip freeze > "$V/python_environment.txt"
+          python "$R/replication/check_publication.py" before --directory "$V"
+          python "$R/replication/finalize_paper.py" 2>&1 | tee "$V/regeneration.log"
+          for name in ECTA_R29 SUPP_R29 RESPONSE_R29 COMPUTATION_R29 HISTORY_R29; do
+            latexmk -pdf -interaction=nonstopmode -halt-on-error "$name.tex" > "$V/$name.compile.log" 2>&1 || { tail -120 "$V/$name.compile.log"; exit 1; }
+            cp "$name.log" "$V/"
+            pdfinfo "$name.pdf" > "$V/$name.pdfinfo.txt"
+          done
+      - name: Independently verify all exact scientific records
+        shell: bash
+        run: |
+          set -euo pipefail
+          R=revisions/2026-09-24-r29
+          V=/tmp/r29-validation
+          /usr/bin/time -v -o "$V/scientific_checks_resource.txt" python "$R/replication/test_revision.py" --output "$V/SCIENCE_TESTS.json" 2>&1 | tee "$V/scientific_checks.log"
+          python "$R/replication/check_publication.py" after --directory "$V"
+          git diff --stat > "$V/working_tree_rebuild_diff.txt"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r29-validation-${{ github.run_id }}
+          path: /tmp/r29-validation/
+          retention-days: 30
