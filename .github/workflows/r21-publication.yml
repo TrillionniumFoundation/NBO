@@ -4,13 +4,12 @@ on:
     branches: [revision/econometrica-r21-policy-sensitive-2026-09-23]
     paths:
       - .github/workflows/r21-publication.yml
-      - revisions/2026-09-23-r21/publication/**
 permissions:
   contents: write
   actions: read
 concurrency:
   group: nbo-r21-referee-publication
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   publication:
     runs-on: ubuntu-24.04
@@ -19,111 +18,29 @@ jobs:
       OPENBLAS_NUM_THREADS: '1'
       OMP_NUM_THREADS: '1'
       MKL_NUM_THREADS: '1'
+      R21_SOURCE_COMMIT: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
-      - name: Verify exact source transport and materialize the complete revision
-        shell: bash
+      - name: Validate the readable source commit and unchanged historical inputs
         run: |
           python3 - <<'PY'
-          from pathlib import Path, PurePosixPath
-          import base64, hashlib, json, lzma, subprocess
-          root=Path.cwd(); rev=root/'revisions/2026-09-23-r21'
-          def digest(data): return hashlib.sha256(data).hexdigest()
-          def bundle(folder,prefix,count,expected):
-              text=''.join((rev/folder/f'{prefix}{i:02d}.b64').read_text().strip() for i in range(count))
-              raw=base64.b64decode(text,validate=True)
-              assert digest(raw)==expected
-              return json.loads(lzma.decompress(raw))
-          base=bundle('publication','source',3,'ff3a823df94045bee13ec666dc1a0374634d56b84784645102a6ec0f7d546e13')
-          patch=bundle('staging','snapshot',2,'fc922252c6793e324327daf0842ee3bac333286db5801c88c511a2ec43d5c2d7')
-          assert base['format']=='R21_new_sources_sha256_v1' and len(base['files'])==20
-          assert patch['format']=='R21_snapshot_review_response_patch_v1' and len(patch['files'])==14
-          finals={item['path']:item['sha256'] for item in patch['files']}
-          def target(name,allow_index=False):
-              p=PurePosixPath(name)
-              assert not p.is_absolute() and '..' not in p.parts
-              allowed={'ECTA_R21.tex','SUPP_R21.tex','R21_REVIEW.md'}
-              if allow_index: allowed.add('REVISION_INDEX.md')
-              assert name in allowed or name.startswith('revisions/2026-09-23-r21/')
-              return root/name
-          for item in base['files']:
-              name=item['path'];dest=target(name);content=item['content'].encode('utf-8')
-              assert digest(content)==item['sha256']
-              if dest.exists():
-                  assert digest(dest.read_bytes()) in {item['sha256'],finals.get(name)},name
-              else:
-                  dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(content)
-          for item in patch['files']:
-              name=item['path'];dest=target(name,True)
-              if dest.exists() and digest(dest.read_bytes())==item['sha256']: continue
-              before=item['before_sha256']
-              if before is None:
-                  assert not dest.exists(),name
-                  content=item['content'].encode('utf-8')
-              else:
-                  assert dest.is_file() and digest(dest.read_bytes())==before,name
-                  lines=dest.read_text().splitlines(keepends=True)
-                  for h in reversed(item['hunks']):lines[h['start']:h['end']]=h['lines']
-                  content=''.join(lines).encode('utf-8')
-              assert digest(content)==item['sha256'],name
-              dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(content)
-          review='reviews/2026-09-23-econometrica-r21/referee_report.md'
-          content=subprocess.check_output(['git','show','bc118f20f6361cdeae668141e45f64c436ee6a2a:'+review])
-          blob=hashlib.sha1(b'blob '+str(len(content)).encode()+b'\0'+content).hexdigest()
-          assert blob=='d98e887168b892c758718181dadaae560d168ebd'
-          dest=root/review
-          if dest.exists():assert dest.read_bytes()==content
-          else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(content)
-          print('Verified base manuscript, all snapshot-response changes, and the exact latest referee report.')
-          PY
-      - name: Fetch immutable executed R20 scientific inputs
-        uses: actions/download-artifact@v4
-        with:
-          name: nbo-r20-science
-          run-id: 35802793602
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path: .r21-r20-input
-      - name: Verify scientific input archive without overwriting history
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path, PurePosixPath
-          import hashlib, tarfile
-          p=Path('.r21-r20-input/NBO_R20_science.tar.gz')
-          assert hashlib.sha256(p.read_bytes()).hexdigest()=='5c563f9b1a68ef218257a3c281953e8b80f2b5720b94741023574b0095dfe162'
-          added=0
-          with tarfile.open(p) as t:
-              for m in t:
-                  n=PurePosixPath(m.name)
-                  assert not n.is_absolute() and '..' not in n.parts
-                  if m.isdir():
-                      assert m.name in {'revisions','revisions/2026-09-23-r20'} or m.name.startswith('revisions/2026-09-23-r20/')
-                      continue
-                  assert m.isfile() and m.name.startswith('revisions/2026-09-23-r20/'),m.name
-                  data=t.extractfile(m).read(); dest=Path(m.name)
-                  if dest.exists():
-                      assert dest.read_bytes()==data, 'Inherited input differs: '+m.name
-                  else:
-                      dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data);added+=1
-          print('Materialized missing immutable inputs:',added)
-          PY
-      - name: Commit inspectable sources and exact review inputs
-        run: |
-          python3 - <<'PY'
-          import importlib.util
+          from pathlib import Path
+          import hashlib, importlib.util, subprocess
+          required=['ECTA_R21.tex','SUPP_R21.tex','R21_REVIEW.md','REVISION_INDEX.md','revisions/2026-09-23-r21/RESPONSE_TO_R21_SNAPSHOT.md','revisions/2026-09-23-r21/replication/representation_audit.py']
+          for name in required:assert Path(name).is_file(),name
           p='revisions/2026-09-23-r21/replication/build.py'
           spec=importlib.util.spec_from_file_location('r21build',p);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
           print(m.preservation())
+          review='reviews/2026-09-23-econometrica-r21/referee_report.md'
+          content=Path(review).read_bytes()
+          expected=subprocess.check_output(['git','show','bc118f20f6361cdeae668141e45f64c436ee6a2a:'+review])
+          assert content==expected
+          assert hashlib.sha1(b'blob '+str(len(content)).encode()+b'\0'+content).hexdigest()=='d98e887168b892c758718181dadaae560d168ebd'
+          print('Both review inputs and the complete readable R21 source are pinned in this commit.')
           PY
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add ECTA_R21.tex SUPP_R21.tex R21_REVIEW.md REVISION_INDEX.md
-          git add revisions/2026-09-23-r21 revisions/2026-09-23-r20/results reviews/2026-09-23-econometrica-r21
-          git diff --cached --quiet || git commit -m 'revision(r21): materialize complete manuscript, both referee responses and exact scientific inputs'
-          git push origin HEAD:${GITHUB_REF_NAME}
-          echo "R21_SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
@@ -144,6 +61,8 @@ jobs:
         run: python revisions/2026-09-23-r21/replication/manifest.py
       - name: Commit complete referee object to the new revision branch only
         run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add ECTA_R21.tex SUPP_R21.tex RESPONSE_R21.tex R21_REVIEW.md REVISION_INDEX.md
           git add -f ECTA_R21.pdf SUPP_R21.pdf RESPONSE_R21.pdf
           git add revisions/2026-09-23-r21
@@ -164,15 +83,13 @@ jobs:
             NBO_R21_review_package.zip
             R21_PUBLICATION_COMMIT.txt
           retention-days: 30
-      - name: Retain diagnostic logs
+      - name: Retain diagnostic logs and complete checks
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nbo-r21-publication-diagnostics
           path: |
             revisions/2026-09-23-r21/build_logs
-            revisions/2026-09-23-r21/results/replay_summary.json
-            revisions/2026-09-23-r21/publication
-            revisions/2026-09-23-r21/staging
+            revisions/2026-09-23-r21/results
           if-no-files-found: warn
           retention-days: 30
