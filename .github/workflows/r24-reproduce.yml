@@ -1,0 +1,57 @@
+name: R24 independent scientific reproduction
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reproduce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Preserve published results separately in the disposable runner
+        run: |
+          test -f revisions/2026-09-23-r24/replication/study.py
+          test -d revisions/2026-09-23-r24/results
+          mv revisions/2026-09-23-r24/results revisions/2026-09-23-r24/frozen-results
+          mkdir -p revisions/2026-09-23-r24/results/logs
+      - name: Install declared numerical environment
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Execute every prescribed configuration from scratch
+        run: |
+          set -o pipefail
+          python revisions/2026-09-23-r24/replication/tests.py 2>&1 | tee revisions/2026-09-23-r24/results/logs/independent_tests.log
+          python revisions/2026-09-23-r24/replication/study.py --phase all 2>&1 | tee revisions/2026-09-23-r24/results/logs/independent_study.log
+          python revisions/2026-09-23-r24/replication/assemble_publication.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=Path('revisions/2026-09-23-r24')
+          old=json.loads((r/'frozen-results/PUBLICATION_SUMMARY.json').read_text())
+          new=json.loads((r/'results/PUBLICATION_SUMMARY.json').read_text())
+          compare={'purpose':'Independent regeneration, not replacement of published evidence','new_trial_count':new['trial_count'],'new_checkpoint_count':new['checkpoint_count'],'selected_rates_before':old['selected_rates'],'selected_rates_after':new['selected_rates'],'reported_timing_is_machine_dependent':True,'heldout_comparison':[]}
+          for x in new['heldout']:
+              y=next(t for t in old['heldout'] if t['orders']==x['orders'] and t['arm']==x['arm'])
+              compare['heldout_comparison'].append({'orders':x['orders'],'arm':x['arm'],'published_bound':y['max_regret_upper'],'new_bound':x['max_regret_upper'],'difference_diagnostic_not_interval':x['max_regret_upper']-y['max_regret_upper']})
+          (r/'results/INDEPENDENT_REPRODUCTION_COMPARISON.json').write_text(json.dumps(compare,indent=2,allow_nan=False)+'\n')
+          assert new['trial_count']==110 and new['checkpoint_count']==286
+          PY
+      - name: Preserve all fresh outcomes without pushing repository changes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r24-independent-${{ github.run_id }}
+          path: revisions/2026-09-23-r24/results/
+          retention-days: 30
