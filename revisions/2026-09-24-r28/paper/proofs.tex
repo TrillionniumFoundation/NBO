@@ -1,0 +1,160 @@
+\section{Proofs of the certificate and completion results}\label{app:completion28}
+\begin{proof}[Proof of Proposition~\ref{prop:residual28}]
+Apply stopped It\^o's formula to $e^{-.04(s-t)}v(s,u_s,x_s)$, first on compactly localized cylinders and then pass to the stopping time using the stated boundedness. For any admissible $a$,
+\begin{equation}
+ J^a-v(t,u,x)=\E\left[e^{-.04(\tau-t)}(g-v)(\tau,u_\tau,x_\tau)+\int_t^\tau e^{-.04(s-t)}\cR^av(s,u_s,x_s)\,ds\right].
+\end{equation}
+Since $\cR^av\le e+q$, $J^a\le v+b+(e+q)\C{1-t}$. For the candidate, $J^\pi\ge v-b-e\C{1-t}$. Take the supremum in the first inequality and subtract the second. Admissibility gives the nonnegative lower bound on regret. This argument uses a smooth test witness, not a differentiable optimal value.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:completion28}]
+The terminal gap is zero. Suppose $0\le V_{t+1}^*-v_{t+1}^\pi\le B_{t+1}^\pi$. Monotonicity of the Bellman operator gives the lower bound and
+\begin{align}
+ V_t^*-v_t^\pi
+ &=T_tV_{t+1}^*-T_tv_{t+1}^\pi+\delta_t^\pi\\
+ &\le\beta\max_a P_t^a B_{t+1}^\pi+\delta_t^\pi=B_t^\pi.
+\end{align}
+The inequality follows by comparing each action's continuation difference before taking the maximum. At a stopped state there is no continuation, so the gap and the envelope are zero.
+
+For completion, proceed backward after fixing the completed suffix. If the raw action is retained, its deficit against that suffix is at most $\eta$ by the test. If it is replaced by a maximizing action, the deficit is zero. Thus $\delta_t^{\bar\pi}\le\eta$ everywhere. Induction in the previous bound yields
+$B_t^{\bar\pi}\le\eta\sum_{j=0}^{T-t-1}\beta^j$, proving the assertion. This argument does not assume that the raw policy is neural, near optimal, or generated independently of the model. Reference-free means that the implemented construction never reads $V^*$; the proof may of course compare to the mathematically defined optimal value.
+
+Each backward sweep enumerates at most $TNA$ action values, each with at most $D$ successors. A maximization and a retained-action test add linear overhead. When primitives are rational, a common denominator can be propagated backward and all comparisons reduced to integer comparisons. Their bit cost is not a unit-cost real operation and must be counted separately for growing horizons or large denominators.
+\end{proof}
+
+\subsection{Exact arithmetic convention in the inventory implementation}
+Let $R=100d$, $D=d+2$, and let $r_{saz}^{\rm num}$ be the integer reward numerator. Terminal values have denominator $q_T=R$. Define $q_t=100Dq_{t+1}$. If the next value numerator is $n_{t+1}$, the action numerator is
+\begin{equation}\label{eq:integer28}
+ Q_{t,s,a}^{\rm num}=100\frac{q_{t+1}}R\sum_{z=1}^{D}r_{saz}^{\rm num}
+ +99\sum_{z=1}^{D}n_{t+1}(s'(s,a,z)).
+\end{equation}
+The stopped action is instead assigned its settlement numerator at denominator $q_t$. Equation~\eqref{eq:integer28} exactly equals the rational expectation and discount recursion. Python arbitrary-size integers carry all accumulated numerators. Binary64 training is allowed to choose a poor action; it is not allowed to change a certificate comparison. Exported decimal bounds are rounded upward for display, whereas the decision uses the exact rational fraction. The independent optimal recursion uses a scalar outcome loop and separately selects feasible maximizers. Every saved policy gap is then compared with its saved statewise envelope using common integer denominators.
+
+\begin{proof}[Proof of Proposition~\ref{prop:gate28}]
+Containment gives $J(\pi_{\rm candidate})\ge L(\pi_{\rm candidate})>U(\pi_{\rm incumbent})+\zeta\ge J(\pi_{\rm incumbent})+\zeta$. A rejected candidate is not deployed. Restoring a byte-equivalent serialization of every deterministic optimizer state component makes the next state identical to the saved state; restoring only policy parameters would not establish this fact for an adaptive optimizer. Summing the strict improvements and using $J\le M$ gives the finite-acceptance bound when $\zeta>0$.
+\end{proof}
+
+\section{Constrained polling: geometry, precision, and work}\label{app:box28}
+\begin{proof}[Proof of Theorem~\ref{thm:box28}]
+Write $w=\kappa h^2$. Failure of the strict acceptance test at a feasible trial $y$ means $L(y)\le U(x)+\sigma h^2$. Since intervals contain the true values and each has width at most $w$,
+\begin{equation}
+ F(y)-F(x)\le(\sigma+2\kappa)h^2.
+\end{equation}
+For $y=x+she_i\in C$, $s\in\{-1,1\}$, smoothness gives
+\begin{equation}
+ F(y)-F(x)\ge sh\,\partial_iF(x)-\frac L2h^2.
+\end{equation}
+Thus $s\partial_iF(x)\le Ch$, where $C=\sigma+2\kappa+L/2$.
+
+For each $i$ with nonzero derivative, take $s=\sgn\partial_iF(x)$. If the full signed step is feasible, the preceding inequality bounds $|\partial_iF(x)|$, and scalar projection implies $|(G_\tau(x))_i|\le Ch$. If it is infeasible, the distance to the face in that sign is less than $h$, and the same scalar projection gives $|(G_\tau(x))_i|<h/\tau$. A zero-width coordinate has projected component zero. Squaring and summing establishes \eqref{eq:stationarity28}.
+
+Every accepted step improves true payoff by more than $\sigma h^2$, by the same containment argument as Proposition~\ref{prop:gate28}. Therefore the number of accepted steps is bounded by $\lfloor(M-F(x_0))/(\sigma h^2)\rfloor$. Each accepted or final unsuccessful poll requires no more than one incumbent evaluation and $2n$ trial evaluations. Multiplying by the stated per-evaluation work gives \eqref{eq:work28}. Computational failure at a feasible trial destroys the failed-poll inequality for that direction; it cannot be classified as a geometric short face. This proves the final qualification as well.
+\end{proof}
+
+For the constant-control slice, $M=0$ is a valid upper payoff bound: flow utility and adjustment costs are nonpositive, while terminal wealth is below one and any earlier boundary settlement includes a nonpositive early-exit penalty. A lower endpoint for the initial payoff supplies a conservative $M-F(x_0)$. At the four executed meshes the code checks every required width, and a payoff call evaluates a degree-100 interval polynomial after construction. Its arithmetic cost is linear in the degree; setup, coefficient construction, and derivative auditing are separate. Measured wall time is an observation, not a proved worst-case CPU-time oracle. The large sufficient-decrease work bound is not presented as a sharp predictor of the observed call count.
+
+The unconstrained positive-spanning result is recovered when all poll directions are feasible. At a binding upper face an increasing objective can have a nonzero ordinary gradient but a zero projected-gradient mapping. This is precisely the $k=1/2$ case in the original slice. In general, neither projected stationarity nor a complete unsuccessful poll implies global optimality without further structure. The slice adds verified strong concavity; the finite-state completion result instead uses Bellman comparison and does not require parameter-space convexity.
+
+\section{The stopped likelihood-ratio bridge and analytic oracle}\label{app:slice28}
+\subsection{Stopping and explicit parameter dependence}
+In the slice, $x_s$ decreases monotonically and its interval endpoint remains above $.5$. Thus only preference can cause early exit. The drift moves preference by at most $.2$ over the horizon, leaving a Brownian excursion of at least $.6$ to reach either boundary from two. The reflection bound $\Pr(\sup_{s\le1}|W_s|\ge12)\le4\Pr(W_1\ge12)$ and $\Pr(W_1\ge12)\le e^{-72}$ give \eqref{eq:exit28}.
+
+Let $H_\theta$ be the stopped payoff as a functional of the preference path, and $\widetilde H_\theta$ its full-horizon clipped extension. The path functionals agree when no exit occurs. Both are bounded in absolute value by $H=14.4$ for the stated parameters: clipped flow utility is at most $5(4/3)^{1/5}<6$ in magnitude, adjustment cost is at most $.04$ when $k\le2$, and the boundary/terminal settlement is bounded by the early-exit charge eight plus the bounded quadratic and logarithmic terms. At a fixed preference path, the only explicit $\theta$ dependence is the quadratic cost. The difference $D_\theta=H_\theta-\widetilde H_\theta$ therefore satisfies
+\begin{equation}
+ |D_\theta|\le2H\ind_A,\quad
+ |\partial_\theta D_\theta|\le k(.2)\ind_A,\quad
+ |\partial_{\theta\theta}D_\theta|\le k\ind_A,
+\end{equation}
+where $A$ is the exit event for that path.
+
+Changing the constant drift of the full preference path yields the likelihood-ratio score $S=W_1/\sigma$, $\sigma=.05$, under the current drift measure. The second score is $S^2-1/\sigma^2$. Bounded path functionals, their displayed explicit derivatives, and Gaussian exponential moments justify differentiating the expectation twice. Consequently,
+\begin{align}
+ |\E D_\theta|&\le2Hp,\\
+ |\partial_\theta\E D_\theta|&\le2H\sqrt p/\sigma+k(.2)p,\\
+ |\partial_{\theta\theta}\E D_\theta|&\le2H\sqrt{2p}/\sigma^2+2k(.2)\sqrt p/\sigma+kp,
+\end{align}
+where $p=4e^{-72}$. The square roots follow from Cauchy--Schwarz, $\E S^2=1/\sigma^2$, and $\E(S^2-1/\sigma^2)^2=2/\sigma^4$. The argument differentiates a change of path measure, not the hitting-time map. The explicit cost derivatives cannot be dropped from these bounds.
+
+\subsection{Power series and Gaussian moments}
+Set $a=\log(4/3)$ and $v=u-2$. With $c=3/4$, untruncated flow utility is
+\begin{equation}
+ f(v)=-\frac43\frac{e^{av}}{1+v}=-\frac43\sum_{n=0}^{\infty}c_nv^n,
+ \qquad c_0=1,\quad c_n=\frac{a^n}{n!}-c_{n-1}.
+\end{equation}
+The absolute coefficient of $f$ is bounded by $(4/3)e^a=16/9<2$. On $|Z|\le10$, $v=\theta s+\sigma\sqrt{s}Z$ satisfies $|v|\le.7$, so a degree-$N$ truncation has error at most
+\begin{equation}
+ d_N=\frac{2(.7)^{N+1}}{1-.7}.
+\end{equation}
+For $N=100$ this is approximately $1.509423\times10^{-15}$. There is no singularity in this central region. Clipping handles the Gaussian tails without evaluating $1/(1+v)$ beyond its valid economic interval.
+
+The full Gaussian polynomial moments are
+\begin{equation}
+ \E(\theta s+\sigma\sqrt{s}Z)^n
+ =\sum_{\substack{0\le j\le n\\j\ {\rm even}}}
+ {n\choose j}\theta^{n-j}\sigma^j(j-1)!!\,s^{n-j/2}.
+\end{equation}
+The convention $(-1)!!=1$ is used. Each time moment $I_m=\int_0^1e^{-\rho s}s^m\,ds$, $\rho=.04$, is enclosed by
+\begin{equation}
+ I_m=\sum_{\ell=0}^{K}\frac{(-\rho)^\ell}{\ell!(m+\ell+1)}+r_{m,K},
+ \qquad |r_{m,K}|\le\frac{e^{\rho}\rho^{K+1}}{(K+1)!},\qquad K=20.
+\end{equation}
+The code propagates this remainder into every coefficient, including the running adjustment cost. The untruncated terminal expectation is the exact quadratic $-.02(\theta^2+\sigma^2)$ plus $.1\log x_1$, discounted at $\rho$.
+
+\subsection{Tail control for values and derivatives}
+Let $T_j$ bound $\E[|Z|^j\ind_{\{|Z|>10\}}]$. Dropping the normal density's factor $(2\pi)^{-1/2}<1$ gives the rigorous recursions
+\begin{equation}
+ T_0=\frac{2e^{-50}}{10},\quad T_1=2e^{-50},\quad
+ T_j=2\,10^{j-1}e^{-50}+(j-1)T_{j-2}\quad(j\ge2).
+\end{equation}
+Define
+\begin{equation}
+ P_r=2\sum_{n=0}^{100}\sum_{j=0}^{n}{n\choose j}(.2)^{n-j}\sigma^jT_{j+r}.
+\end{equation}
+This controls the polynomial tail weighted by $|Z|^r$ uniformly over time and the drift box. The clipped utility has magnitude below six. For a normal expectation at time $s$, drift differentiation gives factors $\sqrt{s}Z/\sigma$ and $s(Z^2-1)/\sigma^2$. Hence the flow errors of orders zero, one, and two are bounded respectively by
+\begin{align}
+ E_0^{\rm flow}&=d_N+6T_0+P_0,\\
+ E_1^{\rm flow}&=(d_N+6T_1+P_1)/\sigma,\\
+ E_2^{\rm flow}&=\{2d_N+6(T_2+T_0)+P_2+P_0\}/\sigma^2.
+\end{align}
+We used $\E|Z|\le1$ and $\E|Z^2-1|\le2$ on the central part and bounded the discount integral by one. These are remainder bounds for expectations and their derivatives, not pointwise derivative bounds for a clipped function.
+
+For the terminal quadratic, the clipped and untruncated versions coincide in the central region. On the tail their difference is at most $.0144+.0001Z^2$, because $|\theta|\le.2$ and the clipping radius is $.8$. Thus the terminal errors are
+\begin{align}
+ E_0^{\rm term}&=.0144T_0+.0001T_2,\\
+ E_1^{\rm term}&=(.0144T_1+.0001T_3)/\sigma,\\
+ E_2^{\rm term}&=\{.0144(T_2+T_0)+.0001(T_4+T_2)\}/\sigma^2.
+\end{align}
+Adding the likelihood-ratio stopping bounds gives the total analytic errors. Directed interval arithmetic adds coefficient and evaluation rounding. The first two derivatives of the resulting polynomial are evaluated on each entire drift cell; their analytic error budgets are then added. This is the source of the validated $L$ and strong-concavity constant $m$ used in the main text.
+
+\subsection{From derivatives to class regret}
+If $F''\le-m<0$ on the whole interval, then for any feasible $y$,
+\begin{equation}
+ F(y)-F(x)\le F'(x)(y-x)-\frac m2(y-x)^2\le\frac{|F'(x)|^2}{2m}.
+\end{equation}
+The code uses an upper enclosure for $|F'(x)|$ and a lower enclosure for $m$. At the upper face, a nonnegative lower bound on $F'$ and strict concavity show that $F$ is increasing on the entire box, giving exact class optimality. The analogous statement holds at the lower face. A sign-changing interval bracket for $F'$ identifies the unique interior optimum. These arguments certify optimality within the fixed consumption/investment/constant-adjustment class; they do not compare that class to arbitrary adapted controls.
+
+\section{Historical transport and the financing-gradient formula}\label{app:transport28}
+\begin{proof}[Proof of Proposition~\ref{prop:transport28}]
+Suppose the two implementations agree through step $n$. They then evaluate the same raw carrier output and the same economic quotient. By the chain rule their parameter gradients are identical, $\nabla_\theta L=B_n^\top g_n$. Their first and second moments, bias corrections, denominators, and parameter displacement are consequently identical. Evaluating the full network at the new parameters gives identical raw outputs and includes the entire nonlinear displacement. Exact recentering supplies the induction hypothesis for the next step. A linearized output update would not supply it unless its Taylor remainder vanished. Expanding the first-moment recurrence gives the historical sum in \eqref{eq:historical28}; Taylor's integral remainder gives its stated bound when the Jacobian is Lipschitz.
+\end{proof}
+
+The inherited financing calculation is retained because it identifies what remains to be instantiated for the general stopped gradient. Let $P(y,a)=B$ be the exact financing equation and $P_N$ its proposal approximation. Suppose $P_a,P_{N,a}\ge d_*>0$ on the relevant root segment and $|P-P_N|\le e_P$. Then the root error is at most $\delta=e_P/d_*$. The reduced gradient of an objective $H$ is
+\begin{equation}
+ H_y-H_a\frac{P_y}{P_a}.
+\end{equation}
+At the exact and approximate roots write $A=H_y$, $B_1=H_a$, $C_1=P_y$, and $D_1=P_a$. Let $E_A,E_B,E_C,E_D$ enclose both approximation errors and the root-shift effects over distance $\delta$, and let $M_B,M_C$ bound the absolute values of both exact and approximate $B_1,C_1$. The reduced-gradient discrepancy is at most
+\begin{equation}\label{eq:reducedgradient28}
+ E_A+\frac{E_BM_C+M_BE_C}{d_*}+\frac{M_BM_CE_D}{d_*^2}.
+\end{equation}
+Indeed, add and subtract the mixed products in $B_1C_1/D_1-B_{1,N}C_{1,N}/D_{1,N}$, and use $|D_1^{-1}-D_{1,N}^{-1}|\le E_D/d_*^2$. All four error terms and both magnitude bounds are needed. Finite payoff secants do not supply these derivative enclosures. R28 instantiates a different exact stopped-gradient bridge on the one-dimensional slice, not the constants in \eqref{eq:reducedgradient28} along the financed 47-dimensional optimizer path.
+
+\section{All-restart discounted suffix envelopes}\label{app:suffix28}
+Let a nonnegative residual envelope equal $a_i$ on time slab $[t_i,t_{i+1}]$, with $\Delta_i=t_{i+1}-t_i$. The discounted suffix at a slab boundary obeys
+\begin{equation}
+ C_i=a_i\frac{1-e^{-\rho\Delta_i}}\rho+e^{-\rho\Delta_i}C_{i+1},\qquad C_m=0.
+\end{equation}
+At a restart $t$ in that slab, put $r=t_{i+1}-t$. The suffix is
+\begin{equation}
+ H_i(r)=\frac{a_i}\rho+\left(C_{i+1}-\frac{a_i}\rho\right)e^{-\rho r},\qquad 0\le r\le\Delta_i.
+\end{equation}
+Its derivative has a constant sign unless it is identically zero. The maximum within the slab is therefore attained at an endpoint. Taking the maximum over the slab endpoints proves the all-restart envelope used by the postprocessor. When a separate uniform boundary mismatch is present, its contribution must be added with the coefficient justified by the underlying stopped verification inequality; it is not absorbed into an unexplained legacy output field. The postprocessed all-restart number is consequently a theorem-backed use of the same slab bounds, not an empirical maximum over sampled restart times.
