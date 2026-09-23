@@ -1,13 +1,17 @@
 """Check every preserved historical PDF page and seal reproducible delivery metadata."""
-import hashlib,json,os,re,subprocess
+import hashlib,json,os,re,subprocess,sys
+try:
+    import fitz
+except ImportError:
+    subprocess.run([sys.executable,"-m","pip","install","PyMuPDF==1.26.7"],check=True)
+    import fitz
 from pathlib import Path
 ROOT=Path.cwd();REV=ROOT/'revisions/2026-09-23-r26'
 def write(p,d):p.write_text(json.dumps(d,indent=2)+'\n')
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def pages(p):
-    s=subprocess.check_output(['pdftotext','-layout',str(p),'-']).decode('utf-8').split('\f')
-    if s and not s[-1].strip():s.pop()
-    return [''.join(x.split()) for x in s]
+    with fitz.open(p) as doc:
+        return [''.join(page.get_text().split()) for page in doc]
 combined=pages(ROOT/'SUPP_R26.pdf');rows=[];start=0
 for doc in ('ECTA_R24','SUPP_R24'):
     source=pages(REV/'history'/f'{doc}_as_reviewed.pdf')
