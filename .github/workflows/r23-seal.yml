@@ -32,11 +32,10 @@ jobs:
           for stem in ['ECTA_R23','SUPP_R23','RESPONSE_R23']:
               for suffix in ['.pdf','.tex']:
                   assert (root/(stem+suffix)).read_bytes()==subprocess.check_output(['git','show',compiled_commit+':'+stem+suffix])
-          workflow=root/'.github/workflows/r23-publication.yml'
-          text=workflow.read_text();before='python revisions/2026-09-23-r23/replication/build_publication.py --compile | tee revisions/2026-09-23-r23/build_logs/publication.log'
-          after='python revisions/2026-09-23-r23/replication/build_publication.py --compile > /tmp/r23-publication-build.log\n          cat /tmp/r23-publication-build.log'
-          assert text.count(before)==1;workflow.write_text(text.replace(before,after))
-          note={'compiled_publication_commit':compiled_commit,'compiled_workflow_source_commit':'d33d3906d4b25ebebde252e12b5222581f576e5d','compiled_run_id':35826137923,'primary_scientific_result_commit':'7384d6bc43774ed91738db1c86ec6f21a1e6504e','previous_manifest_sha256':hashlib.sha256(old_bytes).hexdigest(),'only_preseal_mismatch':mismatches,'cause':'The builder printed its final preservation summary after the manifest had hashed the still-open tee log. No source, policy, scientific result, TeX or PDF changed.','remedy':'Hash the completed log in a separate sealing step; future builds redirect the live summary outside the indexed tree.','recompiled':False,'retrained':False,'all_six_referee_tex_pdf_blobs_unchanged':True,'sealing_source_commit':os.environ['GITHUB_SHA'],'sealing_run_id':os.environ['GITHUB_RUN_ID']}
+          workflow=(root/'.github/workflows/r23-publication.yml').read_text()
+          assert '--compile > /tmp/r23-publication-build.log' in workflow
+          assert '--compile | tee revisions/' not in workflow
+          note={'compiled_publication_commit':compiled_commit,'compiled_workflow_source_commit':'d33d3906d4b25ebebde252e12b5222581f576e5d','compiled_run_id':35826137923,'primary_scientific_result_commit':'7384d6bc43774ed91738db1c86ec6f21a1e6504e','previous_manifest_sha256':hashlib.sha256(old_bytes).hexdigest(),'only_preseal_mismatch':mismatches,'cause':'The builder printed its final preservation summary after the manifest had hashed the still-open tee log. No source, policy, scientific result, TeX or PDF changed.','remedy':'Hash the completed log in a separate sealing step; future builds redirect the live summary outside the indexed tree. The workflow fix was applied through the authorized connector in 97f4ff0bd5bcf9b575b25b475dafd5362e94bafe.','earlier_seal_run':35826429814,'earlier_seal_note':'All hash, preservation and package checks passed; the runner token could not push a workflow-file edit. That rejected push changed no remote branch. This run writes only publication metadata.','recompiled':False,'retrained':False,'all_six_referee_tex_pdf_blobs_unchanged':True,'sealing_source_commit':os.environ['GITHUB_SHA'],'sealing_run_id':os.environ['GITHUB_RUN_ID']}
           (rev/'archive/FINAL_SEAL.json').write_text(json.dumps(note,indent=2)+'\n')
           sys.path.insert(0,str(rev/'replication'))
           import build_publication
@@ -56,7 +55,7 @@ jobs:
               assert z.read('revisions/2026-09-23-r23/PUBLICATION_MANIFEST.json')==manifest.read_bytes()
               assert not any(Path(n).suffix.lower() in {'.ttf','.otf','.woff','.woff2','.pfb','.ttc','.afm'} for n in z.namelist())
           changed=subprocess.check_output(['git','diff','--name-only'],text=True).splitlines()
-          assert set(changed)=={'.github/workflows/r23-publication.yml','revisions/2026-09-23-r23/PUBLICATION_MANIFEST.json'},changed
+          assert set(changed)=={'revisions/2026-09-23-r23/PUBLICATION_MANIFEST.json'},changed
           print(json.dumps({'status':'PASS','verified_manifest_entries':len(final['sha256']),'preservation':final['preservation'],'pdf_build':final['checks']['pdf_build'],'archive_all_manifest_entries_verified':True},indent=2))
           PY
       - name: Publish the final sealed commit on the R23 branch only
@@ -64,7 +63,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .github/workflows/r23-publication.yml revisions/2026-09-23-r23/PUBLICATION_MANIFEST.json revisions/2026-09-23-r23/archive/FINAL_SEAL.json
+          git add revisions/2026-09-23-r23/PUBLICATION_MANIFEST.json revisions/2026-09-23-r23/archive/FINAL_SEAL.json
           git commit -m 'integrity(r23): final sealed hashes, byte-identical referee PDFs and complete verified package'
           git push origin HEAD:revision/econometrica-r23-referee-resolution-2026-09-23
           mkdir -p /tmp/nbo-r23-final
