@@ -24,30 +24,60 @@ jobs:
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
-      - name: Verify exact source transport and materialize new files only
+      - name: Verify exact source transport and materialize the complete revision
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path, PurePosixPath
-          import base64, hashlib, json, lzma
-          root=Path.cwd(); src=root/'revisions/2026-09-23-r21/publication'
-          text=''.join((src/f'source{i:02d}.b64').read_text().strip() for i in range(3))
-          raw=base64.b64decode(text,validate=True)
-          assert hashlib.sha256(raw).hexdigest()=='ff3a823df94045bee13ec666dc1a0374634d56b84784645102a6ec0f7d546e13'
-          data=json.loads(lzma.decompress(raw))
-          assert data['format']=='R21_new_sources_sha256_v1' and len(data['files'])==20
-          for item in data['files']:
-              name=item['path']; p=PurePosixPath(name)
+          import base64, hashlib, json, lzma, subprocess
+          root=Path.cwd(); rev=root/'revisions/2026-09-23-r21'
+          def digest(data): return hashlib.sha256(data).hexdigest()
+          def bundle(folder,prefix,count,expected):
+              text=''.join((rev/folder/f'{prefix}{i:02d}.b64').read_text().strip() for i in range(count))
+              raw=base64.b64decode(text,validate=True)
+              assert digest(raw)==expected
+              return json.loads(lzma.decompress(raw))
+          base=bundle('publication','source',3,'ff3a823df94045bee13ec666dc1a0374634d56b84784645102a6ec0f7d546e13')
+          patch=bundle('staging','snapshot',2,'fc922252c6793e324327daf0842ee3bac333286db5801c88c511a2ec43d5c2d7')
+          assert base['format']=='R21_new_sources_sha256_v1' and len(base['files'])==20
+          assert patch['format']=='R21_snapshot_review_response_patch_v1' and len(patch['files'])==14
+          finals={item['path']:item['sha256'] for item in patch['files']}
+          def target(name,allow_index=False):
+              p=PurePosixPath(name)
               assert not p.is_absolute() and '..' not in p.parts
-              assert name in {'ECTA_R21.tex','SUPP_R21.tex','R21_REVIEW.md'} or name.startswith('revisions/2026-09-23-r21/')
-              content=item['content'].encode('utf-8')
-              assert hashlib.sha256(content).hexdigest()==item['sha256']
-              dest=root/name
+              allowed={'ECTA_R21.tex','SUPP_R21.tex','R21_REVIEW.md'}
+              if allow_index: allowed.add('REVISION_INDEX.md')
+              assert name in allowed or name.startswith('revisions/2026-09-23-r21/')
+              return root/name
+          for item in base['files']:
+              name=item['path'];dest=target(name);content=item['content'].encode('utf-8')
+              assert digest(content)==item['sha256']
               if dest.exists():
-                  assert dest.read_bytes()==content, name
+                  assert digest(dest.read_bytes()) in {item['sha256'],finals.get(name)},name
               else:
-                  dest.parent.mkdir(parents=True,exist_ok=True); dest.write_bytes(content)
-          print('All 20 source files match the locally validated bundle.')
+                  dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(content)
+          for item in patch['files']:
+              name=item['path'];dest=target(name,True)
+              if dest.exists() and digest(dest.read_bytes())==item['sha256']: continue
+              before=item['before_sha256']
+              if before is None:
+                  assert not dest.exists(),name
+                  content=item['content'].encode('utf-8')
+              else:
+                  assert dest.is_file() and digest(dest.read_bytes())==before,name
+                  lines=dest.read_text().splitlines(keepends=True)
+                  for h in reversed(item['hunks']):lines[h['start']:h['end']]=h['lines']
+                  content=''.join(lines).encode('utf-8')
+              assert digest(content)==item['sha256'],name
+              dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(content)
+          review='reviews/2026-09-23-econometrica-r21/referee_report.md'
+          content=subprocess.check_output(['git','show','bc118f20f6361cdeae668141e45f64c436ee6a2a:'+review])
+          blob=hashlib.sha1(b'blob '+str(len(content)).encode()+b'\0'+content).hexdigest()
+          assert blob=='d98e887168b892c758718181dadaae560d168ebd'
+          dest=root/review
+          if dest.exists():assert dest.read_bytes()==content
+          else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(content)
+          print('Verified base manuscript, all snapshot-response changes, and the exact latest referee report.')
           PY
       - name: Fetch immutable executed R20 scientific inputs
         uses: actions/download-artifact@v4
@@ -68,9 +98,10 @@ jobs:
               for m in t:
                   n=PurePosixPath(m.name)
                   assert not n.is_absolute() and '..' not in n.parts
-                  assert m.name.startswith('revisions/2026-09-23-r20/')
-                  if m.isdir(): continue
-                  assert m.isfile(),m.name
+                  if m.isdir():
+                      assert m.name in {'revisions','revisions/2026-09-23-r20'} or m.name.startswith('revisions/2026-09-23-r20/')
+                      continue
+                  assert m.isfile() and m.name.startswith('revisions/2026-09-23-r20/'),m.name
                   data=t.extractfile(m).read(); dest=Path(m.name)
                   if dest.exists():
                       assert dest.read_bytes()==data, 'Inherited input differs: '+m.name
@@ -78,7 +109,7 @@ jobs:
                       dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data);added+=1
           print('Materialized missing immutable inputs:',added)
           PY
-      - name: Commit inspectable source and inherited scientific input identities
+      - name: Commit inspectable sources and exact review inputs
         run: |
           python3 - <<'PY'
           import importlib.util
@@ -88,9 +119,9 @@ jobs:
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add ECTA_R21.tex SUPP_R21.tex R21_REVIEW.md
-          git add revisions/2026-09-23-r21 revisions/2026-09-23-r20/results
-          git diff --cached --quiet || git commit -m 'revision(r21): materialize referee-led manuscript, proofs and exact scientific inputs'
+          git add ECTA_R21.tex SUPP_R21.tex R21_REVIEW.md REVISION_INDEX.md
+          git add revisions/2026-09-23-r21 revisions/2026-09-23-r20/results reviews/2026-09-23-econometrica-r21
+          git diff --cached --quiet || git commit -m 'revision(r21): materialize complete manuscript, both referee responses and exact scientific inputs'
           git push origin HEAD:${GITHUB_REF_NAME}
           echo "R21_SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
       - uses: actions/setup-python@v5
@@ -103,27 +134,26 @@ jobs:
           sudo apt-get install -y --no-install-recommends libmpfr-dev gcc texlive-latex-extra texlive-fonts-recommended poppler-utils
       - name: Re-execute all 136 frozen-policy checks including 20 MPFR cases
         run: python revisions/2026-09-23-r21/replication/replay.py --workers 2
-      - name: Verify policy-sensitive continuum, price and welfare theorems numerically
-        run: python revisions/2026-09-23-r21/replication/audit.py
+      - name: Verify continuum, price, welfare, and representation comparisons
+        run: |
+          python revisions/2026-09-23-r21/replication/audit.py
+          python revisions/2026-09-23-r21/replication/representation_audit.py
       - name: Build all three Econometrica documents in three passes
         run: python revisions/2026-09-23-r21/replication/build.py
       - name: Pin publication hashes and create referee package
         run: python revisions/2026-09-23-r21/replication/manifest.py
       - name: Commit complete referee object to the new revision branch only
         run: |
-          git add ECTA_R21.tex SUPP_R21.tex RESPONSE_R21.tex R21_REVIEW.md
+          git add ECTA_R21.tex SUPP_R21.tex RESPONSE_R21.tex R21_REVIEW.md REVISION_INDEX.md
           git add -f ECTA_R21.pdf SUPP_R21.pdf RESPONSE_R21.pdf
           git add revisions/2026-09-23-r21
           python - <<'PY'
-          from pathlib import Path
-          import hashlib,json
-          d=json.loads(Path('revisions/2026-09-23-r21/INHERITED_SHA256.json').read_text())
-          assert len(d)==3934
-          for name,h in d.items():
-              p=Path(name);assert p.is_file() and hashlib.sha256(p.read_bytes()).hexdigest()==h,name
-          print('All 3,934 inherited files are byte-identical.')
+          import importlib.util
+          p='revisions/2026-09-23-r21/replication/build.py'
+          spec=importlib.util.spec_from_file_location('r21build',p);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+          print(m.preservation())
           PY
-          git diff --cached --quiet || git commit -m 'publication(r21): validated Econometrica PDFs, policy-sensitive continuum proofs and complete evidence manifest'
+          git diff --cached --quiet || git commit -m 'publication(r21): validated Econometrica PDFs, continuum policy proofs and latest referee response'
           git push origin HEAD:${GITHUB_REF_NAME}
           git rev-parse HEAD > R21_PUBLICATION_COMMIT.txt
       - name: Deliver the exact committed referee files
@@ -143,5 +173,6 @@ jobs:
             revisions/2026-09-23-r21/build_logs
             revisions/2026-09-23-r21/results/replay_summary.json
             revisions/2026-09-23-r21/publication
+            revisions/2026-09-23-r21/staging
           if-no-files-found: warn
           retention-days: 30
