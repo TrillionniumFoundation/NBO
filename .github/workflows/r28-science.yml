@@ -1,0 +1,80 @@
+name: R28 scientific reproduction
+on:
+  push:
+    branches: [revision/econometrica-r28-bellman-completion-2026-09-24]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r28-science
+  cancel-in-progress: false
+jobs:
+  science:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[run-r28-science]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      BACKEND: mpfr
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install fixed scientific dependencies
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0 sympy==1.14.0 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          sudo apt-get update -qq
+          sudo apt-get install -y libmpfr-dev gcc
+      - name: Record source and run all fixed cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          R=revisions/2026-09-24-r28
+          mkdir -p "$R/results"
+          git rev-parse HEAD > "$R/results/SCIENCE_SOURCE_COMMIT.txt"
+          python -m pip freeze > "$R/results/python_environment.txt"
+          sha256sum "$R"/replication/*.py > "$R/results/SCIENCE_SOURCE_SHA256.txt"
+          python "$R/replication/inventory.py" 2>&1 | tee "$R/results/inventory_execution.log"
+          python "$R/replication/slice.py" 2>&1 | tee "$R/results/slice_execution.log"
+          python "$R/replication/central.py" 2>&1 | tee "$R/results/central_execution.log"
+          python - <<'PY'
+          import json,pathlib
+          r=pathlib.Path('revisions/2026-09-24-r28/results')
+          inv=json.loads((r/'inventory/summary.json').read_text())
+          mec=json.loads((r/'central/mechanism_summary.json').read_text())
+          pro=json.loads((r/'central/production_summary.json').read_text())
+          sli=json.loads((r/'slice_summary.json').read_text())
+          assert len(inv)==34 and all(x['completed_target_established_exact'] for x in inv)
+          assert len(mec)==6 and all(x['max_parameter_discrepancy']<1e-8 for x in mec)
+          assert len(pro)==12 and all(x['all_rejections_restored_exact'] for x in pro)
+          assert len(sli)==2 and all(x['restricted_target_0_01_met'] for x in sli)
+          assert all(not x['original_full_state_target_met'] for x in sli)
+          (r/'SCIENCE_VALIDATION.json').write_text(json.dumps({'status':'passed','inventory_cases':len(inv),'mechanism_cases':len(mec),'production_trajectories':len(pro),'original_economy_slices':len(sli),'original_full_domain_target_closed':False},indent=2)+'\n')
+          PY
+      - name: Commit new evidence without changing inherited scientific sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add revisions/2026-09-24-r28/results
+          git commit -m 'results(r28): freeze complete executed Bellman, boundary, transport and rollback evidence'
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push origin "HEAD:$GITHUB_REF_NAME"
+          git rev-parse HEAD > /tmp/R28_EVIDENCE_COMMIT.txt
+          git archive --format=tar.gz --output=/tmp/NBO_R28_source.tar.gz HEAD
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r28-science-${{ github.run_id }}
+          path: |
+            /tmp/NBO_R28_source.tar.gz
+            /tmp/R28_EVIDENCE_COMMIT.txt
+            revisions/2026-09-24-r28/results/
+          retention-days: 30
