@@ -1,0 +1,80 @@
+name: R24 evidence materialization and remaining diagnostics
+on:
+  push:
+    branches: [revision/econometrica-r24-state-geometry-2026-09-23]
+    paths: [.github/workflows/r24-materialize.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Recover hash-pinned primary evidence without repeating tuning or held-out runs
+        run: |
+          gh api repos/TrillionniumFoundation/NBO/actions/artifacts/10738485174/zip > /tmp/r24-primary.zip
+          echo 'cf8da93098d0e32c6d6bd219e57aedc84a9b31d1adbee941a004a85d2a44cde8  /tmp/r24-primary.zip' | sha256sum -c -
+          python - <<'PY'
+          import zipfile,hashlib,json,shutil
+          from pathlib import Path
+          r=Path('revisions/2026-09-23-r24')
+          z=zipfile.ZipFile('/tmp/r24-primary.zip')
+          for n in z.namelist():
+              p=Path(n);assert not p.is_absolute() and '..' not in p.parts
+              if n.endswith('/') or '__pycache__' in p.parts or n.endswith('.pyc'):continue
+              q=r/p;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(z.read(n))
+          counts={d:len(list((r/'results'/d).rglob('record.json'))) for d in ('tuning','heldout','multicell')}
+          assert counts=={'tuning':30,'heldout':28,'multicell':36},counts
+          hashes={str(p.relative_to(r)):hashlib.sha256(p.read_bytes()).hexdigest() for d in counts for p in (r/'results'/d).rglob('*') if p.is_file()}
+          (r/'archive').mkdir(exist_ok=True);shutil.copyfile('/tmp/r24-primary.zip',r/'archive/primary_execution.zip')
+          (r/'results/PRIMARY_EVIDENCE_LOCK.json').write_text(json.dumps({'run_id':35832563885,'artifact_id':10738485174,'artifact_sha256':'cf8da93098d0e32c6d6bd219e57aedc84a9b31d1adbee941a004a85d2a44cde8','completed_counts':counts,'files':hashes,'failure':'reference-only unused root diagnostic was infinity, rejected by strict JSON serialization; scientific tuning/held-out/multicell completed'},indent=2)+'\n')
+          PY
+      - name: Install fixed environment and apply metadata-only correction
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          python revisions/2026-09-23-r24/replication/apply_accounting_repair.py
+      - name: Finish the predeclared reference and failure studies
+        run: |
+          set -o pipefail
+          python revisions/2026-09-23-r24/replication/tests.py 2>&1 | tee revisions/2026-09-23-r24/results/logs/recovery_tests.log
+          python revisions/2026-09-23-r24/replication/study.py --phase reference 2>&1 | tee revisions/2026-09-23-r24/results/logs/reference.log
+          python revisions/2026-09-23-r24/replication/study.py --phase failure 2>&1 | tee revisions/2026-09-23-r24/results/logs/failure.log
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          r=Path('revisions/2026-09-23-r24');lock=json.loads((r/'results/PRIMARY_EVIDENCE_LOCK.json').read_text())
+          assert all(hashlib.sha256((r/p).read_bytes()).hexdigest()==s for p,s in lock['files'].items())
+          counts={d:len(list((r/'results'/d).rglob('record.json'))) for d in ('tuning','heldout','multicell','reference','failure')}
+          assert counts=={'tuning':30,'heldout':28,'multicell':36,'reference':12,'failure':4},counts
+          (r/'results/EXECUTION_COMPLETENESS.json').write_text(json.dumps({'counts':counts,'all_prescribed_trajectories_present':True,'primary_results_byte_identical':True,'reference_repair_changes_metadata_only':True,'reference_and_failure_run_on_recovery_runner':True},indent=2)+'\n')
+          PY
+      - name: Commit readable scientific sources and all results only on R24
+        run: |
+          git config user.name 'NBO revision build'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add revisions/2026-09-23-r24
+          git diff --cached --quiet || git commit -m 'results(r24): complete 110 trajectories, preserve primary outputs and reference repair'
+          git pull --rebase origin revision/econometrica-r24-state-geometry-2026-09-23
+          git push origin HEAD:revision/econometrica-r24-state-geometry-2026-09-23
+      - name: Preserve complete outputs and failed attempts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r24-complete-science-${{ github.run_id }}
+          path: revisions/2026-09-23-r24/
+          retention-days: 30
