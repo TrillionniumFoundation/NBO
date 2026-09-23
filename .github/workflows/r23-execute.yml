@@ -1,0 +1,99 @@
+name: R23 root-safe held-out scientific execution
+on:
+  push:
+    branches: [revision/econometrica-r23-referee-resolution-2026-09-23]
+    paths:
+      - .github/workflows/r23-execute.yml
+      - revisions/2026-09-23-r23/source_transport/science_payload.b64
+      - revisions/2026-09-23-r23/source_transport/transport_corrections.json
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r23-scientific-execution
+  cancel-in-progress: false
+jobs:
+  science:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONHASHSEED: '0'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      R23_SOURCE_COMMIT: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Verify and materialize the immutable scientific source
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64,gzip,json,hashlib
+          rev=Path('revisions/2026-09-23-r23');p=rev/'source_transport/science_payload.b64'
+          data=p.read_text().strip()
+          corrections=[['AGOZ5mkNrUVRO4uSi7ei','AGOZ5mkNrUVRO4uSx7ei'],['uiZnk/H0+ej8XavR9','uiZnk/H0+ej8avR9'],['bJ85U8ibuDXalZruKub5M9','bJ85U8ibuDXalZruK7EINkKub5M9'],['X2aEN7h61cglPVocso','X2aEN7h61sgLPVocso']]
+          extra=rev/'source_transport/transport_corrections.json'
+          if extra.exists(): corrections+=json.loads(extra.read_text())
+          for old,new in corrections:
+              if old in data:
+                  assert data.count(old)==1
+                  data=data.replace(old,new)
+          raw=base64.b64decode(data,validate=True)
+          actual=hashlib.sha256(raw).hexdigest();print('source gzip SHA256',actual,flush=True)
+          assert actual=='2a95cb2937f2fd106ba61ca20e1eae5cc7143bff9f72a69f649c12dac74d6469'
+          files=json.loads(gzip.decompress(raw));assert set(files)=={'budget_coordinates.py','run_study.py','tests.py','continuum_audit.py'}
+          manifest={}
+          for name,content in files.items():
+              target=rev/'replication'/name;target.parent.mkdir(parents=True,exist_ok=True);target.write_text(content)
+              manifest[name]=hashlib.sha256(target.read_bytes()).hexdigest()
+          p.write_text(data+'\n')
+          (rev/'source_transport/SOURCE_SHA256.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          PY
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.15'
+      - name: Install pinned scientific dependencies
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Run numerical root and coordinate regressions
+        run: |
+          mkdir -p revisions/2026-09-23-r23/build_logs
+          python revisions/2026-09-23-r23/replication/tests.py | tee revisions/2026-09-23-r23/build_logs/root_tests.log
+      - name: Execute all 72 prescribed configurations
+        run: |
+          python revisions/2026-09-23-r23/replication/run_study.py | tee revisions/2026-09-23-r23/build_logs/run_study.log
+      - name: Certify all prescribed continuum comparisons
+        run: |
+          python revisions/2026-09-23-r23/replication/continuum_audit.py | tee revisions/2026-09-23-r23/build_logs/continuum.log
+      - name: Publish scientific evidence only to the new R23 branch
+        run: |
+          python - <<'PY'
+          import json,subprocess
+          from pathlib import Path
+          rev=Path('revisions/2026-09-23-r23')
+          assert json.loads((rev/'results/study_summary.json').read_text())['configurations']==72
+          assert json.loads((rev/'results/root_tests.json').read_text())['status']=='PASS'
+          rows=json.loads((rev/'results/continuum.json').read_text())['rows'];assert len(rows)==18
+          old=subprocess.check_output(['git','diff','--name-only','9c6faca40fb204494d1e0f53be1468a7ee37341a']).decode().splitlines()
+          assert all(p.startswith('revisions/2026-09-23-r23/') or p.startswith('.github/workflows/r23-') for p in old),old
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add revisions/2026-09-23-r23
+          git diff --cached --quiet || git commit -m 'results(r23): complete held-out factorial, quotient controls and directed continuum evidence'
+          git push origin HEAD:revision/econometrica-r23-referee-resolution-2026-09-23
+          git rev-parse HEAD > revisions/2026-09-23-r23/RESULT_COMMIT.txt
+      - name: Preserve scientific and transport evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r23-scientific-execution
+          path: revisions/2026-09-23-r23
+          retention-days: 30
