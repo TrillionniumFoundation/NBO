@@ -1,0 +1,93 @@
+name: R20 verified-source scientific replication
+on:
+  push:
+    branches: [revision/econometrica-r20-policy-value-certification-2026-09-23]
+    paths: [.github/workflows/r20-execute.yml]
+permissions:
+  contents: write
+jobs:
+  execute:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Decode checksum-verified scientific sources
+        run: |
+          python - <<'PY'
+          import base64,hashlib,io,json,tarfile
+          from pathlib import Path,PurePosixPath
+          p=Path('revisions/2026-09-23-r20/publication/science_payload.b64');text=p.read_text()
+          r=json.loads(p.with_name('transport_repairs.json').read_text())
+          assert hashlib.sha256(text.encode()).hexdigest()==r['before']
+          for lo,hi,s in reversed(r['patches']):text=text[:lo]+s+text[hi:]
+          assert hashlib.sha256(text.encode()).hexdigest()==r['after']
+          raw=base64.b64decode(text,validate=True)
+          assert hashlib.sha256(raw).hexdigest()=='8e5222182c169158644db6ad020323802288b29b856a8094982b0cfc9f394df1'
+          allowed={'proposal.py','certify_stochastic.py','run_study.py','compare_deterministic.py','mpfr_audit.py','wealth_compensation.py'}
+          with tarfile.open(fileobj=io.BytesIO(raw),mode='r:gz') as tar:
+              members=tar.getmembers();assert len(members)==6
+              for m in members:
+                  q=PurePosixPath(m.name);assert m.isfile() and str(q.parent)=='revisions/2026-09-23-r20/replication' and q.name in allowed
+                  data=tar.extractfile(m).read();target=Path(m.name)
+                  assert not target.exists() or target.read_bytes()==data
+                  target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          test "$(git ls-remote origin refs/heads/${GITHUB_REF_NAME} | cut -f1)" = "$GITHUB_SHA"
+          git add revisions/2026-09-23-r20/replication
+          git diff --cached --quiet || git commit -m 'science(r20): exact verified stochastic policy sources'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+          echo "SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends gcc libmpfr-dev
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Neural study, comparators, independent arithmetic and compensation
+        run: |
+          python revisions/2026-09-23-r20/replication/run_study.py
+          python revisions/2026-09-23-r20/replication/run_study.py --classical
+          python revisions/2026-09-23-r20/replication/compare_deterministic.py
+          python revisions/2026-09-23-r20/replication/mpfr_audit.py
+          python revisions/2026-09-23-r20/replication/wealth_compensation.py
+      - name: Check every claim and publish new evidence
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          p=Path('revisions/2026-09-23-r20/results')
+          rows=[r for s in range(20100,20105) for r in json.loads((p/f'neural/seed{s}/records.json').read_text())]
+          assert len(rows)==80 and all(r['accepted'] for r in rows)
+          mp=json.loads((p/'mpfr/records.json').read_text());assert len(mp)==20 and max(r['regret_upper'] for r in mp)<.003
+          wealth=json.loads((p/'wealth/records.json').read_text());assert len(wealth)==20 and min(r['compensated_policy_minus_original_optimum_lower'] for r in wealth)>0
+          PY
+          test "$(git ls-remote origin refs/heads/${GITHUB_REF_NAME} | cut -f1)" = "$SOURCE_COMMIT"
+          git add -f revisions/2026-09-23-r20/results
+          git commit -m 'evidence(r20): executed stochastic policy-value study, MPFR and wealth compensation'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git rev-parse HEAD > R20_SCIENCE_COMMIT.txt
+          git archive HEAD revisions/2026-09-23-r20 | gzip -n > NBO_R20_science.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r20-science
+          path: |
+            NBO_R20_science.tar.gz
+            R20_SCIENCE_COMMIT.txt
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: r20-replication-diagnostics
+          path: revisions/2026-09-23-r20/
+          retention-days: 14
