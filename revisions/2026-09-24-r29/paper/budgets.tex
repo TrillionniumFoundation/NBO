@@ -1,0 +1,53 @@
+
+\section{State-dependent residual budgets}\label{sec:budget29}
+The uniform local tolerance in Theorem~\ref{thm:completion28} reserves the same amount for every possible future stage. Once a continuation has been completed, however, its actual residual envelope is known. We can allocate only the amount needed by that continuation, and test the raw action against the remaining budget. This distinction concerns preservation of candidate decisions, not a change in the information available to the algorithm.
+
+Let $e_t:S_t\to[0,\infty)$ be a prescribed family of error budgets, with $e_T=0$ and zero budget at settled states. Assume that, at every nonsettled state,
+\begin{equation}\label{eq:superbudget29}
+ e_t(s)\ge\beta\max_{a\in A_t(s)}\sum_{s'}P_t(s'\mid s,a)e_{t+1}(s').
+\end{equation}
+A common tolerance $e_t(s)=\varepsilon$ before settlement satisfies this condition when $\beta\le1$. During the backward construction, let $v_{t+1}$ and $B_{t+1}$ be the exact value and residual envelope of the already completed suffix. Set
+\begin{align}
+ q_t(s,a)&=r_t(s,a)+\beta P_{t,s,a}v_{t+1},\\
+ c_t(s)&=\beta\max_{a\in A_t(s)}P_{t,s,a}B_{t+1},\qquad
+ a_t^{\rm rem}(s)=e_t(s)-c_t(s).\label{eq:allowance29}
+\end{align}
+Retain the raw action $a^0=\pi^0_t(s)$ exactly when
+\begin{equation}\label{eq:retain29}
+ \max_a q_t(s,a)-q_t(s,a^0)\le a_t^{\rm rem}(s).
+\end{equation}
+Otherwise choose a maximizing feasible action, using a fixed tie rule. For the selected action $a$, set $v_t(s)=q_t(s,a)$ and
+\begin{equation}\label{eq:budgetrec29}
+ B_t(s)=\max_b q_t(s,b)-q_t(s,a)+c_t(s).
+\end{equation}
+At a settled state, apply its settlement payoff and set $B_t=0$; the terminal value is the stated terminal payoff and $B_T=0$.
+
+\begin{theorem}[Budgeted completion and policy preservation]\label{thm:budget29}
+Under the finite-state assumptions of Theorem~\ref{thm:completion28} and \eqref{eq:superbudget29}, the backward construction is well defined. At every state and restart,
+\begin{equation}\label{eq:budgetguarantee29}
+ v_t^{\pi^0}(s)\le v_t^{\bar\pi}(s)\le V_t^*(s),\qquad
+ 0\le V_t^*(s)-v_t^{\bar\pi}(s)\le B_t(s)\le e_t(s).
+\end{equation}
+The local remaining allowance is nonnegative. Conditional on the already completed suffix and on using envelope \eqref{eq:budgetrec29}, the rule retains the raw action whenever that envelope can certify it within $e_t(s)$. No optimal value or optimal action reference is needed. Its arithmetic enumeration order is $O(TNAD)$; exact bit complexity and storage are charged separately.
+\end{theorem}
+\begin{proof}
+The assertion holds at the terminal time and at settlement. Suppose it holds at $t+1$. Since $0\le B_{t+1}\le e_{t+1}$ and transition probabilities are nonnegative, \eqref{eq:superbudget29} gives $0\le c_t(s)\le e_t(s)$. Thus the allowance in \eqref{eq:allowance29} is nonnegative. If the raw action passes \eqref{eq:retain29}, adding $c_t$ proves $B_t\le e_t$. If it fails, a maximizing feasible action exists by finiteness; its local deficit is zero, so $B_t=c_t\le e_t$.
+
+For the accuracy statement, write $d_{t+1}=V_{t+1}^*-v_{t+1}^{\bar\pi}$. By the induction hypothesis $0\le d_{t+1}\le B_{t+1}$. The Bellman equation and the elementary inequality $\max_a(x_a+y_a)\le\max_a x_a+\max_a y_a$ yield
+\[
+ V_t^*-v_t^{\bar\pi}
+ =\max_a\{q_t(s,a)+\beta P_{t,s,a}d_{t+1}\}-q_t(s,\bar\pi_t(s))
+ \le B_t(s).
+\]
+The loss is nonnegative by optimality of $V^*$. For preservation, assume $v_{t+1}^{\bar\pi}\ge v_{t+1}^{\pi^0}$. The selected action has $q_t(s,\bar\pi_t(s))\ge q_t(s,\pi_t^0(s))$, because it is either the raw action or a maximizer. Positivity of the transition law then gives
+\[
+ v_t^{\bar\pi}(s)\ge r_t(s,\pi_t^0(s))+\beta P_{t,s,\pi_t^0(s)}v_{t+1}^{\pi^0}=v_t^{\pi^0}(s).
+\]
+This closes the induction. Finally, once $v_{t+1}$ and $B_{t+1}$ are fixed, $c_t$ does not depend on the selected current action. The raw action satisfies $B_t\le e_t$ if and only if \eqref{eq:retain29} holds. Computing the action values and propagating the envelope each enumerates at most $TNAD$ successor contributions. None of these steps calls an optimal-reference solver.
+\end{proof}
+
+The preservation inequality also holds for the uniform-threshold operator, by the same induction. It is a pointwise economic comparison on the finite model, stronger than observing that a printed regret bound decreased. It does not carry over automatically to a continuous-state economy or to a floating-point neural implementation.
+
+The theorem is locally permissive, not globally minimum-edit. Changing a later action changes both its value and its envelope, which can change earlier decisions. Consequently we make no claim that the budget rule changes fewer actions on every input, nor that either rule yields the cheapest certified policy. The two rules are compared on exactly the same raw tables. A fixed common tolerance has the advantage of certifying every restart, rather than just one initial distribution. More general budgets satisfying \eqref{eq:superbudget29} can incorporate state-specific accuracy priorities.
+
+This construction uses the full model, feasible-action enumeration, and exact suffix evaluation. These are the same information resources available to exact backward induction. Classical dynamic programming supplies the Bellman comparison argument; the methodological addition here is the explicit candidate-preservation rule, its state-dependent certificate budget, and the joint proof of local permissiveness, whole-state accuracy, and payoff monotonicity. It is not an invention of policy iteration or an unconditional neural acceleration theorem.

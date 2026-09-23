@@ -1,0 +1,91 @@
+\section{Certified Bellman and deployment operators}\label{sec:operators28}
+We distinguish a proposal operator, a completion operator, and a deployment operator. The first may be neural and approximate. The second uses a Bellman error criterion on a specified state model. The third compares economic payoffs and restores the entire optimizer state after rejection. Their conclusions are different: approximation quality, uniform policy regret, and monotone deployed payoff, respectively.
+
+\subsection{Reference-free Bellman completion}
+Consider a finite-horizon Markov decision problem on finite state sets $S_t$, with nonempty feasible actions $A_t(s)$, discount $\beta\in(0,1]$, known transition probabilities, bounded rewards, and a fixed terminal payoff. A stopped state has only its settlement action and zero continuation. Let
+\begin{equation}
+ (T_tv)(s)=\max_{a\in A_t(s)}\left\{r_t(s,a)+\beta\sum_{s'}P_t(s'\mid s,a)v(s')\right\}.
+\end{equation}
+For a deterministic policy $\pi$, compute its own value exactly by backward evaluation, $v_t^\pi=T_t^\pi v_{t+1}^\pi$. Neither this evaluation nor a comparison of its local actions requires $V^*$. Define the nonnegative Bellman deficit
+\begin{equation}\label{eq:localdeficit28}
+ \delta_t^\pi(s)=(T_tv_{t+1}^\pi)(s)-v_t^\pi(s),
+\end{equation}
+and its state-sensitive envelope
+\begin{equation}\label{eq:envelope28}
+ B_T^\pi=0,\qquad
+ B_t^\pi(s)=\delta_t^\pi(s)+\beta\max_{a\in A_t(s)}\sum_{s'}P_t(s'\mid s,a)B_{t+1}^\pi(s').
+\end{equation}
+Both quantities are zero at a stopped state.
+\begin{theorem}[Residual envelope and uniform completion]\label{thm:completion28}
+For every deterministic policy, $0\le V_t^*(s)-v_t^\pi(s)\le B_t^\pi(s)$ at every state and restart time. Fix $\varepsilon>0$ and
+\begin{equation}
+ \eta=\varepsilon\left(\sum_{j=0}^{T-1}\beta^j\right)^{-1}.
+\end{equation}
+Given any raw policy $\pi^0$, construct a completed policy backward. At time $t$, evaluate each action against the already completed continuation $v_{t+1}^{\bar\pi}$. Retain $\pi_t^0(s)$ if its deficit from the largest such action value is at most $\eta$; otherwise select a maximizing feasible action. Then
+\begin{equation}\label{eq:completionguarantee28}
+ 0\le V_t^*(s)-v_t^{\bar\pi}(s)
+ \le\eta\sum_{j=0}^{T-t-1}\beta^j\le\varepsilon
+\end{equation}
+for all states and restarts. The algorithm uses no optimal-value reference. With at most $N$ states, $A$ actions, and $D$ successor outcomes, each evaluation, envelope, and completion sweep uses $O(TNAD)$ arithmetic operations. Exact-integer bit complexity additionally depends on the bit lengths of rewards, probabilities, discount factors, and accumulated values.
+\end{theorem}
+The proof is a backward comparison argument, given in Appendix~\ref{app:completion28}. The terminal stopping convention is essential: a settled state cannot be improved by continuing the chain. In the implementation, exact rational deficits, rather than their printed decimal representations, determine both action replacement and the tolerance test.
+
+The completed policy is the compiled action table, with the changed states recorded. It is not generally the raw neural network evaluated in floating-point arithmetic. In particular, the theorem must not be described as a certificate for an unchanged neural policy when completion replaces an action. The neural representation supplies the candidate value recursion, and completion preserves its decision wherever the suffix-conditioned Bellman deficit is sufficiently small. This construction permits an exact accuracy guarantee without assuming that neural optimization finds a global minimum.
+
+The operation count also reveals the principal computational qualification. At the state sizes studied here, exact backward induction has the same enumeration order. Completion is not a new way to evade tabular complexity. The experiment tests whether discovery and certification can be combined without reference leakage; the classical reference and its cost remain visible.
+
+\subsection{Synchronous economic deployment}
+Let $S$ contain the policy parameters and all optimizer state, including moment estimates, step counters, and the rule's current hyperparameters. Suppose a verifier returns $[L(\pi),U(\pi)]$ containing the exact economic payoff of a feasible policy at the declared restart. A proposal generated from $S$ is deployed only if
+\begin{equation}\label{eq:gate28}
+ L(\pi_{\rm candidate})>U(\pi_{\rm incumbent})+\zeta,
+ \qquad\zeta\ge0.
+\end{equation}
+Otherwise the saved $S$ is restored. A verifier failure gives no usable interval and is not an acceptance.
+\begin{proposition}[Monotone deployment]\label{prop:gate28}
+Every accepted proposal improves exact payoff by more than $\zeta$. Rejection followed by exact state restoration leaves both the deployed policy and the next proposal's initial optimizer state equal to their saved values. If $\zeta>0$ and payoffs are bounded above by $M$, at most $\lfloor(M-J_0)/\zeta\rfloor$ accepted proposals can occur.
+\end{proposition}
+For $\zeta=0$, monotonicity does not imply a finite number of acceptances, convergence of Adam, or discovery of a global optimum. Nor is \eqref{eq:gate28} equivalent to comparing two regret upper bounds. A tighter upper bound can result from a better witness or finer verifier while the candidate's actual payoff falls.
+
+An interval pair can overlap even when the candidate is genuinely better. If a true improvement is $\gamma>0$ and each interval has width at most $w$, separation is guaranteed when $2w<\gamma$. Refining widths $w_j=w_0 2^{-j}$ therefore resolves a fixed positive margin after finitely many successful verifier levels. Zero margin, a finite precision floor, or an exhausted resource budget leaves the comparison unresolved; it is not evidence of economic indifference.
+
+\subsection{Box-constrained stationarity with explicit oracle work}\label{sec:box28}
+Let $C=\prod_{i=1}^n[\ell_i,u_i]$ and let $F:C\to\R$ be differentiable with $L$-Lipschitz gradient on the relevant feasible segments. For $\tau>0$, define the ascent projected-gradient mapping
+\begin{equation}\label{eq:proj28}
+ G_\tau(x)=\frac{\Pi_C(x+\tau\nabla F(x))-x}{\tau}.
+\end{equation}
+Its zero set is the first-order box-stationary set. The gradient need not be zero at a constrained optimum.
+
+At mesh $h>0$, a coordinate poll evaluates every feasible full step $x\pm he_i$. The interval oracle must enclose $F$ with width at most $\kappa h^2$ at the incumbent and at every feasible trial used in a complete unsuccessful poll. A step is accepted if its lower endpoint exceeds the incumbent's upper endpoint by $\sigma h^2$, where $\sigma>0$. A full step outside $C$ is recorded as a geometric short face with its distance to the boundary. A feasible step whose verification is unresolved is not a short face.
+\begin{theorem}[Constrained precision-aware polling]\label{thm:box28}
+Suppose $F\le M$ on the feasible search region and the stated width is obtained whenever required, at work at most $W(\kappa h^2)$ per call. Starting from $x_0$, repeated accepted coordinate steps followed by complete polls reach an unsuccessful complete poll using work at most
+\begin{equation}\label{eq:work28}
+ (2n+1)\left[1+\left\lfloor\frac{M-F(x_0)}{\sigma h^2}\right\rfloor\right]W(\kappa h^2).
+\end{equation}
+At its final point $x$,
+\begin{equation}\label{eq:stationarity28}
+ \|G_\tau(x)\|_2\le\sqrt n\,h\max\left\{\sigma+2\kappa+\frac L2,\frac1\tau\right\}.
+\end{equation}
+If any required feasible evaluation fails to reach the requested width, the conclusion is \emph{oracle unresolved}, not \eqref{eq:stationarity28}.
+\end{theorem}
+The maximum in \eqref{eq:stationarity28} is the boundary term missing from an interior positive-spanning argument. When a full step exists in the sign of a gradient component, unsuccessful comparison bounds that component by $(\sigma+2\kappa+L/2)h$. When it does not, the distance to the corresponding face is less than $h$, so projection bounds the component of $G_\tau$ by $h/\tau$. This proves constrained stationarity without treating an infeasible direction as a failed economic comparison.
+
+Equation~\eqref{eq:work28}, not a bare $O(\varepsilon^{-2})$ poll count, is the complexity statement. Choosing $h$ proportional to a desired projected-gradient tolerance gives an iteration factor of order $\varepsilon^{-2}$ but requires width of order $\varepsilon^2$. A rapidly growing $W$ can dominate all proposal work. The theorem does not establish arbitrary precision for the original 47-dimensional stopped checker. Our implementation below verifies the needed widths at four declared meshes on an original-economy slice, and reports actual setup, derivative-audit, and oracle work. It does not extrapolate a fixed truncation order to arbitrarily small meshes.
+
+\subsection{Exact recentered historical transport}\label{sec:transport28}
+Let $f(\theta)\in\R^{48}$ denote the raw network outputs, and let $Q\in\R^{48\times47}$ have orthonormal columns spanning the economically relevant quotient. Locally the proposal loss depends on raw outputs only through the quotient after the financing intercept has been eliminated. Write $g_r$ for its quotient gradient and $B_r=Q^\top Df(\theta_r)$. For minimization, Adam's first moment is
+\begin{equation}
+ \widehat m_n=\sum_{r=1}^n a_{nr}B_r^\top g_r,
+ \qquad a_{nr}=\frac{(1-\beta_1)\beta_1^{n-r}}{1-\beta_1^n},
+\end{equation}
+with the corresponding coordinatewise second moment and denominator $D_n$. Thus
+\begin{equation}\label{eq:historical28}
+ f(\theta_{n+1})-f(\theta_n)
+ =-\alpha\sum_{r=1}^n a_{nr}Df(\theta_n)D_n^{-1}B_r^\top g_r+R_n,
+\end{equation}
+where $R_n$ is the exact nonlinear Taylor remainder. If $Df$ is $H$-Lipschitz on the step segment, $\|R_n\|\le H\|\theta_{n+1}-\theta_n\|^2/2$. The exact identity does not require this bound to be small.
+\begin{proposition}[Recentered path equivalence]\label{prop:transport28}
+Initialize two implementations with identical carrier parameters, Adam moments, counters, and hyperparameters. In the second implementation evaluate the economic gradient at the carrier's realized raw output, pull it back using $B_n^\top$, apply the same parameter-space Adam recurrence, and recenter the next economic coordinates on the full realized output $f(\theta_{n+1})$. In exact arithmetic the two implementations have identical parameters, moments, raw outputs, and proposal policies at every step, including the entire nonlinear remainder in \eqref{eq:historical28}.
+\end{proposition}
+This proposition is an induction using the chain rule. It does not say that a 47-dimensional optimizer with no neural carrier reproduces 355-dimensional Adam, nor does it imply a chart-independent adaptive optimizer. The implementation uses two independently coded recurrences and measures their floating-point discrepancy. Exact real equality is a mathematical result; the measured discrepancy is a consistency check, not a substitute for its assumptions.
+
+The previous moving control used a capped linearized output update, omitted $R_n$, and let the economic quotient drift from the carrier. Its poor performance consequently confounded transport, clipping, nonlinear displacement, and misalignment. The new control removes those confounds by construction. Agreement identifies what the neural trajectory is doing; it cannot by itself establish that the neural representation is necessary or cheaper.
