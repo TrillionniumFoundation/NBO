@@ -1,0 +1,23 @@
+name: R21 immutable inherited source
+on:
+  push:
+    branches: [revision/econometrica-r21-policy-sensitive-2026-09-23]
+    paths: [.github/workflows/r21-source.yml]
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Archive tracked source without credentials
+        run: |
+          git rev-parse HEAD > R21_SOURCE_COMMIT.txt
+          git archive --format=tar.gz HEAD > NBO_R21_inherited_source.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r21-inherited-source
+          path: |
+            NBO_R21_inherited_source.tar.gz
+            R21_SOURCE_COMMIT.txt
+          retention-days: 30
