@@ -1,0 +1,80 @@
+\section{Introduction}\label{sec:intro28}
+Numerical dynamic programming must answer two different questions. Can an approximator discover a useful policy, and can the computation establish that the policy is economically accurate? A small training loss, a favorable simulated return, and a smooth optimizer trajectory do not answer the second question when stopping, financing restrictions, and active controls are present. Conversely, a rigorous certificate for a known policy does not demonstrate that an algorithm can discover the solution of an unknown Bellman problem. This paper joins discovery and certification through explicitly specified operators, rather than identifying either component with the other.
+
+Our organizing economic problem is a consumption--portfolio economy in which the agent can alter a stochastic preference state at a quadratic cost. Consumption, investment, preference adjustment, and the continuation region interact. We retain the original objective: a current-state policy whose regret is at most $.01$ uniformly over the economic state domain and all restart times. The revision adds three constructive results without changing that objective. First, a backward Bellman completion operator turns a learned finite-state candidate into a policy with a prescribed uniform regret bound. The operator uses its own policy values and local action comparisons, not an optimal-value oracle. Second, a precision-aware direct-search result provides projected-gradient stationarity at box constraints. An explicit likelihood-ratio bridge makes its smoothness and oracle requirements numerically checkable on a slice of the original stopped economy. Third, an exact recentering identity isolates finite-path neural Jacobian and optimizer-moment transport, including the nonlinear output displacement omitted by a linearized control.
+
+The computations are designed to test these statements separately. A stopped, coupled inventory problem supplies unknown-solution Bellman discovery and exact policy evaluation. A constant-control slice of the original economy supplies active-boundary and interior economic optima. Matched production-schedule experiments supply actual deployment decisions, including optimizer-state restoration. The inherited stochastic manufactured example remains a verification stress test, and the inherited full-domain experiment remains the test of the original objective. We do not substitute the former for the latter.
+
+This distinction is quantitatively consequential. All \InventoryCases\ inventory candidates meet $.01$ after the same completion rule, whereas only \InventoryRawPass\ meet it before completion. Yet exact tabular backward induction is also available at these sizes and is charged as a direct baseline. The matched central-state frontier does not identify neural superiority. The best retained whole-domain bound for the original economy is $7.181834580823298$, approximately $718.18$ times its stated tolerance. Our new accuracy results concern precisely the problems and policy classes for which their hypotheses are instantiated. They are neither a numerical proof of that original target nor a statistical claim about optimizer superiority.
+
+\subsection{Relation to the literature and the incremental contribution}
+Classical computational economics emphasizes approximation design, economic feasibility, and error control; see \citet{Judd1998}. Markov-chain approximation for continuous stochastic control provides a systematic discretization theory under its own consistency and convergence conditions \citep{KushnerDupuis2001}. Adaptive sparse grids offer a major classical response to high-dimensional economic state spaces \citep{BrummScheidegger2017}. Our finite inventory graph is an independently specified economic model, not a consistency-verified discretization of the original diffusion. Its exact finite-state accuracy therefore makes no assertion about a continuous-domain discretization error or a sparse-grid performance comparison.
+
+Fitted value iteration propagates approximation error through Bellman recursion; finite-sample bounds quantify that propagation under distributional and function-class conditions \citep{MunosSzepesvari2008}. Deep stochastic-control algorithms study approximation and generalization in finite-horizon problems \citep{HureEtAl2021}. Neural PDE methods provide mesh-free residual approximation \citep{SirignanoSpiliopoulos2018}. These works motivate the discovery stage, but neither a sampled residual nor a convergence statement with an optimization-error term is the same object as a fixed-candidate, all-state arithmetic certificate. Our inventory implementation performs fitted Bellman recursion without a supplied value witness, freezes its actions, and then constructs a deterministic residual envelope and a reference-free corrective sweep. Bellman residual bounds and policy improvement are classical principles. The contribution here is their explicit tolerance-preserving composition, exact arithmetic implementation, and separation from both learned policy generation and a subsequent independent optimal reference.
+
+Information-relaxation duality bounds stochastic dynamic programs by relaxing nonanticipativity and charging penalties \citep{BrownSmithSun2010,BrownSmith2014}. Our stopped supersolution argument is complementary: it bounds a policy and an optimal value using a smooth witness, a boundary mismatch, and generator residuals. Neither form of upper bound makes a candidate feasible automatically. The financed policy construction is evaluated only after admissibility is checked in the original information filtration. The historical dual library is a shared input with a separately identified construction cost, not a free neural training oracle.
+
+Constrained derivative-free optimization is well developed. Mesh adaptive direct search treats general constraints and nonsmooth stationarity under appropriate assumptions \citep{AudetDennis2006}; direct-search sufficient-decrease arguments give worst-case iteration bounds \citep{Vicente2010}. We do not claim to introduce constrained direct search. Our box result exposes the cost of an interval oracle at the necessary precision and gives a short-face projected-gradient bound: geometrically unavailable full steps are treated through projection, while computationally unresolved evaluations cannot establish stationarity. The resulting theorem is instantiated below with validated derivatives and payoff enclosures, rather than inferred from a software test.
+
+Adam uses a history of coordinatewise moments \citep{KingmaBa2015}. Limited-memory quasi-Newton methods are serious classical controls, not optional weak baselines \citep{ByrdEtAl1995}. Function-space kernel descriptions of neural learning are central to the neural tangent kernel literature \citep{JacotEtAl2018}; our identity instead concerns a finite-width network, a realized finite step, and the complete historical Adam state. It is an exact chain-rule comparison, not a fixed-kernel or infinite-width limit. The independent recentered implementation retains both the network carrier and the nonlinear output remainder, so its agreement with neural Adam identifies a mechanism without establishing a cheaper nonneural solver.
+
+Finally, rigorous floating-point verification requires explicit control of rounding, truncation, and domain coverage \citep{Rump2010}. We distinguish three arithmetic objects: exact rational finite-state policies; mathematical real networks with saved binary64 coefficients interpreted exactly; and hardware floating-point deployment. Only the first two are certified here. A hardware execution theorem would require an additional rounding enclosure at deployment.
+
+\section{The economic problem and the certificate target}\label{sec:model28}
+Time runs from $0$ to $T=1$. Before stopping, preference $u$ and wealth $x$ evolve according to
+\begin{align}
+ du_s&=\theta_s\,ds+.05\,dZ^u_s,\\
+ dx_s&=\{(.02+.06p_s)x_s-c_s\}\,ds+.2p_sx_s\,dZ^x_s,
+\end{align}
+where $d\langle Z^u,Z^x\rangle_s=-.25\,ds$. Controls satisfy
+\begin{equation}
+ c\in[.05,.8],\qquad \theta\in[-.2,.2],\qquad p\in[-.5,.8].
+\end{equation}
+The continuation domain is $\cD=(1.2,2.8)\times(.5,2)$. Let $\tau$ be first exit from $\cD$, capped at $1$. The running payoff and settlement are
+\begin{align}
+ \ell_k(u,c,\theta)&=\frac{c^{1-u}}{1-u}-\frac{k}{2}\theta^2,\qquad k\in[.5,8],\\
+ G(u,x)&=-.02(u-2)^2+.1\log x,\qquad
+ g(s,u,x)=G(u,x)-8(1-s).
+\end{align}
+At $s=1$, $g=G$. An admissible progressively measurable policy, adapted to the original Brownian filtration, has payoff
+\begin{equation}\label{eq:payoff28}
+ J_k^\pi(t,u,x)=\E_{t,u,x}\left[\int_t^\tau e^{-.04(s-t)}\ell_k(u_s,c_s,\theta_s)\,ds+e^{-.04(\tau-t)}g(\tau,u_\tau,x_\tau)\right].
+\end{equation}
+Write $V_k=\sup_{\pi\in\cA}J_k^\pi$. The unrestricted value includes admissible path-dependent policies; the target implementation is a single current-state actor $\pi(t,u,x)$. The original full-domain numerical experiment fixes $k=2$ and asks for
+\begin{equation}\label{eq:originaltarget28}
+ \sup_{(t,u,x)\in[0,1]\times\overline{\cD}}\{V_2(t,u,x)-J_2^\pi(t,u,x)\}\le .01.
+\end{equation}
+The boundary values use immediate settlement. We retain \eqref{eq:originaltarget28} throughout. A certificate at $(0,2,1.25)$, a certificate on a small restart rectangle, or an optimum within a constant-control class is not this statement.
+
+The adjustment cost has a direct economic role. Positive $\theta$ changes future utility curvature, but its flow cost rises with $k$. Stopping adds a substantial loss before the horizon. Consequently a policy can have accurate typical-state behavior and still have large worst-restart regret near financially or psychologically fragile states. This is the reason to report a uniform criterion, rather than a mean simulation score alone.
+
+\subsection{Stopped residual verification}
+For a smooth witness $v$, define
+\begin{align}\label{eq:residual28}
+ \cR^a v={}&v_t+\theta v_u+\{(.02+.06p)x-c\}v_x+.00125v_{uu}
+ +.02p^2x^2v_{xx}-.0025pxv_{ux}\\
+ &+\ell_k(u,c,\theta)-.04v.\nonumber
+\end{align}
+No differentiability of $V_k$ is required in the next statement.
+\begin{proposition}[Uniform policy certificate]\label{prop:residual28}
+Suppose $v\in C^{1,2}$ has the boundedness needed for stopped It\^o's formula on the closed cylinder. Suppose the policy is admissible, $|v-g|\le b$ on the parabolic boundary, and, throughout the continuation cylinder,
+\begin{equation}
+ |\cR^\pi v|\le e,\qquad \sup_{a\in\cA}\cR^av-\cR^\pi v\le q,
+\end{equation}
+where $b,e,q\ge0$. Then
+\begin{equation}\label{eq:uniformcertificate28}
+ 0\le V_k(t,u,x)-J_k^\pi(t,u,x)\le 2b+(2e+q)\C{1-t}.
+\end{equation}
+\end{proposition}
+State-dependent and slabwise versions improve this bound when signed residual information is available. The all-restart suffix envelope used in the retained full-state calculation is proved in Appendix~\ref{app:suffix28}. A numerical grid of test points alone cannot establish any of these hypotheses; the intervals must cover each whole cell and each feasible control range.
+
+\subsection{Feasible memory and the financed comparison}
+The retained financed family uses sixteen time slabs. Its network has 355 parameters and 48 raw outputs. A common raw utility intercept is absorbed by the financing root, leaving 47 economic quotient coordinates. This quotient removes a redundancy; it does not turn every neural parameter displacement into an independent economic direction.
+
+The construction can retain the adapted internal state
+\begin{equation}
+ dY_s=.02Y_s\,ds-.3Y_s\,dZ^x_s,
+\end{equation}
+with expert wealth processes $X_i=F_i(s,Y_s)$ and portfolio fractions $p_i=-1.5Y_s F_{i,y}/F_i$. Nonnegative initial mixture weights yield aggregate wealth and wealth-weighted investment, subject to the inherited feasibility checks. This policy is Markov in an augmented state containing $Y$ and the fixed mixture weights, not necessarily in $(t,u,x)$ alone. Since the augmentation is generated from the original observations and carries no independent randomness, it does not enlarge the original admissible filtration. The unrestricted augmented and original control problems can therefore represent the same admissible policies, while the particular finite financed library remains a restricted class.
+
+A central financed certificate is useful evidence about proposal generation and deployment. It cannot establish \eqref{eq:originaltarget28} for a current-state actor. We preserve that distinction in the production tables, the historical comparison, and the response to the referee.
