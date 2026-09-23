@@ -1,0 +1,25 @@
+# R29: referee-directed integration and residual-budget experiment
+
+Date: 2026-09-24. Scientific base: cd1191f278948942f42c6507b4566108f2aa2f6d (R28 executed evidence). Latest referee: review/econometrica-r27-numerical-methods-2026-09-24-dde239e at d6f6f7fa2b0ef40e42206dc64406f004cc83c71e; report reviews/2026-09-24-econometrica-r27/referee_report.md, blob c1cc275b6938ecd0dc85d1a68b88ba60437e3de4. Also address all R26 findings/comments/actions and the R25 second-pass findings/actions. Never change the existing review, main, or R28 branches.
+
+Preserve the title Neural Bellman Operators, the original economy, the original current-state/all-start-state/all-restart 0.01 target, every inherited source and result, all raw failures, the strongest classical baselines, and the R27 post-diagnostic chronology. Do not present the absent historical R27 raw artifacts as recovered: the R28 run is a separately identifiable re-execution. The existing 7.181834580823298 full-domain certificate is not replaced by a finite-state certificate, a restricted-class optimum, or a fabricated improvement.
+
+## Fixed computational cohorts
+
+Retain all 34 R28 inventory policies byte-for-byte. For each (d,L) in (2,4),(3,4),(4,4),(4,5), add ten random feasible policies (seeds 29001--29010), one exact one-period/myopic policy, one deterministic base-stock heuristic, and one two-period truncated tabular policy. The base-stock rule orders toward ceil((L-1)/2), choosing the lowest-index most deficient good and at most two units; it never acts in the stopped state. Two-period lookahead uses only the specified reward, transitions, and terminal payoff; it is not a full-horizon optimal reference.
+
+Expand the width-32/depth-two neural seed panel with 27303--27310 at (4,4), and 27303--27305 at (4,5), using the unchanged R28 training rule. For scaling, use (5,4),(6,4),(7,4) with neural width 32/depth two/seed 27303, degree-two polynomial, myopic, base-stock, two-period tabular, and random seed 29001. These are 115 cases in total; keep every outcome. A declared failed or resource-exhausted case stays in the cohort and is not replaced by another seed.
+
+Apply the identical original fixed-eta completion and the new state/time residual-budget completion at epsilon=1/100 to every case. The latter uses the already-completed suffix residual envelope to set a nonnegative local allowance. Its proof must give all-state/all-restart bounds and absorbing/terminal semantics. Do not claim fewer changes for every policy or a neural-specific advantage. For the neural width-32/depth-two seed-27303 and myopic policies in each of the seven models, also execute epsilon=1/1000 and 1/20 under both completion rules. These 14-case tolerance cohorts are sensitivity analyses, not new independent efficacy replications.
+
+## Provenance and cost
+
+New candidate generation must not open an optimal-reference file or call the full-horizon independent optimal solver. Freeze each raw action table and training record by SHA-256 before completion; freeze reference-free certificates before independently generating/evaluating an optimal reference. Enforce the candidate-generation reference-read prohibition programmatically and record process input paths. Existing references and earlier outcomes are known to the research process, so these extensions are explicitly exploratory; file-level isolation is not a claim of global preregistration or investigator blinding.
+
+Record raw regret/bound, completed regret/bound, per-time/per-inventory-region correction topology, local deficit quantiles, changed fractions, exact integer bit lengths, logical/dense model work, model construction, fitting/compilation, completion, verification, reference and audit work, wall and CPU times, model/policy storage, and clearly scoped process memory. Compare timings within the same execution environment; do not combine R28 and R29 wall times as a hardware speedup. Charge the exact tabular baseline visibly. Do not label inherited central dual-construction time as measured when it is not.
+
+## Review object
+
+Materialize ECTA_R29.tex/pdf, SUPP_R29.tex/pdf, RESPONSE_R29.tex/pdf, a complete point-by-point disposition matrix, new source/code/results/tests, a historical preservation annex, revision index, source/output hashes, and reproduction instructions. Follow the repository's Econometrica class, author-date citations, numbered statements, complete proofs, and separate detailed computational supplement. Test exact Bellman identities, action feasibility, absorbing states, budget invariants, provenance ordering, all fixed cohorts, inherited interval/rollback/transport records, and source preservation.
+
+Run clean-checkout validation on the final referee commit without a push-message gate. Record the checked SHA and workflow/artifact identity externally in the validation artifact, avoiding a self-referential commit-hash claim. A successful compile or unit test does not establish unverified economic theorem hypotheses. Every referee disposition must identify its actual mathematical/computational evidence and distinguish completed corrections from unresolved scientific claims.
