@@ -1,0 +1,81 @@
+name: R29 referee manuscript build
+on:
+  push:
+    branches: [revision/econometrica-r29-referee-integration-2026-09-24]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r29-manuscript-build
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[build-r29]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install fixed scientific and document dependencies
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0 sympy==1.14.0 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          sudo apt-get update -qq
+          sudo apt-get install -y latexmk texlive-latex-extra texlive-fonts-recommended poppler-utils
+      - name: Materialize every document from frozen data
+        shell: bash
+        run: |
+          set -euo pipefail
+          R=revisions/2026-09-24-r29
+          mkdir -p /tmp/r29-build
+          git rev-parse HEAD > /tmp/r29-build/BUILD_SOURCE_COMMIT.txt
+          python "$R/replication/prepare_response.py"
+          python "$R/replication/materialize.py" | tee /tmp/r29-build/materialize.log
+          for name in ECTA_R29 SUPP_R29 RESPONSE_R29 COMPUTATION_R29 HISTORY_R29; do
+            latexmk -pdf -interaction=nonstopmode -halt-on-error "$name.tex" > "/tmp/r29-build/$name.compile.log" 2>&1 || { tail -120 "/tmp/r29-build/$name.compile.log"; exit 1; }
+            pdfinfo "$name.pdf" > "/tmp/r29-build/$name.pdfinfo.txt"
+            cp "$name.log" /tmp/r29-build/
+          done
+          python "$R/replication/test_revision.py" --output /tmp/r29-build/BUILD_VALIDATION.json 2>&1 | tee /tmp/r29-build/tests.log
+          python - <<'PY'
+          import hashlib,json,pathlib,subprocess,os
+          r=pathlib.Path('revisions/2026-09-24-r29')
+          names=['ECTA_R29','SUPP_R29','RESPONSE_R29','COMPUTATION_R29','HISTORY_R29']
+          docs={}
+          for name in names:
+              p=pathlib.Path(name+'.pdf')
+              info=subprocess.check_output(['pdfinfo',str(p)],text=True)
+              docs[name]={'pdf_sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'pdf_bytes':p.stat().st_size,'pages':int(next(x.split(':',1)[1].strip() for x in info.splitlines() if x.startswith('Pages:'))),'tex_sha256':hashlib.sha256(pathlib.Path(name+'.tex').read_bytes()).hexdigest()}
+          out={'build_source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'run_id':int(os.environ['GITHUB_RUN_ID']),'documents':docs,'tests':json.loads(pathlib.Path('/tmp/r29-build/BUILD_VALIDATION.json').read_text()),'science_evidence_commit':'f1874444422fa2d6aba30c6ff3203fcf47d70341','original_full_domain_target_closed':False,'final_head_validation':'The separate read-only workflow checks the subsequent exact referee commit.'}
+          (r/'DOCUMENT_BUILD.json').write_text(json.dumps(out,indent=2)+'\n')
+          PY
+      - name: Commit the complete referee object without altering historical sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          R=revisions/2026-09-24-r29
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f ECTA_R29.tex ECTA_R29.pdf SUPP_R29.tex SUPP_R29.pdf RESPONSE_R29.tex RESPONSE_R29.pdf COMPUTATION_R29.tex COMPUTATION_R29.pdf HISTORY_R29.tex HISTORY_R29.pdf REVISION_INDEX.md R29_REVIEW.md
+          git add -f "$R"/paper/*.tex "$R"/paper/generated/*.tex "$R"/replication/*.py "$R"/source_audit/* "$R"/disposition.json "$R"/REVISION_MANIFEST.json "$R"/DOCUMENT_BUILD.json "$R"/results/R29_HEADLINE_RESULTS.json "$R"/results/R28_HEADLINE_RESULTS.json
+          git commit -m 'paper(r29): freeze complete article, supplements, 102-item response and validated PDFs'
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push origin "HEAD:$GITHUB_REF_NAME"
+          git rev-parse HEAD > /tmp/r29-build/R29_DOCUMENT_COMMIT.txt
+          git archive --format=tar.gz --output=/tmp/NBO_R29_referee_object.tar.gz HEAD ECTA_R29.tex ECTA_R29.pdf SUPP_R29.tex SUPP_R29.pdf RESPONSE_R29.tex RESPONSE_R29.pdf COMPUTATION_R29.tex COMPUTATION_R29.pdf HISTORY_R29.tex HISTORY_R29.pdf REVISION_INDEX.md R29_REVIEW.md revisions/2026-09-24-r29 reviews/2026-09-24-econometrica-r27 reviews/2026-09-23-econometrica-r25-second-pass .github/workflows/r29-build.yml .github/workflows/r29-science.yml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r29-referee-object-${{ github.run_id }}
+          path: |
+            /tmp/NBO_R29_referee_object.tar.gz
+            /tmp/r29-build/
+          retention-days: 30
