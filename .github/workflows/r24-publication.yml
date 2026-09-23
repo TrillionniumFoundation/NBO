@@ -1,0 +1,92 @@
+name: R24 manuscript publication and preservation audit
+on:
+  push:
+    branches: [revision/econometrica-r24-state-geometry-2026-09-23]
+    paths: [.github/workflows/r24-publication.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publication:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Assemble every frozen result and archive the first review
+        run: |
+          mkdir -p revisions/2026-09-23-r24/results/build revisions/2026-09-23-r24/archive
+          git show fafff2ccfa218b5de4ea73a4d0eb21d468166c98:reviews/2026-09-23-econometrica-r23/referee_report.md > revisions/2026-09-23-r24/archive/first_pass_referee_report.md
+          test "$(git hash-object revisions/2026-09-23-r24/archive/first_pass_referee_report.md)" = '7e74b7d09d817b87f466d067cddaeab28b42265d'
+          python revisions/2026-09-23-r24/replication/assemble_publication.py
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          r=Path('revisions/2026-09-23-r24/results')
+          p=Path('revisions/2026-09-23-r22/results/full_state/time_envelope.json')
+          x=json.loads(p.read_text())
+          v=x['all_start_times_regret_upper']
+          assert abs(v-7.241462443133396)<1e-12
+          d={'schema_version':2,'authoritative_source':str(p),'all_start_times_regret_upper':v,'discounting':'discounted suffix envelope','target':0.01,'target_established':False,'new_actor_payoff_improvement_established':False,'deprecated_summary_field':'candidate_all_initial_times_bound','deprecated_field_value':7.386001245971047,'deprecated_field_interpretation':'earlier undiscounted all-times bound; not the current discounted result','historical_files_unchanged':True}
+          (r/'full_state_canonical.json').write_text(json.dumps(d,indent=2)+'\n')
+          PY
+      - name: Install TeX environment
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y latexmk texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Compile main paper, complete supplement and referee response
+        run: |
+          set -o pipefail
+          for target in ECTA_R24 SUPP_R24 RESPONSE_R24; do
+            latexmk -pdf -interaction=nonstopmode -halt-on-error "$target.tex" 2>&1 | tee "revisions/2026-09-23-r24/results/build/$target.build.log"
+          done
+      - name: Audit transitive inputs, all records and every reviewed Git blob
+        run: python revisions/2026-09-23-r24/replication/publication_audit.py
+      - name: Commit validated publication only on R24
+        run: |
+          git config user.name 'NBO revision build'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add revisions/2026-09-23-r24 ECTA_R24.tex ECTA_R24.pdf SUPP_R24.tex SUPP_R24.pdf RESPONSE_R24.tex RESPONSE_R24.pdf R24_REVIEW.md
+          git diff --cached --quiet || git commit -m 'publication(r24): complete manuscript, supplement, forty-point response and preservation seal'
+          git pull --rebase origin revision/econometrica-r24-state-geometry-2026-09-23
+          git push origin HEAD:revision/econometrica-r24-state-geometry-2026-09-23
+      - name: Package exact published files and reproducible source
+        run: |
+          mkdir -p dist
+          cp ECTA_R24.pdf SUPP_R24.pdf RESPONSE_R24.pdf R24_REVIEW.md dist/
+          cp revisions/2026-09-23-r24/PUBLICATION_MANIFEST.json revisions/2026-09-23-r24/FINDING_DISPOSITION.md revisions/2026-09-23-r24/REPRODUCE.md dist/
+          git rev-parse HEAD > dist/PUBLISHED_COMMIT.txt
+          python - <<'PY'
+          import subprocess,zipfile,json,hashlib
+          from pathlib import Path
+          blocked={'.ttf','.otf','.ttc','.woff','.woff2','.pfb','.pfm','.afm','.tfm','.fnt','.eot','.pyc'}
+          archive_suffixes={'.zip','.gz','.tgz','.bz2','.xz','.tar','.7z'}
+          names=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          count=0
+          with zipfile.ZipFile('dist/NBO_R24_referee_source.zip','w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+              for n in names:
+                  if not n:continue
+                  p=Path(n)
+                  if not p.is_file() or p.suffix.lower() in blocked or '__pycache__' in p.parts:continue
+                  if p.suffix.lower() in archive_suffixes and n!='revisions/2026-09-23-r24/archive/primary_execution.zip':continue
+                  z.write(p,n);count+=1
+          files={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in Path('dist').iterdir() if p.is_file()}
+          Path('dist/DELIVERY_SHA256.json').write_text(json.dumps({'file_count_in_source_archive':count,'files':files},indent=2)+'\n')
+          print('Packaged',count,'source/evidence files without standalone fonts or nested historical archives.')
+          PY
+      - name: Preserve published files and any failed build evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r24-publication-${{ github.run_id }}
+          path: |
+            dist/
+            revisions/2026-09-23-r24/results/build/
+          if-no-files-found: warn
+          retention-days: 30
