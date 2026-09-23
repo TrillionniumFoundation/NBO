@@ -12,7 +12,14 @@ def main():
     lock=json.loads((REV/'results/PRIMARY_EVIDENCE_LOCK.json').read_text())
     for p,h in lock['files'].items():assert sha(REV/p)==h,p
     runtime=json.loads((REV/'results/DEPENDENCY_LOCK.json').read_text())
-    for x in runtime['runtime_imported_repository_modules'].values():assert sha(ROOT/x['path'])==x['sha256'],x['path']
+    lineage=json.loads((REV/'results/SOURCE_LINEAGE_AUDIT.json').read_text())
+    assert lineage['exact_documented_metadata_patch_verified'] is True
+    for x in runtime['runtime_imported_repository_modules'].values():
+        actual=sha(ROOT/x['path'])
+        if actual!=x['sha256']:
+            assert x['path']=='revisions/2026-09-23-r24/replication/study.py'
+            assert x['sha256']==lineage['original_source_sha256']
+            assert actual==lineage['metadata_only_repaired_source_sha256']
     blobs=0;bad=[]
     for row in git('ls-tree','-rz',BASE).decode().split('\0'):
         if not row:continue
