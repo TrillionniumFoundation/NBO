@@ -1,0 +1,88 @@
+\section{The Bellman problem with controller memory}\label{sec:r24state}
+Write $z=(u,x)$ for the original economic state and $a=(c,\theta,p)$ for an action. The original admissible class uses progressively measurable controls under the completed Brownian filtration of the economy. A feedback map on $(t,u,x)$ is a particular implementation in that class, not its definition. This distinction matters for the financed expert library.
+
+\subsection{A finite-dimensional realization}
+Let $Y_0=1$ and
+\[
+ dY_t=.02Y_t\,dt-.3Y_t\,dW^x_t.
+\]
+For expert $i$, freeze the sixteen-slab consumption coefficients, the deterministic slabwise preference drift $\theta_i$, and the exact-price-defined reserve $R_i$. Its conditional-price wealth is
+\begin{equation}
+ F_i(t,y)=R_i e^{-.02(1-t)}+\int_t^1e^{-.02(s-t)}\E^Q[c_i(s,Y_s)\mid Y_t=y]ds,
+ \qquad p_i(t,y)=-1.5\,yF_{i,y}(t,y)/F_i(t,y).
+ \label{eq:r24price}
+\end{equation}
+The common-factor dynamics under $Q$ have log mean increment $.065(s-t)$ and variance $.09(s-t)$; under the original measure the log mean increment is $-.025(s-t)$. These are the same conditional-price and hedge identities as in the retained financed-decoder theorem. Frozen initial weights $\lambda_i\geq0$, $\sum_i\lambda_i=1$, are chosen from the initial cell. Define
+\begin{align}
+ c^\lambda(t,y)&=\sum_i\lambda_i c_i(t,y),\qquad
+ \theta^\lambda(t)=\sum_i\lambda_i\theta_i(t),\notag\\
+ p^\lambda(t,x,y)&={\sum_i\lambda_i p_i(t,y)F_i(t,y)\over x}.
+ \label{eq:r24policy}
+\end{align}
+The initialized reachable manifold is
+\begin{equation}
+ x=\sum_i\lambda_iF_i(t,y),\qquad u=\sum_i\lambda_i u_i(t),
+ \label{eq:r24manifold}
+\end{equation}
+where all virtual $u_i$ use the same preference shock. Their differences are deterministic conditional on initialization, since the expert drifts are deterministic. Virtual experts may be continued for this coupling after their individual exit times; the deployed aggregate is stopped at the original aggregate exit time and receives the original settlement.
+
+\begin{proposition}[Markov realization of the financed library]\label{prop:r24realization}
+Under the retained financing and feasibility hypotheses, the aggregate controller is Markov in $(t,u,x,Y,\lambda)$, with the expert library frozen. Initialized on \eqref{eq:r24manifold}, it preserves that manifold until original aggregate stopping and obeys the original economic equations and continuous action constraints. Independent stochastic subaccount coordinates are unnecessary: each wealth account is reconstructed as $F_i(t,Y_t)$. This is not, in general, a Markov policy on $(t,u,x)$ alone.
+\end{proposition}
+Two histories with the same original state can have different $(y,\lambda)$ and hence different controls. Outside the reachable manifold one may specify any admissible extension; the reported certificates concern initialized reachable states and do not certify an arbitrary off-manifold extension. Cell selection is made at initialization and stored, rather than repeatedly switched during a path.
+
+\subsection{Generator, value, and dynamic programming}
+For a smooth function $v(t,u,x,y,\lambda)$, with $\lambda$ fixed, the augmented generator excluding the time derivative is
+\begin{align}
+ \mathcal L^a_{\rm aug}v={}&\theta v_u+\{(.02+.06p)x-c\}v_x+.02y v_y
+ +.00125v_{uu}+.02p^2x^2v_{xx}+.045y^2v_{yy}\notag\\
+ &-.0025pxv_{ux}+.00375yv_{uy}-.06pxyv_{xy}.
+ \label{eq:r24generator}
+\end{align}
+The mixed derivatives use the original correlation $-.25$; the preference--factor covariance is positive. Settlement is $g(t,u,x)$, independent of memory. The unrestricted augmented Bellman equation is
+\begin{equation}
+ v_t+\sup_{a\in A}\{\mathcal L^a_{\rm aug}v+\ell_k(u,c,\theta)\}-.04v=0,
+ \qquad v=g\text{ on the original stopping boundary}.
+ \label{eq:r24HJB}
+\end{equation}
+The semigroup below is the primary definition. This differential equation is interpreted classically only when sufficient regularity holds; writing it does not assume differentiability of the unknown value.
+
+\begin{assumption}[Information and restart]\label{ass:r24memory}
+The original and augmented problems have the same completed Brownian filtration and action constraints. Frozen memory is deterministic at a restart, future Brownian increments have their original law, and no auxiliary variable reveals future shocks. The stopped controlled equations have well-posedness, admissible concatenation, and dynamic-programming properties. Payoffs are integrable and the stopping payoff is unchanged.
+\end{assumption}
+\begin{theorem}[Augmentation preserves unrestricted economic value]\label{thm:r24value}
+Under Assumption~\ref{ass:r24memory}, the unrestricted augmented value equals $V_k(t,u,x)$ for every deterministic admissible memory initialization. It is independent of $y$ and $\lambda$. For $h\geq0$ the augmented dynamic-programming operator is
+\begin{align}
+ (\mathcal T_h w)(s)=\sup_a\E_s\bigg[&\int_t^{(t+h)\wedge\tau}e^{-.04(r-t)}\ell_k(u_r,c_r,\theta_r)\,dr\notag\\
+ &+\mathbf1_{\{\tau\leq t+h\}}e^{-.04(\tau-t)}g(\tau,u_\tau,x_\tau)
+ +\mathbf1_{\{\tau>t+h\}}e^{-.04h}w(S_{t+h})\bigg],
+ \label{eq:r24semigroup}
+\end{align}
+where $S$ is the augmented state. It preserves pointwise order and satisfies the dynamic-programming semigroup identity on admissible continuation functions. Its unrestricted value is the original optimum, while \eqref{eq:r24policy} has a restricted policy value below that optimum.
+\end{theorem}
+The theorem uses the original full-information class. It does not say that adding an unobserved factor to a partially observed problem leaves value unchanged. Nor does it turn a local certificate for an augmented policy into a full-domain certificate for the current-state actor.
+
+\subsection{The computational operator and acceptance rule}
+The numerical construction approximates policy values associated with this Bellman problem. A proposal optimizer is an implementation component, not the exact Bellman semigroup. At checkpoint $n$, let $[L_n,U_n]$ enclose candidate payoff and $[L_I,U_I]$ enclose incumbent payoff. The deployment update is
+\begin{equation}
+ \mathcal A(I,n)=\begin{cases}n,&L_n>U_I,\\ I,&\text{otherwise}.\end{cases}
+ \label{eq:r24gate}
+\end{equation}
+Every accepted replacement has strictly greater actual payoff at the certified initialization. With a fixed unrestricted comparator, true regret falls by the same amount. This comparison needs no dual; a dual is needed to give a numerical upper bound on regret.
+
+The experiment archives snapshots prospectively during optimization and certifies them serially afterward. The proposal optimizer continues its trajectory independently of the replayed deployment decision. Thus the gate neither restores optimizer moments nor supplies a demonstrated convergence mechanism. The historically retained rollback experiment is a different implementation. Cumulative generation-plus-checking curves are accounting reconstructions, not directly timed online deployments.
+
+\begin{table}[t]\centering\small
+\caption{Complete numerical-method specification}\label{tab:r24algorithm}
+\begin{tabularx}{\textwidth}{lX}\toprule
+Component & Definition in the executed study\\\midrule
+Policy information & $(t,u,x,Y,\lambda)$ with frozen expert coefficients; original-state actor retained separately.\\
+Generator & $1$--$16$--$16$--$3$ tanh network or an invertible direct output chart.\\
+Proposal objective & Sixteen slabs; Gauss--Legendre/Gauss--Hermite orders $(8,16)$ or $(12,24)$; finite-rule implicit financing root.\\
+Tuning & Two disjoint seeds; three rates per first-order arm; maximize mean certified lower payoff at 200 calls.\\
+Deployment & Frozen dyadic coefficients; exact price-defined reserve, conditional-price wealth and hedge.\\
+Acceptance & Serial replay of independently certified strict payoff comparisons; no proposal rollback.\\
+Payoff checker & Unchanged directed stopped-model checker, including financing, tails, stopping and continuous actions.\\
+Comparator & Inherited non-neural dual library; unnecessary for pairwise payoff improvement.\\
+Cost & Preprocessing, generation, diagnostics, checking, tuning and upper-library reuse separated.\\\bottomrule
+\end{tabularx}\end{table}
