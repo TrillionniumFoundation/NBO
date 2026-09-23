@@ -1,0 +1,3 @@
+# Fixed financing-root failure fixture
+
+These three files are the exact parameters, compiled actor, and directed failed check from the local preflight of protocol082a3fdc, ensemble22000, vertex1, neural L-BFGS-B. They are retained independently of the later clean reference execution, whose machine-dependent optimizer iterates need not be bitwise identical. No policy data in this fixture are silently replaced by the root-safe follow-up. The source was the originally bracketed R20 proposal objective. The failure reserve was[0.47740008124922,0.47740009347774154]. The paired root-safe test re-evaluates these exact frozen parameters.

@@ -1,0 +1,93 @@
+\section{Matched policy experiments and nonsynchronized continuum comparisons}\label{sec:r22method}
+We use the stochastic policy, exact self-financing decoder, and rectangle $K=[1.98,2.02]\times[1.24,1.26]$ defined in Section~\ref{sec:r21method}. An expert's policy is specified by the sixteen triples $(b_j,s_j,\theta_j)$ and its price-defined reserve, not by an optimizer termination message. Unless stated otherwise, $k=2$ and the starting time is zero.
+
+\subsection{Crossing parameterization and optimizer}
+For each ensemble and vertex, a randomly initialized $1$--$16$--$16$--$3$ tanh network produces a $16\times3$ array of raw outputs at the slab nodes. We initialize the direct parameterization to that exact binary64 array. Both Adam and L-BFGS-B start from the same network weights in the neural arm and the same array in the direct arm. The delivered initial consumption intercepts, slopes, and preference drifts coincide exactly within each block. The dimensions are 355 neural parameters and 48 direct coefficients. Vertex $v$ in ensemble $s$ uses seed $s+v$, for $s\in\{22000,22100,22200\}$; corners are therefore not synchronized.
+
+Each configuration has a cap of 400 function/gradient evaluations. Adam uses learning rate $.005$. L-BFGS-B uses at most 40 line-search evaluations per iteration, function tolerance $10^{-13}$, and gradient tolerance $10^{-8}$. At budget exhaustion we restore the last accepted optimizer iterate, not an unaccepted line-search trial. We report gradient calls separately from accepted optimizer iterations, wall time, and checker calls. An initial-policy check is shared within each block and is charged when a configuration is considered as a standalone method. Final proposals are delivered only when their certified lower payoff exceeds the incumbent's certified upper payoff. Failed feasibility checks leave the incumbent in place and remain in the results.
+
+This design varies the parameterization, including its induced geometry and sharing, within a fixed optimizer. It does not identify a causal effect of hidden layers independently of every change in optimization geometry. Nor are Adam iterations equated with L-BFGS-B iterations. The earlier neural--Adam versus direct--L-BFGS-B comparison remains a useful end-to-end baseline, but is not a representation ablation.
+
+\subsection{Pair-moment control of the mixture's Jensen benefit}
+Let $i=1,\ldots,4$ index experts and let $\lambda_i\geq0$, $\sum_i\lambda_i=1$, denote the fixed bilinear weights of an initial state in $K$. Define unstopped auxiliary preference means
+\[
+ m_i(t)=u_i+\int_0^t\theta_i(s)\,ds,
+ \qquad c_i(t)=.5+.3\sigma\{b_i(t)-s_i(t)\log Y_t\}.
+\]
+All auxiliary experts are driven by the same Brownian motions. They define the mixture up to the mixture's own stopping time; an auxiliary expert's exit does not silently liquidate all subaccounts. On the common no-exit event, auxiliary and individually stopped payoffs agree.
+
+Write $I_j=[j/16,(j+1)/16]$, $M_j=\int_{I_j}e^{-.04t}\,dt$, and let $D_j$ bound the range of $m_i(t)$ on $I_j$, obtained from both slab endpoints. Let $T_j=\max_i\theta_{ij}-\min_i\theta_{ij}$. The directed pair-moment inputs are
+\begin{equation}
+ Q_{ik,j}\ \geq\ \int_{I_j}e^{-.04t}\E[(c_i(t)-c_k(t))^2]dt,
+ \qquad V_j^c=\frac38\max_{i<k}Q_{ik,j},\quad V_j^u=\frac{M_jD_j^2}{4}.
+ \label{eq:r22moments}
+\end{equation}
+The expectation is under the physical measure. The factor and preference shocks need not be independent.
+
+Let $H_{uu},H_{uc},H_{cc}$ bound the absolute Hessian of the running utility on $[1.78,2.42]\times[.5,.8]$. Let $D_T$ be the range of $m_i(1)$, $D_R$ the range of the enclosed reserves, and $R_->.5$ a common lower reserve bound. Define
+\begin{align}
+ \Gamma={}&\sum_j\left\{\tfrac12H_{uu}V_j^u+H_{uc}\sqrt{V_j^uV_j^c}
+       +\tfrac12H_{cc}V_j^c+\tfrac14M_jT_j^2\right\}
+       +6p_4\sum_jM_j\notag\\
+ &+e^{-.04}\left\{.005D_T^2+\frac{.0125D_R^2}{R_-^2}\right\}+16p_E,
+ \label{eq:r22gamma}
+\end{align}
+where $p_4=2\phi(4)/4$ and $p_E=2\exp\{- .58^2/(2\cdot .0025)\}$. These are analytic tail bounds, not estimated failure probabilities.
+
+\begin{theorem}[Continuum comparison without synchronized initialization]\label{thm:r22jensen}
+Suppose the expert coefficients satisfy the decoder's admissibility conditions and each expert payoff is enclosed by $[L_i,U_i]$. For arbitrary, possibly unequal, slopes and preference drifts, the corresponding mixture payoff satisfies
+\[
+ \sum_i\lambda_iL_i-16p_E\ \leq J_\lambda
+ \ \leq\sum_i\lambda_iU_i+\Gamma.
+\]
+Let superscripts $0$ and $1$ denote old and proposed expert systems. If
+\begin{equation}
+ d=\min_i(L_i^1-U_i^0)-\Gamma^0-16p_E>0,\label{eq:r22gain}
+\end{equation}
+then $J_\lambda^1-J_\lambda^0\geq d$ throughout $K$. If $W$ is the convex unrestricted dual upper comparison used here, then
+\[
+ V-J_\lambda^1\leq B:=\max_i\{W(u_i,x_i)-L_i^1\}+16p_E.
+\]
+Consequently $(V-J_\lambda^1)/(V-J_\lambda^0)\leq B/(B+d)$ whenever $d>0$. Convexity is required of the dual comparison $W$, not asserted for the original value function in all state coordinates.
+\end{theorem}
+
+The theorem also compares two different trained parameterizations: use the direct final mixture as the old system and the neural final mixture as the proposed system. No optimal-value upper is needed for that payoff-ordering comparison. The older range-based Jensen certificate remains available as a separate valid upper bound; it is not discarded when pair moments are sharper.
+
+\subsection{A constructive global comparison beyond exact replication}\label{sec:r22corrector}
+For a controlled diffusion with generator $\mathcal L^a$, running reward $f^a$, discount $\rho$, and stopped payoff $g$, set
+\[
+ R^av=v_t+\mathcal L^av-\rho v+f^a,\qquad
+ D^a\psi=\psi_t+\mathcal L^a\psi-\rho\psi.
+\]
+These definitions do not require complete markets or an analytic hedge. Let $v$ be a smooth candidate witness and $\pi$ an admissible current-state policy. Choose nonnegative correction functions $\psi_\ell$ and nonnegative coefficients $\alpha_\ell,\beta_\ell$.
+
+\begin{proposition}[Verified residual-correction cone]\label{prop:r22cone}
+Suppose a finite covering of the state-time and action domains supplies valid interval upper bounds for $R^av$ and $D^a\psi_\ell$, and lower bounds for $R^\pi v$. If the finite linear inequalities certify
+\[
+ \sup_a R^a\left(v+\sum_\ell\alpha_\ell\psi_\ell\right)\leq0,
+ \qquad R^\pi\left(v-\sum_\ell\beta_\ell\psi_\ell\right)\geq0,
+\]
+with the corresponding upper stopping trace and policy-accessible lower stopping trace, then
+\[
+ J^\pi\geq v-\sum_\ell\beta_\ell\psi_\ell,
+ \qquad V\leq v+\sum_\ell\alpha_\ell\psi_\ell.
+\]
+A floating-point linear-programming solution is a proposal only; its inequalities must be checked with directed arithmetic. Including the constant correction $1$ and the time correction $C_\rho(T-t)$ provides a feasible fallback whenever finite global residual and trace bounds are already available. Nonreplicable controls alter the generator and admissible set, not this verification argument.
+\end{proposition}
+
+We implement the time-slab member of this correction cone, retaining the independently enclosed complete-domain residuals. For slab errors $e_j=e_j^++e_j^-$, define $F(T)=0$ and
+\begin{equation}
+ F(t_j)=C_\rho(h_j)e_j+e^{-\rho h_j}F(t_{j+1}).\label{eq:r22suffix}
+\end{equation}
+On each slab $F(t)=e_j/\rho+[F(t_{j+1})-e_j/\rho]e^{-\rho(t_{j+1}-t)}$ is monotone or constant. Thus $\max_jF(t_j)$ certifies every starting time. The broader state-dependent cone is a constructive extension, not a reported incomplete-market experiment.
+
+\subsection{Cover and deployment complexity}\label{sec:r22cover}
+At a fixed starting time, an affine, self-financing mixture on a $d$-simplex uses $d+1$ active experts. A regular grid with $n$ subdivisions per coordinate has $(n+1)^d$ distinct vertices and $d!n^d$ simplices. Sorting fractional coordinates locates the active simplex in $O(d\log d)$ operations. Shared vertex storage avoids duplicating a complete policy for every simplex, but does not eliminate the worst-case dimension dependence.
+
+\begin{proposition}[Conditional cover complexity]\label{prop:r22cover}
+Suppose the state mixture preserves admissibility, the running and terminal criteria are concave on a common event, and the complement correction is certified separately. Then the vertex-payoff and convex-upper argument extends to each simplex, with its own complement allowance. With $m$ time slabs, $q_t$ time nodes and $q_z$ Gaussian nodes, direct conditional-price evaluation costs $O((d+1)mq_tq_z)$ per query; compiled active-policy storage is $O((d+1)m)$ and a complete vertex library costs $O((n+1)^dm)$.
+
+For a fixed current-state neural policy and witness, suppose a compact-domain interval extension overestimates its certificate functional by at most $Ch^\alpha$ on a box of diameter $h$, and the desired inequality has a strict uniform margin $\eta>0$. Then a dyadic adaptive cover terminates after at most $O((D(C/\eta)^{1/\alpha})^d)$ boxes, up to geometric constants, on a domain of diameter $D$. Neither a positive margin nor a low effective dimension follows merely from using a neural network.
+\end{proposition}
+
+The simplex statement concerns state mixtures at a common starting time; it does not justify mixing policies initialized at different times. The second statement applies directly to a current-state residual checker and therefore can include time among its coordinates. The actual full-state execution below covers every cell of the original three-dimensional state-time domain. Its residual margin for the $.01$ target is not positive.
