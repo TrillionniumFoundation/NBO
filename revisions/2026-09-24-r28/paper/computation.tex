@@ -1,0 +1,150 @@
+\section{An instantiated certificate in the original stopped economy}\label{sec:slice28}
+Theorem~\ref{thm:box28} becomes a computational result only after the payoff oracle, smoothness constant, feasible geometry, and precision are supplied. We do so without changing the primitives in Section~\ref{sec:model28}. Fix the restart $(0,2,5/4)$, consumption $c=3/4$, investment $p=0$, and constant adjustment $\theta\in[-1/5,1/5]$. We examine $k=1/2$ and $k=2$. This is an admissible one-dimensional class inside the original economy, not a replacement for all current-state policies.
+
+Wealth is deterministic:
+\begin{equation}
+ x_s=\left(\frac54-\frac{3/4}{.02}\right)e^{.02s}+\frac{3/4}{.02}.
+\end{equation}
+Validated endpoints give $x_1\in[.5177014240300721,.517701424030129]$, so wealth does not exit. Preference is $u_s=2+\theta s+.05W_s$. Since $|\theta|\le.2$, a preference exit implies $\sup_{s\le1}|.05W_s|\ge.6$. Reflection and a Gaussian Chernoff bound give
+\begin{equation}\label{eq:exit28}
+ p_{\rm exit}\le4e^{-72}<2.153\times10^{-31}.
+\end{equation}
+This is an upper bound for every $\theta$ in the box, not an observed exit frequency.
+
+The stopped objective is compared with an unstopped extension that clips preference to $[1.2,2.8]$ inside utility and settlement. Their pathwise payoffs coincide off the exit event and have absolute value at most $H=14.4$. A likelihood-ratio derivative on the full path, with score $W_1/.05$, bounds the payoff, first-derivative, and second-derivative differences. It avoids differentiation of a random first-exit time. The bounds, including the explicit $\theta$-dependence of the adjustment cost, are proved in Appendix~\ref{app:slice28}.
+
+We then integrate Gaussian moments analytically. On $|Z|\le10$, the flow expansion about $u=2$ has $|u-2|\le.7$. A degree-100 power series and a degree-20 discount expansion yield rigorous geometric and exponential remainders. Gaussian tail moments control the complement, including the derivative score factors. MPFR directed arithmetic encloses every coefficient and polynomial evaluation; saved binary64 endpoints are rounded outward. The script records separate flow, terminal, stopping, and arithmetic enclosures rather than reporting one unexplained tolerance.
+
+Eighty intervals of width $1/200$ cover the complete $\theta$ box. They certify strict concavity. For $k=1/2$, $-F''\ge .9622197$ and $|F''|\le1.6146843$; for $k=2$, $-F''\ge2.4326157$ and $|F''|\le3.0850803$. The oracle is executed at meshes $1/25,1/50,1/100,1/200$, with $\sigma=1/100$ and $\kappa=1/100000$. Every required width is checked, including at the active face. The fixed expansion orders are claimed only at these meshes.
+
+\begin{table}[t]
+\caption{Original-economy slice: instantiated boundary and interior certificates}\label{tab:slice28}
+\centering\small
+\begin{tabular}{rrrrrr}\toprule
+$k$ & Final $\theta$ & $L$ & $m$ & Class regret upper & Total seconds\\\midrule
+\tablerows{revisions/2026-09-24-r28/paper/generated/slice_rows.tex}
+\bottomrule\end{tabular}
+\par\smallskip\footnotesize The objective and stopping rule are those of the original economy; consumption, investment, restart, and constant-adjustment class are fixed as stated. $m$ is a validated lower bound on $-F''$. Total time includes construction, derivative auditing, polls, and the final optimum check. It is not a full-domain policy certificate.
+\end{table}
+
+For $k=1/2$, the derivative remains positive at $\theta=1/5$. Strict concavity therefore certifies the upper-face global optimum within the class. Its class regret is zero, although its ordinary gradient is not zero. For $k=2$, a validated sign bracket locates a unique interior optimum near $.183$. The final poll is $\theta=37/200$, with class regret at most $6.157\times10^{-6}$ from $F'(\theta)^2/(2m)$. Thus a higher adjustment cost changes the economic solution from a binding upper control to an interior action. The result concerns actual stopped welfare, not the differentiable proposal loss.
+
+The instantiation resolves the boundary exclusion and demonstrates a stopped-gradient bridge on this class. It does not instantiate the financed 47-dimensional gradient bridge, and it does not show that fixed $c$ and $p$ are optimal among unrestricted controls. Those are distinct mathematical statements.
+
+\section{Unknown-solution Bellman discovery and completion}\label{sec:inventory28}
+\subsection{A coupled stopped inventory economy}
+There are $d$ goods and eight decision periods, with discount $99/100$. Inventory states are $x\in\{0,\ldots,L-1\}^d$. A feasible order purchases zero units or one or two units of one good, never exceeding capacity before demand. Demand is equiprobable over $d+2$ vectors: zero, the all-ones vector, and each vector with one component equal to two and all other components equal to one. These common demand realizations couple the inventories.
+
+For order $a$, let $z=x+a$, sales $s=\min(z,D)$, remaining stock $y=(z-D)_+$, and shortage $h=(D-z)_+$. The period reward is
+\begin{equation}\label{eq:inventoryreward28}
+ r(x,a,D)=\sum_j s_j-\frac35\sum_j a_j-\frac1{10}\ind_{\{a\ne0\}}
+ -\frac1{50}\sum_j y_j^2-\frac25\sum_j h_j^2
+ -\frac1{20d}\left(\sum_jh_j\right)^2.
+\end{equation}
+The last term makes aggregate shortage costly beyond the sum of itemwise shortages. The all-zero state stops immediately and pays $-2-d/5$. Other terminal states pay $\sum_jx_j/5-\sum_jx_j^2/50$. The stopping state cannot order its way back into the continuation economy. Hence both common shocks and the ability to avoid joint stockout matter for a policy's worst-state value.
+
+The model is specified by rational primitives. It has no engineered value function or action oracle. We study $(d,L)=(2,4),(3,4),(4,4)$, with an additional $(4,5)$ resolution and capacity control. These yield 16, 64, 256, and 625 states. Changing $L$ changes the stated finite economic model; it is not an estimate of a continuous-state discretization rate.
+
+\subsection{Equal information and reference ordering}
+Raw policies are obtained by backward fitted Bellman recursion. At each stage a candidate constructs action values using its own preceding value approximation and takes the maximum over feasible actions. The targets are not taken from an optimal reference. Neural candidates use tanh networks of width 16 or 32 and one or two hidden layers, with seeds 27301 and 27302. Each fitted stage uses 400 Adam steps at $.01$, followed by at most 150 L-BFGS-B objective-gradient calls. The last accepted iterate is restored if the call cap is reached. Polynomial candidates use total degrees two and three and least squares on exactly the same states and candidate-specific Bellman targets. All candidates have the same primitives, transition information, terminal payoff, and stopping convention.
+
+There are eight neural configurations and two polynomial configurations at each $L=4$ model. The $d=4,L=5$ control uses the two width-32, depth-two neural seeds and both polynomial degrees, giving \InventoryCases\ retained cases in total. The period-zero action is compiled but its value approximation is not fitted, since no predecessor would use it. This explicit implementation reduction gives seven fitted stages rather than eight and changes no period-zero action target.
+
+For each case, the complete raw action table is saved and hashed before certification. Exact own-policy evaluation produces \eqref{eq:localdeficit28} and \eqref{eq:envelope28}. Completion uses a freshly constructed model and only the frozen action table, with the same $\varepsilon=1/100$ for every case. It saves the changed actions, their original suffix-conditioned deficits, the completed policy, and a second reference-free certificate. All candidates and both certificates for a model are frozen before a separately coded scalar-integer optimal recursion is invoked. That recursion does not call the vectorized action-value or maximization routines used by the certificate. It verifies the policy gaps afterward; it supplies no labels, features, stopping decisions, or hyperparameters to training.
+
+This is a designed experiment, not a preregistered clinical trial. The base R27 model was frozen before the present executions, but its completion amendment was explicitly written after prior diagnostic work. R28 inherits that post-diagnostic algorithmic choice and applies it to every new case without selection. The present source commit, run environment, all weights, all policies, and their freeze-order hashes are recorded. No claim of confirmatory independence from the earlier model-design process is made.
+
+\subsection{All-state accuracy, correction burden, and classical work}
+\begin{table}[t]
+\caption{Unknown-solution inventory: all cases, all states, all restarts}\label{tab:inventory28}
+\centering\small
+\begin{tabular}{rrrrrrr}\toprule
+$d$ & $L$ & States & Cases & Raw passes & Completed passes & Worst completed bound\\\midrule
+\tablerows{revisions/2026-09-24-r28/paper/generated/inventory_group_rows.tex}
+\bottomrule\end{tabular}
+\par\smallskip\footnotesize A pass means the exact-rational reference-free bound is at most $.01$. Counts are computational coverage, not independent statistical replications. The complete 34-case table, raw bounds, exact gaps, changed-action counts, tolerance profile, architectures, and timings appear in the supplement.
+\end{table}
+
+All \InventoryCompletedPass\ completed candidates satisfy the uniform target. The largest completed envelope is \InventoryWorstCompleted, while \InventoryRawPass\ raw candidates already pass. We retain the raw failures rather than treating completion as evidence that neural training alone attains the tolerance. The independent optimal recursion confirms every saved envelope at every state and restart. The gap between mean fitting accuracy and a worst-restart guarantee becomes visible as the state model grows: local action mistakes at financially fragile inventory states can propagate backward, and completion corrects those mistakes against the completed suffix rather than against an unavailable optimal continuation.
+
+Two distinctions govern the interpretation. First, completed policies can contain nonneural corrections. The supplement reports the number and fraction of nonstopped decisions changed, so the burden of correction is observable. Second, exact tabular backward induction is extremely competitive at these sizes. It is shown as a standalone reference solve in the cost table, not hidden inside the certificate's timing. The experiment establishes unknown-solution discovery plus certified completion; it does not establish that neural approximation beats tabulation, polynomials, or adaptive sparse grids in a high-dimensional limit.
+
+\begin{table}[t]
+\caption{Inventory computation: measured work and direct-reference cost}\label{tab:inventorycost28}
+\centering\small
+\begin{tabular}{rrrrrrr}\toprule
+$d,L$ & Neural train & Poly train & Raw check & Completion & Completed check & Exact DP\\\midrule
+\tablerows{revisions/2026-09-24-r28/paper/generated/inventory_cost_rows.tex}
+\bottomrule\end{tabular}
+\par\smallskip\footnotesize Seconds; candidate-stage columns are within-model medians, with neural and polynomial generation separated. Exact DP is the independently executed scalar optimal recursion and excludes candidate training. Construction, compilation, independent gap evaluation, total wall time, model-array bytes, action-table bytes, and process high-water memory are reported separately in the supplement. Shared reference costs are shown both unamortized and per case; no reference cost is silently assigned zero.
+\end{table}
+
+\section{Mechanism and production-schedule experiments}\label{sec:production28}
+\subsection{Recentered historical transport}
+The new mechanism study uses seeds 27101--27103, proposal quadrature orders $(8,16)$ and $(12,24)$, 200 steps, and learning rate $.08$. One implementation uses the neural optimizer directly; the other independently computes the quotient gradient, Jacobian pullback, first and second moments, and the full parameter displacement. Economic coordinates are recentered on realized carrier outputs after every step. There is no output cap, and no nonlinear remainder is dropped.
+
+\begin{table}[t]
+\caption{Independent implementations of the exact recentered identity}\label{tab:transport28}
+\centering\small
+\begin{tabular}{rrrrr}\toprule
+Seed & Proposal orders & Max parameter difference & Max output difference & Max retained remainder\\\midrule
+\tablerows{revisions/2026-09-24-r28/paper/generated/mechanism_rows.tex}
+\bottomrule\end{tabular}
+\par\smallskip\footnotesize Maxima are over 200 steps. Carrier/economic mismatch is zero by construction and capped-step count is zero. The remainder is measured in quotient output norm. All first- and second-moment discrepancies and effective step distributions are retained. Representative policies from seed 27101 at both quadrature orders are separately checked by the stopped MPFR verifier.
+\end{table}
+
+The maximum parameter discrepancy across the six paths is \MechanismMaxError. This numerical agreement supports consistency of the implementations with Proposition~\ref{prop:transport28}. It does not certify equality of floating-point executions, and it does not identify a representation-free method: the carrier, its Jacobian, and all historical parameter moments remain present. In the earlier capped control, high nominal rates could produce the same effective trajectory because every step hit the cap. The new comparison removes that tuning confound rather than reinterpreting the old nominal-rate grid as uncapped rate identification.
+
+\subsection{Production schedules, rejected proposals, and matched controls}
+The production study uses seeds 27201 and 27202 and the fixed $(8,16)$ proposal rule. Neural Adam uses the inherited selected rate $.08$; direct quotient Adam uses $.32$. Direct L-BFGS-B provides a classical comparator. Each method has four blocks of at most 100 objective-gradient calls, with otherwise identical gated and ungated arms. Adam retains its moments across accepted blocks. L-BFGS-B is restarted in both arms at each block, so restart treatment is not a confound. Both arms pay for the same initial and block-end verifications; the ungated arm simply deploys the candidate regardless of the interval comparison.
+
+The gate uses strict payoff separation with no injected extreme learning rate. A rejected block restores the network or quotient parameters, all Adam moments and counters where applicable, and all saved optimizer settings. Saved, candidate, restored, and deployed state hashes are retained, together with the candidate's actual payoff interval, incumbent interval, strict margin, and interval width. These are causal online trajectories, not replayed selections from a completed path.
+
+\begin{table}[t]
+\caption{Fixed-schedule central-state deployment: all twelve trajectories}\label{tab:production28}
+\centering\small
+\begin{tabular}{rlrrrr}\toprule
+Seed & Method/arm & Calls & Rejections & Final regret upper & Total seconds\\\midrule
+\tablerows{revisions/2026-09-24-r28/paper/generated/production_rows.tex}
+\bottomrule\end{tabular}
+\par\smallskip\footnotesize The payoff is at the central restart in the financed class. Total seconds are measured same-process, warm-infrastructure wall times, including initial and checkpoint verification and file bookkeeping. They are not cold from-scratch times; historical dual construction is separately disclosed. A rejected interval comparison need not mean the candidate truly loses payoff.
+\end{table}
+
+There are \ProductionRejections\ actual rejections in the gated trajectories, all with exact restoration of the saved optimizer state. The direct L-BFGS-B paths exercise late-stage rejection under a production schedule; the Adam paths need not reject in order for the safety proposition to hold. Importantly, interval overlap can cause rejection of an economically indistinguishable or slightly better proposal. We therefore do not call these counts a measured frequency of harmful proposals. The paired intervals in the supplement determine which improvements, if any, are strictly certified between final gated and ungated policies. Absent strict separation, a lower printed regret upper bound is not proof that rollback improves payoff.
+
+The results do not displace direct L-BFGS-B from the strongest tested central-state frontier. They establish that the same certificate gate is implementable for neural and direct methods, and that full-state rollback can be exercised without an adversarial rate injection. An algorithmic efficiency claim would require the gains from avoided losses to exceed verification and restoration costs over a broader population of economically relevant problems. That claim is not inferred from an implementation test.
+
+\section{Continuous verification, original-domain progress, and work accounting}\label{sec:record28}
+\subsection{Retained stochastic verification benchmark}
+The inherited three-dimensional state--time benchmark has two independent Brownian sources, stopping, and an unspanned state. It is intentionally manufactured: its value witness and optimal actions are known and used in training. We retain it to test whole-cell verification, not as evidence of unknown-solution discovery. Its details and exact Hamiltonian-square identity are reproduced in the supplement; the full earlier derivations remain in the historical annex.
+
+For the two fixed neural policies, the R26 second-order interval verifier gives bounds $.0008343368$ and $.0007884142$ on 32,768 cells. The same-cell first-order bounds are $.00137310$ and $.00133294$. Thus the second-order enclosure genuinely sharpens verification for unchanged policies. The exact rational degree-eight comparator gives $1.2978908373252045\times10^{-7}$ on 64 one-dimensional cells. That comparator exploits known optimal structure and must not be confused with the information-matched polynomial discovery candidates in Section~\ref{sec:inventory28}.
+
+Neither this three-dimensional success nor the finite-state dimension study proves scalable continuous-state interval-Hessian verification. Mixed derivatives grow quadratically in dimension, rectangular covers can grow exponentially, and interval dependency can dominate. Our new finite-state study quantifies actual enumeration, architecture, tolerance, and storage at 16--625 states; it is not relabeled as a high-dimensional continuous verifier result.
+
+\subsection{What changed in the original full-domain bound}
+The original history is decomposed as follows:
+\begin{center}\small
+\begin{tabular}{p{.25\linewidth}rp{.46\linewidth}}\toprule
+Object & Regret upper & Identified change\\\midrule
+Coarse retained object & 7.2414624431 & Original retained actor and witness, coarse verification.\\
+Fine unchanged object & 7.2004087464 & Same actor and witness; finer verification only.\\
+Fine revised object & 7.1818345808 & Changed actor/witness candidate, common finer verification.\\\bottomrule
+\end{tabular}
+\end{center}
+The first decrease, about $.041054$, is verifier tightening. The second, about $.018574$ or $.258\%$ of the unchanged fine bound, is a joint actor/witness certificate improvement. It is not a certified increase in policy payoff. The historical artifact explicitly records that no such payoff comparison was proved. Moreover, the first continuation block used 82 gradient calls and 48 accepted optimizer iterations, whereas the next three blocks used one call each, accepted no optimizer iteration, and left the candidate hashes unchanged. This stagnation is an empirical observation, not the conclusion of Theorem~\ref{thm:box28} for the full-domain class.
+
+The new original-economy slice establishes a different, correctly restricted guarantee. We do not splice its small regret into the full-state ledger or replace the target in \eqref{eq:originaltarget28}. The full-domain bound and its unresolved payoff-improvement comparison remain visible in both the article and the referee disposition table.
+
+\subsection{Complete cost categories and the measured boundary}
+For a deployed method, the relevant cost is
+\begin{align}\label{eq:cost28}
+ C_{\rm total}={}&C_{\rm construction}+C_{\rm tuning}+C_{\rm proposal}
+ +C_{\rm geometry}+C_{\rm verification}+C_{\rm completion}\\
+ &+C_{\rm rollback}+C_{\rm reference}+C_{\rm bookkeeping}.\nonumber
+\end{align}
+The inventory experiment separately measures model construction, fitted-stage generation, action compilation, own-policy certification, fresh-model completion, completed-policy certification, independent reference construction and solution, and final reference evaluation. The slice includes the power-series oracle construction and whole-box derivative audit. Neither uses a hidden optimal-value witness in candidate generation.
+
+The central-state experiment intentionally reuses the frozen historical dual library and process-level validated quadrature cache. Its run time therefore excludes cold reconstruction of those inputs. The library's original construction record reports $415.788436934$ seconds for 20 freshly generated nodes, including policy and dual generation and verification, with maximum resident memory 509,348 KiB on its original machine. We retain that record and its input hashes, identify warm reuse explicitly, and do not add seconds from different machines into a purported new measured total. A deployment amortizing this library over $K$ solves must additionally charge its reconstruction cost divided by $K$; $K=1$ is not free. The new scripts also record the fixed rates as inherited tuning choices rather than claiming zero-cost tuning from scratch.
+
+Peak process memory is a high-water measure that includes the numerical runtime; it is not the sum of certificate-array bytes and model weights. Both object sizes and process memory are reported. No cell count, tuning run, or checkpoint is counted as an independent replication of a statistical neural effect. The complete ledger permits method comparisons at a common declared information and infrastructure boundary and makes the remaining cold-pipeline measurement explicit.
