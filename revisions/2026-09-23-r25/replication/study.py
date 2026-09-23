@@ -127,18 +127,18 @@ def heldout():
                 meta={'phase':'heldout','arm':arm,'seed':seed,'orders':list(orders),'initial_checker_seconds':isec,
                       'preprocessing_seconds':geom['seconds'] if arm not in ('neural','direct','moving') else 0.}
                 r=run(path,arm,a,mats,S.setup(orders=orders),opt,lr,ic,ia,400,S.CHECKPOINTS,meta)
-                records.append({'path':str(path.relative_to(ROOT)),**{k:r[k] for k in ('arm','seed','orders','optimizer','learning_rate','gradient_calls','generation_seconds','checker_seconds','final_deployed_certificate')}})
+                records.append({'path':str(path.relative_to(ROOT)),**{k:r[k] for k in ('arm','seed','orders','optimizer','gradient_calls','generation_seconds','checker_seconds','final_deployed_certificate')}})
     write(REV/'results/heldout_ledger.json',records)
 
 def online():
     selected=json.loads((REV/'results/tuning_selection.json').read_text());allrows=[]
     for seed in (25101,25102):
-        a,actor,c,sec,mats,geom=initial(seed)
+        a,ia,ic,isec,mats,geom=initial(seed)
         for arm in ('neural','direct','moving'):
             path=REV/f'results/online/seed{seed}/{arm}'
             if (path/'record.json').exists():allrows.append(json.loads((path/'record.json').read_text()));continue
-            obj=S.setup();ia=obj(a,True);ic,isec=S.cert(ia);lr=selected[arm]['selected_rate'];moving=Moving(a) if arm=='moving' else None
-            net=moving.net if moving else make(arm,a,mats);opt=None if moving else torch.optim.Adam(net.parameters(),lr=lr)
+            lr=selected[arm]['selected_rate'];obj=S.setup();moving=Moving(a) if arm=='moving' else None
+            net=moving.net if moving else make(arm,a,mats);opt=None if moving else torch.optim.Adam(S.parameters(net),lr=lr)
             def state():return moving.state() if moving else {'parameters':S.vector(net),'optimizer':copy.deepcopy(opt.state_dict())}
             def restore(s):
                 if moving:moving.restore(s)
