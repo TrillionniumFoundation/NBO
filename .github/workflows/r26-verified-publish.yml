@@ -1,0 +1,121 @@
+name: R26 verified transfer and remote publication
+on:
+  push:
+    branches: [build/econometrica-r26-verified-transfer-2026-09-23]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: nbo-r26-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      BASE: c78d934c0b3b8d346a40c7ddcaf415e167462265
+      DEV: revision/econometrica-r26-certified-descent-2026-09-23
+      COPY: revision/econometrica-r26-referee-copy-2026-09-23
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify transmitted source and pinned historical inventories
+        run: |
+          set -euo pipefail
+          python .r26/bootstrap.py
+      - name: Install fixed numerical environment
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5 scipy==1.17.0 sympy==1.14.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m py_compile revisions/2026-09-23-r26/replication/*.py
+      - name: Reproduce online certification and real optimizer rollback
+        run: |
+          set -euo pipefail
+          python -u revisions/2026-09-23-r26/replication/online_stress.py 2>&1 | tee revisions/2026-09-23-r26/results/online_execution.log
+      - name: Reproduce second-order and exact rational certificates
+        run: |
+          set -euo pipefail
+          python -u revisions/2026-09-23-r26/replication/jet_certificate.py 2>&1 | tee revisions/2026-09-23-r26/results/jet_execution.log
+      - name: Generate tables and execute eleven checks
+        run: |
+          set -euo pipefail
+          python revisions/2026-09-23-r26/replication/publication.py
+          python -u revisions/2026-09-23-r26/replication/test_revision.py 2>&1 | tee revisions/2026-09-23-r26/results/tests.log
+      - name: Install retained Econometrica TeX requirements
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y latexmk texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
+      - name: Compile and audit complete referee package
+        run: |
+          set -euo pipefail
+          mkdir -p revisions/2026-09-23-r26/build
+          for doc in ECTA_R26 SUPP_R26 RESPONSE_R26; do
+            latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=revisions/2026-09-23-r26/build "$doc.tex" 2>&1 | tee "revisions/2026-09-23-r26/results/${doc}_build.log"
+            cp "revisions/2026-09-23-r26/build/$doc.pdf" "$doc.pdf"
+          done
+          python .r26/audit_publication.py
+      - name: Commit only R26 and atomically publish isolated revision references
+        run: |
+          set -euo pipefail
+          for ref in "$DEV" "$COPY"; do
+            if git ls-remote --exit-code --heads origin "$ref" >/dev/null 2>&1; then
+              echo "Refusing to overwrite existing ref: $ref" >&2
+              exit 1
+            fi
+          done
+          git config user.name 'NBO revision build'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git reset --mixed "$BASE"
+          git add ECTA_R26.tex ECTA_R26.pdf SUPP_R26.tex SUPP_R26.pdf RESPONSE_R26.tex RESPONSE_R26.pdf R26_REVIEW.md REVISION_INDEX.md revisions/2026-09-23-r26/
+          python - <<'PY'
+          import subprocess
+          rows=subprocess.check_output(['git','diff','--cached','--name-status']).decode().splitlines()
+          roots={'ECTA_R26.tex','ECTA_R26.pdf','SUPP_R26.tex','SUPP_R26.pdf','RESPONSE_R26.tex','RESPONSE_R26.pdf','R26_REVIEW.md','REVISION_INDEX.md'}
+          for row in rows:
+              status,path=row.split('\t',1)
+              assert path in roots or path.startswith('revisions/2026-09-23-r26/'),row
+              assert status=='A' or (status=='M' and path=='REVISION_INDEX.md'),row
+          print('Validated additive publication:',len(rows),'paths, no historical deletions.')
+          PY
+          git commit -m 'revision(r26): publish verified referee manuscript, actual rollback evidence and second-order certificates'
+          SHA="$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD^)" = "$BASE"
+          git push --atomic origin "HEAD:refs/heads/$DEV" "HEAD:refs/heads/$COPY"
+          test "$(git ls-remote --heads origin "refs/heads/$DEV" | cut -f1)" = "$SHA"
+          test "$(git ls-remote --heads origin "refs/heads/$COPY" | cut -f1)" = "$SHA"
+          export SHA
+          python - <<'PY'
+          import json,os,pathlib
+          data={'remote_write_completed':True,'commit':os.environ['SHA'],'base':os.environ['BASE'],
+                'branches':[os.environ['DEV'],os.environ['COPY']],'remote_heads_verified':True,
+                'atomic_push':True,'force_push':False,
+                'workflow_run':os.environ['GITHUB_RUN_ID'],'repository':os.environ['GITHUB_REPOSITORY']}
+          pathlib.Path('R26_REMOTE_PUBLICATION_RECEIPT.json').write_text(json.dumps(data,indent=2)+'\n')
+          print(json.dumps(data,indent=2))
+          PY
+      - name: Preserve independently verifiable publication artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r26-verified-publication-${{ github.run_id }}
+          path: |
+            ECTA_R26.pdf
+            SUPP_R26.pdf
+            RESPONSE_R26.pdf
+            R26_REVIEW.md
+            REVISION_INDEX.md
+            R26_REMOTE_PUBLICATION_RECEIPT.json
+            revisions/2026-09-23-r26/
+          if-no-files-found: warn
+          retention-days: 30
