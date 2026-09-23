@@ -1,0 +1,88 @@
+name: R25 prospective science and complete evidence
+on:
+  push:
+    branches: [revision/econometrica-r25-coupled-geometry-2026-09-23]
+    paths: [.github/workflows/r25-science.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  science:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Align connector transcription with pinned executed source
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          r=Path('revisions/2026-09-23-r25/replication');p=r/'study.py';s=p.read_text()
+          s=s.replace("('arm','seed','orders','optimizer','learning_rate','gradient_calls'", "('arm','seed','orders','optimizer','gradient_calls'")
+          s=s.replace("a,actor,c,sec,mats,geom=initial(seed)\n        for arm in ('neural','direct','moving'):", "a,ia,ic,isec,mats,geom=initial(seed)\n        for arm in ('neural','direct','moving'):")
+          s=s.replace("obj=S.setup();ia=obj(a,True);ic,isec=S.cert(ia);lr=selected[arm]['selected_rate'];moving=Moving(a) if arm=='moving' else None", "lr=selected[arm]['selected_rate'];obj=S.setup();moving=Moving(a) if arm=='moving' else None")
+          s=s.replace('torch.optim.Adam(net.parameters(),lr=lr)', 'torch.optim.Adam(S.parameters(net),lr=lr)')
+          p.write_text(s)
+          expected={'study.py':'3fdccb4e8c012e6837f86f9a1ea10a9a4b125c99','full_state.py':'476d9e04c10404bb083ee716165fd6d3ab023ddc','secants.py':'de39fd0da73e6ab0980549aa233ed10223731ba1','stochastic_reference.py':'47926bb2023bdac70edda6f9dd340e386f05a545'}
+          for n,h in expected.items():
+              actual=subprocess.check_output(['git','hash-object',str(r/n)]).decode().strip()
+              assert actual==h,(n,actual,h)
+          PY
+          git config user.name 'NBO revision build'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add revisions/2026-09-23-r25/replication/study.py
+          git diff --cached --quiet || git commit -m 'source(r25): align unexecuted connector copy with hash-pinned scientific source'
+          git pull --rebase origin revision/econometrica-r25-coupled-geometry-2026-09-23
+          git push origin HEAD:revision/econometrica-r25-coupled-geometry-2026-09-23
+      - name: Fixed numerical environment
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m py_compile revisions/2026-09-23-r25/replication/*.py
+      - name: Execute calibration, held-out comparison and synchronous acceptance
+        run: |
+          set -o pipefail
+          mkdir -p revisions/2026-09-23-r25/results/logs
+          python -u revisions/2026-09-23-r25/replication/study.py --phase all 2>&1 | tee revisions/2026-09-23-r25/results/logs/science.log
+      - name: Execute nonreplicable stopped reference and original payoff secants
+        run: |
+          set -o pipefail
+          python -u revisions/2026-09-23-r25/replication/stochastic_reference.py 2>&1 | tee revisions/2026-09-23-r25/results/logs/stochastic_reference.log
+          python -u revisions/2026-09-23-r25/replication/secants.py 2>&1 | tee revisions/2026-09-23-r25/results/logs/secants.log
+      - name: Execute original current-state refinement and complete fine-grid audits
+        run: |
+          set -o pipefail
+          python -u revisions/2026-09-23-r25/replication/full_state.py 2>&1 | tee revisions/2026-09-23-r25/results/logs/full_state.log
+      - name: Check completeness and seal all primary evidence
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib,os
+          r=Path('revisions/2026-09-23-r25');counts={x:len(list((r/'results'/x).rglob('record.json'))) for x in ('tuning','heldout','online')}
+          assert counts=={'tuning':84,'heldout':32,'online':6},counts
+          for n in ('stochastic_reference_summary.json','secants.json','full_state/summary.json'):assert (r/'results'/n).is_file(),n
+          paths=[p for p in (r/'results').rglob('*') if p.is_file()]
+          lock={'workflow_run_id':os.environ['GITHUB_RUN_ID'],'counts':counts,'all_prescribed_original_runs_present':True,'all_followon_phases_completed':True,'files':{str(p.relative_to(r)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}}
+          (r/'results/EXECUTION_COMPLETENESS.json').write_text(json.dumps(lock,indent=2)+'\n')
+          PY
+          git add revisions/2026-09-23-r25/results
+          git diff --cached --quiet || git commit -m 'results(r25): preserve bracketed calibration, moving geometry, real rollbacks, stochastic restart and full-state evidence'
+          git pull --rebase origin revision/econometrica-r25-coupled-geometry-2026-09-23
+          git push origin HEAD:revision/econometrica-r25-coupled-geometry-2026-09-23
+      - name: Preserve results and failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r25-science-${{ github.run_id }}
+          path: revisions/2026-09-23-r25/
+          retention-days: 30
