@@ -1,0 +1,147 @@
+name: R21 verified policy-sensitive referee publication
+on:
+  push:
+    branches: [revision/econometrica-r21-policy-sensitive-2026-09-23]
+    paths:
+      - .github/workflows/r21-publication.yml
+      - revisions/2026-09-23-r21/publication/**
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: nbo-r21-referee-publication
+  cancel-in-progress: false
+jobs:
+  publication:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Verify exact source transport and materialize new files only
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path, PurePosixPath
+          import base64, hashlib, json, lzma
+          root=Path.cwd(); src=root/'revisions/2026-09-23-r21/publication'
+          text=''.join((src/f'source{i:02d}.b64').read_text().strip() for i in range(3))
+          raw=base64.b64decode(text,validate=True)
+          assert hashlib.sha256(raw).hexdigest()=='ff3a823df94045bee13ec666dc1a0374634d56b84784645102a6ec0f7d546e13'
+          data=json.loads(lzma.decompress(raw))
+          assert data['format']=='R21_new_sources_sha256_v1' and len(data['files'])==20
+          for item in data['files']:
+              name=item['path']; p=PurePosixPath(name)
+              assert not p.is_absolute() and '..' not in p.parts
+              assert name in {'ECTA_R21.tex','SUPP_R21.tex','R21_REVIEW.md'} or name.startswith('revisions/2026-09-23-r21/')
+              content=item['content'].encode('utf-8')
+              assert hashlib.sha256(content).hexdigest()==item['sha256']
+              dest=root/name
+              if dest.exists():
+                  assert dest.read_bytes()==content, name
+              else:
+                  dest.parent.mkdir(parents=True,exist_ok=True); dest.write_bytes(content)
+          print('All 20 source files match the locally validated bundle.')
+          PY
+      - name: Fetch immutable executed R20 scientific inputs
+        uses: actions/download-artifact@v4
+        with:
+          name: nbo-r20-science
+          run-id: 35802793602
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .r21-r20-input
+      - name: Verify scientific input archive without overwriting history
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path, PurePosixPath
+          import hashlib, tarfile
+          p=Path('.r21-r20-input/NBO_R20_science.tar.gz')
+          assert hashlib.sha256(p.read_bytes()).hexdigest()=='5c563f9b1a68ef218257a3c281953e8b80f2b5720b94741023574b0095dfe162'
+          added=0
+          with tarfile.open(p) as t:
+              for m in t:
+                  n=PurePosixPath(m.name)
+                  assert not n.is_absolute() and '..' not in n.parts
+                  assert m.name.startswith('revisions/2026-09-23-r20/')
+                  if m.isdir(): continue
+                  assert m.isfile(),m.name
+                  data=t.extractfile(m).read(); dest=Path(m.name)
+                  if dest.exists():
+                      assert dest.read_bytes()==data, 'Inherited input differs: '+m.name
+                  else:
+                      dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(data);added+=1
+          print('Materialized missing immutable inputs:',added)
+          PY
+      - name: Commit inspectable source and inherited scientific input identities
+        run: |
+          python3 - <<'PY'
+          import importlib.util
+          p='revisions/2026-09-23-r21/replication/build.py'
+          spec=importlib.util.spec_from_file_location('r21build',p);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+          print(m.preservation())
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ECTA_R21.tex SUPP_R21.tex R21_REVIEW.md
+          git add revisions/2026-09-23-r21 revisions/2026-09-23-r20/results
+          git diff --cached --quiet || git commit -m 'revision(r21): materialize referee-led manuscript, proofs and exact scientific inputs'
+          git push origin HEAD:${GITHUB_REF_NAME}
+          echo "R21_SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install numerical and Econometrica build dependencies
+        run: |
+          python -m pip install numpy==2.3.5
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libmpfr-dev gcc texlive-latex-extra texlive-fonts-recommended poppler-utils
+      - name: Re-execute all 136 frozen-policy checks including 20 MPFR cases
+        run: python revisions/2026-09-23-r21/replication/replay.py --workers 2
+      - name: Verify policy-sensitive continuum, price and welfare theorems numerically
+        run: python revisions/2026-09-23-r21/replication/audit.py
+      - name: Build all three Econometrica documents in three passes
+        run: python revisions/2026-09-23-r21/replication/build.py
+      - name: Pin publication hashes and create referee package
+        run: python revisions/2026-09-23-r21/replication/manifest.py
+      - name: Commit complete referee object to the new revision branch only
+        run: |
+          git add ECTA_R21.tex SUPP_R21.tex RESPONSE_R21.tex R21_REVIEW.md
+          git add -f ECTA_R21.pdf SUPP_R21.pdf RESPONSE_R21.pdf
+          git add revisions/2026-09-23-r21
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          d=json.loads(Path('revisions/2026-09-23-r21/INHERITED_SHA256.json').read_text())
+          assert len(d)==3934
+          for name,h in d.items():
+              p=Path(name);assert p.is_file() and hashlib.sha256(p.read_bytes()).hexdigest()==h,name
+          print('All 3,934 inherited files are byte-identical.')
+          PY
+          git diff --cached --quiet || git commit -m 'publication(r21): validated Econometrica PDFs, policy-sensitive continuum proofs and complete evidence manifest'
+          git push origin HEAD:${GITHUB_REF_NAME}
+          git rev-parse HEAD > R21_PUBLICATION_COMMIT.txt
+      - name: Deliver the exact committed referee files
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r21-referee-publication
+          path: |
+            NBO_R21_review_package.zip
+            R21_PUBLICATION_COMMIT.txt
+          retention-days: 30
+      - name: Retain diagnostic logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r21-publication-diagnostics
+          path: |
+            revisions/2026-09-23-r21/build_logs
+            revisions/2026-09-23-r21/results/replay_summary.json
+            revisions/2026-09-23-r21/publication
+          if-no-files-found: warn
+          retention-days: 30
