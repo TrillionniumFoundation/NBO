@@ -1,0 +1,55 @@
+\section{Financed output geometry and proposal accuracy}\label{sec:r24geometry}
+Let $f:\mathbb R^p\to\mathbb R^{48}$ be the raw-output map of the neural generator evaluated at the sixteen slab nodes. Here $p=355$. The continuous financed policy depends on these outputs through bounded slope and drift decoders and the budget offset. The common raw-intercept direction is a gauge: shifting every intercept is undone by financing. Let $Q\in\mathbb R^{48\times47}$ have orthonormal columns perpendicular to that direction. The retained quotient and interpolation results establish equality of the attainable financed finite-node families, not good conditioning of a trained neural map.
+
+\subsection{The actual output update with momentum}
+For a differentiable loss $L(y)$, write $J_n=Df(\vartheta_n)$ and $g_n=\nabla_yL(f(\vartheta_n))$. Adam's bias-corrected first moment is
+\[
+ \widehat m_n=\sum_{r=1}^{n}a_{nr}J_r'g_r,\qquad
+ a_{nr}={(1-\beta_1)\beta_1^{n-r}\over1-\beta_1^n}.
+\]
+Let $D_n$ be diagonal with entries $\sqrt{\widehat v_n}+\epsilon$, including the numerical stabilizer.
+\begin{theorem}[Output transport of an adaptive parameter update]\label{thm:r24transport}
+Suppose $Df$ is Lipschitz with constant $H$ on the segment between $\vartheta_n$ and $\vartheta_{n+1}$. For Adam with learning rate $\eta_n$,
+\begin{align}
+ f(\vartheta_{n+1})-f(\vartheta_n)
+ &=-\eta_n\sum_{r=1}^na_{nr}J_nD_n^{-1}J_r'g_r+\varepsilon_n,\label{eq:r24transport}\\
+ \|\varepsilon_n\|&\leq\tfrac12H\eta_n^2\|D_n^{-1}\widehat m_n\|^2.\label{eq:r24remainder}
+\end{align}
+The matrix $J_nD_n^{-1}J_n'$ is positive semidefinite and has rank at most $48$. It describes a current-gradient step only without momentum, or after an additional approximation replacing historical gradients and Jacobians. A small parameter-gradient norm bounds the quotient output gradient only when the relevant singular values of the output Jacobian are bounded away from zero.
+\end{theorem}
+A neural--direct Adam difference can therefore arise from the current metric, historical gradient transport, or finite-step curvature. Reporting only the adaptive accumulator omits the Jacobian; reporting only $JJ'$ omits adaptive scaling and momentum. The executed diagnostic records actual Jacobian singular values, the spectrum of $JD_n^{-1}J'$, actual output displacement and its linearization remainder at declared checkpoints. These floating-point spectra are diagnostics, not directed rank certificates.
+
+\begin{proposition}[Equivalent parameter charts]\label{prop:r24charts}
+For invertible $S$, define $\widetilde f(\varphi)=f(S\varphi)$. At $\varphi=S^{-1}\vartheta$, outputs agree and $D\widetilde f=JS$. A gradient step in $\varphi$ induces first-order output metric $JSS'J'$. Where $J$ has full row rank, the minimum-norm right-inverse step $\delta\vartheta=-\eta J'(JJ')^{-1}d$ produces $\delta y=-\eta d+O(\|\delta\vartheta\|^2)$ for any specified output direction $d$, provided the Jacobian is locally Lipschitz.
+\end{proposition}
+The right-inverse statement is a first-order invariance, not a claim that the poorly conditioned trained networks meet a usable rank bound. It is not the executed optimizer. The diagnostic rescaling uses powers of two in the parameter chart $\vartheta=S\varphi$ with identical initial outputs; it does not change tanh arguments and call the resulting function unchanged.
+
+\subsection{Explicit direct controls for geometry}
+At the matched initial network compute
+\[
+ G_0=Q'J_0J_0'Q=W\operatorname{diag}(\gamma_j)W',\qquad
+ \widetilde\gamma_j=\max\{\gamma_j,10^{-5}\gamma_{\max},10^{-12}\}.
+\]
+The direct raw outputs are $y=y_0+QBz$. We compare $B=I$, the square root of the regularized diagonal metric, $B=W\operatorname{diag}(\widetilde\gamma_j^{1/2})W'$, and $B=W\operatorname{diag}(\widetilde\gamma_j^{-1/2})W'$. Normalize $\|QB\|_F^2=47$. These are the direct, diagonal, tangent and whitening charts. Each is invertible on the same quotient and none enlarges the policy class.
+
+The tangent chart freezes a local approximation to neural geometry, not Adam's moving momentum-dependent trajectory. Whitening tests the reverse scaling. Jacobian and factorization costs are charged as preprocessing; the ordinary direct arm need not incur them in a standalone implementation. The original $47$-coordinate gauge control alone is not a test of these anisotropic geometries.
+
+\subsection{Financing and derivative error}
+Let $y$ collect independent raw coordinates, $a$ be the scalar financing offset, and $P(y,a)=B_0$ the exact price equation. Let $P_N$ be its approximation, with roots $a(y)$ and $a_N(y)$ in a common bracket. Let $F(y,a)$ and $F_N(y,a)$ be payoff objectives. These may describe an integrable proposal extension; identification with the stopped economic payoff requires an additional argument.
+
+\begin{theorem}[Reduced-gradient perturbation]\label{thm:r24gradient}
+On a common root bracket suppose $P_a,P_{N,a}\geq d_*>0$, $|P-P_N|\leq e_P$, and the required first derivatives exist and are Lipschitz in the offset. Then $|a-a_N|\leq\delta=e_P/d_*$. At the respective roots suppose
+\[
+ \|F_{N,y}-F_y\|\leq E_A,\quad |F_{N,a}-F_a|\leq E_B,\quad
+ \|P_{N,y}-P_y\|\leq E_C,\quad |P_{N,a}-P_a|\leq E_D,
+\]
+where each $E$ includes its fixed-offset approximation error and its offset-Lipschitz allowance times $\delta$. If both versions satisfy $|F_a|\leq M_B$ and $\|P_y\|\leq M_C$, then
+\begin{equation}
+ \|\nabla_yF_N(y,a_N(y))-\nabla_yF(y,a(y))\|
+ \leq E_A+{E_BM_C+M_BE_C\over d_*}+{M_BM_CE_D\over d_*^2}.
+ \label{eq:r24gradienterror}
+\end{equation}
+\end{theorem}
+Existence of an exact-price correction root does not establish the accuracy of a delivered finite-rule root. Finite-difference agreement for a discrete objective verifies its implementation derivative, not distance to the derivative of the continuous stopped payoff.
+
+The proposal extends preference beyond the stopping interval by clipping to $[1.2,2.8]$ before running-utility evaluation. This supplies a bounded, integrable Gaussian-tail extension instead of extending CRRA through preference one. The original payoff checker and stopping model are unchanged. The two proposal rules agree with the inherited objective at regression-tested unclipped nodes. Whether any checkpoint node is clipped is recorded. Two-rule differences are evaluated at the same raw policy, not different optimized iterates. They do not instantiate the uniform derivative hypotheses of Theorem~\ref{thm:r24gradient}.
