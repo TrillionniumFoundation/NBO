@@ -1,0 +1,151 @@
+name: R22 frozen-execution publication recovery
+on:
+  push:
+    branches: [revision/econometrica-r22-crossed-certification-2026-09-23]
+    paths:
+      - .github/workflows/r22-finalize.yml
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: nbo-r22-frozen-publication
+  cancel-in-progress: true
+jobs:
+  publication:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONHASHSEED: '0'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      R22_SOURCE_COMMIT: 9527f219df4fe82d3e9d81fc9ab3ac968613437b
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.15'
+      - name: Retrieve the exact completed scientific execution
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          curl --fail --silent --show-error --location \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            https://api.github.com/repos/TrillionniumFoundation/NBO/actions/artifacts/10730632886/zip \
+            -o /tmp/r22-reference.zip
+          echo '0893e5c3fc285019fd37774b4b1474c1fcc318adc2df7dc331439a56bbe6a6d7  /tmp/r22-reference.zip' | sha256sum --check
+          python - <<'PY'
+          import hashlib,json,os,shutil,zipfile
+          from pathlib import Path,PurePosixPath
+          rev=Path('revisions/2026-09-23-r22')
+          source_run='35813098721'
+          with zipfile.ZipFile('/tmp/r22-reference.zip') as z:
+              for entry in z.infolist():
+                  name=PurePosixPath(entry.filename)
+                  assert not name.is_absolute() and '..' not in name.parts
+                  assert name.parts[0] in {'results','build_logs','source_transport'}
+              source_manifest=json.loads(z.read('source_transport/SOURCE_MANIFEST.json'))
+              for name,row in source_manifest['files'].items():
+                  actual=hashlib.sha256((rev/name).read_bytes()).hexdigest()
+                  assert actual==row['materialized_sha256'],f'Scientific source changed: {name}'
+              z.extractall(rev)
+          assert len(source_manifest['files'])==21
+          env=json.loads((rev/'results/environment.json').read_text())
+          assert env['run_id']==source_run and env['source_commit']==os.environ['R22_SOURCE_COMMIT']
+          archive=rev/'archive'/('reference-run-'+source_run)
+          archive.mkdir(parents=True,exist_ok=True)
+          shutil.copy2(rev/'results/build.json',archive/'original_build.json')
+          frozen={str(p.relative_to(rev)):hashlib.sha256(p.read_bytes()).hexdigest()
+                  for p in (rev/'results').rglob('*') if p.is_file() and p.name!='build.json'}
+          (rev/'FROZEN_RESULTS_SHA256.json').write_text(json.dumps(frozen,indent=2,sort_keys=True)+'\n')
+          metadata={'scientific_run_id':source_run,'scientific_source_commit':env['source_commit'],
+                    'scientific_workflow_commit':env['workflow_commit'],'artifact_id':10730632886,
+                    'artifact_sha256':'0893e5c3fc285019fd37774b4b1474c1fcc318adc2df7dc331439a56bbe6a6d7',
+                    'publication_run_id':os.environ['GITHUB_RUN_ID'],'publication_workflow_commit':os.environ['GITHUB_SHA'],
+                    'retrained':False,'verified_source_files':21,'frozen_scientific_result_files':len(frozen),
+                    'first_publication_failure':'strict preservation caught regeneration of one tracked R21 audit bytecode cache',
+                    'remedy':'clean checkout and PYTHONDONTWRITEBYTECODE=1; historical preservation assertion unchanged'}
+          (rev/'PUBLICATION_RECOVERY.json').write_text(json.dumps(metadata,indent=2)+'\n')
+          print(json.dumps(metadata,indent=2))
+          PY
+      - name: Install publication and independent invariant-check dependencies
+        run: |
+          python -m pip install numpy==2.3.5
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libmpfr-dev gcc texlive-latex-extra texlive-fonts-recommended poppler-utils
+      - name: Recheck invariants without replacing any scientific output
+        run: |
+          python - <<'PY'
+          import json,subprocess,sys
+          from pathlib import Path
+          rev=Path('revisions/2026-09-23-r22')
+          output=rev/'results/proof_checks.json'
+          original=output.read_bytes()
+          subprocess.run([sys.executable,str(rev/'replication/proof_checks.py')],check=True)
+          checked=output.read_bytes()
+          (rev/'build_logs/publication_recheck.json').write_bytes(checked)
+          output.write_bytes(original)
+          assert json.loads(checked)['status']=='PASS'
+          PY
+      - name: Build exact referee PDFs and check all historical blobs
+        run: |
+          python - <<'PY'
+          import hashlib,json,sys
+          from pathlib import Path
+          rev=Path('revisions/2026-09-23-r22')
+          sys.path.insert(0,str(rev/'replication'))
+          import build
+          constants=build.tables()
+          build.materialize(constants)
+          p=rev/'REPRODUCE.md'
+          text=p.read_text().replace('```sh\n','```sh\nexport PYTHONDONTWRITEBYTECODE=1\nexport OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONHASHSEED=0\n',1)
+          text+='\n## Exact scientific execution and publication provenance\n\nSee `EXECUTION_NOTE.md` and `PUBLICATION_RECOVERY.json`. The frozen scientific outputs come from run 35813098721; this publication job only verifies and compiles them. The original cache-related preservation failure is retained in the execution record.\n'
+          p.write_text(text)
+          build.compile_docs()
+          frozen=json.loads((rev/'FROZEN_RESULTS_SHA256.json').read_text())
+          for name,expected in frozen.items():
+              assert hashlib.sha256((rev/name).read_bytes()).hexdigest()==expected,f'Frozen result mutated: {name}'
+          build.manifest()
+          preservation=json.loads((rev/'MANIFEST.json').read_text())['preservation']
+          assert preservation['unexpected_modified_old_paths']==[]
+          print(json.dumps(preservation,indent=2))
+          print('All frozen scientific outputs are byte-identical to the completed reference execution.')
+          PY
+      - name: Commit the verified publication on the R22 branch only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ECTA_R22.tex SUPP_R22.tex RESPONSE_R22.tex R22_REVIEW.md REVISION_INDEX.md
+          git add -f ECTA_R22.pdf SUPP_R22.pdf RESPONSE_R22.pdf
+          git add revisions/2026-09-23-r22
+          git reset -- revisions/2026-09-23-r22/replication/__pycache__ || true
+          git diff --cached --quiet || git commit -m 'publication(r22): frozen crossed evidence, general Jensen proof, full-state witness and Econometrica referee PDFs'
+          git push origin HEAD:${GITHUB_REF_NAME}
+          git rev-parse HEAD > R22_PUBLICATION_COMMIT.txt
+      - name: Deliver the exact final referee package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r22-referee-publication
+          path: |
+            NBO_R22_review_package.zip
+            R22_PUBLICATION_COMMIT.txt
+          retention-days: 30
+      - name: Retain publication diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r22-finalization-diagnostics
+          path: |
+            revisions/2026-09-23-r22/build_logs
+            revisions/2026-09-23-r22/MANIFEST.json
+            revisions/2026-09-23-r22/PUBLICATION_RECOVERY.json
+          if-no-files-found: warn
+          retention-days: 30
