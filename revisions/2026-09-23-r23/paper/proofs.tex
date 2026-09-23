@@ -1,0 +1,37 @@
+\section{Financed-coordinate proofs}\label{app:r23budget}
+\subsection{Existence, identification, and the price derivative}
+For every finite $\ell$, the logistic function is continuous, strictly increasing, and takes values strictly between zero and one. Its bound by one permits dominated convergence under the finite measure $\mu$. Hence $P$ is continuous and strictly increasing, with limits $c_-M$ and $(c_-+\Delta c)M$ at minus and plus infinity. The interior-budget condition gives existence and uniqueness of a finite root. Replacing $(b,a)$ by $(b+h\mathbf1,a-h)$ leaves every logit and price unchanged, proving the common-shift identity.
+
+The derivative satisfies $0<\sigma'(y)\leq1/4$. Differentiation under the integral is therefore justified for the offset and each intercept coordinate. Positive measure of a slab and finiteness of its logits give $D_j>0$. The implicit function theorem gives $\partial a^*/\partial b_j=-D_j/D$ and $\partial a^*/\partial B=1/D$. Differentiating $b^f=b+a^*\mathbf1$ proves \eqref{eq:r23projection}. Since $\omega^\top\mathbf1=1$,
+\[
+ (I-\mathbf1\omega^\top)^2=I-\mathbf1\omega^\top,
+ \qquad (I-\mathbf1\omega^\top)\mathbf1=0.
+\]
+If this projection annihilates $z$, then $z=\mathbf1(\omega^\top z)$, so its null space is exactly one-dimensional and its rank is $m-1$. It need not be an orthogonal projection. Each common-shift equivalence class has exactly one representative with final intercept zero. Slopes and preference drifts are unchanged, giving $3m-1$ direct coordinates. The implementation uses raw intercepts scaled by $.3$; applying the same common-shift chart before that scaling gives the same quotient.\hfill$\square$
+
+\subsection{The unbounded-tail bracket and inverse conditioning}
+Normalize $\mu$ to a probability measure. On $G$, monotonicity bounds $\sigma(\ell+a)$ by its values at $\ell_-$ and $\ell_+$. On the complement it lies in $[0,1]$. Writing the possibly larger actual mass of $G$ explicitly and then using its lower bound gives
+\[
+ (1-p)\sigma(\ell_-+a)
+ \leq \frac{P(a)-c_-M}{\Delta cM}
+ \leq (1-p)\sigma(\ell_++a)+p.
+\]
+The upper expression equals $\nu$ at $a_-$ and the lower equals $\nu$ at $a_+$. Monotonicity of $P$ proves \eqref{eq:r23bracket}. This argument uses a bound on the complement's measure; it does not assign the Gaussian law compact support.
+
+For $|y|\leq Z$, the logistic derivative is at least $e^{-Z}/(1+e^{-Z})^2$, because it is even and decreases with $|y|$. Restrict the derivative integral to $G$ and use its mass lower bound to obtain \eqref{eq:r23conditioning}. The mean value theorem between $\widehat a$ and $a^*$ gives the residual-to-root bound. If $P_q$ is a quadrature price, the triangle inequality supplies the valid residual bound $|P(\widehat a)-B|\leq|P_q(\widehat a)-B|+|P(\widehat a)-P_q(\widehat a)|$. Omitting the second term is not justified by a small first term.
+
+For the Gaussian implementation, $t$ and $\sqrt t$ are interval-enclosed on every slab, and $Z_0\in[-8,8]$ gives the compact logit range under the pricing measure. The Mills inequality supplies the omitted relative mass. Directed logarithms and exponentials enclose both endpoints of \eqref{eq:r23bracket}. The executable check adds a small outward endpoint allowance and verifies strictly positive price margins at both ends. It computes the derivative bound using $e^{-Z}/(1+e^{-Z})^2$, avoiding subtraction of a rounded logistic value from one. Each of the 72 frozen delivered policies is checked. The resulting finite existence and conditioning enclosures do not alter those policies or replace their original financing certificates.\hfill$\square$
+
+\section{Finite-node class equivalence and its certificate}\label{app:r23class}
+Order the distinct nodes as $t_1<\cdots<t_m$. Select $a_1<t_1$ and $a_j\in(t_{j-1},t_j)$ for $j\geq2$. Define the first hidden-feature matrix $H_{ij}(K)=\tanh(K(t_i-a_j))$. As $K\to\infty$, it tends to a matrix whose first column consists of ones and whose successive columns switch from minus one to plus one at successive rows. Subtracting successive rows shows that this limiting matrix is nonsingular. By continuity of the determinant, $H(K)$ is nonsingular for some finite $K$.
+
+Use a diagonal second-layer weight matrix $\epsilon I$ and zero biases. Its feature matrix is $G(\epsilon)=\tanh(\epsilon H(K))$, with tanh applied elementwise. Since $G(\epsilon)/\epsilon\to H(K)$ as $\epsilon\downarrow0$, it is nonsingular for sufficiently small positive finite $\epsilon$. For any raw-output array $Y\in\mathbb R^{m\times3}$, the final affine layer with zero bias and coefficient matrix $G(\epsilon)^{-1}Y$ interpolates $Y$ exactly in real arithmetic. Every network also produces such an array, so the two finite-node output sets coincide. The common decoder and Theorem~\ref{thm:r23budget} then give the financed-family and quotient statements. Bounds attained only by infinite sigmoid logits belong to the closure, not to the asserted finite-logit interior.
+
+The numerical certificate fixes the actual sixteen nodes $t_j=(2j+1)/16-1$, thresholds $a_j=2j/16-1$, $j=0,\ldots,15$, $K=80$, and $\epsilon=1/4$. MPFR interval evaluation encloses the entire exact feature matrix. Directed Gaussian elimination has no pivot interval containing zero and encloses its determinant in the strictly positive interval reported in the supplement. Elimination is an algebraic enclosure of that fixed matrix, not a rank judgment based on a singular-value tolerance. It proves existence of the exact final linear solve; rounding a computed solve would require its own output-error analysis.\hfill$\square$
+
+\section{Re-budgeting and preservation of economic comparisons}\label{app:r23wealth}
+Higher initial wealth raises $B$. Theorem~\ref{thm:r23budget} therefore increases the exact financing offset. With the contrasts and slopes unchanged, logistic consumption is ordered at every time and factor realization. Under common shocks, the deterministic preference drifts give identical preference paths. The price-defined wealth difference before stopping is the positive conditional price of the remaining consumption difference, since both policies have the same terminal reserve. Their wealth processes are therefore ordered as well.
+
+The maintained nonexit condition rules out wealth stopping for either policy. They stop at the same preference exit or terminal date. Running utility has derivative $c^{-u}>0$ with respect to consumption on the original domain; effort cost is identical. At the common stopping time the settlement's wealth derivative is $.1/x>0$, while its preference and liquidation components agree. Comparing these terms pathwise and taking discounted expectations proves Proposition~\ref{prop:r23wealth}.
+
+For the specified reserve and consumption range, the conditional price at remaining horizon $h\in[0,1]$ lies between $R e^{-.02h}+.5C_{.02}(h)$ and $R e^{-.02h}+.8C_{.02}(h)$. The lower bound is minimized at $h=0$ and exceeds $.5$; the upper is maximized at $h=1$ and is below $2$. This proves wealth nonexit for the exact-price family. In the experiment the reserve is independently enclosed rather than set equal to its floating-point target. Its original feasibility and payoff enclosures remain authoritative; this ideal-family monotonicity result is not used to bypass them.\hfill$\square$

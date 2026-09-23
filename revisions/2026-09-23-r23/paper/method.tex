@@ -1,0 +1,54 @@
+\section{Financed-coordinate identification and exact-price conditioning}\label{sec:r23method}
+Let $\mu$ be a finite positive pricing measure, with mass $M>0$. In the present economy it integrates discounted risk-neutral consumption over the remaining horizon. For a time-slab intercept vector $b$ and slope vector $s$, write $\ell(t,z)=b_j-s_j\log Y_t(z)$ on slab $j$. Put $c_-=.5$, $\Delta c=.3$, and
+\[
+ P(a)=c_-M+\Delta c\int\sigma(\ell+a)\,d\mu,
+ \qquad B=x-e^{-rT}R,
+ \qquad \nu=\frac{B-c_-M}{\Delta c M}.
+\]
+Here $R$ is a target terminal reserve, $r=.02$, and the numerical application has $T=1$. Assume $\ell$ is finite $\mu$-almost everywhere and $0<\nu<1$. The exact-price family solves $P(a)=B$. The delivered finite-precision policies are instead priced independently; their reserve is defined by that exact price and enclosed by the checker. The two constructions must not be silently equated.
+
+\begin{theorem}[The budget quotient and a continuous-price bracket]\label{thm:r23budget}
+The price equation has a unique finite root $a^*$. A common intercept shift $b\mapsto b+h\mathbf1$ changes that root to $a^*-h$ and leaves the financed stream unchanged. For slabs of positive pricing measure, define
+\[
+ D_j=\Delta c\int_{I_j}\sigma'(\ell+a^*)\,d\mu,
+ \quad D=\sum_jD_j>0,\quad\omega_j=D_j/D.
+\]
+Then the financed intercepts $b^f=b+a^*\mathbf1$ satisfy
+\begin{equation}
+ \frac{\partial a^*}{\partial b_j}=-\omega_j,
+ \qquad \frac{\partial b^f}{\partial b}=I-\mathbf1\omega^\top,
+ \qquad \frac{\partial a^*}{\partial B}=D^{-1}.
+ \label{eq:r23projection}
+\end{equation}
+The matrix in \eqref{eq:r23projection} is a rank-$(m-1)$ projection whose null space is the common-intercept direction. Fixing one raw intercept to zero is a complete coordinate chart for the same financed family, with $3m-1$ rather than $3m$ direct coordinates.
+
+Suppose a measurable set $G$ has $\mu(G)\geq(1-p)M$, $\ell\in[\ell_-,\ell_+]$ on $G$, and $0\leq p<\min(\nu,1-\nu)$. With $\operatorname{logit}(q)=\log(q/(1-q))$, the root is enclosed by
+\begin{equation}
+ a_- =\operatorname{logit}\!\left(\frac{\nu-p}{1-p}\right)-\ell_+,
+ \qquad
+ a_+ =\operatorname{logit}\!\left(\frac{\nu}{1-p}\right)-\ell_-.
+ \label{eq:r23bracket}
+\end{equation}
+If $Z$ bounds $|\ell+a|$ on $G$ for $a\in[a_-,a_+]$, then
+\begin{equation}
+ P'(a)\geq d_*:=\Delta c M(1-p)\frac{e^{-Z}}{(1+e^{-Z})^2}>0.
+ \label{eq:r23conditioning}
+\end{equation}
+For any $\widehat a$ in that bracket, an exact-price residual bound $|P(\widehat a)-B|\leq\varepsilon$ implies $|\widehat a-a^*|\leq\varepsilon/d_*$. A proposal quadrature residual must include a separately certified quadrature error before it can be used as $\varepsilon$.
+\end{theorem}
+
+For a finite positive quadrature rule, $p=0$ and the extreme node logits give the bracket directly. For the continuous Gaussian pricing measure, the checker uses $G=\{|Z_0|\leq8\}$ in the standard-normal integration coordinate and the directed Mills bound $p\leq2\phi(8)/8$. Under that measure $\log Y_t=.065t+.3\sqrt t Z_0$; all time slabs are covered when obtaining $\ell_-$ and $\ell_+$. The unbounded tail is therefore included rather than treated as a finite support assumption. The derivative lower bound can be conservative. Its role is to establish a valid conditioning enclosure, not to claim that every observed root is well conditioned.
+
+The proposal program centers intercepts before evaluating prices and retains centered coordinates when forming the delivered logits. This avoids reintroducing a large canceled common offset into the price calculation. It uses the finite-rule bracket, rejects nonfinite or saturated arithmetic, and applies the analytic first derivative after bisection. The independent stopped-policy checker remains unchanged. Mathematical translation invariance does not imply bitwise invariance under arbitrary floating-point shifts.
+
+\begin{proposition}[Equality of the finite-node policy classes]\label{prop:r23class}
+At $m$ distinct scalar time nodes, a $1$--$m$--$m$--$3$ tanh network with unrestricted finite real weights can interpolate any prescribed $m\times3$ raw-output array. Thus the neural, direct, and direct-quotient representations used here generate the same finite-node financed family, for finite logits and the interior sigmoid action ranges. They do not thereby have the same optimization geometry or the same finite-precision trajectory. Nor does interpolation at fixed time nodes establish approximation of a current-state policy on a higher-dimensional domain.
+\end{proposition}
+
+The proof constructs an invertible hidden-feature matrix and solves only for the final affine layer. For the actual sixteen nodes, the replication record supplies a directed MPFR nonsingularity certificate for rational first- and second-layer parameters. This identifies what the crossed experiment can attribute to parameterization. It does not assert that Adam or L-BFGS-B finds the interpolating weights, or that this construction is itself a competitive training method.
+
+\begin{proposition}[Fixed-shape re-budgeting]\label{prop:r23wealth}
+Consider two exact-price policies with the same finite intercept contrasts, slopes, deterministic preference drifts, and terminal reserve $R$, but with initial wealth $x'<x''$ in the attainable budget interval. Suppose both price-defined wealth processes stay strictly inside the wealth boundaries until preference exit or the horizon. Then their consumption streams and wealth processes are pathwise ordered under common shocks, their stopping times coincide, and $J(x'')\geq J(x')$. The policy map changes through its financing offset. This result therefore concerns a re-budgeted family, not the compensating variation of a fixed complete policy map.
+\end{proposition}
+
+For the target reserve $.50001$ and consumption in $[.5,.8]$, the conditional-price bounds establish the stated wealth nonexit condition over the one-year horizon. The earlier $.002$ counterfactual is supported by its separately computed payoff intervals; Proposition~\ref{prop:r23wealth} does not replace those calculations or identify a minimum increment. Small differences between the proposed reserve and the independently enclosed delivered reserve remain in the numerical checks.
