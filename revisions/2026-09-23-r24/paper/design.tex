@@ -1,0 +1,45 @@
+\section{Prospective numerical design}\label{sec:r24design}
+The protocol was committed before new scientific execution, after both R23 reports and the complete preceding evidence were examined. This is a prospective response to known methodological questions, not independent rediscovery of the old qualitative pattern. Tuning, evaluation and multicell construction are distinct stages; every current-run result is retained.
+
+\subsection{Tuning and held-out checkpoints}
+At $(u,x)=(2,1.25)$, seeds $24001$ and $24002$ form the tuning set. Each of five Adam arms tests $.005,.02,.08$ for $200$ objective/gradient calls with proposal orders $(8,16)$. Select the rate maximizing mean final certified lower payoff over the two seeds. Infeasible candidates are ineligible and ties within $10^{-10}$ use the smaller rate. Each arm receives six trials and $1,200$ calls. Actual generation, preprocessing and checking times are retained; equal calls are not equal work.
+
+Evaluation seeds $24101,24102$ are crossed with orders $(8,16),(12,24)$ and the five selected Adam methods, neural L-BFGS-B and direct L-BFGS-B. L-BFGS-B has call cap $400$, maximum line searches $40$, function tolerance $10^{-13}$ and gradient tolerance $10^{-8}$. No hyperparameter is selected on these outcomes.
+
+Checkpoints are fixed at calls $25,50,100,200,400$. For line-search methods use the latest accepted iterate available by the call, not an unaccepted trial or future iterate. Carry a terminated endpoint forward while reporting actual calls. Snapshots are archived during optimization and certified serially afterward by the independent checker. The schedule is prospective, but cumulative generation-plus-checking curves reconstruct costs rather than time an online rollback algorithm. Repeated converged endpoints are distinguished from changed proposals that fail the strict gate.
+
+Initial checking, preprocessing, tuning and diagnostic-only calls are separately recorded. The inherited dual construction cost is $415.789$ seconds. Adding it to each fresh solve supplies an unamortized accounting scenario, not a controlled same-machine timing experiment. For $M$ solves reusing the same library, charge $415.789/M$ per solve. Reuse is not assumed after arbitrary changes in economic primitives. All rates selected in this study were $.08$, the upper edge of the declared grid; this finite calibration family does not identify an optimum outside its range.
+
+\subsection{A larger four-cell cover}
+The grid is
+\[
+ u\in\{1.98,2,2.02\},\qquad x\in\{1.24,1.255,1.27\}.
+\]
+It gives nine distinct initial states and four cells, extending the preceding wealth span by $50$ percent. Lexicographic vertex $i$ uses seed $24300+i$. Neural, direct and tangent Adam use their selected rates; direct L-BFGS-B is included without retuning. All receive the $400$-call cap and $(8,16)$ rule. Every endpoint is checked, including unsuccessful proposals.
+
+\begin{proposition}[Multicell regret certificate]\label{prop:r24cover}
+Suppose every deployed vertex policy in a cell satisfies the financed-decoder conditions with stopped payoff lower bound $L_i$. Suppose the inherited upper $\overline V$ is convex on the cell and the retained common-shock concavity and stopping hypotheses hold with nonsynchronized stopping allowance $\zeta$. Then the initialized augmented mixture satisfies
+\begin{equation}
+ V(0,z)-J(0,z;\pi^\lambda)\leq\max_{i\text{ in cell}}\{\overline V(z_i)-L_i\}+\zeta
+ \label{eq:r24cover}
+\end{equation}
+throughout the cell. The largest bound certifies the complete union. A failed vertex invalidates its cells unless an independently certified incumbent is deployed.
+\end{proposition}
+The preference range and drift bounds are unchanged, giving the retained allowance $\zeta=16p_E$, $p_E=2\exp\{-.58^2/(2\cdot.0025)\}$. The convex upper is evaluated at new vertices, not interpolated from the old four values. Cell bounds use actual deployed certificates. This is a substantive low-dimensional multicell execution, not removal of worst-case exponential library growth in dimension. The new result certifies regret; it does not infer uniform mixture payoff improvement merely from improved vertices.
+
+\subsection{A known-solution reference and failure diagnostics}
+The reference economy has deterministic wealth, horizon one, zero interest and discounting, fixed preference two, no risky asset or preference adjustment, running utility $-1/c$, terminal payoff $\log R$, and initial wealth $1.25$. Controls satisfy $.05\leq c\leq.8$ and $R=1.25-\int_0^1c_tdt>0$. It is a separately named benchmark, not the original stochastic economy.
+\begin{proposition}[Reference optimum and error separation]\label{prop:r24reference}
+The unique optimum, up to equality almost everywhere, is constant consumption
+\[
+ c_*={\sqrt6-1\over2},\qquad R_*=c_*^2,\qquad V_*=-1/c_*+2\log c_*.
+\]
+It is interior to the control bounds and $R_*>.5$. Every feasible sixteen-slab policy has exact payoff
+\[
+ J(c)=-{1\over16}\sum_{j=1}^{16}{1\over c_j}+\log\left(1.25-{1\over16}\sum_{j=1}^{16}c_j\right).
+\]
+Both continuous parameter families contain the optimum. Class-approximation and temporal quadrature errors are zero; directed arithmetic encloses the residual optimization gap and payoff uncertainty.
+\end{proposition}
+The decoder $c_j=.05+.70\sigma(y_{j0})$ contains $c_*$ and guarantees reserve above $.5$. There is no financing gauge, so direct charts retain all $48$ raw coordinates. The other $32$ outputs are inactive in payoff. Seeds $24501,24502$ use transferred selected rates and the same checkpoints, without reference-specific calibration.
+
+The adverse R23 neural L-BFGS-B run at seed $23203$ is diagnosed separately. Preserve its original source, endpoint and stopping message. Regenerate it, change only an equivalent powers-of-two parameter chart with layer-group scales $(1/4,1,4)$, restart with tighter tolerance, and restart direct optimization from the failed raw outputs. Record Jacobian spectra, gradients, call histories, raw-output and financed-coefficient distances to the frozen direct solution, and certificates. Restart caps are additional budgets, not hidden equal-total-work comparisons. These diagnostics explain a known failure and never enter held-out selection.
