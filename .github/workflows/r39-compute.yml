@@ -1,0 +1,104 @@
+name: R39 common Markov scientific replay
+on:
+  push:
+    branches: ['revision/econometrica-r39-common-continuation-2026-09-25']
+    paths: ['.github/workflows/r39-compute.yml']
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r39-compute
+  cancel-in-progress: false
+jobs:
+  compute:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [finite, continuum, nonlinear]
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONHASHSEED: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install pinned numerical stack
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5 scipy==1.17.0 sympy==1.14.0
+          mkdir -p revisions/2026-09-25-r39/build/ci-${{ matrix.component }}
+          python -m pip freeze > revisions/2026-09-25-r39/build/ci-${{ matrix.component }}/pip-freeze.txt
+          python -VV > revisions/2026-09-25-r39/build/ci-${{ matrix.component }}/python.txt
+          uname -a > revisions/2026-09-25-r39/build/ci-${{ matrix.component }}/os.txt
+          lscpu > revisions/2026-09-25-r39/build/ci-${{ matrix.component }}/cpu.txt
+          python -c 'assert __debug__; import sys; assert sys.flags.optimize == 0'
+          git rev-parse HEAD > revisions/2026-09-25-r39/build/ci-${{ matrix.component }}/source-commit.txt
+          python -m pip download --only-binary=:all: --dest /tmp/wheels numpy==2.3.5 scipy==1.17.0 sympy==1.14.0
+          sha256sum /tmp/wheels/* > revisions/2026-09-25-r39/build/ci-${{ matrix.component }}/wheel-sha256.txt
+      - name: Execute and independently verify
+        run: |
+          set -euo pipefail
+          p=revisions/2026-09-25-r39
+          case '${{ matrix.component }}' in
+            finite)
+              python $p/replication/run_finite.py 2>&1 | tee $p/build/ci-finite/construct.log
+              python $p/replication/verify_finite.py 2>&1 | tee $p/build/ci-finite/verify.log
+              ;;
+            continuum)
+              python $p/replication/randomized_primary.py 2>&1 | tee $p/build/ci-continuum/construct.log
+              python $p/replication/primary_restart.py 2>&1 | tee $p/build/ci-continuum/restart.log
+              python $p/replication/verify_continuum.py --workers 4 2>&1 | tee $p/build/ci-continuum/verify.log
+              ;;
+            nonlinear)
+              python $p/replication/nonlinear_support.py 2>&1 | tee $p/build/ci-nonlinear/construct.log
+              python $p/replication/verify_nonlinear.py 2>&1 | tee $p/build/ci-nonlinear/verify.log
+              ;;
+          esac
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r39-${{ matrix.component }}-${{ github.run_id }}
+          path: |
+            revisions/2026-09-25-r39/results/
+            revisions/2026-09-25-r39/build/ci-${{ matrix.component }}/
+          retention-days: 30
+          if-no-files-found: error
+  materialize:
+    needs: compute
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: revision/econometrica-r39-common-continuation-2026-09-25
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r39-*-${{ github.run_id }}
+          path: revisions/2026-09-25-r39
+          merge-multiple: true
+      - name: Commit only checked R39 results and logs
+        run: |
+          set -euo pipefail
+          p=revisions/2026-09-25-r39
+          test -f $p/results/verify_finite.json
+          test -f $p/results/verify_continuum.json
+          test -f $p/results/verify_nonlinear.json
+          python - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('revisions/2026-09-25-r39/results')
+          for name,count in [('verify_finite',16),('verify_continuum',42),('verify_nonlinear',2)]:
+              rows=json.loads((p/(name+'.json')).read_text())['outcomes']
+              assert len(rows)==count and all(r['passed'] for r in rows)
+          PY
+          git config user.name 'NBO revision publication'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add $p/results $p/build/ci-*
+          git diff --cached --name-only | grep -v '^revisions/2026-09-25-r39/' && exit 1 || true
+          git commit -m 'results(r39): materialize all scientific replay objects and independent checks'
+          git fetch origin revision/econometrica-r39-common-continuation-2026-09-25
+          git rebase origin/revision/econometrica-r39-common-continuation-2026-09-25
+          git push origin HEAD:revision/econometrica-r39-common-continuation-2026-09-25
