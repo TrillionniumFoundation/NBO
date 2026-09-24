@@ -1,0 +1,140 @@
+\input{revisions/2026-09-24-r38/paper/preamble}
+\begin{document}\begin{frontmatter}
+\title{Technical Supplement to ``Certified Bellman Operators for Costly Policy Revision''}
+\runtitle{Technical Supplement: R38}
+\begin{aug}\author[id=au1,addressref={add1}]{\fnms{Qian}~\snm{QI}\ead[label=e1]{qiqian@pku.edu.cn}}\address[id=add1]{\orgname{Peking University}}\end{aug}
+\begin{abstract}This supplement gives the representation, policy-class, constrained-frontier, cell-verification, and directed-box details supporting the article. It reports every primary configuration, every economic sensitivity, every fixed-restart reference, all nonlinear failures, and all adaptive local LP runs. The original stopped-control scalar proof is retained in full. Exact fractions and complete proof objects accompany the displayed numerical summaries.\end{abstract}
+\end{frontmatter}
+
+\section{Policy classes, attainability, and restart semantics}
+The deterministic Markov feasible class in the article uses a single measurable action at each date and state. Its randomized counterpart uses a probability kernel at that date and state. The all-restart condition is imposed before the current action draw. Neither class is replaced by an initial-state average performance constraint. Implementation cost is averaged under the specified initial distribution only after the all-restart operating inequalities have been established.
+
+A history-conditioned policy may remember earlier actions, shocks, and previously drawn randomization. Its continuation is evaluated at a decision history before the next action draw. To make off-path assertions well-defined, a policy includes continuation kernels at every admissible history, not only histories with positive probability under the initially deployed policy. The operating benchmark remains the unconstrained Markov value $V_t(x_t)$ because the underlying model is Markov. The required inequality is conditional at every such history.
+
+The deterministic necessary-action proof uses the action actually selected at that history. Its upper operating continuation is $V_{t+1}$, regardless of the particular history. A randomized policy instead obeys an average inequality over current actions; individual actions in its support need not obey the deterministic test. The two-period example is an explicit instance. Conditioning on the current action draw would define a different feasible class and would remove the mixture mechanism; that conditioning is not used here.
+
+The exact frontier recursion keeps separate continuation choices for different histories that end at the same physical state. Identical state/date frontier sets can be cached because the primitive model is Markov. Selecting two different points on the cached frontier at different histories is still history dependence. Thus memoization is not a proof that a randomized Markov policy attains the frontier optimum.
+
+At a fixed initial state with finite shocks and finite horizon, the reachable decision tree is finite. A feasible solution on that tree can be extended to unvisited decision histories by an operating-optimal policy. The off-tree extension has finite implementation cost and zero operating regret. It does not affect the Dirac initial objective. This justifies the fixed-restart reference under the stated all-history definition without claiming that independently chosen references at different initial states admit a common Markov continuation.
+
+\section{Exact finite representation and independent checking}
+A represented function is the finite tuple $(z_i,m_i,b_i,v_i)$, equal to $m_ix+b_i$ on each open interval $(z_i,z_{i+1})$ and to $v_i$ at $z_i$. The terminal and operating witnesses are continuous in the primary model, but compiled policies and cost functions need not be. A special action at a singleton may affect later values through a transition preimage. Such points are not discarded merely because the initial distribution is continuous.
+
+All affine transition preimages of continuation knots are inserted. Necessary-set threshold crossings are also inserted before checking an action's eligibility. An inequality between affine functions on an open cell is equivalent to inequalities at both endpoint limits. Actual endpoint values are checked separately. A midpoint identifies the correct affine formula on an already certified partition; it is not the test of the inequality itself.
+
+The independent primary verifier uses SymPy Rational and its own tuple parser, line selection, partition union, transition pullback, and primitive Bellman evaluator. It does not import the constructor's Fraction/PW kernel. For each object it checks the primitive model against duplicated literals, the frozen installed-input hash, the terminal equations, $V=TV$, the upper-witness defects and lower-witness recursion, necessary-action masks, lower-cost minimum and attainment, the deployed operating and cost equations, all-restart regret, and exact initial integrals. It recomputes both integrated and functionwise equality flags.
+
+The twenty mutation categories include primitive discount, transition, shock probability, reward cost, policy class, objective scope, terminal conditions, missing dates, knot order, malformed rational tokens, illegal actions, fractional actions, isolated values, affine coefficients, false integrals, false equality, witness defects, and provenance/hash failures. The complete category names and diagnostic outcomes are in the independent verification ledger. The independence claim concerns the separate arithmetic/partition implementation. Both programs intentionally implement the same economic primitives; this is not formal proof-assistant verification or an assertion that all common interpretation errors are impossible.
+
+The exact publication comparison also hashes canonical JSON for 187 scientific objects: 42 primary objects, 70 fixed-restart frontiers, 12 local LP objects, 21 global support bundles, and 42 gap-function objects. This cross-environment equality check is distinct from independent verification. Only the primary and frontier groups are covered by the independent SymPy procedures. Timing fields are not part of these 187 canonical scientific objects.
+
+\section{Witness construction, sufficient actions, and outer restrictions}
+For completeness, let $U_T=g$ and suppose $0\leq U_t-T_tU_{t+1}\leq d_t$. Induction gives $V_t\leq U_t$. If $b_T=0$ and $b_t=d_t+\beta b_{t+1}$, then
+\[
+ U_t-V_t\leq d_t+T_tU_{t+1}-T_tV_{t+1}\leq d_t+\beta b_{t+1}=b_t.
+\]
+Thus $L_t=U_t-b_t$ is a lower witness. Actual realized defects can produce a tighter witness than a uniform construction allowance. The R38 safe outer calculation uses the realized defect recursion recorded in its proof object.
+
+For a sufficient action class, suppose $e_t=\eta_t+\beta e_{t+1}$ and an action satisfies $U_t-T_t^aU_{t+1}\leq\eta_t$. If the actual continuation satisfies $J_{t+1}\geq U_{t+1}-e_{t+1}$, then
+\[
+ U_t-T_t^aJ_{t+1}\leq\eta_t+\beta e_{t+1}=e_t.
+\]
+Selecting exclusively from nonempty sufficient action sets therefore gives an operating-feasible policy. Cost minimization over those sets is ordinary dynamic programming, but it solves an inner-class problem. In contrast, every feasible deterministic action is included in $\{a:L_t-T_t^aU_{t+1}\leq\varepsilon\}$. The cost minimum over this latter class is a lower bound on the original deterministic problem.
+
+The exact lower selector is retained even when infeasible. Its failure does not invalidate the lower bound; it shows that the outer class is strictly larger than the operating-feasible class. Each selected feasible upper policy is evaluated from scratch. The main result's equality test uses exact rational integrals, and the stronger all-restart flag additionally checks every cost function difference on open cells and stored knots.
+
+The upper-policy attempts per configuration are not presumed all feasible: the inherited deployment, necessary-set selector, operating-optimal selector, and four operating-priority backward selectors give seven named attempts. An empty backward admissible set is explicitly recorded. The count is seven, not a number of independently optimized global policies. A candidate's failed operating certificate is not silently repaired by increasing the tolerance.
+
+\section{Exact point LP and whole-cell primal--dual tests}
+At a fixed state the local LP is $\min p\cdot z$ subject to $p\geq0$, $\sum p=1$, and $p\cdot q\geq b$. Every vertex is either a feasible unit vector, or a mixture of two actions $i,j$ with $q_i<b<q_j$ and weights
+\[
+ p_i=\frac{q_j-b}{q_j-q_i},\qquad p_j=\frac{b-q_i}{q_j-q_i}.
+\]
+When $q_i=b$, the feasible unit vector handles the endpoint. When $q_i=q_j$, the pair does not require division and its cheaper feasible unit vector or another crossing pair suffices. Ties are resolved by a deterministic order, but every tied optimal value remains valid.
+
+The dual candidates are zero and nonnegative values $(z_i-z_j)/(q_i-q_j)$ for unequal $q_i,q_j$. The implementation checks exact primal--dual equality at every sampled basis-selection point and every stored isolated knot. These exact point checks select a certificate; they do not verify a cell by sampling.
+
+On an open input cell, all $q,z,b$ are affine. Additional splits ensure that action feasibility and denominator signs do not change in the interior. The proposed two-action primal has nonnegative weights summing to one throughout the cell; these conditions are checked at endpoint limits. Let its numerator be $N$ and denominator $D>0$. For a fixed $\mu\geq0$, write $d_a=z_a+\mu(b-q_a)$. Since $D_\mu=\min_a d_a$, the inequality $P-D_\mu\leq\delta$ is equivalent to
+\[
+ N-D(d_a+\delta)\leq0\qquad\text{for every action }a.
+\]
+Each left-hand side is quadratic. Its maximum is calculated using both endpoints and, for a concave quadratic, the vertex when interior. A zero denominator at an endpoint is treated by the rational one-sided extension and a separate exact point LP at the endpoint. A denominator that is negative in the interior rejects the cell.
+
+The piecewise-affine dual minimum can change active action within an accepted cell. All such intersections are inserted, and the checker verifies that each stored affine line is the corresponding dual minimum throughout its subcell, not only at its midpoint. The union of accepted cells must cover $[0,1]$ without gaps or overlaps. The exact knot LP value is stored independently of the open-cell lower formula.
+
+After construction, each slope, intercept, and point value is rounded downward to a denominator $2^{40}$. On $[0,1]$, an affine slope/intercept rounding changes the value by at most $2^{-39}$ in the correct direction. The exact difference is checked again before propagation. For arbitrary requested tolerance the theorem requires enough bits to keep this rounding term below half the stage budget; forty bits are the implemented choice for the three displayed tolerances, not a precision-free limit.
+
+Integration uses directed 64-bit dyadic bounds for each exact affine-piece integral. Summing these finite rational bounds avoids forcing every breakpoint denominator into one enormous least common multiple. The width of this numerical integral enclosure is recorded separately and is added to the upper endpoint of the local-relaxation interval. No unrounded decimal integral is used in a proof.
+
+The initial unquantized reconstruction reached Python's rational-to-string size limit. Its failure log is preserved, and the source labeled as a reconstruction is not claimed to be a bitwise saved copy of that initial process. The quantized algorithm and the final whole-cell verifier are actual executed sources. An engineering recursion-depth cap of 60 causes explicit failure. The conditional finite-cover theorem is not a promise that this cap suffices for arbitrary models.
+
+\section{Frontier primal and dual verification}
+The constructor enumerates the action-specific Minkowski sums of efficient successor vertices, computes the convex lower hull, and intersects it with the required operating half-space. Pruning a pair is valid only when another achievable pair has no smaller operating value and no larger cost, or when the point lies above a supporting lower edge. Because feasibility is a lower bound on operating value, a higher-value cheaper pair dominates for all preceding lower-budget requirements.
+
+For every retained frontier vertex, the proof stores either one candidate or a convex combination of two candidates that attains it. Its cost-support line $c=\mu j+\eta$ is checked against all primitive candidate pairs. Supporting slopes are nonnegative. Adjacent vertices determine the edge slope; checking that line against every candidate proves the entire edge, including an intersection with the operating-budget line. At the first feasible frontier point, either the operating budget binds or a zero supporting slope certifies an unconstrained cost minimum. The maximum operating frontier coordinate is also checked against the independent operating value.
+
+The SymPy verifier reconstructs all candidate action/child combinations from the primitive model and the already verified child frontiers. It compares canonical candidate counts/hashes and every supporting inequality. It does not import the constructor's hull or optimization functions. Terminal nodes have the singleton $(g,0)$. These tests certify the serialized recursive frontier, including feasibility propagation, rather than just its reported initial number.
+
+The two-period uniform-initial randomized Markov calculation uses a different analytic certificate. On each rational interval the integrand is rational with an affine denominator. For a positive rational logarithm argument $r$, range reduction writes $r=2^m s$ with $1\leq s<2$, using reciprocity when $r<1$. With $y=(s-1)/(s+1)$,
+\[
+ \log s=2\sum_{i=0}^{n-1}\frac{y^{2i+1}}{2i+1}+R_n,
+ \qquad 0\leq R_n\leq\frac{2y^{2n+1}}{(2n+1)(1-y^2)}.
+\]
+The same expansion encloses $\log2$. Forty terms give the recorded rational integral enclosures. Signs of the antiderivative coefficients determine which endpoint is used. This analytic calculation is not included in the count of 70 independently verified frontier objects.
+
+\section{Nonlinear whole-box arithmetic and certificate scope}
+Let a box be $[i/N,(i+1)/N]\times[j/N,(j+1)/N]$ for range bounding. The represented policy uses half-open assignment, with the upper outside boundary included in the final box. All transition coefficients in the nonlinear experiment are nonnegative. Therefore the lower/lower corner and upper/upper corner enclose the image of the entire box, including the bilinear term.
+
+For a component with integer coefficients $(s,b,c,n)$ and own-coordinate index $h$, the exact lower transition numerator is
+\[
+ s h N+b i j+(c+n\xi)N^2,
+\]
+with denominator $100N^2$; the upper numerator replaces $h,i,j$ by $h+1,i+1,j+1$. Multiplication by $N$ and integer division locate the possible successor boxes. The implementation verifies that the index range spans at most one step in each coordinate, so evaluating all four combinations of lower/upper indices covers every possible successor box. An exact upper image on a grid boundary includes the neighboring assigned box, conservatively. It is not rounded into a single midpoint successor.
+
+Rewards, terminal values, revision weights, and discounted transition expectations receive directed integer floors and ceilings at scale $2^{34}$. For an expectation, the numerator is $19(3v_1+2v_2)$ and the denominator is 100. Its absolute value is checked below $2^{62}$ before integer division. In the local randomized lower recursion, multipliers are at most 64 and bounded model values keep the additional expressions within signed 64-bit capacity. This finite experiment's overflow account is explicit; it is not an arbitrary-horizon machine-arithmetic theorem.
+
+The installed continuous threshold rule can change inside a box. Cost bounds therefore enumerate a conservative set of \emph{possible installed actions on the full closed box}. A candidate action has zero lower revision cost whenever it might equal the installed action; it has zero upper revision cost only when it is the unique possible installed action. Otherwise the upper revision weight is charged. This prevents a midpoint installed-action comparison from becoming an invalid whole-box cost certificate.
+
+The compiled-rule pilot itself chooses the installed action at each box midpoint and then holds that action throughout the box. It is a proposal, not exactly the continuous installed rule at threshold-crossing boxes. Likewise, the classical solver uses midpoint rewards and bilinear interpolation only to propose a fixed box policy. Both receive the same whole-box operating and cost evaluation. The proof pertains to the resulting serialized box policies, not to an unrecorded continuous interpolation of their actions.
+
+Backward maxima of lower and upper operating action enclosures bound the unconstrained operating value. The deterministic necessary-action recursion uses the lower operating witness, upper next-value action bound, and lower implementation costs. The randomized local-grid recursion instead takes a dual minimum over \emph{all} actions. The code checks both nonnegativity and that the deterministic bound dominates this randomized bound. For a policy with $U_t-J_t^{\rm lower}\leq1/2$ in every box and date, operating feasibility follows. Its implementation upper enclosure then bounds the feasible optimum from above; a failed operating certificate leaves only a bound on that candidate's own cost.
+
+A failed sufficient enclosure does not prove that the candidate policy is truly infeasible. All tables consequently use ``certificate pass'' rather than treating every failure as a mathematical infeasibility result. The unsuccessful pilot, fallback boxes, coarse-mesh failures, and candidate-level classical outcomes are retained. Witness construction is charged once for each mesh/horizon, while each proposal and reevaluation is charged to its method. This is a nonlinear two-state test, not a calibration or a claimed advantage at arbitrary dimension.
+
+\section{All primary configurations}
+\input{revisions/2026-09-24-r38/paper/generated/all_primary.tex}
+The machine-readable exact table contains both cost endpoints as rational strings, the safe-witness lower endpoint, the exact gap, both equality flags, the installed-policy hash, deployed-policy hash, lower-function hash, and full proof-object hash. In each corresponding primary object, the frozen input path and its byte hash are also retained. Operating feasibility and installed-value preservation hold for every row, but preservation is a separate verified property.
+
+\section{All economic sensitivities}
+\input{revisions/2026-09-24-r38/paper/generated/all_sensitivity.tex}
+
+\section{All fixed-restart constrained references}
+\input{revisions/2026-09-24-r38/paper/generated/all_frontiers.tex}
+
+\section{All nonlinear candidates and failures}
+\input{revisions/2026-09-24-r38/paper/generated/all_multistate.tex}
+
+\section{All adaptive local LP runs}
+\input{revisions/2026-09-24-r38/paper/generated/all_local.tex}
+
+\section{Killed operators: error propagation and action coverage}
+Write an exact killed step as $\mathsf T_t^a v=h_t^a+Q_t^a v$, where $Q_t^a$ is a positive subprobability kernel with mass bounded by $\alpha_t$. Monotonicity and the estimate $\norm{\mathsf T_t^av-\mathsf T_t^aw}_\infty\leq\alpha_t\norm{v-w}_\infty$ follow directly. Suppose a validated approximation obeys $\norm{\widetilde{\mathsf T}_t^av-\mathsf T_t^av}_\infty\leq\xi_t$ for every action and every function used by the construction. If upper encoding adds defect $d_t$, then the backward total budget obeys
+\[
+ b_t=d_t+\xi_t+\alpha_t b_{t+1}.
+\]
+Inflating an upper encoded step by $\xi_t$ and taking the corresponding lower envelope supplies safe witnesses. The same positive-kernel argument proves the deterministic necessary-action lower bound for an implementation recursion with compatible stopping and nonnegative costs.
+
+The quantifier over actions is essential. A discrete subset gives a lower operating value but may omit the true optimum. It also creates an overly narrow implementation policy class. To claim a certificate for the continuous-control target, one must enclose all omitted actions, for example with validated action regularity and interval covers. State interpolation, killed-transition approximation, action coverage, and time-discretization error must remain separately identifiable in the budget. The present nonlinear maintenance calculation validates a distinct finite-action model, not these diffusion approximation constants.
+
+\section{Retained scalar stopped-control optimum}\label{sec:boundary}
+At restart $(0,61/50,5/4)$ with $k=2$, $c=3/4$, $p=0$, and constant $\theta\in[-1/5,1/5]$, the unchanged stopped-economy payoff is strictly increasing in $\theta$. The derivative lower bounds are $8163/125000$ on the negative half interval and $47251/125000$ on the positive half interval. Hence $\theta=1/5$ is the unique optimum in this scalar class. The archived payoff enclosure is $[-3.7609,-3.7607]$. It is inherited, not newly reevaluated. The following full proof is preserved from the materialized R34 supplement; cross-reference wording and file paths are adjusted for this standalone supplement.
+\input{revisions/2026-09-24-r38/paper/retained_boundary.tex}
+
+\section{Preservation map and historical evidence}
+No earlier revision source, result, or review is removed. The branch starts at the latest R36 review commit and adds R38. The article, supplement, response, and computational report from R34 are preserved page-for-page in \texttt{HISTORY\_R38.pdf}, followed by the earlier recursive historical annex. The original stopped consumption--portfolio specification, its full-domain target, the scalar boundary quadrature record, the 47-coordinate derivative/residual bridge discussion, Adam transport and rollback derivations, inventory comparisons, and operating-mode studies remain in those sources and archived pages.
+
+The R35 and R36 protocol files remain unchanged in the repository. Their unmaterialized execution assertions are not treated as verified observations. R38 supplies a newly executed scientific object with explicit provenance. In particular, the fresh compiled-rule nonlinear pilot is not relabeled as a historical zero-penalty run. The complete prior unfavorable neural and inventory results are retained; none is converted into a new neural acceleration claim.
+
+The old material is a historical annex, not additional experiments for the R38 cohort. Its former statements of current revision status are read at their original dates. The current main article and response specify which numerical objectives have new certificates and which original targets retain their previous bounds. This organization shortens the main narrative without deleting the technical record.
+The main article prints the references cited in its current theorem and application discussion. The complete inherited bibliography is retained in \path{history/references_R34.tex}, in the unchanged R34 source, and in the historical PDF annex; uncited predecessor references have not been removed from the scientific archive.
+\end{document}

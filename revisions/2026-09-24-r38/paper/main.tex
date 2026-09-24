@@ -1,0 +1,314 @@
+\input{revisions/2026-09-24-r38/paper/preamble}
+\begin{document}
+\begin{frontmatter}
+\title{Certified Bellman Operators for Costly Policy Revision}
+\runtitle{Certified Bellman Operators}
+\begin{aug}\author[id=au1,addressref={add1}]{\fnms{Qian}~\snm{QI}\ead[label=e1]{qiqian@pku.edu.cn}}\address[id=add1]{\orgname{Peking University}}\end{aug}
+\begin{abstract}
+We study the least costly revision of an installed policy subject to operating guarantees at every state and restart. Two-sided Bellman witnesses generate safe outer restrictions for deterministic policies and cost lower bounds that can be matched by independently feasible deployments. In a continuous-state maintenance economy, exact arithmetic certifies 24 initial-distribution deterministic optima among 42 configurations, including 12 with positive implementation cost. An exact continuation-frontier recursion and a solved two-period randomized Markov example separate deterministic from randomized objectives. For randomized lower bounds, adaptive primal--dual cell certificates replace a finite local multiplier grid and provide a quantitative approximation guarantee. A nonlinear two-state economy tests directed enclosures beyond piecewise-affine closure, while 66 sensitivity configurations measure endogenous intervention exposure. Separate rational verification, unsuccessful runs, full computational costs, and nonzero residual intervals accompany the results. A killed-operator comparison connects the method to stopped economic control.
+\end{abstract}
+\begin{keyword}\kwd{Dynamic programming}\kwd{Policy revision}\kwd{Verified computation}\kwd{Constrained Markov control}\kwd{Neural proposals}\end{keyword}
+\end{frontmatter}
+
+\section{Introduction}\label{sec:intro}
+An installed decision rule can be inexpensive to operate and expensive to replace. A new rule must preserve operating performance, but its implementation cost depends on which decisions change and on the states the revised rule subsequently visits. Maintenance, organizational procedures, and deployed decision systems share this distinction. A rule that minimizes today's number of changes need not minimize the discounted cost of future changes. The economic problem is therefore a constrained control problem, not a pointwise classification problem.
+
+This paper constructs certificates for that problem. Its operating requirement is uniform over decision dates and states. Its implementation objective is an expectation under a specified initial distribution and the deployed policy's own transition law. These are different scopes: a uniform performance constraint does not turn an initial-distribution optimum into a cost optimum from every restart. We maintain that distinction in the theory and in every numerical declaration of exactness.
+
+The first contribution is a deterministic outer-class construction using two-sided operating witnesses. A feasible deterministic action must be compatible with the performance target even when followed by optimal operating continuation. Replacing that unavailable continuation by a certified upper witness, and optimal current value by a lower witness, preserves the necessity of the test. Minimizing implementation cost over the resulting outer class gives a valid lower bound. An independently evaluated feasible deployment gives an upper bound. Equality solves the constrained implementation objective, not merely an inner approximation. Exact operating dynamic programming supplies a reference specialization, and its full cost is charged.
+
+The second contribution is a policy-class-specific constrained reference calculation. A continuation-frontier recursion solves finite-shock, finite-horizon problems from a fixed restart when continuation may depend on history. Its construction clips operating feasibility at each decision history, not only at the initial node. A two-period version of the maintenance economy also admits an analytic randomized Markov solution for the uniform initial distribution. The latter has strictly smaller implementation cost than every deterministic Markov policy. Thus deterministic sufficiency is false even in the basic economic environment. A correct positive deterministic result cannot be extended to randomized policies by terminology alone.
+
+The third contribution replaces a finite local multiplier grid by a statewise exact linear program and a whole-cell approximation certificate. The exact primal frontier can be rational rather than piecewise affine. We bound it by a feasible primal expression and a fixed-multiplier dual function throughout each cell, using rational quadratic sign tests. Directed dyadic encoding controls coefficient growth without sacrificing the lower-bound direction. The resulting error bound converges to the continuous local restart relaxation. It does not assert global strong duality for the original constrained control problem. Separate experiments measure witness error, global price refinement, local multiplier error, and feasible upper-search improvement.
+
+These constructions have material numerical consequences. Of 42 unchanged primary configurations, 24 have exactly matching deterministic lower and upper initial costs; 12 of these costs are strictly positive. All 14 horizon-four cases close. Of the 24 integrated equalities, 23 also have equality of the complete cost-to-go functions. The remaining 18 deterministic cases retain explicitly reported nonzero intervals. The largest interval is below 0.249 in normalized implementation units. No operating tolerance is relaxed to obtain these statements.
+
+Two further studies examine the mechanism and the representation. Across 66 designed economic sensitivities, dynamic revision is strictly less costly than pointwise revision in 22 configurations and has exactly equal cost in 44. A separate bilinear two-state economy uses outward integer box enclosures, horizons through 32, and meshes through 256 per dimension. It includes unsuccessful certificates and an information-matched classical grid scalarization comparator. These are tests of a known-model numerical method, not empirical calibration or evidence of dimension-free scalability.
+
+\subsection{Relation to existing methods}
+Bellman comparison, constrained backward induction, convexification, and weak duality are established tools \citep{Altman1999,Judd1998}. We do not rename them as new principles. Our contribution is the constructive combination of operating witnesses, policy-class-correct outer restrictions, a finite verifiable optimality test, and a numerical implementation that closes positive implementation-cost cases. The frontier computation provides a direct constrained reference for its stated history-conditioned objective, rather than comparing only with unconstrained operating optimization.
+
+Approximate dynamic programming studies approximation and sampling errors under specified information structures \citep{MunosSzepesvari2008,Scherrer2013}. Safe policy improvement can restrict changes in response to uncertainty about a transition model \citep{Laroche2019}. Here the model is known, approximation proposes a rule or a witness, and a separate deterministic verification layer checks the resulting rule on the whole state domain. Neural and spline proposals are retained on identical terms. We establish neither a neural speed advantage nor superiority of an installed neural rule merely because a repaired deployment is feasible.
+
+Numerical economics exploits economic and approximation structure \citep{Judd1998,BrummScheidegger2017}. Information-relaxation methods provide a different route to bounds \citep{BrownSmithSun2010,BrownSmith2014}. Both approaches must charge bound construction. Our one-dimensional reference calculation exploits exact affine structure; the two-dimensional experiment replaces that structure with directed box arithmetic. Verified computation concerns the analytic reduction as well as arithmetic error \citep{Rump2010}. Accordingly, independent arithmetic verification is specified by its actual code boundary, rather than inferred from the existence of a second execution path.
+
+\section{Economic environment and policy classes}\label{sec:model}
+Let $t=0,\ldots,T$, let $X$ be a Borel state space, and let $A$ be a finite action set. Rewards $r_t(x,a)$, terminal payoff $g(x)$, and implementation costs $k_t(x,a)$ are bounded and measurable, with $k_t\geq0$. The discount factor is $0<\beta\leq1$. A known transition kernel $P_t^a$ defines
+\begin{equation}\label{eq:operators}
+ T_t^a v=r_t(\cdot,a)+\beta P_t^a v,
+ \qquad T_t v=\max_{a\in A}T_t^a v,
+ \qquad V_T=g,\quad V_t=T_tV_{t+1}.
+\end{equation}
+Measurable selectors exist because the action set is finite. For a deterministic Markov policy $\pi$, define $J_T^\pi=g$, $C_T^\pi=0$, and
+\begin{equation}\label{eq:policy}
+ J_t^\pi=T_t^{\pi_t}J_{t+1}^\pi,
+ \qquad C_t^\pi=k_t(\cdot,\pi_t)+\beta P_t^{\pi_t}C_{t+1}^\pi.
+\end{equation}
+Given an installed rule $\pi^0$ and a nonnegative revision weight $w_t$, our principal specification is $k_t(x,a)=w_t(x)\ind\{a\ne\pi_t^0(x)\}$.
+
+For a fixed initial distribution $\nu$ and a tolerance $\varepsilon\geq0$, write
+\begin{equation}\label{eq:target}
+ K_D(\nu,\varepsilon)=\inf_{\pi\in\cF_D(\varepsilon)}\int C_0^\pi\,d\nu,
+ \quad
+ \cF_D(\varepsilon)=\{\pi:V_t(x)-J_t^\pi(x)\leq\varepsilon\ \text{for every }(t,x)\}.
+\end{equation}
+The subscript $D$ denotes deterministic Markov policies. A randomized Markov kernel $p_t(\cdot\mid x)$ averages the action-specific equations in \eqref{eq:policy}; replacing the feasible class gives $K_R$. An implementation intervention is charged for the action actually drawn, so its conditional expected cost is $\sum_a p_t(a\mid x)k_t(x,a)$.
+
+History dependence requires more notation. Let $h_t=(x_0,a_0,x_1,\ldots,a_{t-1},x_t)$ be an admissible decision history, augmented by any remembered past randomization. Continuation rewards $J_t^\pi(h_t)$ and costs $C_t^\pi(h_t)$ are defined before the date-$t$ action draw. The history-conditioned feasible class requires
+\begin{equation}\label{eq:history}
+ V_t(x_t)-J_t^\pi(h_t)\leq\varepsilon
+ \quad\text{at every admissible decision history,}
+\end{equation}
+including continuation kernels specified at off-path histories. We do not impose the same inequality after conditioning on the current action draw but before receiving its payoff. Such a different constraint would exclude precisely the mixtures studied below. Deterministic history-dependent policies and randomized history-dependent policies are kept separate. A pointwise cost lower bound for all these histories can be integrated against any initial distribution; an optimum computed at one fixed initial state cannot simply be integrated to claim a Markov optimum with common continuation choices.
+
+Operating preservation relative to the installed rule, $J_t^\pi\geq J_t^{\pi^0}$, is checked separately. It is not silently added to \eqref{eq:target}. In the primary experiment every selected deployment satisfies both properties, so a deployment with a matched lower bound also solves the problem with the additional preservation restriction.
+
+\subsection{Maintenance primitives and the unchanged primary cohort}\label{sec:maintenance}
+The state $x\in[0,1]$ measures condition. Actions $0,1,2$ mean defer, maintain, and replace. The primitive parameters are
+\begin{equation}
+ \beta=19/20,\quad r(x,a)=x-c_a,\quad
+ (c_0,c_1,c_2)=(0,3/20,9/20),\quad g(x)=x/2.
+\end{equation}
+The two shocks have probabilities $3/5$ and $2/5$, with transition maps
+\begin{equation}\label{eq:maps}
+\begin{array}{c|cc}
+ a&f_{a1}(x)&f_{a2}(x)\\\hline
+ 0&3x/4&3x/4+1/20\\
+ 1&17x/20+1/10&17x/20+7/50\\
+ 2&x/10+4/5&x/10+17/20.
+\end{array}
+\end{equation}
+Every map preserves $[0,1]$. The primary revision weight is $1+x$, and $\nu$ is uniform. Because intervention has a positive current operating cost, its justification comes from continuation value. Action-dependent transitions also make future implementation exposure endogenous.
+
+The primary cohort is unchanged: horizons $4,8,12$, tolerances $1/100,1/20$, and seven frozen installed rules at each horizon. These are defer, an occupancy-stress rule, two spline rules, and three neural rules. The neural seeds are 31001, 31002, and 31003; the spline grids have 33 and 129 nodes. The exact serialized R34 incumbents, not refitted substitutes, are used. Their source hashes and separate values at partition knots are part of the new proof objects. A binary floating-point network evaluation is not interchangeable with this exact compiled policy representation.
+
+\section{Constructive witnesses and feasible deployment}\label{sec:witness}
+For bounded functions $L_t,U_t$, suppose
+\begin{equation}\label{eq:witness}
+ L_t\leq V_t\leq U_t,\qquad L_T=U_T=g.
+\end{equation}
+These inequalities must be constructed and checked, not supplied as a costless oracle. In the maintenance economy, expectation under positive affine maps, addition of affine rewards, and maximization preserve convex piecewise-affine structure. The exact representation stores rational knots, an affine formula on each open interval, and separate values at every knot.
+
+\begin{lemma}[Constructive upper encoding]\label{lem:encode}
+Let $F$ be continuous, convex, rational piecewise affine on $[0,1]$. Its chord interpolant on a rational mesh lies above $F$. Rounding the starting ordinate and each chord slope upward to a common grid $2^{-q}\mathbb Z$ produces a convex function $G$ with $0\leq G-H\leq2^{1-q}$, where $H$ is the chord interpolant. If $F$ is $M$-Lipschitz and mesh width is at most $h$, then $0\leq G-F\leq Mh+2^{1-q}$. The actual maximum defect is determined exactly on the union of the two knot sets.
+\end{lemma}
+\begin{proof}
+Convexity orders the chord slopes; upward rounding on a common lattice preserves that ordering. Each slope error is below $2^{-q}$, so integration over a total length of one adds less than $2^{-q}$ to the starting error. Convexity puts every chord above $F$, and the endpoint Lipschitz inequalities bound the chord error by $Mh$. The difference of the two represented functions is affine on each common interval, so its extrema occur at endpoint limits and stored points.\end{proof}
+
+Starting from $U_T=g$, construct $F_t=T_tU_{t+1}$ and an encoding satisfying $0\leq U_t-F_t\leq d_t$. With $b_T=0$ and $b_t=d_t+\beta b_{t+1}$, set $L_t=U_t-b_t$. Backward comparison proves \eqref{eq:witness}. In the primary economy a slope bound propagates as $M_t\leq1+\beta(17/20)M_{t+1}$ before the explicit encoding increment. Thus finite mesh and precision choices exist for every positive prescribed defect. The implementation checks the actual defects rather than relying only on a priori Lipschitz bounds.
+
+A sufficient inner action class supplies an initial deployment. Choose $e_T=0$ and $e_t=\eta_t+\beta e_{t+1}$, with $e_t\leq\varepsilon$, and define
+\begin{equation}\label{eq:inner}
+ \cA_t(x)=\{a:U_t(x)-T_t^aU_{t+1}(x)\leq\eta_t\}.
+\end{equation}
+It is nonempty whenever $d_t\leq\eta_t$. Every selector in this class satisfies $U_t-J_t^\pi\leq e_t$ by induction and hence satisfies \eqref{eq:target}. Minimizing the implementation recursion over $\cA_t$ solves the cost problem \emph{inside this sufficient class}. It need not solve the unrestricted feasible problem.
+
+The implementation cost of a deployment is always evaluated using that deployment's transition law. A pointwise choice minimizing $k_t(x,a)$ inside $\cA_t(x)$ discards the term $\beta P_t^a C_{t+1}$; the dynamic choice retains it. Their comparison is meaningful only when both use the same admissible actions and each policy's own occupancy. Section~\ref{sec:sensitivity} imposes both requirements.
+
+For upper-bound enrichment, a backward generator carries an actually constructed continuation $(J_{t+1},C_{t+1})$, admits only actions satisfying $V_t-T_t^aJ_{t+1}\leq\varepsilon$, and selects among them using an operating-priority score. This generator uses exact $V$ only in the reference study. Its penalties $0,1,4,16$ are computational search parameters, not estimated economic prices. An empty admissible set is a failed candidate. The selected full policy is reevaluated before use, and no optimality claim is attached to the generator itself.
+
+\section{Deterministic outer bounds and optimality certificates}\label{sec:outer}
+Define the witness-based necessary set and its cost recursion by
+\begin{align}
+ \cN_t(L,U;x)&=\{a:L_t(x)-T_t^aU_{t+1}(x)\leq\varepsilon\},\label{eq:necessary}\\
+ B_T^{L,U}&=0,\qquad
+ B_t^{L,U}(x)=\min_{a\in\cN_t(L,U;x)}
+ \{k_t(x,a)+\beta P_t^aB_{t+1}^{L,U}(x)\}.\label{eq:outer}
+\end{align}
+The set is nonempty because an operating-optimal action belongs to it. Unlike \eqref{eq:inner}, this is an outer restriction: every feasible deterministic action must pass the test, but passing the test does not ensure that accumulated future loss remains feasible.
+
+\begin{theorem}[Safe deterministic outer bound]\label{thm:outer}
+Under \eqref{eq:witness}, every feasible deterministic Markov policy satisfies $B_t^{L,U}(x)\leq C_t^\pi(x)$ at every restart. The same inequality holds for a deterministic history-dependent policy satisfying \eqref{eq:history}, with $x=x_t$ and its history-conditioned cost. If a separately feasible Markov policy $\widehat\pi$ has
+\begin{equation}\label{eq:equality}
+ \int B_0^{L,U}\,d\nu=\int C_0^{\widehat\pi}\,d\nu,
+\end{equation}
+it attains $K_D(\nu,\varepsilon)$ and also the infimum over the stated deterministic history-dependent class. Equality of the complete functions $B_t^{L,U}=C_t^{\widehat\pi}$ additionally establishes cost optimality from every restart. Integrated equality alone does not establish that stronger assertion.
+\end{theorem}
+\begin{proof}
+At a feasible deterministic decision history with current action $a$, operating comparison gives
+\[
+ L_t(x)-T_t^aU_{t+1}(x)
+ \leq V_t(x)-T_t^aV_{t+1}(x)
+ \leq V_t(x)-J_t^\pi(h_t)\leq\varepsilon.
+\]
+The middle inequality uses optimal continuation as an upper bound on the policy's actual continuation after each successor history. Hence $a\in\cN_t$. Assuming the cost inequality at the next date, positivity of $P_t^a$ gives
+\[
+ B_t^{L,U}(x)\leq k_t(x,a)+\beta P_t^aB_{t+1}^{L,U}(x)
+ \leq C_t^\pi(h_t).
+\]
+Terminal costs are zero, so induction proves the assertion. Integration gives a lower bound on every feasible initial objective. A feasible policy attaining it is optimal. For pointwise equality the same argument applies separately at every restart. An integral can ignore other dates, zero-mass points, and states not cost-relevant under $\nu$, so no converse pointwise implication is available.\end{proof}
+
+The theorem uses exact comparisons, not a floating tolerance for equality. More generally, a verified interval of width at most $\tau$ certifies $\tau$-optimality for its named deterministic objective. This is a valid stopping criterion whenever attained; it is not a claim that every available refinement must attain it.
+
+\begin{proposition}[Refining witnesses]\label{prop:nested}
+If $L^n\uparrow V$ and $U^n\downarrow V$, then the sets $\cN(L^n,U^n)$ decrease, contain $\cN(V,V)$, and the associated bounds increase to $B^{V,V}$ pointwise. For a finite action set, a uniform strict margin separating excluded actions from the threshold ensures equality of the necessary sets once the witness errors are smaller than that margin. Neither statement identifies $B^{V,V}$ with the constrained optimum unless a feasible upper policy closes the interval.
+\end{proposition}
+\begin{proof}
+The defining left-hand side increases with $n$. An action whose exact gap exceeds $\varepsilon$ is eventually excluded; an action whose exact gap is at most $\varepsilon$ is always included. A finite action set therefore stabilizes pointwise to the exact necessary set. By backward induction, the bounded nonnegative cost recursions increase; monotone convergence passes through each expectation and a minimum over finitely many actions. The uniform-margin assertion follows from $|(V-T^aV)-(L^n-T^aU^n)|\leq\norm{V-L^n}_\infty+\beta\norm{U^n-V}_\infty$. The exact necessary test still allows policies whose losses accumulate, which explains the final qualification.\end{proof}
+
+In the experiment we compute both $B^{L,U}$ and $B^{V,V}$. The former demonstrates that safe deployment bounds do not require an exact operating solution. The latter is a fully charged same-object deterministic reference bound. Their difference is measured, not suppressed. When the exact-set minimizing selector itself is infeasible, it remains a valid lower-bound witness but is not a deployable policy.
+
+\section{Randomization and direct constrained references}\label{sec:frontier}
+Actionwise screening cannot be applied to randomized policies. A mixture can satisfy the operating constraint while assigning positive probability to an action that fails the deterministic necessary test. We therefore retain the unrestricted support/restart bounds for the randomized class and introduce a separate constrained reference calculation.
+
+\subsection{A continuation-frontier recursion}
+For finite shocks $j=1,\ldots,m$, let $\cK_t(x)$ be the achievable pairs of conditional operating value and implementation cost from a decision history ending at $(t,x)$, with all future decision histories satisfying \eqref{eq:history}. The dependence on the installed rule is suppressed. Put $\cK_T(x)=\{(g(x),0)\}$. Form
+\begin{equation}\label{eq:frontier}
+ \begin{aligned}
+ \cK_t(x)&=\operatorname{co}\!\left(\bigcup_{a\in A}\mathcal S_t^a(x)\right)
+       \cap\{(j,c):j\geq V_t(x)-\varepsilon\},\\
+ \mathcal S_t^a(x)&=\left\{\left(r_t(x,a)+\beta\sum_jp_jj_j,
+       k_t(x,a)+\beta\sum_jp_jc_j\right):\right.\\[-2pt]
+ &\hspace{32mm}\left.(j_j,c_j)\in\cK_{t+1}(f_{aj}(x)),\quad j=1,\ldots,m\right\}.
+ \end{aligned}
+\end{equation}
+Only the efficient lower frontier is needed: higher cost at the same or lower operating value is dominated. At a fixed restart, the minimum second coordinate of \eqref{eq:frontier} is the exact history-conditioned randomized implementation optimum.
+
+\begin{theorem}[Finite constrained frontier]\label{thm:frontier}
+For a finite horizon, finite actions, and finite shocks, recursion \eqref{eq:frontier} is exact for the history-conditioned class. Rational primitives and rational state evaluations give finite rational polygonal frontiers. Primal convex combinations and supporting lines certify every retained frontier edge and its minimum cost. The recursion need not compute the randomized Markov optimum when different histories reaching the same physical state may choose different continuations.
+\end{theorem}
+\begin{proof}
+At the terminal date the assertion is immediate. Conditional on a current action and next shock, the policy must choose a continuation pair in the corresponding successor set. The expectation of these pairs is exactly the action-specific set in braces. Mixing current actions produces its convex hull. The half-space enforces current feasibility; successor sets already enforce every subsequent decision-history restriction. Conversely, choose a convex representation, implement its current lottery, and use the selected feasible successor continuation for each realized action and shock. This constructs every pair in the recursion. Finite Minkowski sums, finite unions, convex hulls, and half-space intersections preserve rational polytopes. Supporting lines bound all candidate vertices and primal combinations attain the retained vertices; adjacent supporting slopes certify entire edges. The construction remembers which continuation was assigned to each history and imposes no common Markov continuation across distinct histories.\end{proof}
+
+The full tree can grow exponentially with horizon. Memoization of identical $(t,x)$ frontier sets reduces repeated construction, but it does not impose equality of the selected continuation points at separate visits. For continuous shocks, additional validated set approximation would be required. We do not infer a high-dimensional complexity rate from a finite tree.
+
+The reference study solves 70 fixed-restart horizon-four problems: the 14 primary configurations at $x=0,1/4,1/2,3/4,1$. These objectives are Dirac initial distributions, not the primary uniform distribution. In 24 cases the randomized history-conditioned value is strictly below the deterministic lower bound at the same restart. Each full frontier has a separately implemented rational primal/dual verification. The experiment is a direct constrained comparator for its exact stated policy class and initial state, not a numerical quadrature of $K_R$ in the primary study.
+
+\subsection{A solved randomized Markov continuum example}\label{sec:two}
+A two-period version yields an exact comparison under the \emph{same uniform initial objective} for both policy classes. Keep all maintenance primitives and install defer at both dates. At the last decision date defer maximizes operating value and has zero implementation cost. Thus it dominates every alternative in both coordinates. Let $q_0=T_0^0V_1$ and $\Delta=V_0-q_0$. For each of $\varepsilon=1/100,1/20$, exact partition evaluation gives $\Delta(x)>\varepsilon$ throughout $[0,1]$.
+
+Every feasible deterministic policy must then change its first action at every state, so $K_D=\int_0^1(1+x)dx=3/2$. For a randomized policy, all changed actions have the same implementation cost; the operating-maximizing changed action produces the largest gain per intervention. The optimal probability of changing is consequently $1-\varepsilon/\Delta(x)$, and
+\begin{equation}\label{eq:two}
+ K_R=\int_0^1(1+x)\left(1-\frac{\varepsilon}{\Delta(x)}\right)dx<\frac32.
+\end{equation}
+This is a feasible Markov policy at every initial state; its last-date continuation is defer and is feasible at every restart. Any mixture with a smaller change probability would lose more than $\varepsilon$ operating value at that state. Equation~\eqref{eq:two} therefore solves the randomized Markov problem, not merely a local necessary relaxation.
+
+On an affine piece $\Delta(x)=ax+b$, the integral of $(1+x)/(ax+b)$ equals $(r-l)/a+(a-b)a^{-2}\log((ar+b)/(al+b))$ when $a\ne0$, with the evident constant-denominator formula otherwise. Exact rational logarithm enclosures yield costs approximately $1.3720075152810114$ and $0.8600375764050574$. The enclosure widths are below $10^{-20}$. At $x=0$, $\Delta=2323/4000$ and the optimal replace probability at tolerance $1/100$ is $2283/2323$. This counterexample rules out deterministic sufficiency for the model. It supplements rather than replaces the unchanged primary horizons.
+
+\section{Randomized lower bounds and adaptive local certificates}\label{sec:lp}
+For a global nonnegative support price $\lambda$, let $W_T^\lambda=\lambda g$ and
+\begin{equation}\label{eq:support}
+ W_t^\lambda=\max_a\{\lambda r_t(\cdot,a)-k_t(\cdot,a)+\beta P_t^aW_{t+1}^\lambda\}.
+\end{equation}
+Every feasible randomized or history-conditioned policy satisfies $W_t^\lambda\geq\lambda J_t^\pi-C_t^\pi$, hence
+\begin{equation}\label{eq:floor}
+ F_t(x)=\max\{0,\sup_{\lambda\in\Lambda}[\lambda(L_t(x)-\varepsilon)-W_t^\lambda(x)]\}\leq C_t^\pi(h_t).
+\end{equation}
+A finite $\Lambda$ gives a valid floor without claiming that its supremum exhausts global duality.
+
+Let $R_{t+1}$ be a cost lower bound valid after every successor decision history. Set $q_a=T_t^aU_{t+1}(x)$, $z_a=k_t(x,a)+\beta P_t^aR_{t+1}(x)$, and $b=L_t(x)-\varepsilon$. Feasibility implies $\sum_a p_aq_a\geq b$. The continuous local relaxation is
+\begin{equation}\label{eq:lp}
+ \Phi_t(R_{t+1})(x)=\min_{p\geq0,\ \sum p_a=1,\ \sum p_aq_a\geq b}\sum_ap_az_a
+ =\sup_{\mu\geq0}\min_a\{z_a+\mu(b-q_a)\}.
+\end{equation}
+The support price $\lambda$ in \eqref{eq:support} prices a complete unrestricted continuation. The local multiplier $\mu$ prices only the necessary one-step inequality in \eqref{eq:lp}. They are not interchangeable.
+
+\begin{proposition}[Local restart propagation]\label{prop:restart}
+If $F_t$ and $R_{t+1}$ are valid cost lower bounds for the history-conditioned feasible class, then $R_t=\max\{F_t,\Phi_t(R_{t+1})\}$ is also valid. For three actions, the pointwise primal optimum is attained either by a feasible pure action or by a mixture of two actions straddling $b$. The dual optimum is attained at zero or at a nonnegative intersection of two action lines, with ties and equal slopes handled explicitly.
+\end{proposition}
+\begin{proof}
+The actual action probabilities satisfy the necessary operating inequality, and their actual continuation costs dominate $R_{t+1}$. Their cost therefore dominates the minimum in \eqref{eq:lp}. Taking the maximum with another valid lower bound is safe. The simplex intersected with one half-space has vertices of the stated type. The dual is a concave piecewise-linear function on $[0,\infty)$; feasibility and bounded primal cost imply a finite attained value, attained at an intersection or on a constant segment, including zero when applicable. Direct enumeration of these candidates supplies the primal and dual equality.\end{proof}
+
+On an interval where $q_a,z_a,b$ are affine, a two-action primal cost is
+\begin{equation}\label{eq:rational}
+ P_{ij}(x)=\frac{(q_j-b)z_i+(b-q_i)z_j}{q_j-q_i},\quad q_i\leq b\leq q_j.
+\end{equation}
+Its numerator is quadratic and its denominator affine. A fixed dual price gives $D_\mu(x)=\min_a\{z_a+\mu(b-q_a)\}$, a piecewise-affine lower bound. We first split at all input knots, eligibility crossings, and denominator sign changes. A cell is accepted only if the primal is feasible throughout it and $P_{ij}-D_\mu\leq\rho/2$ throughout it. Multiplication by the nonnegative denominator reduces each action-line comparison to a quadratic sign test. A quadratic's maximum on a closed interval occurs at an endpoint or its interior stationary point. Zero denominators at cell endpoints are handled by endpoint limits; stored isolated knots are solved separately by the exact point LP.
+
+\begin{theorem}[Certified local approximation]\label{thm:local}
+Suppose the preceding cell tests cover the domain. Rounding every coefficient and isolated point value of the dual lower function downward to $q$ dyadic bits decreases it by at most $2^{1-q}$ on $[0,1]$. Let $e=\rho/2+2^{1-q}$ and assume $2^{1-q}\leq\rho/2$. Backward propagation with this lower encoding, and the same exact floor $F_t$, produces $\widehat R_t\leq R_t$ with
+\begin{equation}\label{eq:localerror}
+ 0\leq R_t-\widehat R_t\leq e\sum_{s=0}^{T-t-1}\beta^s.
+\end{equation}
+On finite affine partitions with a strictly feasible action margin on each compact cell, refinement terminates for every positive $\rho$. At degeneracies, finite termination is asserted only when the rational one-sided extension and cell tests admit a finite cover. A refinement cap causes an explicit failure, never a passing certificate.
+\end{theorem}
+\begin{proof}
+For $x\in[0,1]$, decreasing slope and intercept by less than $2^{-q}$ decreases an affine value by less than $2^{1-q}$. Stored point values have the same direction. The cell test bounds the distance to the exact local primal optimum before rounding. Changing a continuation cost by at most $d$ changes every action cost by at most $\beta d$, so minimization over the unchanged feasible simplex is monotone and $\beta$-nonexpansive. The maximum with the same floor is nonexpansive. Backward induction gives \eqref{eq:localerror}. Under a strict feasibility margin, feasible primal vertices and optimal dual choices have bounded local moduli on a finite subdivision; the midpoint primal/dual gap then tends uniformly to zero as cell widths shrink. Compactness supplies a finite cover. At a boundary degeneracy such a modulus need not follow from strict interior feasibility alone, which is why the stated one-sided condition and explicit stopping test are required.\end{proof}
+
+The initial unquantized reconstruction encountered rational serialization growth. That unsuccessful run is retained. The implemented experiment uses $q=40$ and $\rho=1/100,1/200,1/400$, with directed 64-bit dyadic integration enclosures. It solves the two horizon-four neural31001 tolerance cases under constructed witnesses and exact $V$, for 12 complete certificates. The floor is fixed at zero throughout this diagnostic. The experiment measures approximation to this continuous local relaxation, not an additive decomposition of a different nonzero-support restart bound and not a proof of global strong duality.
+
+\section{Numerical evidence and computational accounting}\label{sec:results}
+All new results are generated from executable sources and exact or outward-directed proof objects. The earlier R35/R36 protocol assertions are not used as observations. The primary model, its 42 installed configurations, and its operating tolerances are unchanged. The computation report specifies commands, source hashes, execution records, arithmetic libraries, and the complete unsuccessful candidate ledger.
+
+\subsection{Primary deterministic optima and residual intervals}
+\input{revisions/2026-09-24-r38/paper/generated/primary_summary.tex}
+The exact necessary-set lower recursion and independently feasible deployments agree in 24 uniform-initial objectives, including 12 strictly positive costs. Ten positive-cost equalities occur at horizon four and two at horizon eight. The horizon-eight neural31003 case with $\varepsilon=1/20$ has integrated equality without equality of all cost-to-go functions. The other 23 exact cases have complete function equality. This distinction is tested, not inferred from rounded table entries.
+
+All horizon-four necessary selectors are feasible, and their full cost functions match those of the selected feasible deployment. This supplies a certificate-level explanation for all 14 closures: in these configurations the outer relaxation itself has a feasible minimizing selector. It is not a theorem that every horizon-four maintenance specification has this property. At longer horizons the necessary selector violates the operating target in 19 cases, by as much as approximately 0.07738. Eighteen of those retain a positive initial cost interval; the remaining one has the integrated-only equality just described. Accumulated operating loss, not failure of exact arithmetic, is the diagnosed obstruction to treating those outer selectors as deployments.
+
+Every primary deployment passes the all-state operating constraint and preserves the installed operating value. Both candidate failures and all 18 residual deterministic intervals are printed in the supplement or recorded exactly in the result ledger. The lower and upper fractions, policy and lower-function hashes, frozen-input hash, policy class, objective, and exactness scope are supplied for each of the 42 cases. Decimal displays do not determine equality.
+
+\subsection{Controlled gap diagnostics}\label{sec:gaps}
+\input{revisions/2026-09-24-r38/paper/generated/gap_summary.tex}
+Three support floors are compared under identical installed rules: constructed $L$ with eight global prices, exact $V$ with the same eight prices, and exact $V$ with fifteen prices. The eight prices are $0,1,4,16,64,256,1024,4096$; refinement adds $1/2,2,8,32,128,512,2048$. This requires 315 fresh unrestricted support solves across 21 horizon--incumbent pairs; both operating tolerances reuse the same support functions. Pointwise monotonicity of both refinements is checked.
+
+The witness substitution improves 30 support floors, with maximum integrated gain below $8.6\times10^{-5}$. Global price refinement improves 28 floors, with maximum gain approximately 0.3160. In the separate deterministic ladder, exact $V$ raises 30 safe outer bounds, with maximum gain below $1.2\times10^{-5}$. Upper-portfolio enrichment lowers 30 inherited deployment costs, by as much as approximately 0.9399. These measurements show why exact-value availability is not the main numerical source of the residual deterministic gaps on this cohort.
+
+These gains are not summed across policy classes. Global support floors are valid for randomized history-conditioned policies; the necessary-action floor is deterministic. The local LP diagnostic has zero floor and uses only the two declared horizon-four neural31001 cases. For the 18 unresolved primary cases, the exact deterministic interval, necessary-selector violation, witness gain, support refinement, and upper-search improvement are reported as separate coordinates. We do not claim that the structural gap of the continuous global randomized problem has been numerically isolated.
+
+\input{revisions/2026-09-24-r38/paper/generated/local_summary.tex}
+Tightening the local tolerance narrows a certified interval around the continuous local relaxation. The certified comparison with the eight-price local recursion is computed on identical witness inputs and a zero support floor. The theorem explains the narrowing without assigning it to global strong duality.
+
+\subsection{Economic sensitivities and endogenous exposure}\label{sec:sensitivity}
+The sensitivity study uses horizon eight, three natural installed rules, two separately declared tolerances $0.05$ and $0.20$, and eleven one-at-a-time primitive specifications. The baseline condition rule replaces below $0.3$ and maintains below $0.6$. The preventive rule replaces below $0.15$ and maintains below $0.75$. The calendar rule intervenes every fourth date, replacing below $0.2$ and maintaining otherwise, and defers at other dates. These are normalized scenarios, not observations sampled from firms.
+
+The primitive perturbations change discounting to $0.90$ or $0.99$, the revision weight to $1$ or $1+2x$, the initial density to $2x$ or $2(1-x)$, maintenance cost to $0.10$ or $0.20$, or defer persistence to $0.65$ or $0.85$. Only the named primitive changes in each scenario. Both dynamic and pointwise revisions use the same sufficient action sets; their costs are evaluated under their own transitions and the same scenario-specific initial density.
+\input{revisions/2026-09-24-r38/paper/generated/sensitivity_summary.tex}
+All 66 configurations pass their operating checks. There are 22 strictly positive implementation savings and 44 exact zero effects; the maximum saving is approximately 0.08701. The complete scenario table retains the zero effects. The exercise demonstrates sensitivity of intervention exposure across the declared economic rules, not a prevalence estimate or a dollar welfare calibration. Computational penalties used elsewhere are not substituted for these economic revision weights.
+
+\subsection{A nonlinear two-state economy}\label{sec:nonlinear}
+Condition is now $(x,y)\in[0,1]^2$, and actions defer, repair the first component, repair the second component, or overhaul both components. Rewards are $(x+y)/2-c_a$, with costs $(0,0.18,0.18,0.32)$, terminal payoff $(x+y)/4$, and revision weight $1+(x+y)/2$. Discounting and shock probabilities remain $0.95$ and $(0.6,0.4)$. Each coordinate transition has the form $(s z+bxy+c+n\xi)/100$, where $\xi\in\{0,1\}$ and $z$ is that coordinate. The action-specific tuples are
+\[
+\begin{array}{c|cc}
+ &x\text{-coordinate}&y\text{-coordinate}\\\hline
+0&(65,5,0,3)&(70,3,0,2)\\
+1&(15,3,70,2)&(70,3,0,2)\\
+2&(65,5,0,3)&(15,4,70,2)\\
+3&(10,2,80,2)&(10,2,80,2).
+\end{array}
+\]
+These maps are monotone on the square and preserve it, but bilinearity destroys the one-dimensional affine closure used by the primary solver.
+
+Uniform meshes have $N=16,32,64,128,256$ cells per coordinate, and horizons are $4,8,16,32$. Box endpoint arithmetic and backward floors/ceilings are performed with signed integers at scale $2^{34}$. The code encloses each full transition image, enumerates every intersected successor box, and checks an intermediate absolute-value bound below $2^{62}$. The grid policy is constant on each assigned half-open box; closed transition enclosures cover ties conservatively. Details, including separately evaluated fixed policies, appear in the supplement.
+
+The operating tolerance is $1/2$ in this separate economy. It does not replace $1/100$ or $1/20$ in the primary study. Two restart-based generators use penalties zero and four. A classical bilinear-interpolation grid solver constructs a scalarization portfolio at prices $4,16,64,256$; its floating-point output is only a proposal and receives the same directed whole-box evaluation. All witness, candidate, and verification work is charged.
+\input{revisions/2026-09-24-r38/paper/generated/multistate_summary.tex}
+There are 26 certified restart-generator configurations among 40 and 15 certified classical portfolios among 20. A fresh R38 audit of the midpoint-compiled installed-rule box policy fails in all 16 pilot mesh--horizon configurations through mesh 128. That compiled-rule pilot is not a reconstruction of the unsupported R35/R36 zero-penalty pilot claim. The two algorithms' candidate counts differ, so their success counts are not a paired win rate. The full ledger reports each matched mesh, horizon, tolerance, runtime, cost enclosure, witness width, fallback count, and failure. These results demonstrate executed nonlinear enclosure construction, not uniform dominance over the classical comparator.
+
+\subsection{Time, representation, and verification}
+\input{revisions/2026-09-24-r38/paper/generated/work_summary.tex}
+Exact operating solves are shared only across configurations with the same horizon. Frozen installed rules are amortized historical inputs; no neural training is described as newly executed. New exact operating values, outer recursions, feasible candidate searches, support refinements, frontier references, adaptive LP construction, nonlinear grids, and their verification are charged separately. This distinction avoids comparing warm certificate work with cold neural training.
+
+A SymPy Rational verifier imports none of the Fraction/PW construction, envelope, composition, or optimizer routines. It rebuilds partitions using actual primitive transition pullbacks, checks necessary-set threshold crossings, open-cell endpoint limits, isolated values, Bellman equalities and inequalities, all-restart feasibility, terminal conditions, and exact initial integrals. All 42 primary objects pass. Twenty declared corruption categories are rejected, including transitions, discounting, shock probabilities, action labels, parser failures, objective scope, point values, and false exactness claims.
+
+A second SymPy procedure independently checks the 70 fixed-restart frontier objects using explicit primitive candidate pairs, feasible convex combinations, and supporting inequalities. It shares the independent parser and primitive definitions with the primary verifier, not the constructor's arithmetic kernel. Its coverage is not extended to the nonlinear arrays or the two-period logarithm calculation. The local cell checker and the nonlinear reevaluator are useful but share their respective construction arithmetic; we do not call those implementations independent. Residual common-mode risks include a common interpretation of the model and errors in manually duplicated primitive specifications. Canonical hashes identify the checked objects, not the truth of an unchecked mathematical assumption.
+
+\section{Stopped economic control and a killed-operator bridge}\label{sec:stopped}
+The original consumption--portfolio program is retained with its original target. On $(u,x)\in(1.2,2.8)\times(0.5,2)$ and horizon one,
+\begin{align}
+ du_s&=\theta_sds+0.05\,dZ_s^u,\\
+ dx_s&=[(0.02+0.06p_s)x_s-c_s]ds+0.2p_sx_s\,dZ_s^x,
+ \qquad d\langle Z^u,Z^x\rangle_s=-0.25\,ds.
+\end{align}
+Controls range over $[0.05,0.8]\times[-0.2,0.2]\times[-0.5,0.8]$. Running utility is $c^{1-u}/(1-u)-k\theta^2/2$, terminal payoff is $G=-0.02(u-2)^2+0.1\log x$, and exit settlement is $G-8(1-s)$, with discount rate $0.04$. The full current-state target at $k=2$ remains $\sup_{t,u,x}(V_2-J_2^\pi)\leq0.01$.
+
+The connection is operator-theoretic rather than a claim that maintenance certificates solve this diffusion. Let $\tau$ be exit, $\Delta$ a time step, and $a$ a control held over the step. Define the killed Bellman operator
+\begin{align}\label{eq:killed}
+ \mathsf T_\Delta^a w(z)=\E_z^a\bigg[
+ &\int_0^{\tau\wedge\Delta}e^{-rs}\ell(Z_s,a)ds
+ +e^{-r\tau}g(t+\tau,Z_\tau)\ind\{\tau\leq\Delta\}\\[-1mm]
+ &+e^{-r\Delta}w(Z_\Delta)\ind\{\tau>\Delta\}\bigg].\nonumber
+\end{align}
+Its continuation measure is positive and has mass at most $e^{-r\Delta}$. Bellman comparison, witness propagation, and the necessary-action proof therefore extend verbatim to this subprobability kernel, with the continuation mass replacing $\beta$ and exit settlements included in the one-step reward. A verified operator error $\xi_t$ enters the backward witness budget additively, and thus contributes at most the corresponding discounted sum of $\xi_t$ to the operating certificate.
+
+This statement is useful only with valid killed-transition and action-coverage enclosures. A finite action grid alone cannot supply a lower bound for the original continuous-control revision optimum: omitted actions may improve it. Uniform action interpolation, time discretization, boundary settlement, and diffusion approximation errors must all be covered. Markov-chain approximation provides one route to such an additional analysis \citep{KushnerDupuis2001}; it is not supplied by the maintenance experiment.
+
+The retained scalar boundary result remains intact. At restart $(0,61/50,5/4)$ with $k=2$, $c=3/4$, $p=0$, and constant $\theta\in[-1/5,1/5]$, the archived derivative enclosures are positive on both halves of the interval and identify $\theta=1/5$ as the unique maximizer in that scalar class. Its proof and payoff enclosure are reproduced in the supplementary preservation material. The inherited full-domain bound $7.181834580823298$ is not converted into a $0.01$ certificate. The new killed-operator result explains precisely which parts of the certificate method transfer and which additional validated computations remain necessary for the unchanged diffusion objective.
+
+\section{Conclusion}
+Operating feasibility at every restart and implementation optimality under an initial distribution can be certified separately and then combined. Safe necessary-action restrictions convert operating witnesses into deterministic cost lower bounds without requiring exact operating values. On the unchanged primary cohort, matching feasible deployments establish 24 exact deterministic initial objectives, including 12 positive implementation costs. The separate randomized references show why a policy-class qualifier is mathematically indispensable, rather than a presentational qualification.
+
+The adaptive local LP supplies a controlled approximation to a continuous restart relaxation. Its error bound, the global support-price study, and the remaining deterministic intervals identify different numerical tasks rather than hiding them in a single gap. Nonlinear whole-box execution and the designed economic sensitivities extend the evidence beyond the exact affine reference model. The publication object includes the proofs, source, unsuccessful computations, and actual verification records needed to review these claims. The original stopped-control objective and all earlier technical material are preserved with an explicit map to their present location.
+
+\input{revisions/2026-09-24-r38/paper/references}
+\end{document}
