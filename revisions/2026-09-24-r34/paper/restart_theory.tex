@@ -1,0 +1,62 @@
+\section{Propagating the all-restart restriction}\label{sec:restart}
+The support bound in Section~\ref{sec:global} treats each restart separately. Its optimizing comparison policy need not respect the operating restriction at subsequent restarts. Yet an implementable policy in $\mathcal F_\varepsilon$ must respect all of them. This section uses that additional restriction to strengthen the cost certificate without solving another unrestricted support problem or changing the deployed policy.
+
+Let $\mathcal M$ be a finite set of nonnegative rational numbers containing zero. Write $q_t^{U,a}=T^aU_{t+1}$ and retain the two-sided witnesses $L,U$ and support lower bound $B$. Starting from $A_T=0$, calculate backwards
+\begin{align}
+ z_t^a(x)&=k_t(x,a)+\beta P^aA_{t+1}(x),\label{eq:restart-z}\\
+ m_t^\mu(x)&=\min_a\{z_t^a(x)+\mu[L_t(x)-\varepsilon-q_t^{U,a}(x)]\},\label{eq:restart-m}\\
+ A_t(x)&=\max\{0,B_t(x),m_t^\mu(x):\mu\in\mathcal M\}.\label{eq:restart-a}
+\end{align}
+Every action remains in the minimization. In particular, we do not impose $q_t^{U,a}\ge L_t-\varepsilon$ separately on the actions available to a randomized controller. That actionwise restriction could exclude a feasible mixture and invalidate a cost lower bound.
+
+\begin{theorem}[Restart-propagated global cost certificate]\label{thm:restart}
+In the finite-horizon maintenance model, let $L\le V\le U$ and $B$ be the verified witnesses of Section~\ref{sec:global}. Equations~\eqref{eq:restart-z}--\eqref{eq:restart-a} have finite rational piecewise-affine representations. For every all-restart-feasible Markov policy, including a randomized Markov policy,
+\begin{equation}\label{eq:restart-order}
+ 0\le B_t\le A_t\le C_t^\pi\quad\text{at every state and date}.
+\end{equation}
+The statement also holds for history-dependent policies whose conditional operating continuation is feasible at every history from which it is evaluated. If $\widehat\pi$ is a separately certified feasible policy, then
+\begin{equation}\label{eq:restart-gap}
+ \int A_0\,d\nu\le C^*_{\nu,\varepsilon}\le\int C_0^{\widehat\pi}\,d\nu,
+ \qquad
+ \int C_0^{\widehat\pi}\,d\nu-C^*_{\nu,\varepsilon}
+ \le\int(C_0^{\widehat\pi}-A_0)\,d\nu.
+\end{equation}
+Relative to \eqref{eq:global-gap}, the certified excess-cost bound is reduced by exactly $\int(A_0-B_0)\,d\nu\ge0$, with no change in the upper deployment. Enlarging $\mathcal M$ cannot decrease $A$ when the other inputs are fixed.
+\end{theorem}
+\begin{proof}
+At the terminal date implementation cost is zero. Suppose the stated lower bound has been proved at date $t+1$. Conditional on the current state, let $\alpha_a$ be the action probabilities of a feasible policy. Its continuation cost satisfies
+\begin{equation}\label{eq:restart-costproof}
+ C_t^\pi\ge\sum_a\alpha_a\{k_t^a+\beta P^aA_{t+1}\}
+              =\sum_a\alpha_a z_t^a.
+\end{equation}
+Its operating continuation is at most the optimal continuation and hence at most $U_{t+1}$. Feasibility at the current restart and the lower operating witness give
+\begin{equation}\label{eq:restart-necessary}
+ L_t-\varepsilon\le V_t-\varepsilon\le J_t^\pi
+                    \le\sum_a\alpha_a q_t^{U,a}.
+\end{equation}
+For any $\mu\ge0$, the minimum in \eqref{eq:restart-m} is bounded by the same expression averaged with weights $\alpha$. Equations~\eqref{eq:restart-costproof} and \eqref{eq:restart-necessary} imply
+\[
+ m_t^\mu\le\sum_a\alpha_a z_t^a+
+       \mu\left(L_t-\varepsilon-\sum_a\alpha_aq_t^{U,a}\right)
+       \le\sum_a\alpha_a z_t^a\le C_t^\pi.
+\]
+The already certified $B_t$ and zero are also lower bounds. Their maximum proves the induction. The same conditional argument applies after every history if its future continuations satisfy the restart restriction. Integrating and comparing with a feasible deployment proves \eqref{eq:restart-gap} and the exact tightening identity.
+
+Finite positive affine pullbacks, addition, and maxima or minima of finitely many rational affine pieces preserve finite piecewise-affine representability, including exceptional knot values. They construct every displayed object. Finally, induction shows monotonicity in $\mathcal M$: a larger next-date lower bound raises every $z_t^a$; a larger multiplier portfolio adds candidates to the outer maximum.\end{proof}
+
+The distinction concerning histories is material. Feasibility only in expectation at time zero does not require each subsequently realized history to meet the same operating tolerance. Equation~\eqref{eq:restart-costproof} cannot in general use future all-restart lower bounds for such a history. The theorem therefore does not apply the stronger propagated bound to that different constraint. The Markov all-state problem \eqref{eq:regret}, which is the computational objective of this paper, satisfies precisely the required continuation restriction. The unpropagated support inequality remains valid for any individual feasible restart without this extra continuation premise.
+
+The term $\mu=0$ already transmits future mandatory intervention costs through the transition law. Positive $\mu$ uses the additional necessary operating inequality at the current restart. The resulting construction is a local Lagrangian relaxation coupled backwards across dates. Weak duality and backward comparison are classical; the methodological contribution here is the complete construction and independently checkable composition with two-sided operating witnesses and class-free support bounds. Neither strong duality nor sharpness of the finite multiplier portfolio is a premise. A positive residual gap is not a proof of optimality.
+
+\subsection{Construction work and proof objects}\label{sec:restart-work}
+An algorithm evaluates \eqref{eq:restart-z}, constructs the action minima for each local multiplier, and forms the outer maximum. No new unrestricted $W^\lambda$ solve, optimal operating surface, or externally supplied feasible-policy value is needed. The witnesses and feasible deployment must already have been constructed and charged as in Section~\ref{sec:global}; their costs do not disappear when the propagation is added.
+
+For clarity, let $n_a$ and $n_p$ be the numbers of actions and shock branches, $m=|\mathcal M|$, and $S_t$ the number of cells in the common input overlay at date $t$, including pulled-back knots of $A_{t+1}$ and $U_{t+1}$ and knots of the installed policy, $L_t$, and $B_t$. Each of the $m$ action minima has at most $O(n_a^2S_t)$ cells before simplification. Overlaying those minima and comparing their $m+2$ alternatives has at most $O((m+2)^2m n_a^2S_t)$ cells before simplification. These counts yield, for a deliberately elementary implementation, the conservative total bit-work bound
+\begin{equation}\label{eq:restart-work}
+ O\!\left(\mathsf A(b)\sum_t
+     \{n_an_p+m n_a^2+(m+2)^2m n_a^2\}^2 S_t^2\right)
+       +C_{\rm encode}+C_{\rm audit},
+\end{equation}
+where $b$ bounds all intermediate rational bit lengths and $\mathsf A(b)$ bounds their arithmetic cost. Sorting and repeated exact evaluations are included by the squared expression. This bound is output-sensitive: $S_t$ and $b$ include objects produced by the backward recursion, not small constants assumed in advance. A finite proof object does not imply dimension-independent complexity or a faster operating-value solve.
+
+To verify the object, the checker reconstructs $z$ and each action expression, checks that the supplied $m_t^\mu$ lies below every action expression and equals its supplied minimizing selector, and checks that $A_t$ lies above every outer term and equals its supplied source selector. It additionally checks $B_t\le A_t\le C_t^{\widehat\pi}$, the terminal value, all hashes linking the inputs, and the reported integrals. These are affine endpoint-limit and isolated-point comparisons, not calls to the optimizing envelope constructor. The selector may choose different bound sources at different states; it is a proof selector, not a new deployment policy.

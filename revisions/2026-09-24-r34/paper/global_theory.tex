@@ -1,0 +1,92 @@
+\section{Global bounds beyond the certified action class}\label{sec:global}
+Class-wise cost optimality and zero-intervention optimality leave a substantive question: how far is a positive-cost repair from the best policy satisfying the original operating constraint? We answer this question by constructing a lower cost bound over the full feasible set, together with a globally feasible upper-cost policy. The construction uses the same primitives and all-restart constraint as Section~\ref{sec:model}. It neither relaxes the operating tolerance of the deployed policy nor presumes that the local action class exhausts globally feasible policies.
+
+\subsection{A lower operating witness from computed defects}
+Let $\gamma_t$ select a maximizer of $T^aU_{t+1}$ and let $d_t\ge0$ be a checked uniform upper bound on $U_t-T^{\gamma_t}U_{t+1}$. Define
+\begin{equation}\label{eq:lowerconstruct}
+ b_T=0,\qquad b_t=d_t+\beta b_{t+1},\qquad L_t=U_t-b_t.
+\end{equation}
+The defect $d_t$ is computed by exact interval-limit and knot comparisons, not inferred from training error. One can replace the maximizing $\gamma$ by any feasible selector for which the displayed defect is checked.
+\begin{lemma}[Constructive two-sided operating witnesses]\label{lem:lower}
+If $U_T=g$, $U_t\ge T^aU_{t+1}$ for every action, and $U_t-T^{\gamma_t}U_{t+1}\le d_t$, then
+\begin{equation}\label{eq:two-sided}
+ L_t\le J_t^\gamma\le V_t\le U_t
+\end{equation}
+from every state and restart. Under the compression rule of Section~\ref{sec:construction}, $d_t\le\delta$, hence $b_t\le\delta H_{T-t}(\beta)$.
+\end{lemma}
+\begin{proof}
+The upper comparison follows by backward induction. If $J_{t+1}^\gamma\ge U_{t+1}-b_{t+1}$, monotonicity and translation by the constant $b_{t+1}$ imply
+$J_t^\gamma\ge T^{\gamma_t}U_{t+1}-\beta b_{t+1}\ge U_t-d_t-\beta b_{t+1}=L_t$.
+The terminal values agree. Maximizing the operating return gives the middle inequality. The final bound follows by summing the checked compression defects.\end{proof}
+This construction charges both the upper witness and its defect computation. An exact optimal value is unnecessary. Its accuracy can be tightened independently of the operating tolerance at which a policy will be deployed.
+
+\subsection{Unrestricted support values and cost lower bounds}
+Write $k_t(x,a)=(1+x)\ind\{a\ne\pi_t^0(x)\}$ for implementation cost, to distinguish it from the maintenance expenditure $c_a$. For each nonnegative rational multiplier $\lambda$, compute
+\begin{equation}\label{eq:support}
+\begin{split}
+ W_T^\lambda&=\lambda g,\\
+ W_t^\lambda(x)&=\max_a\{\lambda r(x,a)-k_t(x,a)
+                 +\beta P^aW_{t+1}^\lambda(x)\}.
+\end{split}
+\end{equation}
+Let $\sigma^\lambda$ attain the displayed maximum, and independently evaluate its operating and implementation values. Backward induction gives
+$W_t^\lambda=\lambda J_t^{\sigma^\lambda}-C_t^{\sigma^\lambda}$.
+The maximization is unrestricted: it does not use $\mathcal B$, a fixed-occupancy distribution, or a supplied operating optimum. Whole-cell upper comparisons and equality at the selected action independently certify its value.
+
+Let $\mathcal F_\varepsilon$ denote policies satisfying \eqref{eq:regret}. The statements below also hold for randomized and history-dependent policies whenever their continuation from the specified restart satisfies the operating constraint. In particular they bound the all-restart feasible Markov policies studied in the application. For any finite set $\Lambda\subset[0,\infty)$, define
+\begin{equation}\label{eq:global-lower}
+ B_t(x)=\max\left\{0,\ \max_{\lambda\in\Lambda}
+  \big[\lambda\{L_t(x)-\varepsilon\}-W_t^\lambda(x)\big]\right\}.
+\end{equation}
+\begin{theorem}[Class-free intervention-cost bounds]\label{thm:global}
+For every $\pi\in\mathcal F_\varepsilon$,
+\begin{equation}\label{eq:global-bound}
+ B_t(x)\le C_t^\pi(x)\qquad\text{for every restart }(t,x).
+\end{equation}
+Let $\widehat\pi$ be any separately verified member of $\mathcal F_\varepsilon$, and let $\nu$ be the initial distribution. Then, writing $C^*_{\nu,\varepsilon}=\inf_{\pi\in\mathcal F_\varepsilon}\int C_0^\pi\,d\nu$,
+\begin{equation}\label{eq:global-gap}
+ \int B_0\,d\nu\ \le C^*_{\nu,\varepsilon}\le\int C_0^{\widehat\pi}\,d\nu,
+ \qquad
+ \int C_0^{\widehat\pi}\,d\nu-C^*_{\nu,\varepsilon}
+ \le\int(C_0^{\widehat\pi}-B_0)\,d\nu.
+\end{equation}
+A zero right-hand side proves global cost optimality for the original constraint, not only for a certified inner class.
+\end{theorem}
+\begin{proof}
+Unrestricted support optimality implies
+$W_t^\lambda\ge\lambda J_t^\pi-C_t^\pi$.
+Feasibility and Lemma~\ref{lem:lower} give
+$J_t^\pi\ge V_t-\varepsilon\ge L_t-\varepsilon$.
+Multiplication by $\lambda\ge0$ and rearrangement yield each term of \eqref{eq:global-lower} as a lower bound on $C_t^\pi$. Nonnegative implementation costs justify the additional zero. Taking the pointwise maximum retains a common lower bound on every feasible policy. Integrating, taking an infimum, and using the feasible $\widehat\pi$ gives \eqref{eq:global-gap}. The conditional backward comparison for $W^\lambda$ also bounds history-dependent and randomized policies.\end{proof}
+
+The argument uses classical weak duality and Bellman comparison; these principles are not claimed as new. The additional construction is a checkable certificate for the original all-state operating constraint: computed two-sided witnesses, unrestricted support values, a separately feasible deployment, and an explicit global cost gap. There is no claim of strong duality, attainment of the lower bound by the finite multiplier set, or global cost optimality merely because a scalarized problem is solved exactly. The lower bound can be loose.
+
+The maximum in \eqref{eq:global-lower} may select different multipliers at different states. This is legitimate because every term bounds the same feasible policy's cost. It does not license splicing the actions of different $\sigma^\lambda$: such a splice changes continuation values and must be evaluated and certified again. Our computation selects one complete feasible policy, not a statewise mixture of unchecked recommendations.
+
+\subsection{Constructive feasibility and charged work}
+A finite multiplier portfolio need not rely on accidental feasibility. In the maintenance model, $0\le k_t\le2$. Put $M_t=2H_{T-t}(\beta)$.
+\begin{proposition}[A sufficient multiplier without an optimal-value input]\label{prop:price}
+For $\lambda>0$, an exact maximizing selector in \eqref{eq:support} satisfies
+\begin{equation}\label{eq:pricebound}
+ V_t-J_t^{\sigma^\lambda}\le M_t/\lambda,\qquad
+ U_t-J_t^{\sigma^\lambda}\le b_t+M_t/\lambda.
+\end{equation}
+Consequently, $\max_t(b_t+M_t/\lambda)\le\varepsilon$ is a sufficient all-state, all-restart feasibility condition. It uses only the computed defect bound and model primitives.
+\end{proposition}
+\begin{proof}
+Use an operating-optimal policy as a comparator in the support problem. Its implementation cost is at most $M_t$, so
+$\lambda J_t^{\sigma^\lambda}-C_t^{\sigma^\lambda}
+ \ge\lambda V_t-C_t^{\pi^*}$.
+Since $C_t^{\sigma^\lambda}\ge0$, this gives the first inequality. Lemma~\ref{lem:lower} implies $U_t-V_t\le b_t$, which gives the second. The comparator proves the inequality; the algorithm does not evaluate it to construct its inputs.\end{proof}
+
+For the fixed $T\le12$ study below, we build witnesses using accuracy parameter $10^{-4}$, so $b_t\le1/40000$. The predeclared multiplier $4096$ satisfies
+$1/40000+2H_{12}(19/20)/4096<1/100$.
+Thus the portfolio contains a feasible support policy for both declared tolerances independently of the installed proposal. All candidate policies are nevertheless checked directly; a mathematical sufficient bound is not a substitute for checking the serialized object.
+
+For $m=|\Lambda|$, the total work is the sum of witness construction, $m$ unrestricted support solves, their own-policy value evaluations and checks, construction of the lower-bound envelope, and final feasibility checking. If $N_{t,\lambda}$ denotes the actual overlay size for multiplier $\lambda$, a conservative addition to \eqref{eq:work} is
+\begin{equation}\label{eq:dual-work}
+ O\!\left(\mathsf A(b)\sum_{\lambda\in\Lambda}\sum_t
+ (AD+A^2)\{N_{t,\lambda}+K_t+Z_{t+1,\lambda}\}^2\right)
+ +C_{\rm lower}+C_{\rm encode}+C_{\rm check}.
+\end{equation}
+The notation $b$ here is the integer bit-length bound from Section~\ref{sec:work}, not the defect sequence $b_t$. All failed feasibility candidates are charged. If the class-minimum candidate is also offered, its complete construction is added rather than treating its inherited certificate as free. No bound on the output sizes, or speedup relative to a classical verified solver, follows from \eqref{eq:dual-work} alone. The method buys a stronger economic statement---a bound against every globally feasible policy---at an explicitly recorded computational cost.
