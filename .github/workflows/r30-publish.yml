@@ -1,0 +1,105 @@
+name: R30 scientific publication
+on:
+  push:
+    branches: [revision/econometrica-r30-adaptive-certification-2026-09-24]
+    paths: [.github/workflows/r30-publish.yml]
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r30-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Verify and materialize immutable revision payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/r30-publication
+          git rev-parse HEAD > /tmp/r30-publication/SOURCE_COMMIT.txt
+          python - <<'PY'
+          import pathlib, hashlib, base64, lzma, json
+          expected = ['ce96c3d715e4b9bc54fb00df636518f5b1acb9072d879eeee44c5b7168dcaaa3','11570c39b2d4e6e4342b4fb17a2ca25e39ce55b04c535d35b7d2ea1f313bbcb5','8aec2904b065866a3571311633f659788492b5d45c15f3eb02d98fa0106414c5','955d0d7ac0dfb0e5d81370ece865d8d5ee2cd52bd87b637dd91dcab347d997aa','a3250f1f629e2353dc54f597993bbaabd6409ab1ee8e6f71d09d9ee181e5c09e','338e87ca7e990d3087b95582823499db479d6c209ff9e7127962333c7d385d65','9ebee915c2862dc7d2b57378f8945c7d6edd00e1420eadec48081d97d54fc593','3b3d571520784e6d6b8b46f84cc45cc2fe3861aca9620dec00123de62d26b460','918f86594c30407c4401427f9c4b898a7204a00452dda4c53d6d4d0a521628d4']
+          parts = [pathlib.Path(f'.r30-transfer/part{i:02}.b64') for i in range(9)]
+          records = [(str(p),len(p.read_bytes()),hashlib.sha256(p.read_bytes()).hexdigest()) for p in parts]
+          pathlib.Path('/tmp/r30-publication/transport.json').write_text(json.dumps(records,indent=2))
+          print(records,flush=True)
+          assert [r[2] for r in records] == expected, 'Transport chunk mismatch'
+          payload = base64.b64decode(b''.join(p.read_bytes() for p in parts),validate=True)
+          assert hashlib.sha256(payload).hexdigest() == 'a95fd2cb809a1affbd0dfa456bedd15c8db437bdb32d35c45ea1d2b8176fcfa7'
+          files = json.loads(lzma.decompress(payload))
+          assert len(files) == 92
+          for name,content in files.items():
+              p=pathlib.Path(name)
+              assert not p.is_absolute() and '..' not in p.parts
+              assert name.startswith('revisions/2026-09-24-r30/') or name=='R30_REVIEW.md'
+              p.parent.mkdir(parents=True,exist_ok=True)
+              p.write_text(content,encoding='utf-8')
+          print('Verified and materialized',len(files),'source and frozen evidence files.')
+          PY
+      - name: Install fixed scientific and document dependencies
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0 sympy==1.14.0 mpmath==1.3.0 python-flint==0.8.0 gmpy2==2.2.1
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          sudo apt-get update -qq
+          sudo apt-get install -y latexmk texlive-latex-extra texlive-fonts-recommended poppler-utils
+          python -m pip freeze > /tmp/r30-publication/python_environment.txt
+      - name: Replay frozen exact evidence without retraining or replacing timings
+        shell: bash
+        run: |
+          set -euo pipefail
+          R=revisions/2026-09-24-r30
+          python "$R/replication/replay_evidence.py" 2>&1 | tee /tmp/r30-publication/replay.log
+          python "$R/replication/test_revision.py" --recompute-stopping --output "$R/results/VALIDATION.json" 2>&1 | tee /tmp/r30-publication/r30-tests.log
+          python revisions/2026-09-24-r29/replication/test_revision.py --output "$R/results/INHERITED_VALIDATION.json" 2>&1 | tee /tmp/r30-publication/inherited-tests.log
+      - name: Assemble referee manuscripts and validate publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          R=revisions/2026-09-24-r30
+          V=/tmp/r30-publication
+          python "$R/replication/assemble_paper.py" 2>&1 | tee "$V/assembly.log"
+          for name in ECTA_R30 SUPP_R30 RESPONSE_R30 COMPUTATION_R30 HISTORY_R30; do
+            latexmk -pdf -interaction=nonstopmode -halt-on-error "$name.tex" > "$V/$name.compile.log" 2>&1 || { tail -100 "$V/$name.compile.log"; exit 1; }
+            cp "$name.log" "$V/"
+            pdfinfo "$name.pdf" > "$V/$name.pdfinfo.txt"
+          done
+          python "$R/replication/publication.py" manifest 2>&1 | tee "$V/manifest.log"
+          cp "$R/PUBLICATION_MANIFEST.json" "$R/results/VALIDATION.json" "$R/results/INHERITED_VALIDATION.json" "$V/"
+      - name: Commit manuscripts and evidence to the isolated revision branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          find revisions/2026-09-24-r30 -type d -name __pycache__ -prune -exec rm -rf {} +
+          git config user.name 'NBO revision validation'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add revisions/2026-09-24-r30 R30_REVIEW.md REVISION_INDEX.md
+          git add -f ECTA_R30.tex ECTA_R30.pdf SUPP_R30.tex SUPP_R30.pdf RESPONSE_R30.tex RESPONSE_R30.pdf COMPUTATION_R30.tex COMPUTATION_R30.pdf HISTORY_R30.tex HISTORY_R30.pdf
+          git diff --cached --stat > /tmp/r30-publication/publication-diff.txt
+          git commit -m 'paper(r30): regional Bellman certificates, costly policy revision, active stopping and complete referee response'
+          git push origin HEAD:revision/econometrica-r30-adaptive-certification-2026-09-24
+          git rev-parse HEAD > /tmp/r30-publication/PUBLISHED_COMMIT.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r30-publication-${{ github.run_id }}
+          path: |
+            /tmp/r30-publication/
+            ECTA_R30.pdf
+            SUPP_R30.pdf
+            RESPONSE_R30.pdf
+            COMPUTATION_R30.pdf
+            HISTORY_R30.pdf
+          retention-days: 30
