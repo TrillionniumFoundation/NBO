@@ -1,0 +1,100 @@
+name: R32 verified review package
+on:
+  push:
+    branches: [revision/econometrica-r32-constructive-certificates-2026-09-24]
+    paths: [.github/workflows/r32-build-review.yml]
+permissions:
+  contents: write
+concurrency:
+  group: r32-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      R: revisions/2026-09-24-r32
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Materialize hash-verified reviewed sources
+        run: |
+          python - <<'PY'
+          import base64,hashlib,io,tarfile
+          from pathlib import Path,PurePosixPath
+          data=base64.b64decode(''.join(Path(f'.r32-transfer/source-{i:02}.b64').read_text().strip() for i in range(4)),validate=True)
+          assert hashlib.sha256(data).hexdigest()=='4eda11db20b8e44d36ec798863fa89a0905d5b4f604d340eb87a2131d6ca5bd4'
+          with tarfile.open(fileobj=io.BytesIO(data),mode='r:xz') as archive:
+              for item in archive:
+                  p=PurePosixPath(item.name)
+                  assert not p.is_absolute() and '..' not in p.parts and item.isfile()
+                  assert str(p).startswith('revisions/2026-09-24-r32/') or str(p) in [f'{x}_R32.tex' for x in ('ECTA','SUPP','RESPONSE','COMPUTATION','HISTORY')]
+                  target=Path(str(p));target.parent.mkdir(parents=True,exist_ok=True)
+                  target.write_bytes(archive.extractfile(item).read())
+          PY
+      - name: Install numerical and journal dependencies
+        run: |
+          python -m pip install numpy==2.3.5
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Reproduce every declared configuration
+        run: |
+          set -euo pipefail
+          mkdir -p "$R/results"
+          for H in 4 8 12; do
+            python -u "$R/replication/study.py" "$R/results" --horizon "$H" | tee "$R/results/H${H}.log"
+          done
+          python "$R/replication/boundary.py" --output "$R/results/boundary.json" > "$R/results/boundary.log"
+          python "$R/replication/audit.py" --folder "$R/results" | tee "$R/results/audit.log"
+          python "$R/replication/report.py"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('revisions/2026-09-24-r32/results/summary.json').read_text())
+          assert d['cases']==42 and d['certified']==42 and d['preservation_certified']==42
+          assert d['zero_intervention_certificates']==12
+          assert json.loads(Path('revisions/2026-09-24-r32/results/tests.json').read_text())['passed']
+          PY
+      - name: Compile and check all five documents
+        run: |
+          bash "$R/build.sh"
+          python - <<'PY'
+          from pathlib import Path
+          for name in ('ECTA','SUPP','RESPONSE','COMPUTATION'):
+              text=Path(f'{name}_R32.log').read_text(errors='replace')
+              assert 'Overfull' not in text, name
+              assert 'There were undefined references' not in text, name
+              assert 'undefined citations' not in text, name
+          PY
+          git diff --exit-code -- econsocart.cls econsocart.cfg
+      - name: Commit publication to the isolated revision branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          find "$R" -type d -name __pycache__ -prune -exec rm -rf {} +
+          git add -f "$R" ECTA_R32.tex ECTA_R32.pdf SUPP_R32.tex SUPP_R32.pdf RESPONSE_R32.tex RESPONSE_R32.pdf COMPUTATION_R32.tex COMPUTATION_R32.pdf HISTORY_R32.tex HISTORY_R32.pdf
+          git commit -m 'revision(r32): publish constructive coupled certificates, global scalar optimum and complete referee response [skip ci]'
+          git fetch origin 'revision/econometrica-r32-constructive-certificates-2026-09-24'
+          git rebase FETCH_HEAD
+          git push origin HEAD:'revision/econometrica-r32-constructive-certificates-2026-09-24'
+          git rev-parse HEAD > R32_PUBLISHED_COMMIT.txt
+      - name: Archive review deliverables
+        run: |
+          tar -czf R32_REVIEW_PACKAGE.tar.gz "$R" ECTA_R32.tex ECTA_R32.pdf SUPP_R32.tex SUPP_R32.pdf RESPONSE_R32.tex RESPONSE_R32.pdf COMPUTATION_R32.tex COMPUTATION_R32.pdf HISTORY_R32.tex HISTORY_R32.pdf R32_PUBLISHED_COMMIT.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r32-review-${{ github.run_id }}
+          path: |
+            R32_REVIEW_PACKAGE.tar.gz
+            revisions/2026-09-24-r32/results/*.log
+            revisions/2026-09-24-r32/build/*.txt
+          retention-days: 14
+          if-no-files-found: warn
