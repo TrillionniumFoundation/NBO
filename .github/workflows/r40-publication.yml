@@ -41,13 +41,18 @@ jobs:
               assert p.is_relative_to(prefix) and '..' not in p.parts and isinstance(text,str)
               p.parent.mkdir(parents=True,exist_ok=True)
               p.write_text(text,encoding='utf-8')
-          print('Verified source capsule:',len(data),'files')
+          # Make index archival self-contained on a clean checkout.
+          p=prefix/'replication/prepare_revision.py'
+          old="h=ROOT/'history/REVISION_INDEX_before_R40.md'"
+          s=p.read_text();assert s.count(old)==1
+          p.write_text(s.replace(old,old+';h.parent.mkdir(parents=True,exist_ok=True)'))
+          print('Verified source capsule:',len(data),'files; applied explicit clean-checkout directory fix')
           PY
       - name: Install the recorded numerical and journal build environment
         run: |
           python -m pip install numpy==2.3.5 scipy==1.17.0 sympy==1.14.0 matplotlib==3.10.8
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends texlive-latex-extra texlive-fonts-recommended latexmk
+          sudo apt-get install -y --no-install-recommends texlive-latex-extra texlive-fonts-recommended latexmk poppler-utils
           mkdir -p revisions/2026-09-25-r40/build/ci-publication
           python -VV > revisions/2026-09-25-r40/build/ci-publication/python.txt
           python -m pip freeze --all > revisions/2026-09-25-r40/build/ci-publication/pip-freeze.txt
