@@ -1,0 +1,114 @@
+name: R34 exact reproduction and publication
+on:
+  push:
+    branches: [revision/econometrica-r34-verified-policy-frontier-2026-09-24]
+    paths: ['.github/workflows/r34-publish.yml']
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r34-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Verify and materialize exact source packet
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64,hashlib,io,json,tarfile
+          from pathlib import Path,PurePosixPath
+          packet=''.join((Path('.r34-publish-input')/f'source-{i:02}.b64').read_text().strip() for i in range(6))
+          raw=base64.b64decode(packet,validate=True)
+          assert len(raw)==61000
+          assert hashlib.sha256(raw).hexdigest()=='f5c708116f1ba5b8a4a5c540e50ef9133c52657f61b46ba9b3bf2b5646ecfaf1'
+          prefix='revisions/2026-09-24-r34/'
+          protocol=Path(prefix+'PROTOCOL.md').read_bytes()
+          blob=b'blob '+str(len(protocol)).encode()+b'\0'+protocol
+          assert hashlib.sha1(blob).hexdigest()=='6ba07bef84ea65442b4554499866fb94e9a3b941'
+          with tarfile.open(fileobj=io.BytesIO(raw),mode='r:xz') as archive:
+              members=archive.getmembers()
+              assert len(members)==26
+              for m in members:
+                  assert m.isfile() and m.name.startswith(prefix)
+                  assert '..' not in PurePosixPath(m.name).parts and not PurePosixPath(m.name).is_absolute()
+                  assert m.name!=prefix+'PROTOCOL.md'
+                  target=Path(m.name);target.parent.mkdir(parents=True,exist_ok=True)
+                  target.write_bytes(archive.extractfile(m).read())
+          manifest=json.loads(Path(prefix+'SOURCE_PACKET_MANIFEST.json').read_text())
+          for p,expected in manifest.items():
+              assert hashlib.sha256(Path(p).read_bytes()).hexdigest()==expected,p
+          print('Verified all transmitted sources and the previously committed protocol.')
+          PY
+      - name: Install unmodified journal-class dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
+      - name: Execute complete support cohort and independent audit
+        run: python -u revisions/2026-09-24-r34/run_study.py
+      - name: Execute restart closure, mutation tests and fresh full audit
+        run: python -u revisions/2026-09-24-r34/run_closure.py
+      - name: Assemble complete papers and verify exact scientific reproduction
+        run: |
+          R=revisions/2026-09-24-r34
+          python "$R/replication/report_global.py" "$R"
+          python "$R/replication/report_restart.py" "$R"
+          python revisions/2026-09-24-r32/replication/boundary.py --output "$R/results/boundary_recheck.json" > "$R/results/boundary_recheck.log"
+          python "$R/assemble.py"
+          bash "$R/build.sh"
+          python "$R/publication.py"
+      - name: Commit publication only to the isolated R34 branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch=revision/econometrica-r34-verified-policy-frontier-2026-09-24
+          test "$GITHUB_REF_NAME" = "$branch"
+          find revisions/2026-09-24-r34 -type d -name __pycache__ -prune -exec rm -rf {} +
+          git add -f revisions/2026-09-24-r34 R34_REVIEW.md ECTA_R34.tex ECTA_R34.pdf SUPP_R34.tex SUPP_R34.pdf RESPONSE_R34.tex RESPONSE_R34.pdf COMPUTATION_R34.tex COMPUTATION_R34.pdf HISTORY_R34.tex HISTORY_R34.pdf
+          python - <<'PY'
+          import subprocess
+          allowed={'R34_REVIEW.md'}|{f'{s}_R34.{e}' for s in ('ECTA','SUPP','RESPONSE','COMPUTATION','HISTORY') for e in ('tex','pdf')}
+          paths=subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines()
+          assert paths and all(p.startswith('revisions/2026-09-24-r34/') or p in allowed for p in paths),paths
+          changes=subprocess.check_output(['git','diff','--cached','--name-status','88015b77a0c26e7b883156410b684b229fd7e86f'],text=True).splitlines()
+          extra={'.github/workflows/r34-review-package.yml','.github/workflows/r34-publish.yml'}
+          for line in changes:
+              status,p=line.split('\t',1)
+              assert status=='A',('inherited file modified',line)
+              assert p in allowed|extra or p.startswith(('revisions/2026-09-24-r34/','.r34-publish-input/')),line
+          print('All inherited tracked files remain unchanged; publication is additive and branch-isolated.')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'revision(r34): verified all-restart cost bounds and complete referee package [skip ci]'
+          git push origin "HEAD:$branch"
+          git rev-parse HEAD | tee /tmp/R34_PUBLICATION_COMMIT.txt
+      - name: Upload published referee package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r34-publication-${{ github.sha }}
+          path: |
+            *_R34.pdf
+            *_R34.tex
+            R34_REVIEW.md
+            revisions/2026-09-24-r34
+            /tmp/R34_PUBLICATION_COMMIT.txt
+          retention-days: 30
+      - name: Preserve execution and build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r34-execution-logs-${{ github.run_id }}
+          path: |
+            revisions/2026-09-24-r34/results/*.log
+            revisions/2026-09-24-r34/results/*clock.json
+            revisions/2026-09-24-r34/build
+          if-no-files-found: ignore
+          retention-days: 30
