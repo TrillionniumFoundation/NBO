@@ -1,0 +1,126 @@
+name: R40 referee publication
+on:
+  push:
+    branches: [revision/econometrica-r40-referee-complete-2026-09-25]
+    paths:
+      - .github/workflows/r40-publication.yml
+      - revisions/2026-09-25-r40/transport/**
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r40-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 12
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Decode and verify the completed source capsule
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64,gzip,json,hashlib
+          prefix=Path('revisions/2026-09-25-r40')
+          parts=sorted((prefix/'transport').glob('source.part*.b64'))
+          assert len(parts)==3
+          compressed=base64.b64decode(''.join(p.read_text().strip() for p in parts),validate=True)
+          assert hashlib.sha256(compressed).hexdigest()=='4552f03fffe10470bf0b013b8d8f636641d29fc59d50ebfe8cf8328dee1fc30c'
+          raw=gzip.decompress(compressed)
+          assert hashlib.sha256(raw).hexdigest()=='041ab7d712b52fccd3f0dc18f98559ddb35c996f5f567c8482a8834880b88300'
+          data=json.loads(raw)
+          assert len(data)==11
+          for name,text in data.items():
+              p=Path(name)
+              assert p.is_relative_to(prefix) and '..' not in p.parts and isinstance(text,str)
+              p.parent.mkdir(parents=True,exist_ok=True)
+              p.write_text(text,encoding='utf-8')
+          print('Verified source capsule:',len(data),'files')
+          PY
+      - name: Install the recorded numerical and journal build environment
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0 sympy==1.14.0 matplotlib==3.10.8
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends texlive-latex-extra texlive-fonts-recommended latexmk
+          mkdir -p revisions/2026-09-25-r40/build/ci-publication
+          python -VV > revisions/2026-09-25-r40/build/ci-publication/python.txt
+          python -m pip freeze --all > revisions/2026-09-25-r40/build/ci-publication/pip-freeze.txt
+          uname -a > revisions/2026-09-25-r40/build/ci-publication/os.txt
+          lscpu > revisions/2026-09-25-r40/build/ci-publication/cpu.txt
+          printf 'ImageOS=%s\nImageVersion=%s\n' "$ImageOS" "$ImageVersion" > revisions/2026-09-25-r40/build/ci-publication/runner-image.txt
+          sha256sum "$(which python)" > revisions/2026-09-25-r40/build/ci-publication/python-sha256.txt
+          git rev-parse HEAD > revisions/2026-09-25-r40/build/ci-publication/source-commit.txt
+          dpkg-query -W > revisions/2026-09-25-r40/build/ci-publication/debian-packages.txt
+          python -m pip download --dest "$RUNNER_TEMP/r40-wheels" numpy==2.3.5 scipy==1.17.0 sympy==1.14.0 matplotlib==3.10.8
+          (cd "$RUNNER_TEMP/r40-wheels" && sha256sum *) > revisions/2026-09-25-r40/build/ci-publication/wheel-sha256.txt
+      - name: Execute new exact tests and reconcile all inherited summaries
+        run: |
+          set -euo pipefail
+          export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MPLBACKEND=Agg
+          python revisions/2026-09-25-r40/replication/property_tests.py | tee revisions/2026-09-25-r40/build/ci-publication/property-tests.log
+          python revisions/2026-09-25-r40/replication/prepare_revision.py | tee revisions/2026-09-25-r40/build/ci-publication/manuscript-generation.log
+          python revisions/2026-09-25-r40/replication/make_figures.py
+      - name: Compile all four complete Econometrica documents
+        run: |
+          set -euo pipefail
+          for name in ECTA SUPP RESPONSE COMPUTATION; do
+            latexmk -pdf -interaction=nonstopmode -halt-on-error "${name}_R40.tex" > "revisions/2026-09-25-r40/build/ci-publication/${name}-latexmk.log" 2>&1
+            cp "${name}_R40.log" "revisions/2026-09-25-r40/build/ci-publication/${name}_R40.log"
+            if grep -E 'Overfull|Undefined control sequence|undefined references' "${name}_R40.log"; then exit 1; fi
+            pdfinfo "${name}_R40.pdf" > "revisions/2026-09-25-r40/build/ci-publication/${name}-pdfinfo.txt"
+          done
+      - name: Check every inherited tracked file and bind all published objects
+        run: |
+          set -euo pipefail
+          find revisions/2026-09-25-r40 -type d -name __pycache__ -prune -exec rm -rf {} +
+          python revisions/2026-09-25-r40/replication/prepare_revision.py --manifest | tee revisions/2026-09-25-r40/build/ci-publication/preservation.log
+          python - <<'PY'
+          import json
+          p=json.load(open('revisions/2026-09-25-r40/results/preservation.json'))
+          assert p['passed'] and p['inherited_files_checked']>100
+          PY
+      - name: Commit and push only this new revision branch
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = 'revision/econometrica-r40-referee-complete-2026-09-25'
+          git config user.name 'NBO revision publication'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f revisions/2026-09-25-r40 ECTA_R40.tex ECTA_R40.pdf SUPP_R40.tex SUPP_R40.pdf RESPONSE_R40.tex RESPONSE_R40.pdf COMPUTATION_R40.tex COMPUTATION_R40.pdf R40_REVIEW.md REVISION_INDEX.md
+          git diff --cached --stat
+          git commit -m 'paper(r40): publish complete referee revision, witness-driven convergence, economic margins, and independent verification'
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
+      - name: Assemble referee reading package
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import zipfile,subprocess
+          root=Path('revisions/2026-09-25-r40')
+          with zipfile.ZipFile('NBO_R40_review_package.zip','w',zipfile.ZIP_DEFLATED) as z:
+              names=['R40_REVIEW.md','REVISION_INDEX.md','econsocart.cls','econsocart.cfg','ecta-fullname.bst','ECTA_R38.pdf','SUPP_R38.pdf','HISTORY_R38.pdf']
+              names += [f'{n}_R40.{ext}' for n in ('ECTA','SUPP','RESPONSE','COMPUTATION') for ext in ('pdf','tex')]
+              for name in names:
+                  p=Path(name)
+                  if p.exists():z.write(p,name)
+              for p in root.rglob('*'):
+                  if p.is_file() and '__pycache__' not in p.parts:z.write(p,str(p))
+              z.writestr('REMOTE_COMMIT.txt',subprocess.check_output(['git','rev-parse','HEAD'],text=True))
+              z.writestr('PACKAGE_README.txt','Read R40_REVIEW.md. This package contains the complete current manuscript, supplements, response, computation report, sources, and publication records. Rebuilding scientific diagnostics from the original proof objects requires the frozen NBO repository history named in the manifest; all old proofs remain in that repository. The four current journal documents can be recompiled from these materialized sources. No numerical gap is claimed closed merely because compilation or preservation checks pass.\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r40-review-package
+          path: NBO_R40_review_package.zip
+          retention-days: 30
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: nbo-r40-publication-failure-log
+          path: revisions/2026-09-25-r40/build/ci-publication
+          retention-days: 30
