@@ -1,0 +1,19 @@
+name: R32 source snapshot
+on:
+  push:
+    branches: [revision/econometrica-r32-constructive-certificates-2026-09-24]
+    paths: [.github/workflows/r32-source-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Archive exact source
+        run: git archive --format=tar HEAD | gzip -n > nbo-r32-source.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r32-source-${{ github.sha }}
+          path: nbo-r32-source.tar.gz
+          retention-days: 1
