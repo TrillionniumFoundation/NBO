@@ -1,0 +1,33 @@
+name: R40 frozen source capsule
+on:
+  push:
+    branches: [revision/econometrica-r40-referee-complete-2026-09-25]
+    paths: [.github/workflows/r40-source-capsule.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Export exact source and compact metadata
+        run: |
+          python - <<'PY'
+          import pathlib, zipfile, subprocess
+          root=pathlib.Path('.')
+          allowed={'.tex','.py','.md','.cls','.cfg','.bst','.yml','.toml','.txt','.json','.csv'}
+          paths=subprocess.check_output(['git','ls-files'],text=True).splitlines()
+          with zipfile.ZipFile('r40-source-capsule.zip','w',zipfile.ZIP_DEFLATED) as z:
+            for name in paths:
+              p=pathlib.Path(name)
+              take=name.startswith(('revisions/2026-09-25-r39/','revisions/2026-09-24-r38/paper/','reviews/2026-09-25-econometrica-r38/')) or (len(p.parts)==1 and p.suffix in {'.cls','.cfg','.bst'})
+              if take and p.suffix in allowed and p.stat().st_size<4000000:
+                z.write(p,name)
+            z.writestr('SOURCE_COMMIT.txt',subprocess.check_output(['git','rev-parse','HEAD'],text=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r40-frozen-source
+          path: r40-source-capsule.zip
+          retention-days: 30
+          if-no-files-found: error
