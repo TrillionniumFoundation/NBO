@@ -1,0 +1,30 @@
+name: R31 pinned source
+on:
+  push:
+    branches: ['revision/econometrica-r31-coupled-witnesses-2026-09-24']
+    paths: ['.github/workflows/r31-source.yml']
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: e9bc144fbb6843d6a3436825a28584efb64fb8f1
+      - name: Archive exact reviewed source
+        run: |
+          mkdir -p /tmp/r31-source
+          git rev-parse HEAD > /tmp/r31-source/REVIEW_HEAD.txt
+          git archive --format=tar HEAD | gzip -n > /tmp/r31-source/review-source.tar.gz
+          sha256sum /tmp/r31-source/review-source.tar.gz > /tmp/r31-source/SHA256SUMS
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download offline validated arithmetic wheel
+        run: python -m pip download --only-binary=:all: python-flint==0.8.0 -d /tmp/r31-source/wheels
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r31-pinned-source
+          path: /tmp/r31-source
+          retention-days: 30
