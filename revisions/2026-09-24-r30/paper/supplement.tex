@@ -1,0 +1,79 @@
+\section{Objects, arithmetic, and preservation}
+This supplement supplies the analytic construction behind the active-boundary calculation and the detailed numerical records for the regional certificate. The five R29 documents are reproduced, without page alteration, in \texttt{HISTORY\_R30.pdf}. The original source, exact-rational inventory records, controls, failures, and preceding responses remain in their original directories. Historical statements are to be read with the current response and scope statements, not as an alternative set of current claims.
+
+Three arithmetic objects must remain distinct. Training uses floating point. Compilation interprets the saved binary64 coefficients as exact rational constants and produces an exact piecewise-constant decision rule with explicit tie points. The certificate uses rational polynomial bounds, comparisons, and integrals. An actual floating-point neural forward pass is not certified. The integer-index deployment test covers arbitrary-precision rational comparisons, not unmodeled hardware rounding.
+
+A candidate's saved parameters, compiled intervals, and final cover are linked in the verifier. Every certificate leaf must lie within a compiled constant-action interval and carry the correct raw decision. Every breakpoint is checked against exact network evaluation. Coverage, adjacency, feasible actions, bound coefficients, endpoint actions, and the final tolerance are verified independently of the training loss. Removing an endpoint, altering a bound, making the cover incomplete, supplying a negative tolerance, or querying an invalid grid index is rejected.
+
+\section{Stopped Gaussian moments and analytic errors}\label{app:stopping30}
+Let $a=6/5$, $b=14/5$, $u_0=61/50$, $\sigma=1/20$, and $c=3/4$. Deterministic wealth is
+\begin{equation}
+ x(t)=\left(\frac54-\frac{3/4}{.02}\right)e^{.02t}+\frac{3/4}{.02}.
+\end{equation}
+It decreases to a value above .51770, so there is no wealth exit in this restricted class. The original preference boundaries and settlement are unchanged. Put $q=y-2$, so $|q|\le4/5$ on $[a,b]$, and $L=\log(4/3)$. The utility term is
+\begin{equation}
+ \frac{c^{1-y}}{1-y}=-\frac{e^{L(1+q)}}{1+q}=\sum_{n=0}^{\infty}c_nq^n,
+ \qquad c_n=-\frac43\sum_{j=0}^n\frac{L^j}{j!}(-1)^{n-j}.
+\end{equation}
+Since $|c_n|\le e^{2L}=16/9$, truncation after degree $128$ has the uniform bound
+\begin{equation}\label{eq:utilityrem30}
+ R_{128}\le\frac{16}{9}\frac{(4/5)^{129}}{1-4/5}<2.803\cdot10^{-12}.
+\end{equation}
+All coefficients are enclosed by ball arithmetic. The remainder is an analytic uniform bound, not an interpolation residual.
+
+The half-line killed kernel equals a difference of two Gaussian densities, with means $m_1=u_0+\theta t$ and $m_2=2a-u_0+\theta t$, common variance $v=\sigma^2t$, and image multiplier $e^{-2\theta(u_0-a)/\sigma^2}$. For a Gaussian density $\varphi_{m,v}$ define
+\begin{equation}
+ I_n(m,v)=\int_a^b(y-2)^n\varphi_{m,v}(y)\,dy.
+\end{equation}
+The initial moment is a normal-CDF difference. Integration by parts gives
+\begin{align}
+ I_1&=(m-2)I_0+v\{\varphi_{m,v}(a)-\varphi_{m,v}(b)\},\\
+ I_n&=(m-2)I_{n-1}+(n-1)vI_{n-2}\\
+ &\hspace{1cm}+v\{(a-2)^{n-1}\varphi_{m,v}(a)-(b-2)^{n-1}\varphi_{m,v}(b)\},\quad n\ge2.\nonumber
+\end{align}
+Their image-weighted difference integrates the utility polynomial and the polynomial components of the Dynkin integrand exactly up to arithmetic enclosure. Moments through degree 130 suffice for two parameter derivatives.
+
+In the fixed $k=2$ slice,
+\begin{align}
+ h_\theta(t,y)={}&\frac{c^{1-y}}{1-y}-\theta^2+8-.04\theta(y-2)-.00005+.002-\frac{c}{10x(t)}\\
+ &\qquad -.04\{- .02(y-2)^2+.1\log x(t)\}+.32(1-t),\nonumber\\
+ \partial_\theta h_\theta={}&-2\theta-.04(y-2),\qquad
+ \partial_\theta^2h_\theta=-2.
+\end{align}
+On the domain, the deliberately conservative bounds $|h|\le M=20$, $|h'|\le M_1=2$, and $|h''|\le M_2=8$ hold. For example, the utility magnitude is below 5.3, wealth is above .5177, and the remaining displayed terms fit strictly within these bounds.
+
+The time interval $[0,t_0]$, with $t_0=10^{-6}$, is bounded rather than numerically integrated. Under the full Gaussian law,
+\begin{equation}
+ \E|S_t|\le\frac{\sqrt t}{\sigma},\qquad
+ \E\left|S_t^2-\frac{t}{\sigma^2}\right|\le\frac{\sqrt2\,t}{\sigma^2}.
+\end{equation}
+Restricting to survival cannot increase these absolute-moment bounds. Thus the three omitted-time errors are at most
+\begin{align}
+ E_0^{\rm time}&=Mt_0,\\
+ E_1^{\rm time}&=M_1t_0+\frac{2M}{3\sigma}t_0^{3/2},\\
+ E_2^{\rm time}&=M_2t_0+\frac{4M_1}{3\sigma}t_0^{3/2}+\frac{M\sqrt2}{2\sigma^2}t_0^2.
+\end{align}
+The uniform utility approximation contributes at most $R_{128}$, $2R_{128}/(3\sigma)$, and $R_{128}\sqrt2/(2\sigma^2)$, respectively.
+
+The difference between the true doubly stopped occupation measure and the lower-killed measure restricted to $[a,b]$ occurs only on a path that has already hit the upper boundary. With the probability bound $p_b$ in the article, Cauchy--Schwarz and the likelihood-score second moments yield opposite-boundary errors
+\begin{align}
+ E_0^{\rm opp}&=Mp_b,\\
+ E_1^{\rm opp}&=M\sqrt{p_b}/\sigma+M_1p_b,\\
+ E_2^{\rm opp}&=M\sqrt{2p_b}/\sigma^2+2M_1\sqrt{p_b}/\sigma+M_2p_b.
+\end{align}
+This treatment does not discard the economically material lower-boundary event. It only encloses the distant upper-boundary correction. Adding these errors to the ball-integrated polynomial expression produces the reported derivative enclosures.
+
+The remaining integration uses $s=\sqrt t$, 200-bit arithmetic, and the fixed breakpoints $s\in\{.001,.01,.05,.1,.2,.4,.8,1\}$. The complex analytic extension passes holomorphicity checks to square root and logarithm; a ball crossing an unverified branch domain returns nonfinite rather than a false bound. The FLINT integration routine supplies a rigorous integral enclosure; its requested decimal tolerance is not itself treated as the achieved error bound. Final balls are tested for finiteness, reality, and radius below .005. Their actual radii are much smaller. The first attempted nested spatial/time ball integral failed; its source and output remain in \texttt{results/stopping/attempts}. The successful moment formulation changes the implementation, not the instance or target controls.
+
+\section{Exact cost accounting}
+For a raw-action interval with local deficit bounds $[l_d,u_d]$, the mandatory-change lower bound includes it only when $l_d>\eta$. The reported upper bound includes every changed interval. Their difference therefore bounds the intervention cost in excess of the minimum local-loss-class cost even when the subdivision stops conservatively near a tolerance crossing. The online exact guard attains the same local-class optimum pointwise without constructing a finite cover. The finite cover provides an offline certificate and an alternative deployment representation, not a lower intervention cost than that guard.
+
+Under the continuous reset density, interval occupancy is $\int_l^r2x\,dx$ and priority-weighted occupancy is $\int_l^r2x(1+x)\,dx$. Multiplication by $H_8$ accounts for survival and discounting. Operating gains are integrated from $(a^{\rm new}-a^0)f(x)$ against that same density. An independently written interval-overlay routine recomputes the policy-change costs and the comparison to the near-exact structural policy. No finite-grid occupancy estimate is substituted for these continuous integrals.
+
+\section{Detailed evidence}
+\input{revisions/2026-09-24-r30/paper/generated/detailed}
+
+\section{Scope of the retained continuous and historical results}
+The scalar comparative statics, the finite inventory completion, the regional operating-mode certificate, and the original continuous all-domain objective have different policy classes and restart sets. The new active-boundary calculation establishes payoff and derivative enclosures for five constant controls at one restart. It neither supplies a global scalar optimizer nor validates all 47 financed coordinates. The original bound 7.181834580823298 is unchanged. The original supersolution/residual theorem and every earlier unsuccessful run remain available in the reproduced R29 documents.
+
+The central-state bracketing comparison uses the inherited validated oracle without changing its error budget or strict-concavity audit. Its target is a projected-gradient upper bound .005; the inherited polling schedule reports its own achieved bound, which need not be identical. Setup and concavity-audit costs are charged before either search. The old direct-search theorem is retained as a sufficient certificate theorem, not as evidence that polling dominates root-based scalar methods. The historical transport identity and restoration tests are preserved in full but no longer serve as independent numerical-superiority claims.

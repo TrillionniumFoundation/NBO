@@ -1,0 +1,239 @@
+\section{Introduction}
+An installed decision rule is not a blank slate. Replacing it can require new operating instructions, contractual approvals, or changes at precisely those states where intervention is expensive. Consequently, two policies with almost identical operating payoffs need not be economically interchangeable. This paper studies Bellman computation when a uniform performance requirement and the cost of policy revision are both explicit objectives. Neural networks provide candidate decisions; the certified object is a compiled policy together with a proof of its performance and intervention cost.
+
+Our starting point is a substantive computational limitation of exhaustive Bellman completion. The preceding inventory experiment evaluated all feasible actions at all states and repaired a candidate whenever its residual allowance was exceeded. The argument was correct, but it repeated the enumeration performed by dynamic programming. On every reported graph, repair plus verification cost more than the independently implemented exact solver. Including new neural fitting raised the displayed cost ratio to between 10.9 and 63.2. Moreover, only 12 of 115 raw candidates met the 0.01 criterion, and none did so in the main cohort with at least 256 states. Those results remain part of the evidence. They motivate a change in the algorithm, not a reinterpretation of a universal post-repair pass rate as approximation success.
+
+We develop two complementary constructions. First, a regional Bellman certificate verifies a whole set of states with one valid range enclosure. Its complexity depends on the construction of the enclosures, the geometry of unresolved regions, and the representation of the candidate, rather than necessarily on the number of grid states. Second, a constrained Bellman recursion minimizes discounted intervention cost within an explicitly certified policy class. This supplies an economic meaning for preservation and separates an optimization claim from a count of unchanged table entries. The admissible class is an inner approximation to the policies satisfying the true regret constraint; we do not identify these two classes.
+
+The computational example is an eight-period operating-mode economy with an exogenous state process and costly policy revision. This structure permits continuation values to cancel from action comparisons. Exact polynomial range bounds and a rational compilation of a one-hidden-layer ReLU network then certify an entire continuous state interval. The same certificate applies to any midpoint grid, including a grid with $2^{40}$ states, without materializing that grid. This is a cardinality result in one state dimension, not a high-dimensional approximation theorem. We compare against a structure-aware classical solver using the identical range oracle, polynomial proposals, and vectorized dynamic programming. A good installed proposal can reduce certificate construction, but the classical structural solver remains a strong competitor; neural training is not assigned zero cost.
+
+A separate calculation addresses the economically active stopping boundary of the original consumption--portfolio model. At the new restart, the lower-boundary hitting probability at zero preference adjustment is approximately 0.689, rather than the previous upper bound below $2.153\cdot10^{-31}$ at the central restart. We integrate a killed-diffusion kernel with validated Gaussian moments and explicit approximation remainders. First and second derivatives are enclosed, and the curvature changes sign across the tested controls. This is a substantive boundary diagnostic in the unchanged economy. It is not the all-state, all-restart certificate for the original current-state actor.
+
+\subsection{Relation to existing methods}
+The comparison argument behind Bellman residual bounds and one-step policy improvement is classical. Fitted value iteration propagates approximation errors under sampling and function-class assumptions \citep{MunosSzepesvari2008}; approximate policy iteration and its interpolations have related performance bounds \citep{Scherrer2013}. A rollout construction improves a base policy by optimizing against its continuation. The exhaustive completion retained in the historical annex belongs to this family. Our general comparison theorem does not claim a new Bellman principle. The additional objects are a checkable regional witness, a complexity statement conditional on its geometry, and an intervention-cost optimization within the resulting admissible action sets.
+
+Safe policy improvement with baseline bootstrapping restricts departures from a behavior policy when a batch dataset leaves transitions uncertain \citep{Laroche2019}. Here the transition model is known, the certificate is deterministic, and the intervention weights are economic primitives rather than uncertainty proxies. Neither construction subsumes the other's information assumptions. The present minimum-cost statement applies only to its displayed certified class. It is not a global minimum-edit theorem for all policies that happen to satisfy the true regret bound.
+
+Numerical economics already uses problem structure, approximation, and error control \citep{Judd1998}, including adaptive sparse grids for high-dimensional models \citep{BrummScheidegger2017}. Our one-dimensional region cover is not a substitute for such a dimensionality comparison. Markov-chain approximation of a diffusion requires consistency and convergence conditions \citep{KushnerDupuis2001}; neither the inventory graph nor the operating-mode economy is presented as a verified discretization of the original diffusion. Information-relaxation bounds \citep{BrownSmithSun2010,BrownSmith2014} and smooth supersolution bounds furnish possible witnesses, but their construction must be charged.
+
+The continuous calculation uses verified numerical integration, rather than Monte Carlo confidence intervals or a decimal quadrature tolerance. Directed and ball arithmetic control different sources of uncertainty only when the analytic hypotheses and truncation errors are also supplied \citep{Rump2010,Flint2026}. Constrained direct search \citep{KoldaLewisTorczon2003,KoldaLewisTorczon2006,AudetDennis2006} is retained as a certificate wrapper. When a scalar derivative oracle and strict concavity are available, derivative bracketing is the appropriate strong alternative. Neural control approximation \citep{HureEtAl2021,SirignanoSpiliopoulos2018} motivates proposal generation; it does not replace these verification obligations.
+
+\section{Economic objectives and information}
+\subsection{The original stopped economy}
+Time runs from zero to one. Preference $u$ and wealth $x$ satisfy
+\begin{align}
+ du_s&=\theta_s\,ds+.05\,dZ_s^u,\\
+ dx_s&=\{(.02+.06p_s)x_s-c_s\}\,ds+.2p_sx_s\,dZ_s^x,
+ \qquad d\langle Z^u,Z^x\rangle_s=-.25\,ds.
+\end{align}
+The controls lie in $[.05,.8]\times[-.2,.2]\times[-.5,.8]$ for $(c,\theta,p)$. Let $\tau$ be the first exit from $\mathcal D=(1.2,2.8)\times(.5,2)$, capped at one. Running utility and settlement are
+\begin{align}
+ \ell_k(u,c,\theta)&=\frac{c^{1-u}}{1-u}-\frac{k}{2}\theta^2,\quad k\in[.5,8],\\
+ G(u,x)&=-.02(u-2)^2+.1\log x,\qquad g(s,u,x)=G(u,x)-8(1-s).
+\end{align}
+For an admissible policy adapted to the original filtration,
+\begin{equation}
+ J_k^\pi(t,u,x)=\E_{t,u,x}\!\left[\int_t^\tau e^{-.04(s-t)}\ell_k(u_s,c_s,\theta_s)\,ds+e^{-.04(\tau-t)}g(\tau,u_\tau,x_\tau)\right].
+\end{equation}
+Write $V_k=\sup_\pi J_k^\pi$. The original objective is a single current-state actor $\pi(t,u,x)$ satisfying
+\begin{equation}\label{eq:original30}
+ \sup_{(t,u,x)\in[0,1]\times\overline{\mathcal D}}\{V_2(t,u,x)-J_2^\pi(t,u,x)\}\le .01.
+\end{equation}
+The best retained whole-domain upper bound is $7.181834580823298$. No computation in this revision replaces it by a bound below .01. The finite-state results and the active-boundary scalar derivative calculation have different scopes, identified below. In particular, the financed 47-coordinate actor is not supplied here with a validated full-class derivative/residual bridge. The original model, target, unsuccessful evidence, and historical derivations are retained without alteration.
+
+\subsection{The certification and revision problem}
+For the general discrete-time analysis, let $t=0,\ldots,T-1$, let the measurable state space be $S_t$, and let $A_t(s)$ be finite. Rewards and terminal settlement are bounded. A known substochastic kernel $P_t^a$ includes survival; settlement upon absorption is included in the reward. Define
+\begin{equation}
+ (T_t^a v)(s)=r_t(s,a)+\beta\int v(s')P_t(ds'\mid s,a),\qquad
+ T_t v=\max_{a\in A_t(s)}T_t^a v,
+\end{equation}
+where $0<\beta\le1$. Assume measurable maximizers, for example a fixed ordering of the finite actions. Let $\pi^0$ be an installed policy, possibly obtained by neural approximation. The operating value is $J^\pi$, whereas the revision cost is
+\begin{equation}\label{eq:cost30}
+ C_\nu(\pi;\pi^0)=\E_\nu^\pi\sum_{t=0}^{T-1}\beta^t
+ w_t(S_t,\pi_t(S_t))\ind\{\pi_t(S_t)\ne\pi_t^0(S_t)\},
+\end{equation}
+with nonnegative bounded weights and zero cost after absorption. The occupancy measure in this expression is induced by the deployed policy. It is not a uniform count of states. An economically relevant constrained problem is to minimize \eqref{eq:cost30} subject to uniform regret and, when required, operating-payoff preservation. We solve this problem within a certified inner class, and bound the loss from that class in the implemented special case.
+
+The phrase \emph{precomputed-optimum-free} below means that no stored $V^*$ or optimal-action file is read. It does not mean model-free, sampling-only, or less-informed than dynamic programming. All model evaluations, witness construction, interval bounds, compilation, and final checks are charged. An independently implemented reference has independent code, not independent economic information.
+
+\section{Regional Bellman certificates}\label{sec:regional30}
+The following statement separates a proof obligation from the representation used to discharge it.
+\begin{theorem}[Regional comparison]\label{thm:regional30}
+Let bounded measurable functions $L_t,U_t$ and a feasible policy $\pi$ satisfy
+\begin{equation}\label{eq:witness30}
+ L_T\le g\le U_T,\qquad L_t\le T_t^{\pi_t}L_{t+1},\qquad
+ U_t\ge T_t U_{t+1}.
+\end{equation}
+Then $L_t\le J_t^\pi\le V_t^*\le U_t$ at every state and restart. If $U_t-L_t\le e_t$, then $V_t^*-J_t^\pi\le e_t$. It suffices to prove each inequality on every member of a finite covering of each state space, including any exceptional boundaries or tie points.
+\end{theorem}
+\begin{proof}
+At $T$ the assertion is the terminal inequality. Positivity of $P_t^a$ preserves order. Thus $J_t^\pi=T_t^{\pi_t}J_{t+1}^\pi\ge T_t^{\pi_t}L_{t+1}\ge L_t$, and $V_t^*=T_tV_{t+1}^*\le T_tU_{t+1}\le U_t$. Backward induction proves the assertion simultaneously for every restart. A covering proof is pointwise complete, so it proves the same premises without enumerating the points of a cell.\end{proof}
+
+A regional verifier must bound the complete expression, not its values at selected test points. For example, an interval upper bound on $T_t^aU_{t+1}-U_t$ must cover the whole cell and every feasible action. An implementation may split a cell until its bound is decisive or use an exact finite-state fallback. An unresolved cell prevents certification; it is not counted as a passing cell.
+
+\begin{proposition}[A certified preservation class]\label{prop:class30}
+Suppose $U_T=g$, $U_t\ge T_tU_{t+1}$, $e_T=0$, and $e_t\ge0$. Let $v_t^0=J_t^{\pi^0}$, including $v_T^0=g$. Define
+\begin{equation}\label{eq:allowed30}
+ \mathcal B_t(s;e)=\left\{a\in A_t(s):
+ \begin{array}{l}T_t^a(U_{t+1}-e_{t+1})(s)\ge U_t(s)-e_t(s),\\
+ T_t^a v_{t+1}^0(s)\ge v_t^0(s)
+ \end{array}\right\}.
+\end{equation}
+If these sets are nonempty, every measurable policy selecting from them satisfies
+\begin{equation}
+ J_t^\pi\ge v_t^0,\qquad 0\le V_t^*-J_t^\pi\le e_t
+\end{equation}
+for all states and restart dates.
+\end{proposition}
+\begin{proof}
+The first inequality in \eqref{eq:allowed30} makes $U-e$ a subsolution for the selected policy, so Theorem~\ref{thm:regional30} supplies the regret bound. The second inequality and backward induction give $J_t^\pi=T_t^{\pi_t}J_{t+1}^\pi\ge T_t^{\pi_t}v_{t+1}^0\ge v_t^0$.\end{proof}
+The value $v^0$ is an own-policy witness, not an optimum. Its exact evaluation may itself be expensive. Its cost and the cost of $U$ are part of the method. A sufficient lower/upper enclosure can replace exact evaluation if it establishes the displayed comparisons conservatively. Empty admissible sets require a different witness or budget; the theorem does not conceal this feasibility condition.
+
+\subsection{The exhaustive limit}
+The original residual-budget algorithm remains a useful fallback on a finite graph. After completing the suffix, it retains a raw action when its local deficit plus the propagated suffix envelope fits in the prescribed allowance; otherwise it chooses a maximizing action against that completed suffix. Its full proof and all previous numerical results are reproduced in the historical annex.
+\begin{proposition}[Zero tolerance]\label{prop:zero30}
+On a finite exact model, exhaustive backward completion with zero allowance yields $J_t^\pi=V_t^*$ at every state and date. A raw action can be retained at zero tolerance precisely when it is maximizing against the completed suffix. The statement permits retention of any optimal tie; the fixed replacement tie rule does not force a retained tie to be replaced.
+\end{proposition}
+\begin{proof}
+At the last decision date, zero allowance permits only a reward-plus-settlement maximizer. Suppose the completed suffix has optimal value. The same zero-deficit condition then permits only a maximizer of the optimal Bellman comparison at the preceding date. Induction gives the result.\end{proof}
+This finite exact limit is not a termination claim for interval subdivision at zero tolerance around irrational indifference points. Nor does a small number of replacements imply a small exhaustive scan. The regional implementation below is what changes the enumeration requirement.
+
+\section{The economic value of preservation}\label{sec:cost30}
+\begin{theorem}[Minimum revision cost in a certified class]\label{thm:cost30}
+Fix nonempty action sets \eqref{eq:allowed30}. Put $D_T=0$ and
+\begin{equation}\label{eq:costdp30}
+ D_t(s)=\min_{a\in\mathcal B_t(s;e)}\left\{
+ w_t(s,a)\ind\{a\ne\pi_t^0(s)\}+\beta\int D_{t+1}(s')P_t(ds'\mid s,a)\right\}.
+\end{equation}
+A measurable minimizing policy satisfies the uniform regret and preservation bounds of Proposition~\ref{prop:class30} and minimizes the discounted intervention cost from every restart among policies selecting from $\mathcal B(e)$. Randomization and history dependence do not improve the minimum within this class.
+\end{theorem}
+\begin{proof}
+Every eligible action satisfies the two comparisons in Proposition~\ref{prop:class30}; the chosen policy therefore inherits those guarantees. Conditional on a state and admissible action, the induction hypothesis lower-bounds the remaining intervention cost by $D_{t+1}$. Taking the minimum proves that every eligible policy has cost at least $D_t$. A minimizing selector attains equality. A randomized action forms a convex combination of the displayed alternatives and cannot fall below their minimum. Conditional application of the same induction covers history-dependent policies whose actions remain in the fixed admissible sets.\end{proof}
+
+The conclusion is deliberately about $\mathcal B(e)$. A policy excluded by a conservative witness can still meet the true regret requirement. Theorem~\ref{thm:cost30} does not claim otherwise. Likewise, the earlier observed edit-count comparison between two completion rules is not a theorem that one rule changes fewer actions on every input. The new optimization objective supplies the missing preference over policies, rather than strengthening that empirical comparison by assertion.
+
+Budgets can be designed as economic choices. For a finite, prespecified collection $\mathcal E$ of state/date-dependent profiles satisfying $0\le e_t(s)\le\varepsilon$, discard profiles with empty admissible sets and solve \eqref{eq:costdp30} for each remaining profile. Choosing the profile minimizing $\int D_0\,d\nu$ gives the least intervention cost in the union of these certified classes. This follows by taking the minimum of the classwise minima; it is not a polynomial-time claim for unrestricted budget design. Regional weights can encode priority or contractual constraints, and prohibited revisions can be represented by removing actions before optimization. The numerical experiment fixes a common tolerance before execution and reports priority-weighted costs; it does not claim to have optimized unrestricted state-specific budgets.
+
+For a monetary shadow price $\lambda\ge0$, compare policies using $J_\nu^\pi-\lambda C_\nu(\pi;\pi^0)$. If a more accurate policy $\pi^{\rm ref}$ has additional intervention cost $\Delta C>0$ and operating-payoff advantage $\Delta J$, the preserved policy is preferred precisely when $\lambda>\Delta J/\Delta C$. This is a stated economic tradeoff. It does not value a CPU second in units of utility, and it does not infer economic value from Hamming distance.
+
+\section{An adaptive certificate without state enumeration}\label{sec:complexity30}
+Consider the following operating-mode economy. At each of eight dates an active firm observes $x\in[0,1]$ and chooses $a\in\{0,1\}$. Its reward is
+\begin{equation}
+ r(x,a)=x/5+a f(x).
+\end{equation}
+Survival is $9/10$, discounting is $19/20$, and, conditional on survival, the next state has density $2x$, independently of the action. Settlement is zero. Hence $\gamma=171/200$ and
+\begin{equation}
+ H_n=\sum_{j=0}^{n-1}\gamma^j,\quad H=H_8=\frac{63065975868557291}{12800000000000000},\quad
+ \eta=\frac{.01}{H}.
+\end{equation}
+An action's local operating loss is $d_a(x)=\max(0,f(x))-a f(x)$. Continuations cancel from action comparisons, so the optimal action is a sign decision on $f$. Every policy with $d_{\pi_t}(x)\le\eta$ satisfies regret at most $H_{8-t}\eta\le .01$ at every state and restart. This exact cancellation is available to the classical comparator as well as to the certificate.
+
+An installed binary policy is represented by constant-action intervals and explicit actions at their endpoints. A one-hidden-layer ReLU score can be compiled into this representation exactly: save its binary64 coefficients as rational constants; split at every activation kink; on each resulting affine piece split again at any score zero. The score's sign is then constant on each open piece. Evaluation at every breakpoint fixes the tie action. This certifies the compiled rule, not a hardware floating-point forward pass.
+
+For a polynomial $f$ on $I=[l,r]$, convert its power coefficients to Bernstein coefficients. Their minimum and maximum enclose the polynomial throughout $I$. On a raw-action interval let $\underline d,\overline d$ bound $(1-2a)f$. Retain $a$ if $\overline d\le\eta$; switch if $\underline d>\eta$; otherwise bisect. At the prescribed deep-refinement limit, switching is permitted only if $\underline d\ge0$. Every new endpoint is also evaluated exactly. Failure to resolve a cell at the resource cap raises an error rather than a certificate.
+
+\begin{proposition}[Accuracy, improvement, and a cost enclosure]\label{prop:implemented30}
+Every completed cover produced by this rule has uniform regret at most .01 and weakly improves the raw operating payoff at every restart. Let the initial state have density $2x$, and let the revision priority be $w(x)=1+x$. Write $F$ for the union of cells with $\underline d>\eta$, and $E$ for the union of all changed cells. Among policies with local loss at most $\eta$,
+\begin{equation}\label{eq:mincost30}
+ H\int_F 2x(1+x)\,dx\ \le\ C_{\rm local}^*\ \le\
+ C(\pi;\pi^0)=H\int_E2x(1+x)\,dx.
+\end{equation}
+The same conclusions hold on every midpoint grid with its own transition distribution; the displayed integrals describe the continuous density, not an uncomputed discrete-grid occupancy measure.
+\end{proposition}
+\begin{proof}
+On a retained cell the raw deficit is at most $\eta$. On a changed cell $(1-2a)f\ge0$, so switching makes the decision optimal and weakly increases current reward. Both comparisons hold at the explicitly evaluated endpoints. Because transitions do not depend on actions, backward summation yields the accuracy and improvement claims. Every locally admissible policy must change the raw action throughout $F$; all points of $E$ are changed by the reported policy. The weights are nonnegative and absorption contributes the factor $H$. This proves \eqref{eq:mincost30}. Endpoints have zero continuous occupancy but are not omitted from the uniform certificate. The pointwise local comparisons also apply to each finite grid, whose transition probabilities sum to one.\end{proof}
+
+\begin{proposition}[Geometry-dependent work]\label{prop:work30}
+Suppose a hierarchical regional verifier visits at most $K2^{s\ell}$ unresolved cells at level $\ell$, terminates by level $L$, and bounds each visited cell at cost at most $c_\ell$. Including a binary split's resolved children, its range-oracle work is
+\begin{equation}
+ O\!\left(K\sum_{\ell=0}^L2^{s\ell}c_\ell\right).
+\end{equation}
+Compilation, witness construction, integration of occupancy weights, serialization, and final verification are additional costs. For a fixed-degree univariate polynomial, simple isolated threshold crossings, and a piecewise constant candidate with finitely many pieces, $s=0$ applies after a finite initial refinement, giving $O(KL)$ fixed-degree range operations, independently of a later grid cardinality $N$.
+\end{proposition}
+\begin{proof}
+Each unresolved cell has two children, so a constant multiple of the sum of unresolved-cell counts bounds all visits. Multiplying by each level's bound cost proves the first assertion. In one dimension, simple crossings have a nonzero derivative in disjoint small neighborhoods. For a fixed polynomial, the Bernstein enclosure differs from the endpoint range by $O(|I|^2)$ on such neighborhoods; its first-order variation is $O(|I|)$. Thus only a bounded number of dyadic cells per crossing can straddle the threshold at a given sufficiently fine level. Away from these neighborhoods a positive margin eventually decides the comparison. Candidate breakpoints add finitely many initial pieces. Summation proves the stated specialization.\end{proof}
+Multiple or flat threshold crossings require their own count; the proposition does not silently assume simple crossings in every model. The implemented finite cover is verified directly, whether or not the asymptotic specialization is invoked. In higher dimensions a codimension-one unresolved surface can have $s=d-1$, so the result is not a dimension-free complexity claim. For a degree-$p$ univariate polynomial the implemented power-to-Bernstein transformation takes $O(p^2)$ rational operations; it is not a free oracle. The one-hidden-layer compilation uses $O(w^2)$ rational operations for width $w$ and at most $O(w)$ sign/kink intervals.
+
+Exact arithmetic has a further cost. If all primitive rational denominators divide a common $Q$, backward values on a finite horizon have denominators dividing $Q^{2(T-t)+1}$: multiplication by a transition and a discount contributes at most two powers per stage. With bounded rewards, numerator and denominator bit lengths are $O(T\log Q+\log((T+1)R))$, where $R$ bounds the payoff scale. For $M$ separate $b$-bit primitive denominators the coarse bound $\log Q\le Mb$ gives $O(TMb+\log((T+1)R))$. Rational normalization and arithmetic on these growing integers must be charged in addition to the $O(TNAD)$ enumeration count. The new records report actual integer bit lengths and serialized certificate bytes.
+
+No reduction in information is implicit. With completely unstructured rewards, an uninspected state--action entry can be changed while preserving all inspected entries and invalidating an all-state guarantee. The positive regional result escapes that ambiguity because a verified structural bound covers the unenumerated entries. It does not infer them from training accuracy.
+
+\section{Numerical evidence}\label{sec:evidence30}
+\subsection{Design and candidate freezing}
+The new study fixes three gain functions before execution:
+\begin{equation}
+ f_1(x)=x-3/8,\qquad f_2(x)=16(x-1/5)(x-1/2)(x-4/5),\qquad
+ f_3(x)=2(x-.33)^2-.04.
+\end{equation}
+Each has 20 neural candidates: widths eight and sixteen, Adam and L-BFGS, and five seeds per architecture/optimizer cell. Training uses 512 fixed midpoint observations of the primitive reward difference, not optimal-value labels. Adam uses 200 steps at rate .02; L-BFGS permits 200 iterations with strong-Wolfe search. Every candidate is saved and hashed before its certification and diagnostic comparison. The entire study is exploratory and informed by the reports. Freezing prevents subsequent seed selection; it does not make the accumulated research history independent or turn the 60 candidates into 60 independent economic models.
+
+All parameters, raw policies, covers, exact metrics, failures, and source hashes are retained. A polynomial least-squares comparator uses the known degree and the same 512 observations. Its compiled dyadic policy is identified separately from an exact polynomial-sign oracle. Constant proposals and a structure-aware direct solver use the same Bernstein bounds. The direct solver at tolerance $10^{-12}$ is called \emph{near-exact}, not exact. Vectorized full-grid dynamic programming supplies an additional binary64 diagnostic at $N=2^8,2^{12},2^{20}$; its arithmetic is not promoted to an exact certificate. Deeper rollout and policy iteration cannot improve the sign-based action in this action-independent-transition model: all continuation terms cancel for every lookahead depth. This is an analytic strong-baseline comparison in this family, not a new rollout experiment on the inherited inventory model.
+
+\input{revisions/2026-09-24-r30/paper/generated/summary}
+
+The raw-to-certificate distinction matters. Raw regret is bounded independently by exact polynomial integration and range bounds; it is not inferred from the completed policy. In this model a stationary raw policy with loss $d(x)$ has worst restart-zero regret
+\begin{equation}
+ \sup_x d(x)+(H-1)\int_0^1 2x\,d(x)\,dx.
+\end{equation}
+Later restart horizons are shorter. This formula supplies both lower and upper raw-regret bounds. A failed raw candidate is retained even when its final cover certifies. A universal completion pass rate is a consistency check, not the efficacy statistic.
+
+\subsection{Work, baselines, and amortization}
+\input{revisions/2026-09-24-r30/paper/generated/costs}
+The certificate covers the continuum, and therefore also $2^{40}=1{,}099{,}511{,}627{,}776$ midpoint states without constructing an array of that size. We did not run a trillion-state dynamic program. The exact integer-index deployment routine compares a queried rational state with certificate breakpoints, including ties. Its guarantee concerns arbitrary-precision rational execution. The proof does not establish the behavior of a hardware neural actor.
+
+An even stronger classical control is available here: the symbolic rule $a^*(x)=\ind\{f(x)\ge0\}$ is exactly optimal by the action-independent continuation identity. It needs no state enumeration or root isolation. Given a raw decision, an online guard that retains it exactly when $(1-2a)f(x)\le\eta$ attains the minimum intervention cost in the local-loss class, with one polynomial comparison per query. Its additional revision cost is zero; our finite cover trades that online comparison for an offline proof object and has the small extra-cost enclosure reported below. We implement and test both controls. Their existence rules out interpreting this family as a demonstrated neural-specific solution advantage. The mathematical contribution is the general certified-class formulation and the explicit proof/representation tradeoff, not the invention of this classical sign rule.
+
+The direct structural comparator exploits the same cancellation of continuation values and remains cheaper than neural fitting plus certification in many comparisons. This is an important control, not an inconvenient baseline to omit. For a genuinely preinstalled reusable proposal, a break-even number of identical certification jobs can be defined by
+\begin{equation}
+ K>\frac{C_{\rm fit}}{C_{\rm structural}-(C_{\rm compile}+C_{\rm certify}+C_{\rm check})},
+\end{equation}
+only when the denominator is positive. This is conditional accounting, not evidence that such reuse occurred. The example proves sub-enumerative feasibility and quantifies when a given proposal simplifies a cover; it does not establish a universal neural wall-time advantage.
+
+\subsection{Economically weighted policy changes}
+\input{revisions/2026-09-24-r30/paper/generated/economics}
+We report discounted occupancy changes, priority-weighted changes, and the exact operating-payoff gain over the raw policy. The lower bound in \eqref{eq:mincost30} identifies changes that any policy in the local-loss class must make. The difference between upper and lower cost bounds measures conservative extra intervention near unresolved tolerance crossings. Thus numerical minimality is assessed against a stated class and a stated cost, not against unweighted Hamming distance.
+
+The near-exact structural comparator starts from the same installed policy when intervention costs are assessed. A positive net advantage at the illustrative shadow price is a deterministic economic comparison of these two deployments. It is not a statistical treatment effect, a neural-specific theorem, or an estimate of the value of computational time. The threshold $\Delta J/\Delta C$ is reported so that the economic judgment need not be hidden in a chosen price.
+
+\subsection{The retained exhaustive benchmark}
+\input{revisions/2026-09-24-r30/paper/generated/legacy}
+The old candidate failures, polynomial successes, exact-DP timings, action topologies, and bit-length records are unchanged. The ratios in Table~\ref{tab:legacy30} are computed from the displayed R29 stage times; their precision should not be read as greater than that of those inputs. The new operating-mode family changes the structural setting, not those adverse measurements. In particular, it does not supply multiple-seed high-dimensional inventory evidence that was absent from R29.
+
+\section{An economically active stopping boundary}\label{sec:stopping30}
+Fix the original primitives, $k=2$, $c=3/4$, $p=0$, $x_0=5/4$, and constant $\theta\in[-1/5,1/5]$, but restart preference at $u_0=61/50$. Wealth is deterministic and remains above its lower boundary through time one. Put $a=6/5$, $b=14/5$, $\sigma=1/20$, and $d=u_0-a=1/50$. The lower-boundary hitting probability is
+\begin{equation}\label{eq:hit30}
+ p_a(\theta)=\Phi\!\left(-\frac{d+\theta}{\sigma}\right)
+ +e^{-2\theta d/\sigma^2}\Phi\!\left(\frac{-d+\theta}{\sigma}\right).
+\end{equation}
+An additional upper-boundary event has probability at most
+\begin{equation}
+ p_b\le 2\exp\!\left[-\frac{(b-u_0-.2)^2}{2\sigma^2}\right]
+ <7.709\cdot10^{-166}.
+\end{equation}
+The lower event is retained exactly; only the distant opposite boundary is bounded as a remainder.
+
+Let $h_\theta=(\partial_t+\mathcal L_\theta-.04)g+\ell_2$. Stopped It\^o's formula gives
+\begin{equation}\label{eq:dynkin30}
+ J_\theta=g(0,u_0,x_0)+\int_0^1e^{-.04t}\E_\theta[h_\theta(t,u_t)\ind\{t<\tau\}]\,dt.
+\end{equation}
+The half-line killed transition density is
+\begin{equation}\label{eq:kernel30}
+ p_\theta(t,u_0,y)=\frac{e^{-(y-u_0-\theta t)^2/(2\sigma^2t)}}{\sigma\sqrt{2\pi t}}
+ \left\{1-e^{-2d(y-a)/(\sigma^2t)}\right\},\quad y>a.
+\end{equation}
+Its parameter scores are $S_t=(y-u_0-\theta t)/\sigma^2$ and $S_t^2-t/\sigma^2$. Consequently the first two integrands are $S_th_\theta+\partial_\theta h_\theta$ and $(S_t^2-t/\sigma^2)h_\theta+2S_t\partial_\theta h_\theta+\partial_\theta^2h_\theta$. Bounded-domain payoff terms and Gaussian score moments justify differentiation; the supplementary construction gives explicit remainder constants.
+
+\input{revisions/2026-09-24-r30/paper/generated/stopping}
+
+The positive curvature near zero and negative curvature near the upper adjustment bound are both separated from zero by their enclosures. Thus the strictly concave central-state scalar objective is not a valid shape assumption near the active stopping boundary. At the five tested controls the first derivative is positive, but five pointwise derivative signs do not prove monotonicity over the entire interval or locate its global maximum. This distinction prevents another form of sample-to-domain extrapolation.
+
+\subsection{Verified search and retained mechanisms}
+\input{revisions/2026-09-24-r30/paper/generated/bracketing}
+The inherited central-state oracle admits a strict-concavity audit. We compare derivative bracketing and the prescribed polling schedule using that identical oracle and explicitly charge construction and the concavity audit. The box-poll theorem remains a generic projected-stationarity certificate. Its worst-case call bound is not presented as a prediction of the small scalar experiment, and the new active-boundary calculation does not inherit the central-state concavity assumption.
+
+The historical Adam transport and interval-gated rollback results are reproduced in the historical annex. The transport comparison is an independently implemented recurrence with the same carrier and Adam state \citep{KingmaBa2015}; it is not a cheaper alternative optimizer. The retained nonlinear remainder of roughly 1.39--1.50 explains why the earlier linearized control was inadequate. Rollback verifies safe acceptance and exact restoration, but the inherited paired final payoffs do not establish a positive net welfare improvement. Neither observation is used as evidence for the new regional complexity theorem or the economic intervention-cost result.
+
+\section{Conclusion}
+Uniform accuracy and the economics of revising an installed policy are distinct requirements. Regional Bellman inequalities can certify a policy without enumerating every state when validated model structure supports whole-region bounds. A second Bellman recursion assigns preservation an explicit occupancy-weighted objective and minimizes that objective in the certified class. The implemented operating-mode economy supplies exact continuous-domain covers, raw-policy error bounds, a near-minimum intervention-cost enclosure, and strong information-matched classical controls. It does not establish neural exclusivity or eliminate the cost of training and witness construction.
+
+The original stopped economy remains a demanding test of these ideas. The new killed-kernel calculation rigorously instantiates material stopping and reveals nonconcavity absent from the central example. The original current-state, all-domain .01 certificate and the full 47-coordinate derivative/residual bridge remain separate, uncompleted numerical requirements. Retaining them explicitly preserves the scientific target without attributing to a finite model or a scalar calculation a result it has not proved.

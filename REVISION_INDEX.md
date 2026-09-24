@@ -1,9 +1,7 @@
-# Current review object: R29
+# Current review object: R30
 
-Read ECTA_R29.pdf, SUPP_R29.pdf, RESPONSE_R29.pdf, COMPUTATION_R29.pdf and HISTORY_R29.pdf.
+Read ECTA_R30.pdf, SUPP_R30.pdf, RESPONSE_R30.pdf, COMPUTATION_R30.pdf and HISTORY_R30.pdf.
 
-Latest addressed report: reviews/2026-09-24-econometrica-r27/referee_report.md at d6f6f7fa2b0ef40e42206dc64406f004cc83c71e. Also addressed individually: R26 and the independent R25 second pass.
+Latest addressed report: reviews/2026-09-24-econometrica-r29-second-pass/referee_report.md at 3175974aed89dac1595af174a201dcae7bcfae31. The first R29 report at 3f2724d3db622d26f6b1e439fc01311c4858ee7e is also covered item by item. Both reviewed manuscript 788246778893695471015ce4db76e6a61a2c9ca0.
 
-Scientific base: cd1191f278948942f42c6507b4566108f2aa2f6d. New source/evidence: revisions/2026-09-24-r29/. R29 has 115 frozen candidates, 286 completed variants, complete raw failures and classical controls. Original current-state/all-state/all-restart target remains 0.01, with inherited bound 7.181834580823298; finite-state and restricted-class certificates do not replace it.
-
-See R29_REVIEW.md for reproduction and exact-commit validation. Earlier root index is preserved in revisions/2026-09-24-r29/source_audit/REVISION_INDEX_before_R29.md. All historical source/results remain unchanged.
+See R30_REVIEW.md and revisions/2026-09-24-r30/disposition.json. Original sources/results are unchanged. The previous index is preserved in revisions/2026-09-24-r30/source_audit/REVISION_INDEX_before_R30.md. The original continuous all-domain .01 target is not certified; its bound remains 7.181834580823298.
