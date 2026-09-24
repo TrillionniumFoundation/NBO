@@ -1,0 +1,85 @@
+\input{revisions/2026-09-25-r39/paper/preamble}
+\input{revisions/2026-09-25-r39/paper/generated/metrics}
+\begin{document}
+\begin{frontmatter}
+\title{Computation and Verification Report: Revision R39}
+\runtitle{R39 Reproducibility and Verification}
+\begin{aug}\author[id=au1,addressref={add1}]{\fnms{Qian}~\snm{QI}}\address[id=add1]{\orgname{Peking University}}\end{aug}
+\begin{abstract}This report specifies executable reproduction, prospective protocol provenance, arithmetic and verification boundaries, resource accounting, and publication checks. It separates construction, independent inequality checking, cross-run identity, and document integrity.\end{abstract}
+\end{frontmatter}
+
+\section{Repository and protocol provenance}
+The revision branch is
+\begin{center}\path{revision/econometrica-r39-common-continuation-2026-09-25}.\end{center}
+It starts from the latest review commit \path{acbede22e517a245fcc5244de7171c1ae218ea73}, which preserves the R38 article and all prior branch content. The review source is \path{reviews/2026-09-25-econometrica-r38/referee_report.md}. No main or earlier revision branch is overwritten. All new scientific material resides under \path{revisions/2026-09-25-r39}, with four root-level manuscript entry points.
+
+Before generation of the eight finite-state environments, commit \path{13fd3ee0eec78db5fa6aed34e63819c5ed546209} fixed the case seeds, models' dimension/horizon/tolerance parameters, solver hashes, node budget, wall-clock allowance, and stopping tolerance in \path{protocol/holdout.json}. The development seed is 390001. The evaluation seeds are 391101--391108. The exact frozen hashes are
+\begin{quote}\small
+\path{common_markov.py}:\\
+\path{dbdc36718c088498444d70916bc875d6e16a917cc854269838a74c27bfc139f0}\\
+\path{verified_lp.py}:\\
+\path{b70478a171915f30760b2b2c576f49b2d215689045107b59fb06ea4db082a4e0}
+\end{quote}
+The runner verifies these hashes before generating a case. The legacy demonstration entry point inside the frozen first file is not the protocol runner; use \path{run_finite.py}. The frozen files are not edited after evaluation to improve held-out outcomes.
+
+The first local execution and subsequent GitHub execution are distinct runs of the same frozen experiment. CI is described as a replay, not an additional untouched holdout. Machine speed changes how much of a timed search can be completed, so timed proof files need not have identical hashes or node counts across runs. The published tables are generated from the proof summaries belonging to the current published execution and are checked against that execution's proof objects. A compact first-execution record is retained in the protocol directory. No result is selected by comparing the two runs and taking the most favorable endpoint.
+
+\section{Environment recipe}
+The numerical stack is Python 3.13.5, NumPy 2.3.5, SciPy 1.17.0, and SymPy 1.14.0. The CI uses Ubuntu 24.04 hosted runners and fixes \texttt{OPENBLAS\_NUM\_THREADS}, \texttt{OMP\_NUM\_THREADS}, and \texttt{MKL\_NUM\_THREADS} to one. \texttt{PYTHONHASHSEED} is zero. The continuum verifier can use four independent worker processes; the finite per-case search is not run with competing solver cases in the same process. Each finite case is a fresh process, so its peak resident memory is not inherited from a preceding case.
+
+The workflow records \texttt{python -VV}, \texttt{pip freeze}, operating-system information, CPU description, source commit, and downloaded wheel hashes in \path{build/ci-finite}, \path{build/ci-continuum}, and \path{build/ci-nonlinear}. This is an executable environment recipe with package and wheel identities. A hosted image name is not a permanent container digest, and binary identity years later is not assumed. Exact rational proof verification can be rerun independently of the original optimizer's floating-point trajectory.
+
+Python optimization must be disabled: assertions are scientific checks. Every publication invocation checks \texttt{\_\_debug\_\_} and \texttt{sys.flags.optimize}. The primary kernel itself rejects \texttt{-O}. No approximate floating-point assertion is substituted for a rational inequality.
+
+\section{Executable reproduction}
+From the repository root, install the pinned packages and execute the following commands. They generate complete proof objects and then independently check them. The old R38 source and results must remain available because the development cohort and its established bound components are intentionally unchanged.
+\begin{verbatim}
+python -m pip install numpy==2.3.5 scipy==1.17.0 sympy==1.14.0
+p=revisions/2026-09-25-r39
+python $p/replication/run_finite.py
+python $p/replication/verify_finite.py
+python $p/replication/randomized_primary.py
+python $p/replication/primary_restart.py
+python $p/replication/verify_continuum.py --workers 4
+python $p/replication/nonlinear_support.py
+python $p/replication/verify_nonlinear.py
+python $p/replication/property_tests.py
+python $p/replication/publication.py
+\end{verbatim}
+The last command additionally uses Matplotlib for the two inherited local-work plots. It constructs the deterministic diagnostics, generates every result table, and checks that the tables refer to the independently checked objects. It is not a replacement for the preceding scientific verifiers.
+
+The four manuscript entry points are \path{ECTA_R39.tex}, \path{SUPP_R39.tex}, \path{RESPONSE_R39.tex}, and \path{COMPUTATION_R39.tex}. They use the retained Econometric Society \path{econsocart.cls} with its Econometrica option. Run \texttt{latexmk -pdf -interaction=nonstopmode -halt-on-error} on each entry point, then run \path{publication.py --manifest}. The manifest records new document hashes, scientific source and result hashes, and the unchanged R38 article, supplement, and historical-annex hashes.
+
+\section{What is computed and independently checked}
+\subsection{Finite common-policy searches}
+Each proof file contains the rational economic model, exact operating value, common action probabilities, operating and revision values, all searched boxes, contraction results, split coordinates and cuts, terminal leaf classifications, and the final interval. The LP version also saves every accepted nonnegative rational multiplier vector and its residual bound. A floating solver can propose a multiplier or a candidate, but cannot certify feasibility, remove a box, or establish the lower endpoint on its own. Solver failures retain the interval Bellman bound.
+
+The independent SymPy verifier imports neither constructor, policy repair, nor SciPy. It checks the model's reward/cost contract, transition stochasticity, the exact operating Bellman equation, every all-restart candidate inequality, and the initial-law cost. It reconstructs contractions and McCormick residual rows, verifies both child boxes and complete tree reachability, checks cost pruning against the final incumbent, and rebuilds the global minimum over leaves. All 16 complete finite trees are checked, not only a sample of successful cases.
+
+\subsection{Whole-domain continuous-state objects}
+Each of the 42 primary randomized files retains the original incumbent and operating values, the new common operating continuation, numerator and denominator functions for mixing, and directed dyadic cost grids. The operating checker covers all open pieces and isolated points. The independent cost calculation uses positive affine transition maps and one of the three stated absolutely continuous initial laws; it does not extend the almost-everywhere cost guarantee to a Dirac initial law.
+
+The connected local lower file contains full support floors and every directed local grid. Independent checks reconstruct support supersolution inequalities and all feasible local pure and two-action vertices. Twenty-one horizon/incumbent support families are reused across the two tolerances, but each primary policy and local result is separately checked. Final endpoints can additionally use valid inherited bounds. In the horizon-8 neural31002, uniform-law, allowance-$1/20$ row, a retained R34 randomized endpoint exceeds the freshly checked local/support lower value. Its inherited provenance is specifically listed in \path{results/publication_audit.json}; it is not claimed to have received a fresh R39 independent derivation. Deterministic strict-separation comparisons similarly retain the source R38 certificate identity rather than inventing a new proof of an old bound.
+
+\subsection{Nonlinear objects}
+Twenty paired-model mesh/horizon constructions at allowance $1/2$ and four tighter-tolerance lower-only diagnostics use directed integer arrays at scale $2^{34}$. Global support supersolutions, operating lower/upper arrays, support floors, and connected restart bounds are stored. Array multiplication includes signed-integer overflow checks before a result is accepted. The upper policies remain the retained R38 candidates; no new upper-portfolio search is charged to this lower-bound-only improvement.
+
+Full independent arithmetic covers exactly $(T,N)=(8,64)$ and $(32,64)$. That verifier uses SymPy rational corner geometry, explicitly split threshold regions, and Python arbitrary-precision integer scalar induction. NumPy only reads the archive arrays. It checks all global-support action inequalities and separately reconstructs candidate operating and cost enclosures. The finer mesh rows remain directed-construction results with structural and hash checks; they do not inherit an independent label from the two checked objects.
+
+\section{Resource and termination accounting}
+The finite search allowance is 4,096 evaluated nodes and 60 seconds per solver/case, with requested absolute gap $1/1000$. Binary expansion adds two children, so an exhausted allowance can leave 4,095 evaluated nodes. Time is checked between iterations, not by interrupting the production of a node certificate. Model construction and operating solve appear in the end-to-end time. LP startup, Python imports, proof serialization, independent verification, and document rendering are separate stages visible in the logs; no single solver time is called the cost of the entire publication.
+
+The main finite table and supplemental work table use every run, including zero-cost cases, positive-gap termination, and remaining intervals. An absolute gap below $0.001$ can still be a material percentage of a very small cost. Both scales are reported. Peak resident memory includes Python and library overhead. The nonlinear payload $8N^2(T+1)(11+4)$ bytes counts stored arrays before temporary buffers and differs from process RSS. The nonlinear 60-second allowance is not borrowed from the finite protocol: these are separate declared experiments with separate resource records.
+
+The primary cohort is a development calculation with a fixed 1,024-cell base partition plus exact knots. No out-of-sample claim is made for its methods or incumbent selection. The local cost enclosure has nonzero width; exact operating values do not make its randomized cost exact. The full-horizon local lower bound need not be exact either. The manuscript therefore reports intervals rather than converting additional decimal places into an optimality claim.
+
+\section{Adversarial tests and the trusted boundary}
+Nine finite-proof corruptions test policy probability, policy class, initial law, terminal value, revision stage cost, lower bound, dual sign, and root coverage. The seeded partition test adds 200 random discontinuous piecewise-affine pairs, 15,112 exact value comparisons in the first execution, and 400 malformed-partition rejections. Its seed is 390723. These tests expose specific bugs and boundary mistakes but do not estimate an all-input false-acceptance rate.
+
+The mathematical specification remains a trusted boundary: an independently programmed arithmetic check can still share an incorrectly stated economic assumption. The paper-to-code contracts therefore duplicate primitive formulas and test their consequences, while the article proves why the constrained formulation is the relevant economic object. The reset approximation assumptions are not declared machine-checked for the atomic models. Package hashes certify byte identities, not theorem validity. Publication checks ensure that displayed numbers match checked data, not that every proposed application satisfies the theorem.
+
+\section{Preservation and review navigation}
+No earlier branch or historical file is replaced. The new supplement appends the complete \path{ECTA_R38.pdf} and \path{SUPP_R38.pdf} without changing their pages. \path{HISTORY_R38.pdf}, older referee reports, exact frontiers, sensitivities, failed local reconstruction, and stopped-control material remain on the branch. The new diagnostic makes the horizon-eight restart disagreement explicit without altering the historical result files. The revised article and response are the current interpretation; archival pages remain visibly archival.
+
+The publication manifest, independent reports, full tables, and response supply a direct route for re-review. They also retain the unresolved positive randomized gaps, the nonlinear relative width, the lack of empirical calibration, and the uncertified stopped-diffusion target. Those boundaries are part of the scientific record rather than omitted failures.
+\end{document}

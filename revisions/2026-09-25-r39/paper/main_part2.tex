@@ -1,0 +1,94 @@
+\section{Feasibility repair and complete policy search}\label{sec:convergence}
+Set
+\begin{align}
+ D_C&=K\sum_{s=0}^{T-1}(s+1)\beta^s,\label{eq:DC}\\
+ D_J&=\max_{1\leq h\leq T}\left\{2R\sum_{s=0}^{h-1}(s+1)\beta^s+2Gh\beta^h\right\}.\label{eq:DJ}
+\end{align}
+The maximum over remaining horizons in $D_J$ matters: the terminal term $h\beta^h$ need not increase with $h$. Total variation between action distributions is one half of their $\ell_1$ distance.
+
+\begin{lemma}[Policy perturbations]\label{lem:perturb}
+If $\sup_{t,x}\TV(p_t(\cdot\mid x),q_t(\cdot\mid x))\leq\theta$, then
+\[
+ \sup_{t,x}|J_t^p-J_t^q|\leq D_J\theta,
+ \qquad \sup_{t,x}|C_t^p-C_t^q|\leq D_C\theta.
+\]
+\end{lemma}
+\begin{proof}
+For costs, an action's remaining cost lies in $[0,K\sum_{s=0}^{h-1}\beta^s]$ at a state with $h$ periods remaining. Changing its distribution changes the conditional expectation by at most the length of this interval times $\theta$. Adding $\beta$ times the next-date value difference and iterating gives $K\sum_{s=0}^{h-1}(s+1)\beta^s\theta$. For operating rewards use the interval length $2R$ for each stage and $2G$ for the terminal reward. A reward at distance $s$ can be affected by $s+1$ action changes, and the terminal reward by $h$ changes. Taking the maximum over $h$ gives \eqref{eq:DJ}. The same conclusions follow by a finite-horizon coupling, but do not require one.
+\end{proof}
+
+\begin{theorem}[Common-continuation repair]\label{thm:repair}
+Suppose $p\in\cF_R(\varepsilon+\delta)$, $\delta\geq0$. There is a Borel randomized Markov policy $\widehat p\in\cF_R(\varepsilon)$ with $J_t^{\widehat p}\geq J_t^p$ for every $(t,x)$ and
+\begin{equation}\label{eq:repairbound}
+ \sup_{t,x}\TV(\widehat p_t,p_t)\leq
+ \rho_\varepsilon(\delta):=\frac{\delta}{(1-\beta)\varepsilon+\delta},
+ \qquad
+ \int C_0^{\widehat p}\,d\nu\leq\int C_0^p\,d\nu+D_C\rho_\varepsilon(\delta).
+\end{equation}
+In particular,
+\begin{equation}\label{eq:valuemodulus}
+ 0\leq\KR(\nu,\varepsilon)-\KR(\nu,\varepsilon+\delta)
+ \leq D_C\rho_\varepsilon(\delta).
+\end{equation}
+\end{theorem}
+\begin{proof}
+Proceed backward, with $J_T^{\widehat p}=g$. Given a repaired continuation, put $q_a=T_t^aJ_{t+1}^{\widehat p}$, $q_p=\sum_a p_t(a\mid x)q_a$, $q_* =\max_a q_a$, and $b=V_t-\varepsilon$. By the induction hypothesis, $q_p\geq J_t^p\geq V_t-\varepsilon-\delta$. Also $J_{t+1}^{\widehat p}\geq V_{t+1}-\varepsilon$ implies $q_*\geq V_t-\beta\varepsilon$. If $q_p\geq b$, retain $p_t$. Otherwise choose a measurable maximizing action $a_*$ and set
+\[
+ \widehat p_t=(1-\alpha)p_t+\alpha e_{a_*},\qquad
+ \alpha=\frac{b-q_p}{q_*-q_p}.
+\]
+Writing $d=b-q_p\in(0,\delta]$, the denominator is at least $(1-\beta)\varepsilon+d$. Thus $\alpha\leq\rho_\varepsilon(\delta)$ and $J_t^{\widehat p}=b\geq q_p\geq J_t^p$. All operations are Borel; the division is used only where the denominator is strictly positive. The construction uses only $t$ and $x$ and the already fixed next-date continuation. Lemma~\ref{lem:perturb} bounds cost. Apply the construction to arbitrarily near-minimizers at tolerance $\varepsilon+\delta$ and take their infimum to obtain \eqref{eq:valuemodulus}.
+\end{proof}
+
+The repair is not a convex combination of whole policies. Such a combination, if selected once and remembered, would enlarge the information state. Here the mixture is selected anew at each state using one repaired continuation. The slack $(1-\beta)\varepsilon$ explains why the theorem assumes strict discounting and a positive tolerance. No vanishing modulus at $\beta=1$ or $\varepsilon=0$ is asserted by this argument.
+
+\subsection{A complete finite-state construction}\label{sec:lattice}
+Let $X$ have $n$ states. For an integer $M\geq1$, let $\mathcal P_M$ be the policies whose action probabilities are multiples of $1/M$. Put $\theta_M=\min\{1,(m-1)/M\}$ and $\delta_M=D_J\theta_M$. Evaluate every candidate by the common Bellman equations and let
+\[
+ v_M=\min\left\{\int C_0^p\,d\nu:p\in\mathcal P_M,\
+ J_t^p\geq V_t-\varepsilon-\delta_M\ \forall t\right\}.
+\]
+For rational primitives these comparisons, values, and policy probabilities use rational arithmetic.
+
+\begin{theorem}[Convergence to the constrained optimum]\label{thm:lattice}
+Repair a minimizer defining $v_M$ and denote its feasible cost by $U_M$. Then
+\begin{equation}\label{eq:latticebracket}
+ L_M:=\max\{0,v_M-D_C\theta_M\}\leq\KR(\nu,\varepsilon)\leq U_M,
+ \qquad U_M-L_M\leq D_C\{\theta_M+\rho_\varepsilon(\delta_M)\}.
+\end{equation}
+Thus a prescribed positive absolute accuracy is reached at a finite $M$. At most
+$\binom{M+m-1}{m-1}^{nT}$ policies need be evaluated at that level. Running maxima of lower bounds and running minima of upper bounds give nested certificates without changing their validity.
+\end{theorem}
+\begin{proof}
+Round the first $m-1$ probabilities of any feasible policy down to multiples of $1/M$ and assign the remainder to the last action. The total-variation error is at most $(m-1)/M$, capped by one. Lemma~\ref{lem:perturb} shows that the rounded policy belongs to the relaxed finite set and has cost at most the original cost plus $D_C\theta_M$. Hence $v_M-D_C\theta_M\leq\KR$. Theorem~\ref{thm:repair} applied to the minimizing grid policy gives $U_M\leq v_M+D_C\rho_\varepsilon(\delta_M)$. The weak-composition count gives the number of simplex points at each date and state. The displayed error tends to zero.
+\end{proof}
+
+The theorem controls distance to \eqref{eq:target}, not distance to a one-step relaxation. Its count is exponential in $nT(m-1)$; it is a completeness construction, not a polynomial-time claim. The deterministic finite-state problem can instead be solved by evaluating its $m^{nT}$ vertices with the original tolerance. The randomized repair is neither required nor valid as a deterministic-preserving operation.
+
+\subsection{The executed spatial search}\label{sec:spatial}
+For binary actions, write $p_{ti}$ for the probability of action 1. A policy box $Q=\prod_{ti}[\ell_{ti},u_{ti}]$ retains the same coordinates across all restarts. Backward interval Bellman evaluation gives operating upper values $\overline J$ and unconstrained implementation lower values $\underline C$ for that box. Necessary operating tests can contract its coordinate intervals: if $q_0^+,q_1^+$ are next-date operating upper values, an admissible $p$ must satisfy
+\begin{equation}\label{eq:cap}
+ (1-p)q_0^++pq_1^+\geq V_t(i)-\varepsilon.
+\end{equation}
+Intersect this half-interval with $[\ell_{ti},u_{ti}]$. Empty intersections or inconsistent directed operating enclosures remove the box. Every removal is justified by a necessary inequality. Feasible policies are never removed because a sufficient candidate check fails.
+
+The remaining cost lower bound is $\int\underline C_0\,d\nu$. Repairing the midpoint of the contracted box produces a feasible upper policy. The algorithm selects a live box with the smallest lower bound and bisects a coordinate maximizing $\beta^t(u_{ti}-\ell_{ti})$. It preserves both children and every live leaf. A global lower endpoint is the minimum of all live or cost-pruned leaf lower bounds and the incumbent upper cost. It stops when their difference is no greater than the requested tolerance, or reports the remaining interval when the preassigned budget is exhausted.
+
+\begin{proposition}[Stopping bound for interval Bellman search]\label{prop:spatial}
+Let $w=\max_{ti}(u_{ti}-\ell_{ti})$ for a surviving policy box. Its midpoint-repair cost minus its interval Bellman lower bound is at most
+\begin{equation}\label{eq:boxerror}
+ H(w)=D_C\{w+\rho_\varepsilon(D_Jw)\}.
+\end{equation}
+Without a node or time cap, the best-bound bisection procedure reaches every prescribed positive gap $\eta$ in finitely many steps. In particular, choose $w_*>0$ with $H(w_*)\leq\eta$. A sufficient worst-case bisection depth is
+\begin{equation}\label{eq:depth}
+ d\left\lceil\log_2\frac{1}{\beta^{T-1}w_*}\right\rceil,
+ \qquad d=nT,
+\end{equation}
+with the ceiling replaced by zero when its argument is at most one. The associated full binary-tree node bound is exponential in this depth. Adding valid McCormick lower bounds cannot invalidate the stopping guarantee.
+\end{proposition}
+\begin{proof}
+With only rectangular probability restrictions, ordinary Bellman maximization produces the maximum operating value simultaneously at every state. It is a common Markov policy, not a family of incompatible histories. A surviving contracted box has its operating upper value at least $V_t-\varepsilon$ at every date and state. Each such maximizing policy differs from the midpoint policy by total variation at most $w$. Lemma~\ref{lem:perturb} therefore makes the midpoint $D_Jw$-approximately feasible. The same rectangular Bellman argument for minimum cost gives a lower bound no smaller than midpoint cost minus $D_Cw$. Repair and \eqref{eq:repairbound} imply \eqref{eq:boxerror}. A box satisfying $H(w)\leq\eta$ cannot need refinement while the global gap exceeds $\eta$: its repaired cost is already an incumbent candidate, so its lower bound is within $\eta$ of the global incumbent or higher. On any still-refined path, weighted longest-side bisection makes every physical width at most $w_*$ by the depth in \eqref{eq:depth}. There are finitely many nodes up to that depth. Valid stronger lower bounds only remove or improve boxes. The supplement details the effect of the necessary contractions; they shrink the rectangles and preserve every feasible point.
+\end{proof}
+
+This is a convergence theorem for the implemented search rule, not an inference from favorable outcomes. It also explains why a 60-second run can end with a large gap: a finite worst-case bound can be prohibitively large. The numerical results report that distinction directly.
+

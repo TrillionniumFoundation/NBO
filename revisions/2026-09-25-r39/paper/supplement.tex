@@ -1,0 +1,193 @@
+\input{revisions/2026-09-25-r39/paper/preamble}
+\input{revisions/2026-09-25-r39/paper/generated/metrics}
+\begin{document}
+\begin{frontmatter}
+\title{Supplement to ``Certified Bellman Operators for Costly Policy Revision''}
+\runtitle{Common-Continuation Certificates: Supplement}
+\begin{aug}\author[id=au1,addressref={add1}]{\fnms{Qian}~\snm{QI}}\address[id=add1]{\orgname{Peking University}}\end{aug}
+\begin{abstract}This supplement supplies proof details, exact model contracts, complete result tables, and the distinction between independent verification and inherited evidence. The complete R38 article and supplement are appended without modification. The main article is self-contained and does not require the archival annex.\end{abstract}
+\end{frontmatter}
+\section{Objects, assumptions, and verification boundaries}
+The economic object throughout the new theory is one randomized Markov policy used at all states and dates. Each inequality $J_t^p(x)\geq V_t(x)-\varepsilon$ concerns that same policy. Its cost is integrated under a named initial law. None of the new convergence results treats a collection of Dirac-optimal policies as a solution under a dispersed initial law.
+
+\begin{longtable}{p{.21\textwidth}p{.36\textwidth}p{.35\textwidth}}
+\caption{Assumptions and certificate scope}\label{tab:assumptions}\\
+\toprule Result & Target and assumptions & Computation and check \\ \midrule\endfirsthead
+\toprule Result & Target and assumptions & Computation and check \\ \midrule\endhead
+Repair and modulus & Borel state space, finite actions, bounded rewards and costs, $0<\beta<1$, $\varepsilon>0$; common randomized Markov policy; any initial law & Analytic proof. Borel measurability and the model bounds are assumptions, not facts inferred from a hash. \\
+Finite complete search & Finite states; same all-restart constraints and initial masses; compact policy product & Rational evaluation and verified box search. Full independent SymPy checks for 16 executed search trees. \\
+Continuous transfer & Certified reset-kernel approximation in operator total variation; initial mixture identity; $\varepsilon>2a_h$ & Analytic end-to-end theorem. No claim that atomic benchmark kernels satisfy a vanishing reset error. \\
+Primary lotteries & Unchanged one-state, atomic affine-shock model; all-state operating feasibility; uniform, $2x$, or $2(1-x)$ initial density & Exact operating identities including isolated points; directed cost boxes; 42 independent lottery and local-bound checks. \\
+Deterministic restrictions & Borel finite-action necessary correspondence; deterministic policies only & R38 proof objects and independent verification remain retained. The deterministic lower bound is not a randomized lower bound. \\
+Nonlinear support & Two-state bilinear dynamics; uniform square; $\varepsilon=1/2$ for paired upper policies & Directed vector arithmetic on all 20 meshes; independent scalar checks for two complete objects. Four $\varepsilon=1/20$ rows are lower-only. \\
+Retained local adaptive LP & A continuous one-step relaxation, not the common-policy global optimum & Prior exact whole-cell certificates retained; new connected lower recursion independently checked. \\
+Stopped diffusion & Continuous actions, boundary settlement and diffusion approximation still require coverage & Archival derivation, not a solved numerical target or external validation. \\
+\bottomrule
+\end{longtable}
+
+\section{Details of the repair and complete-search arguments}
+\subsection{Policy perturbation and terminal rewards}
+Use total variation $\TV(p,q)=\frac12\sum_a|p_a-q_a|$ for action distributions. If an action-dependent scalar takes values in an interval of length $D$, replacing $p$ by $q$ changes its expectation by at most $D\TV(p,q)$. With $h$ stages remaining, a stage cost at distance $s$ can be affected by the current decision and by $s$ earlier transitions. Thus the cost perturbation constant is $K\sum_{s=0}^{h-1}(s+1)\beta^s$. Operating rewards contribute $2R\sum_{s=0}^{h-1}(s+1)\beta^s$, and the terminal reward contributes $2Gh\beta^h$. The maximum over all remaining horizons is necessary: $h\beta^h$ need not be increasing in $h$. Taking only the horizon-$T$ terminal term would not provide a uniform all-restart bound. The main article uses this maximum explicitly.
+
+\subsection{Common-continuation repair and approximate minimizers}
+Let the original policy be feasible at allowance $\varepsilon+\delta$. At each backward step, all next-date repairs have already been fixed. The old current action probabilities evaluated against that repaired continuation give $q_p\geq V_t-\varepsilon-\delta$. The best current action gives $q_*\geq V_t-\beta\varepsilon$. If $q_p<V_t-\varepsilon$, the required mixture share is
+\[
+ \alpha=\frac{V_t-\varepsilon-q_p}{q_*-q_p}
+ \leq\frac{\delta}{(1-\beta)\varepsilon+\delta}.
+\]
+Mixing occurs only on the Borel set with a positive numerator and denominator. The first maximizer in a fixed action ordering is Borel because the action set is finite. Operating value weakly improves at every date and state. The same policy therefore satisfies all repaired constraints simultaneously. A coin selected once at time zero and remembered would not prove this result; the construction does not use such a coin.
+
+For a general Borel model an optimizer need not exist. Apply the repair to a policy whose cost is within $\xi>0$ of the relaxed infimum. The repaired cost is at most that relaxed infimum plus $\xi+D_C\rho_\varepsilon(\delta)$. Letting $\xi\downarrow0$ proves the value modulus without assuming attainment. In a finite-state model, the product of policy simplexes is compact, the finite-horizon Bellman values are polynomials in its coordinates, and the feasible set is closed and nonempty. There the constrained minimum is attained. The pure-action finite-state problem is a finite enumeration; the randomized repair does not preserve deterministic policies and is not presented as a deterministic repair.
+
+\subsection{Why necessary contractions preserve completeness}
+Fix the already contracted next-date probability intervals. Their rectangular operating Bellman recursion has one maximizing Markov policy that attains its upper value at all states, by backward induction. The inequality used to contract a current interval is therefore necessary for every feasible policy remaining in the original box. Contracting a current coordinate leaves next-date values unchanged. Its retained endpoint set, when nonempty, still permits an operating value at least $V_t-\varepsilon$. Proceeding backward establishes this fact simultaneously at all dates of the contracted box. Capping an operating upper value by $V_t$ does not reduce a true rectangular maximum, since an unconstrained operating optimum already dominates every box-restricted policy.
+
+The implementation also computes lower operating enclosures and may discard a box when a lower enclosure exceeds its upper enclosure. That is an inconsistency test, not a failure of one sufficient candidate. Lower operating clipping at $V_t-\varepsilon$ uses a property of every feasible policy. Such additional necessary tests cannot remove a feasible policy. The separate cost lower recursion uses the retained probability rectangle without imposing incompatible, restart-specific continuation choices. Ordinary cost Bellman minimization attains this rectangular lower value at every state.
+
+Let $w$ be the largest retained interval width. The midpoint differs by at most $w$ in total variation from the rectangular operating maximizer and the rectangular cost minimizer. Hence its operating deficit is at most $D_Jw$, and its cost is at most the rectangular lower cost plus $D_Cw$. Repair adds at most $D_C\rho_\varepsilon(D_Jw)$. This proves the stated box error, including the effect of contractions.
+
+For the finite stopping count, put $a=\beta^{T-1}w_*$. Any physical width exceeding $w_*$ has weighted width exceeding or equal to $a$. Each weighted coordinate starts at at most one and, whenever selected, is at least halved; contractions can only reduce it further. Along any path, after at most $\lceil\log_2(1/a)\rceil$ halvings per coordinate, no weighted width can remain above $a$. Because the largest weighted coordinate is selected, no more than $nT$ times that number of splits are needed before all physical widths are at most $w_*$. A positive-gap search never needs to refine a box whose repaired midpoint is already within the requested gap of its lower bound. There are finitely many possible nodes above this depth. The count can be enormous, and does not imply that the fixed-budget experiments exhaust it.
+
+\subsection{Rational policy lattices and a deterministic benchmark}
+For $m$ actions, rounding down the first $m-1$ probabilities and assigning the remainder to the last action gives a total-variation error at most $(m-1)/M$. The relaxed feasibility test at allowance $\varepsilon+D_J\theta_M$ retains a rounded version of every originally feasible policy. Its minimum cost minus $D_C\theta_M$ is a lower bound. Repair of its minimizing policy gives a feasible upper bound. The main theorem bounds the gap by $D_C[\theta_M+\rho_\varepsilon(D_J\theta_M)]$. Lattice levels need not be nested: taking the maximum of all lower endpoints and the minimum of all feasible upper endpoints yields nested certificates. The executed algorithm uses box search, rather than asserting that this exhaustive lattice was run.
+
+\section{Continuous-state transfer without a hidden policy sieve}
+\subsection{Averaging identity}
+In the reset model, after a transition into $E_j$, the conditional within-cell law is exactly $\mu_j$, independently of the predecessor state and action. For an arbitrary Borel policy $p$, define $\bar p_t(a\mid i)=\int_{E_i}p_t(a\mid x)\mu_i(dx)$. At the terminal date the payoff is cellwise constant. If the averaged next-date values coincide with those of the finite model, integrating the reset Bellman equation over $\mu_i$ gives the finite Bellman equation with action probabilities $\bar p_t$. Backward induction proves the identity for operating values and costs. It uses the same averaged policy at every restart, not a separately optimized policy for each $i$.
+
+Uniform primitive comparison bounds $|J^p-J_h^p|$ by $a_t$ and $|C^p-C_h^p|$ by $b_t$ for the very same policy. The comparison for optimal operating values is obtained directly from the contraction and monotonicity of finite-horizon Bellman operators. An original feasible policy, when averaged, therefore satisfies the finite constraints at allowance $\varepsilon+2a_h$. A finite policy feasible at $\varepsilon-2a_h$ can be lifted to the original model and satisfies its original constraints. The initial-mixture identity converts the integrated cost exactly in the reset model; $b_h$ controls the remaining original-model error. Combining both maps with the repair modulus produces the global error budget in the article.
+
+\subsection{Verification obligations for an application}
+The theorem needs a bound for every bounded Borel test function, not merely weak convergence for smooth functions. A verified uniform density approximation can provide such a bound through an $L_1$ estimate. For a compact domain with a Lipschitz density in both source and destination coordinates, piecewise-constant density integration gives a computable linear mesh modulus, with cell volume and domain diameter included in the constant. Discontinuous installed rules require an aligned partition or a separately bounded cost error. The approximation must retain the declared initial-law mixture. These conditions are sufficient, not automatically satisfied by a chosen mesh.
+
+The affine and bilinear benchmark kernels contain atoms. Replacing their images by uniform cell measures does not furnish a vanishing operator-total-variation error. Their direct whole-domain certificates do not depend on this transfer theorem. We retain their unresolved structural gaps and do not present a mesh sequence as a proof of convergence for those atomic models. The stopped diffusion would additionally need continuous-action coverage, boundary settlement, time discretization, and diffusion/quadrature error bounds before the same end-to-end conclusion could be claimed.
+
+\section{Exact model contracts and prospective evaluation}
+\subsection{Finite-state joint perturbations}
+The protocol commits seeds 391101--391108 after development seed 390001, with the case dimensions and horizons in Table~\ref{tab:finitework}. The two-condition state rewards are $(1/5,4/5)$. The four-state rewards are $(1/5,1/2,1/2,4/5)$, representing the average of two low/high indicators. Action $a\in\{0,1\}$ has operating reward $s_i-a c$, terminal reward $s_i/2$, and revision cost $a(1+s_i)$ against the installed action zero. The seed fixes $c\in\{11,\ldots,20\}/100$ and transition jitters; the complete generated rational matrices are inside every proof object.
+
+For two states, the probability of the high-condition destination is
+\[
+ P^a(i,\mathrm{high})=
+ \{22\ind_{i=0}+65\ind_{i=1}+j_{ai}+40a\}/120,
+ \qquad j_{ai}\in\{0,\ldots,8\}.
+\]
+For four states, writing the source as $(i_x,i_y)\in\{0,1\}^2$, the two destination indicators are conditionally independent given the source and action, with probabilities
+\[
+ p_x=(18+39i_x+7i_xi_y+j_x+37a)/120,\qquad
+ p_y=(20+36i_y+5i_xi_y+j_y+37a)/120,
+\]
+where the seed gives $j_x,j_y\in\{0,\ldots,6\}$. Their product probabilities specify the four-state row. Odd seeds use uniform initial masses; even seeds use $\nu_i=(i+1)/\sum_{j=1}^n j$. This is a designed joint-perturbation suite, not a calibrated economic panel or a random sample of environments.
+
+The protocol at commit \texttt{13fd3ee0eec78db5fa6aed34e63819c5ed546209} fixes the two solver hashes, all eight cases, 4,096 nodes, 60 seconds per solver/case, and absolute stopping tolerance $1/1000$. No solver coefficient was changed after these eight environments were generated. A subsequent CI execution is a replay of the frozen experiment, not a second untouched holdout. Wall-clock stopping can change the explored node count across machines. The first local execution summary is retained separately; tables identify the published execution by its manifest.
+
+\begin{longtable}{rlrrlrrl}
+\caption{Complete finite-state work and termination records}\label{tab:finitework}\\
+\toprule Seed & Method & Absolute gap & Nodes & Stop & MiB RSS & Seconds & Gap met\\\midrule\endfirsthead
+\toprule Seed & Method & Absolute gap & Nodes & Stop & MiB RSS & Seconds & Gap met\\\midrule\endhead
+\tablerows{revisions/2026-09-25-r39/paper/generated/finite_work.tex}
+\bottomrule\end{longtable}
+I and M denote interval Bellman and verified McCormick search. The memory figure is process peak resident memory; it includes interpreter and imported libraries, not only the search tree. Seconds include model construction and the operating solve. The search cap is checked between proof-producing iterations, so a final iteration can exceed 60 seconds. Serialization and independent checking are separate costs recorded in logs. A stopped run supplies a valid remaining interval; it is not a failed proof and is not labeled exact.
+
+\subsection{The nonlinear primitive contract}
+The state lies in $[0,1]^2$, $\beta=19/20$, and shock $z\in\{0,1\}$ has probabilities $3/5,2/5$. For each component, the transition is $(s\,\text{own}+bxy+c+dz)/100$. The coefficient pairs for actions $0,1,2,3$ are
+\[
+\begin{array}{c|cc}
+a & x\text{ component }(s,b,c,d)&y\text{ component }(s,b,c,d)\\\hline
+0&(65,5,0,3)&(70,3,0,2)\\
+1&(15,3,70,2)&(70,3,0,2)\\
+2&(65,5,0,3)&(15,4,70,2)\\
+3&(10,2,80,2)&(10,2,80,2).
+\end{array}
+\]
+Operating costs are $(0,9/50,9/50,8/25)$, reward is $(x+y)/2-c_a$, and terminal reward is $(x+y)/4$. The installed action is 3 when both coordinates are below $1/4$; otherwise it is 1 when $x<9/20$, 2 when $y<9/20$, and 0 otherwise. Revision cost is $(1+(x+y)/2)\ind\{a\ne a^0(x,y)\}$. The independent checker separately partitions threshold-crossing boxes and verifies all transition ranges by rational corner geometry. This tests the paper-to-code model contract as well as arithmetic direction.
+
+\section{Complete continuous-state results}
+The tables below have identical all-restart constraints on both sides. Lower and upper decimals are rounded outward, and the gap column is rounded upward. Relative gaps are descriptive decimal percentages calculated from the exact rational interval. ``Gain'' means the lottery upper cost is strictly below the deterministic lower cost for that same initial density. It does not mean that the lottery is a globally optimal randomized rule. Zero upper cost is exact by nonnegativity; no positive randomized row is relabeled exact.
+\subsection{Uniform initial density}
+\begin{longtable}{rlrrrrrl}
+\toprule $T$ & Installed rule & $\varepsilon$ & Lower & Upper & Gap & Gap/upper (\%) & Gain\\\midrule\endfirsthead
+\toprule $T$ & Installed rule & $\varepsilon$ & Lower & Upper & Gap & Gap/upper (\%) & Gain\\\midrule\endhead
+\tablerows{revisions/2026-09-25-r39/paper/generated/primary_uniform.tex}
+\bottomrule\end{longtable}
+\subsection{Initial density $2x$}
+\begin{longtable}{rlrrrrrl}
+\toprule $T$ & Installed rule & $\varepsilon$ & Lower & Upper & Gap & Gap/upper (\%) & Gain\\\midrule\endfirsthead
+\toprule $T$ & Installed rule & $\varepsilon$ & Lower & Upper & Gap & Gap/upper (\%) & Gain\\\midrule\endhead
+\tablerows{revisions/2026-09-25-r39/paper/generated/primary_high_condition.tex}
+\bottomrule\end{longtable}
+\subsection{Initial density $2(1-x)$}
+\begin{longtable}{rlrrrrrl}
+\toprule $T$ & Installed rule & $\varepsilon$ & Lower & Upper & Gap & Gap/upper (\%) & Gain\\\midrule\endfirsthead
+\toprule $T$ & Installed rule & $\varepsilon$ & Lower & Upper & Gap & Gap/upper (\%) & Gain\\\midrule\endhead
+\tablerows{revisions/2026-09-25-r39/paper/generated/primary_low_condition.tex}
+\bottomrule\end{longtable}
+\section{Deterministic gaps and the exceptional restart locus}
+The inherited deterministic headline decomposes into 12 zero-cost and 12 positive-cost equalities. Of the positive-cost equalities, ten occur at horizon 4, two at horizon 8, and none at horizon 12. The table reports every inherited absolute and relative interval and the outer selector's maximum operating deficit. A deficit above $\varepsilon$ is an actual violation established by the exact one-dimensional representation; it is distinct from a failed sufficient nonlinear box certificate.
+
+The installed policy has zero \emph{revision} cost by definition. Therefore a revision gap divided by the installed policy's revision cost is undefined for every row. We do not report that ratio as zero, and do not substitute its operating reward as a denominator with different units. The valid cost normalization is gap divided by a positive feasible upper revision cost; a zero upper cost is separately labeled exact.
+
+\begin{longtable}{rlrrrrr}
+\toprule $T$ & Rule & $\varepsilon$ & Det. gap & Gap/upper (\%) & Selector deficit & Excess over $\varepsilon$\\\midrule\endfirsthead
+\toprule $T$ & Rule & $\varepsilon$ & Det. gap & Gap/upper (\%) & Selector deficit & Excess over $\varepsilon$\\\midrule\endhead
+\tablerows{revisions/2026-09-25-r39/paper/generated/deterministic_gaps.tex}
+\bottomrule\end{longtable}
+
+\subsection{Exact disagreement for horizon 8, neural31003, allowance $1/20$}
+A direct check reveals a stronger initial equality than the earlier verbal description suggested: $C_0=B_0$ as represented functions, including isolated points. The failure of the all-restart equality flag comes from dates 1, 2, and 3 below. These are not merely null-set changes to the initial cost function. They are distinct restarted problems. The nonnegative Bellman cost-gap decomposition and initial equality imply zero expected later gap under the selected policy and the original uniform law; positive-gap intervals therefore have zero probability along that policy from this initial law. They remain relevant when the controller is restarted at their states. The following fractions come directly from the independent piecewise-affine parser. No decimal equality test was used.
+
+\input{revisions/2026-09-25-r39/paper/generated/exception_locus}
+
+\section{Nonlinear bounds and work}
+The support-only lower endpoint is shown beside its connected restart improvement. All upper policies are the same retained feasible candidates; thus the improvement is not confounded with a larger proposal portfolio. A missing upper endpoint means that no upper candidate at that mesh was certified by the inherited sufficient test. It does not imply true infeasibility. No comparison of unmatched success fractions is used.
+
+\begin{longtable}{rrrrrrr}
+\toprule $T$ & $N$ & Support lower & Restart lower & Upper & Gap/upper (\%) & Array MiB\\\midrule\endfirsthead
+\toprule $T$ & $N$ & Support lower & Restart lower & Upper & Gap/upper (\%) & Array MiB\\\midrule\endhead
+\tablerows{revisions/2026-09-25-r39/paper/generated/nonlinear_all.tex}
+\bottomrule\end{longtable}
+
+The array payload excludes temporary continuation ranges, the interpreter, and compression buffers; peak process memory is also saved. On a threshold-crossing box, the cost upper enclosure charges the largest possible realized departure cost, while the lower enclosure can charge zero if the installed action is possible there. This conservatism concerns enclosure of the implemented policy, not a claim that the policy changes at every point of that box. The nonzero supports address the earlier lower-bound weakness without removing this upper-enclosure conservatism.
+
+\subsection{Operating allowance $1/20$}
+These four rows test a tolerance comparable to the primary development cohort. They are explicitly lower-bound-only diagnostics. A feasible policy at allowance $1/2$ cannot be used as an upper policy at allowance $1/20$.
+\begin{longtable}{rrrrrl}
+\toprule $T$ & $N$ & $\varepsilon$ & Lower & Witness width & Status\\\midrule\endfirsthead
+\toprule $T$ & $N$ & $\varepsilon$ & Lower & Witness width & Status\\\midrule\endhead
+\tablerows{revisions/2026-09-25-r39/paper/generated/nonlinear_tight.tex}
+\bottomrule\end{longtable}
+
+\section{Local-LP error versus work and degeneracies}
+The inherited adaptive calculation is retained in full. Its finest tolerances required substantially more cells and work. The table and two generated figures display all 12 executions, not only favorable rows. They concern a continuous local relaxation with zero global support floor, and are not silently combined with the new nonzero-floor global recursion as if their errors were additive.
+
+\begin{longtable}{lrrrrr}
+\toprule Witness & $\varepsilon$ & Local tolerance & Cells & Local interval width & Seconds\\\midrule\endfirsthead
+\toprule Witness & $\varepsilon$ & Local tolerance & Cells & Local interval width & Seconds\\\midrule\endhead
+\tablerows{revisions/2026-09-25-r39/paper/generated/local_work.tex}
+\bottomrule\end{longtable}
+
+\begin{figure}[p]\centering\includegraphics[width=.85\textwidth]{revisions/2026-09-25-r39/paper/generated/local_cells.pdf}\caption{Certified local interval width against whole cells. Every inherited local execution is displayed; the connected R39 global lower bounds solve a different recursive lower problem.}\end{figure}
+\begin{figure}[p]\centering\includegraphics[width=.85\textwidth]{revisions/2026-09-25-r39/paper/generated/local_seconds.pdf}\caption{Certified local interval width against construction seconds. The steep work increase is retained rather than hidden by an aggregate success count.}\end{figure}
+
+The new local calculation uses a fixed represented partition, not an adaptive nondegeneracy termination assumption. For one operating inequality, it enumerates feasible pure actions and two-action mixtures straddling the boundary. When a pure action lies exactly on the boundary it is already included. When two operating values coincide, no division by their difference is performed; either their face is infeasible or its linear cost minimum is attained at an included pure vertex. Thus rational coincidences do not create an unreported termination assumption for the new calculation. The old logs did not instrument an occurrence count for every degeneracy in their adaptive proof construction. We do not infer such a count from successful termination. Those old claims remain subject to their explicitly conditional theorem.
+
+\section{Independent checks, publication checks, and preservation}
+The 16 finite proof trees are checked using SymPy rationals without importing either solver, the repair constructor, or the LP package. The verifier reconstructs the economic stage contract, common-policy Bellman equalities, operating feasibility, box coverage, contractions, all accepted nonnegative multiplier residuals, and the minimum over terminal leaves. Nine distinct corruptions of policy class, probabilities, terminal value, initial law, revision cost, lower endpoint, multiplier sign, or root coverage are rejected. These mutation tests supplement rather than prove the verifier's all-input correctness.
+
+The 42 continuous-state lottery objects and their 42 connected local lower objects receive independent operating, cost, support, and vertex checks. The separate randomized and deterministic inherited endpoints retain their provenance. Most final lower endpoints are either the newly checked local integral or the newly checked exact support integral. A retained R34 randomized endpoint may dominate those at a particular row; such an inherited component is not converted into a fresh R39 independent proof merely by taking a maximum. The publication audit records the source components. Likewise deterministic strict separation uses the retained R38 deterministic certificates, whose own independent checks remain part of the archive. The independent label for new lotteries and local bounds does not expand automatically to all historical components.
+
+The two nonlinear independent checks cover the whole $(T,N)=(8,64)$ and $(32,64)$ objects, including policy cost and operating feasibility. They use rational corner geometry and scalar arbitrary-precision integer recursions, rather than vectorized construction arithmetic. Other nonlinear meshes have directed construction and structural checks, not the same independent status. These labels are distinct from hash identity, repeated execution, and publication-integrity checks.
+
+A seeded adversarial test separately generates 200 discontinuous piecewise-affine pairs, tests their exact lower envelopes and positive affine pullbacks against independent SymPy evaluation at knots and open-cell representatives, and rejects 400 malformed partitions. The retained report states its seed and comparison count. This tests isolated values, threshold crossings, and discontinuities beyond the nine hand-selected finite-tree mutations. It is not a probability estimate of false acceptance.
+
+\subsection{Preserved scientific content}
+The appended R38 article and supplement contain the complete deterministic proof, fixed-restart history-conditioned frontier, two-period randomized example, adaptive local-LP theorem, economic sensitivity analysis, nonlinear feasibility construction, and killed-operator/stopped-control derivations. They remain historical documents with their original claims and limitations; the R39 article and this supplement specify the current conclusions. The complete older 349-page \texttt{HISTORY\_R38.pdf}, prior reviews, failed runs, and source hashes remain unchanged on the branch. No historical scientific content is deleted. Preservation is not presented as additional evidence that an unresolved economic optimum has been solved.
+
+\clearpage
+\section{Verbatim preserved R38 article}
+The following pages are the original article, not a newly edited substitute. Its initial cost-equality discussion is supplemented by the exact restart diagnostic above.
+\includepdf[pages=-,pagecommand={},fitpaper=false]{ECTA_R38.pdf}
+\clearpage
+\section{Verbatim preserved R38 technical supplement}
+\includepdf[pages=-,pagecommand={},fitpaper=false]{SUPP_R38.pdf}
+\end{document}
