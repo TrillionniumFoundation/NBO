@@ -1,0 +1,25 @@
+name: R30 pinned source
+on:
+  push:
+    branches: [revision/econometrica-r30-referee-response-2026-09-24]
+    paths: [.github/workflows/r30-source.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Archive the exact checked-out source and retained evidence
+        run: |
+          git rev-parse HEAD > /tmp/SOURCE_COMMIT.txt
+          git archive --format=tar.gz HEAD > /tmp/NBO_R30_BASE.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r30-base-${{ github.run_id }}
+          path: |
+            /tmp/NBO_R30_BASE.tar.gz
+            /tmp/SOURCE_COMMIT.txt
+          retention-days: 7
