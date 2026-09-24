@@ -1,0 +1,30 @@
+name: R30 source export
+on:
+  push:
+    branches: [revision/econometrica-r30-adaptive-certification-2026-09-24]
+    paths: [.github/workflows/r30-source-export.yml]
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package tracked source and current referee PDFs
+        run: |
+          python - <<'PY'
+          import pathlib, subprocess, zipfile
+          files = subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          with zipfile.ZipFile('/tmp/nbo-r30-baseline.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for name in files:
+                  p=pathlib.Path(name)
+                  if p.is_file() and (p.suffix.lower() not in {'.pdf','.zip','.gz','.png','.jpg','.jpeg'} or (p.parent==pathlib.Path('.') and p.name.endswith('_R29.pdf'))):
+                      z.write(p,name)
+              z.writestr('BASELINE_COMMIT.txt',subprocess.check_output(['git','rev-parse','HEAD']))
+          print(pathlib.Path('/tmp/nbo-r30-baseline.zip').stat().st_size)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r30-baseline-${{ github.sha }}
+          path: /tmp/nbo-r30-baseline.zip
+          retention-days: 7
