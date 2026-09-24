@@ -1,0 +1,27 @@
+name: R34 review package
+on:
+  push:
+    branches: [revision/econometrica-r34-verified-policy-frontier-2026-09-24]
+    paths:
+      - '.github/workflows/r34-review-package.yml'
+      - '.r34-transfer/**'
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Package pinned repository sources
+        run: |
+          git rev-parse HEAD > /tmp/SOURCE_COMMIT.txt
+          git archive --format=tar.gz HEAD > /tmp/NBO-source.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r34-source-${{ github.sha }}
+          path: |
+            /tmp/NBO-source.tar.gz
+            /tmp/SOURCE_COMMIT.txt
+          retention-days: 7
