@@ -1,0 +1,11 @@
+# R32 amendment 01: shape-safe encoding, complete setup costs, independent checks
+
+The first 42-case class-only cohort was executed under the inherited fixed model and candidate recipe. Every case certified; neural raw passes were 0/18, spline raw passes 12/12, and the six predeclared occupancy-stress cases had positive dynamic cost savings. Those observations and the initial code/timings are retained in results/attempts/phase-timing-v0. No seed, model, horizon, tolerance or failed candidate is removed.
+
+A mathematical encoding audit identified a general issue: independently rounding sampled knot ordinates upward need not preserve convexity, even though the tested witness intermediates were convex and all their inequalities passed. The final construction instead rounds the ordered secant slopes upward to dyadics and integrates them from an upward-rounded initial ordinate. This preserves convexity exactly and adds at most twice the slope-rounding unit to the vertical error. The complete original/new-knot comparison remains mandatory. The complete cohort is rerun after this change.
+
+The initial phase timings excluded interpreter/framework import. Every final neural fitting run now executes in a fresh subprocess; its full wall time, including interpreter and PyTorch loading, is charged. Training, exact compilation and subsequent certificate stages are not assigned zero cost. The original descriptive timings remain visible rather than being silently replaced.
+
+An additional checker verifies every interval limit and isolated knot inequality without calling the construction's envelope optimizer. It checks changed-model, missing-cell, endpoint and false-cost mutations, and compares tiny dynamic programs with exhaustive scenario-tree choices. Its time is reported separately and added to the final delivered-work accounting.
+
+Finally, when an installed policy's own-value computation already satisfies the all-restart bound, retaining it has globally minimal intervention cost zero. This corollary is checked for every case, not only the successful spline cases. Zero-intervention certificates are additional outputs; they do not erase the class-only computations or claim that an arbitrary conservative action class is globally cost optimal.

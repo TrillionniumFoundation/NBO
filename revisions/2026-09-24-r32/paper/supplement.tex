@@ -1,0 +1,120 @@
+\section{Finite representations and verification semantics}\label{app:representation}
+The replication uses a finite rational object $f=(z_i,m_i,b_i,v_i)$: $f(x)=m_ix+b_i$ on each open interval $(z_i,z_{i+1})$, while $f(z_i)=v_i$. This distinction is necessary even when the original operating value is continuous. Compiled decisions can jump, a cost-minimizing decision can have a special tie value, and an affine transition can send an entire exceptional point to another exceptional point. Integral-zero sets must therefore remain in a certificate for all restart states.
+
+For a common overlay of two such functions, an affine inequality on an open interval holds if and only if it holds in both endpoint limits. The actual endpoint values are checked separately. This is the reason a midpoint may safely identify which affine formula applies on an already constructed cell, but may not by itself verify that formula's inequality. Every range check uses the limits as well as the stored points. A missing cell, a wrong point value, or a changed model fails verification.
+
+An affine composition $f(\alpha x+\gamma)$ with $\alpha>0$ adds every preimage of a knot that lies in $[0,1]$. Values at those preimages are inherited exactly. Maximization first overlays all source partitions; on each common affine cell it inserts all pairwise action intersections. The minimum action index breaks an exact tie. Constrained minimization additionally overlays the binary eligibility masks. Thus eligible singleton actions are not inferred from neighboring open cells.
+
+Normalization removes a knot only if both adjacent affine formulas agree and the stored knot value agrees with that same formula. A separate test creates a point spike, normalizes it, composes it with an affine map, and confirms that the spike and its preimage survive. Exact integration ignores singleton masses only when integrating against the continuous initial distribution. The dynamic recursions never ignore them.
+
+\section{Constructive witness details}\label{app:witness}
+\subsection{Existence and implemented adaptive compression}
+For a convex Lipschitz function on $[0,1]$, a chord interpolant on a mesh of width $h$ lies above the function. A conservative $Lh$ error bound follows from the Lipschitz comparisons to both endpoints. Hence a sufficiently fine rational mesh and sufficiently fine dyadic rounding produce a certified upper approximation at every finite backward step. The maximum over finitely many positive affine compositions of convex piecewise-affine functions remains convex and piecewise affine.
+
+The implementation uses a more economical, checked adaptive rule. Initially retain both endpoints. For each candidate chord, find the source knot with the largest chord error. If that error exceeds half the stage compression allowance, retain that knot and recurse on the two children. This yields an unrounded chord cover with error at most half the allowance. Retained locations are rounded to dyadics, and exact function values at the rounded locations are recomputed. Ordered chord slopes, rather than independent point ordinates, are rounded upward; integrating these rounded slopes from an upward-rounded initial value preserves convexity.
+
+Rounding a retained coordinate can change the chord error. The acceptance decision therefore does not rely only on the error before rounding. It evaluates $G-F$ over the union of all source and encoded knots, including endpoints, and requires $0\le G-F\le\delta$. Precisions 24, 32, 48, 64, 96, and 128 bits for coordinates are available, with 16 extra bits for slope and initial-value rounding. A failed precision ladder is an unresolved construction, not a certificate. All registered cases pass at the first coordinate precision. The implemented cap is 200,000 pieces; the existence theorem does not identify that engineering cap with a universal termination bound.
+
+The original local implementation rounded ordinates and ran timing in a shared Python process. The archived attempt and all its results are retained. The final implementation rounds slopes to preserve the induction invariant and times each neural fit in a fresh process. These corrections do not change the economic model, seeds, training recipe, or tolerance. They are documented in the amendment rather than hidden by overwriting the earlier outputs.
+
+\subsection{Upper and lower witnesses}
+Let $\rho_t=U_t-TU_{t+1}$. Exact compression proves $0\le\rho_t\le\delta$. The upper comparison $V_t\le U_t$ is independent of the proposal. With $e_t=\eta+\beta e_{t+1}$ and $e_T=0$, an eligible action satisfies
+\[
+ T^a(U_{t+1}-e_{t+1})=q_t^a-\beta e_{t+1}\ge U_t-e_t.
+\]
+The lower witness is therefore the explicitly constructed function $L_t=U_t-e_t$. It is not a supplied policy-value surface. The stronger realized check uses the exactly evaluated $J_t^\pi$ and reports $\max_{t,x}(U_t-J_t^\pi)$; this can be considerably smaller than the allowance $\varepsilon$.
+
+Exact installed-policy evaluation is a separate recursion. No raw-policy performance statistic is inferred from final repair. The reference diagnostic $\max(V-v^0)$ uses the uncompressed optimum only after the raw policy is frozen. The deployable zero-intervention certificate instead uses $\max(U-v^0)$ and needs no reference optimum. These quantities are recorded separately as \texttt{raw\_exact\_regret} and \texttt{raw\_regret\_upper}.
+
+\section{Cost optimality, preservation, and comparison classes}\label{app:cost}
+Given nonempty eligible action sets, the intervention-cost recursion is ordinary finite-horizon dynamic programming with state-dependent constraints. Its output is nevertheless an additional economic object beyond the operating-value solve. The exact checker verifies, at every point where action $a$ is eligible, that $D_t$ does not exceed that action's immediate cost plus its continuation. It also verifies equality for the chosen action. This proves minimum cost and attainment from every restart; a uniform initial density is used only to summarize the resulting functions.
+
+The primary computation does not impose one-step installed-value preservation as an action restriction. Instead, it computes the installed and revised values and verifies the complete difference. All 42 primary outputs preserve operating value. It would be incorrect to claim that this empirical fact establishes preservation for all inputs under the deficit-only action class. The optional intersection with $T^av^0_{t+1}\ge v^0_t$, together with a nonemptiness condition, provides that theorem when required.
+
+The additional zero-intervention certificates have a different scope of optimality. Once $U-v^0\le\varepsilon$ everywhere is checked, zero is a lower bound on the cost of every feasible policy, not merely policies in the local class. Thus retaining a certified incumbent is globally optimal for intervention cost. This does not prove that a nonzero class minimum is globally optimal for the unconstrained-by-class regret problem. The 12 separate zero certificates explicitly expose this distinction.
+
+The pointwise comparator retains an installed action when eligible and otherwise minimizes current implementation cost with action-index tie breaking. It does not optimize future implementation exposure. Its operating and cost functions are recomputed under the policy it actually deploys. The certified greedy comparator maximizes operating continuation against $U$. The uncompressed reference maximizes operating value exactly. Neither accuracy-only comparator is mislabeled as solving the constrained minimum-cost problem.
+
+The price envelope is an exact comparison over the listed computed policies. For each pair with different costs, the algorithm includes a nonnegative crossing $(J_i-J_j)/(C_i-C_j)$; it checks all open intervals between crossings and every crossing point. A final unbounded interval covers arbitrarily large prices. Identical lines and exact ties remain valid alternatives. This produces a complete finite comparison, without implying an optimization over uncomputed feasible policies or an empirical monetary calibration.
+
+\section{Complete active-boundary proof}\label{app:boundary}
+\subsection{Deterministic wealth and the Dynkin integrand}
+Throughout this section the primitives, controls, and restart are those in Theorem~\ref{art-thm:boundary} of the article. With $p=0$, $c=3/4$, and $x(0)=5/4$,
+\begin{equation}
+ x(t)=\frac{75}{2}-\frac{145}{4}e^{t/50}.
+\end{equation}
+For $0\le t\le1$, $e^{t/50}\le(1-1/50)^{-1}=50/49$, hence $x(t)\ge25/49>1/2$. It is decreasing and starts below two, so no wealth boundary is reached. Let $y$ denote preference. Direct differentiation of the unchanged settlement gives
+\begin{align}
+ h_\theta(t,y)={}&\frac{(3/4)^{1-y}}{1-y}-\theta^2+8
+ -.04\theta(y-2)-.00005+.002-\frac{.075}{x(t)}\nonumber\\
+ &\quad+.0008(y-2)^2-.004\log x(t)+.32(1-t),\label{eq:hsupp}\\
+ \partial_\theta h_\theta={}&-2\theta-.04(y-2).\label{eq:hparametersupp}
+\end{align}
+For $y\in[6/5,14/5]$, put $z=y-1\in[1/5,9/5]$ and $L=\log(4/3)<1/3$. The utility is $-e^{Lz}/z$, which is increasing on this interval because $Lz<1$. Its lower bound is $-5e^{1/15}\ge-75/14$. Also $|y-2|\le4/5$, $x(t)\ge1/2$, and $\log x(t)\le\log(5/4)<1/4$. Dropping nonnegative terms yields
+\begin{equation}
+ h_\theta\ge8-\frac1{20000}-\frac3{20}-\frac1{1000}
+ -\frac4{625}-\frac1{25}-\frac{75}{14}
+ =\frac{342357}{140000}>2.\label{eq:hlower}
+\end{equation}
+The utility derivative is $e^{Lz}(1-Lz)/z^2\ge10/81$. Thus
+\begin{equation}
+ \partial_yh_\theta\ge\frac{10}{81}-\frac4{3125}-\frac1{125}
+ =\frac{28901}{253125}>0.\label{eq:hylower}
+\end{equation}
+Extend $h_\theta(t,y)$ constantly from $b=14/5$ to larger $y$. The extension remains bounded, nondecreasing in $y$, and at least two. Its parameter derivative retains the bounds in \eqref{eq:hparametersupp}. Conservative absolute bounds $|h|\le20$ and $|\partial_\theta h|\le2$ hold for this extension.
+
+\subsection{A coupling lower bound for the derivative}
+Let $Y_t=u_0+\theta t+\sigma W_t$, killed at $a=6/5$, where $u_0=61/50$ and $\sigma=1/20$. If drift increases, the coupled process is higher at every date and lower-boundary survival events are nested. For a fixed nondecreasing integrand $h\ge2$, paths surviving under both drifts have a nonnegative payoff change, while newly surviving paths contribute at least two. Taking a positive difference quotient gives
+\begin{equation}
+ \partial_\theta\E_\theta[h(t,Y_t)\ind\{t<\tau_a\}]
+ \ge2\partial_\theta\Pr_\theta(t<\tau_a).
+\end{equation}
+The direct dependence of $h_\theta$ on $\theta$ must be added, not included in this frozen-integrand comparison. It contributes at least $-4/125$ for $\theta\in[-1/5,0]$ and at least $-54/125$ for $\theta\in[0,1/5]$, after integrating over a discounted survival time of at most one. Gaussian likelihood scores justify differentiability and dominated passage to the occupation integral for this bounded extension.
+
+The reflection formula with drift, differentiated exactly, yields
+\begin{equation}\label{eq:survderiv}
+ S'_\theta(t)=16e^{-16\theta}\Phi\left(\frac{\theta t-1/50}{(1/20)\sqrt t}\right).
+\end{equation}
+The function $\log\Phi$ is concave. Indeed, with $r=\varphi/\Phi$, its second derivative is $-r(z)\{z+r(z)\}<0$; when $z<0$, the elementary Gaussian tail inequality gives $r(z)>-z$. Equation~\eqref{eq:survderiv} is therefore log-concave in $\theta$. Its minimum on each of the two half intervals is at least the smaller of its endpoint values.
+
+For $t\in[1/25,1/5]$, the normal arguments at $\theta=0$ and $\theta=-1/5$ are bounded below by $-2$ and $-14/5$, respectively. The latter follows by maximizing $4\sqrt t+(2/5)/\sqrt t$ on that compact interval; its maximum is $14/5$. The rational inequalities
+\begin{gather}\label{eq:normalbounds}
+ 24<e^{16/5}<25,\qquad \Phi(-2)>1/50,\qquad \Phi(-14/5)>1/500,\\
+ \Phi(-4/5)>1/5,\qquad \Phi(6/5)>22/25.\nonumber
+\end{gather}
+imply $S'_\theta(t)\ge8/25$ on the entire negative drift half interval.
+
+For $t\in[1/4,1]$, the endpoint arguments at $\theta=0$ and $\theta=1/5$ are at least $-4/5$ and $6/5$. Hence $S'_\theta(t)\ge352/625$ on the positive drift half interval. Since $e^{-.04t}\ge24/25$, the two lower bounds for the derivative of the lower-killed occupation expression are
+\begin{align}
+ 2\frac4{25}\frac{24}{25}\frac8{25}-\frac4{125}&=.066304,\\
+ 2\frac34\frac{24}{25}\frac{352}{625}-\frac{54}{125}&=.379008.
+\end{align}
+No derivative sample grid appears in this argument. The intervals cover every admissible constant drift, including the shared point zero.
+
+\subsection{Distant-boundary error and rational checks}
+The upper boundary is distant but not discarded. Under all admissible drifts, a path hitting it must have a Brownian excursion of at least $(b-u_0-1/5)/\sigma$. Reflection and a Gaussian tail bound give
+\begin{equation}
+ p_b\le2\exp\left[-\frac{(b-u_0-1/5)^2}{2\sigma^2}\right]
+ =2e^{-380.88}<2^{-379}.
+\end{equation}
+For a path-dependent difference supported on that event, the drift likelihood score has second moment at most $1/\sigma^2$. Cauchy--Schwarz bounds the derivative discrepancy between the actual doubly killed occupation integral and the extended lower-killed one by
+\begin{equation}
+ \frac{20}{\sigma}\sqrt{p_b}+2p_b
+ <400\,2^{-189}+2\,2^{-379}<1/1000.
+\end{equation}
+Subtracting $1/1000$ from the preceding half-line bounds gives precisely $8163/125000$ and $47251/125000$. A strictly increasing continuous function on the compact drift interval has the unique maximizer $1/5$.
+
+The file \texttt{replication/boundary.py} proves the elementary constants in \eqref{eq:normalbounds} with exact fractions. Exponential bounds use Taylor sums and an explicit geometric tail. A Machin arctangent identity with alternating-series bounds proves a rational bound for $\pi$, and $\sqrt{2\pi}<251/100$ follows. Gaussian lower bounds use monotone right sums of mesh $1/100$ on finite intervals, with every exponential term bounded by a rational Taylor calculation. Truncating the infinite tail only lowers a tail integral. For $\Phi(6/5)$ the integral is from zero to $6/5$, added to $1/2$. Terms are rounded downward to a common dyadic denominator before summation, with the direction of the bound preserved. The code records the resulting exact rational lower bounds and requires them to exceed all displayed thresholds.
+
+The payoff enclosure at $\theta=1/5$ is inherited from the unchanged validated R30 killed-kernel oracle. Its source path, Git blob hash, and the fact that it is not recomputed are recorded in \texttt{results/boundary.json}. The current theorem changes its interpretation from an endpoint evaluation to the optimum of the entire constant class. It does not assert feedback optimality or satisfy the original all-domain current-state target.
+
+\section{Full cohort and audit results}
+\input{revisions/2026-09-24-r32/paper/generated/all_cases}
+The tables display rounded summaries only. Every primary certificate stores rational knots, values, policies, Bellman witnesses, and intervention-cost functions. A separate file records the exact interval-wide error and cost residual. The checker does not invoke the envelope optimizer. Its only shared components are the representation, the primitive model, and elementary exact affine operations. This is implementation separation, not a proof assistant or an assertion of independence from all shared arithmetic code.
+
+Eight deliberately malformed inputs are rejected: changed model, absent model, negative tolerance, missing date, missing interval, changed endpoint, false cost, and infeasible action. Tests also retain point spikes and affine preimages and compare the exact two-period Bellman solution with exhaustive adaptive scenario-tree enumeration at four rational restart states. The test count is not substituted for the whole-state inequalities in the certificates.
+
+\section{Historical preservation and current claims}
+The document \texttt{HISTORY\_R32.pdf} concatenates the five R30 submission objects without altering their pages: article, supplement, response, computational record, and the earlier historical annex. The repository retains their original source and result paths. Thus the previous action-independent operating-mode study, inventory comparison, Adam transport and rollback derivations, central-state search, active-boundary quadrature failures, and earlier referee responses are not deleted to simplify the current narrative.
+
+In particular, the unfavorable exhaustive inventory timing ratios, the 26/60 raw passes in the prior operating-mode cohort, and the exact symbolic and online-guard controls remain available. They are historical evidence, not results of the new action-dependent model. The original whole-domain bound remains 7.181834580823298 and its target remains .01. No new result is relabeled as a 47-coordinate derivative bridge, a high-dimensional certificate, or neural-specific acceleration. The constructive coupled certificates and the global active-boundary scalar theorem are additional results with explicitly delimited objects.

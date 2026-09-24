@@ -1,0 +1,260 @@
+\section{Introduction}
+Replacing an installed decision rule has an economic cost. A maintenance instruction may require retraining operators, changing a contract, or obtaining approval at the states where the instruction is used. Consequently, two policies with similar operating returns need not be interchangeable. This paper studies how to construct a uniformly accurate policy while minimizing the discounted cost of revising an installed rule. The distribution of future implementation costs is endogenous: a revision today changes the states at which later instructions must be changed.
+
+We develop a constructive Bellman-certificate method for this problem. Starting from model primitives, the method builds upper value witnesses, generates a nonempty class of uniformly accurate actions, and solves the intervention-cost problem within that class. A finite proof object specifies the deployed policy and its operating and intervention values. A separate checker verifies whole intervals and isolated boundary points without repeating the optimizing envelope construction. Neural networks and classical approximations supply installed proposals; their fitting errors do not enter a certificate unless separately bounded.
+
+The computational application is a continuous-state maintenance economy with action-dependent transitions. Maintaining or replacing a unit is always inferior to deferring in current reward. Such actions can nevertheless be optimal because they improve future condition. Continuation terms therefore cannot be canceled from the action comparison. Upper witnesses are computed by action-dependent expectation, maximization, and globally checked polygonal compression. The inputs do not include an optimal-value surface, an optimal-action file, or an analytically supplied supersolution. Own-policy values, admissible action sets, and the intervention-cost recursion are also constructed from the primitives and included in the work accounts.
+
+Three results organize the analysis. First, convex piecewise-affine structure permits an explicit construction of upper witnesses with controlled rounding and compression error. Second, a uniform local deficit budget produces a nonempty policy class with an all-state, all-restart operating guarantee. Within that class, a second Bellman recursion minimizes intervention cost under the deployed policy's occupancy. Third, an independently certified incumbent can be retained at zero intervention cost, which is globally minimal even outside the conservative local class. This last result prevents a sufficient local restriction from creating unnecessary revisions when a global own-policy certificate is already available.
+
+The experiments exercise these statements rather than infer them from training loss. Three horizons, two accuracy budgets, and seven proposal rules produce 42 class-based certificates, all checked in exact rational arithmetic. The predeclared mechanism stress incumbent produces strictly positive dynamic-versus-pointwise intervention savings at every horizon and budget. The remaining 36 comparisons have zero savings and are retained. All 12 spline cases qualify for the additional zero-intervention certificate. None of the 18 neural cases meets its raw operating target. These outcomes establish an end-to-end coupled construction and an endogenous-occupancy mechanism; they do not establish neural-specific computational superiority.
+
+A further result advances the original stopped consumption--portfolio problem without changing its primitives. At the economically active boundary restart used previously, we prove a positive derivative over the entire constant-adjustment interval. This identifies the unique global optimum of that scalar control class. The argument combines monotone coupling, killed-process survival derivatives, and rational bounds for the distant-boundary error; it does not assume concavity or extrapolate from five derivative evaluations. The original all-domain current-state target remains stated separately and is not replaced by the auxiliary maintenance-model certificate.
+
+\subsection{Relation to existing methods}
+Bellman comparison and constrained backward induction are classical. We do not claim a new dynamic-programming principle. Fitted value iteration studies approximation and sampling error under a generative model \citep{MunosSzepesvari2008}; approximate policy iteration has related performance bounds \citep{Scherrer2013}. Here fitting is separated from a deterministic, all-state verification layer for a known model. Safe policy improvement with baseline bootstrapping restricts changes when data leave the transition model uncertain \citep{Laroche2019}. Our admissible class instead limits a verified operating deficit, and our implementation cost is an economic primitive. Neither information structure subsumes the other.
+
+Numerical economics exploits structure and approximation \citep{Judd1998}. Adaptive sparse grids address genuinely high-dimensional dynamic models \citep{BrummScheidegger2017}. Our dimensional experiment is one-dimensional and does not establish a competing high-dimensional rate. Information-relaxation methods furnish other routes to upper bounds \citep{BrownSmithSun2010,BrownSmith2014}. Their construction and our construction must both be charged; a supplied upper bound is not a free solution input. Verified computation requires both a valid analytic reduction and controlled arithmetic \citep{Rump2010}. Markov-chain approximation of a diffusion imposes additional consistency requirements \citep{KushnerDupuis2001}; the maintenance economy is not asserted to be a discretization of the stopped diffusion.
+
+The methodological addition is the explicit composition of witness construction, quantified encoding error, a nonempty certified action class, endogenous-cost optimization, and an independently checkable finite representation. The cost recursion alone is standard once the class is known. The constructive witness and class-generation steps are therefore part of the main theorem and computation, not omitted preprocessing. The comparison with uncompressed exact piecewise-affine dynamic programming is intentionally strong: both methods exploit the same affine model structure. No neural advantage, dimension-free complexity, or universal acceleration follows merely from the existence of a regional proof object.
+
+\section{Economic environment and objectives}\label{sec:model}
+\subsection{A coupled maintenance economy}
+There are $T$ decision dates and a terminal date. Condition $x$ lies in $[0,1]$. Actions $a=0,1,2$ denote defer, maintain, and replace. Current reward is $r(x,a)=x-c_a$, with
+\begin{equation}\label{eq:primitives}
+ \beta=19/20,\qquad (c_0,c_1,c_2)=(0,3/20,9/20),\qquad g(x)=x/2.
+\end{equation}
+Two shocks have probabilities $(p_1,p_2)=(3/5,2/5)$. Their next-state maps are
+\begin{equation}\label{eq:maps}
+\begin{array}{c|cc}
+ a&f_{a1}(x)&f_{a2}(x)\\\hline
+ 0&3x/4&3x/4+1/20\\
+ 1&17x/20+1/10&17x/20+7/50\\
+ 2&x/10+4/5&x/10+17/20.
+\end{array}
+\end{equation}
+All maps preserve the state interval. For a continuation $v$, write
+\begin{equation}
+ T^a v(x)=x-c_a+\beta\sum_{j=1}^2p_jv(f_{aj}(x)),\qquad
+ Tv=\max_{a\in\{0,1,2\}}T^a v.
+\end{equation}
+The optimal operating value satisfies $V_T=g$, $V_t=TV_{t+1}$; a policy $\pi$ has $J_T^\pi=g$, $J_t^\pi=T^{\pi_t}J_{t+1}^\pi$. Because every intervention has a positive current cost, any maintain or replace decision is justified by continuation value, not by a primitive reward-sign rule.
+
+Let $\pi^0$ be an installed policy. Its revision cost from restart $(t,x)$ is
+\begin{equation}\label{eq:cost}
+ C_t^\pi(x)=\E_{t,x}^{\pi}\sum_{s=t}^{T-1}\beta^{s-t}
+ (1+X_s)\ind\{\pi_s(X_s)\ne\pi_s^0(X_s)\}.
+\end{equation}
+One unit is a normalized implementation intervention, not a dollar estimate. For a uniform initial state distribution $\nu$, the reported economic costs are $\int C_0^\pi(x)\,d\nu(x)$, calculated under each deployed policy. The objective is to minimize this cost subject to
+\begin{equation}\label{eq:regret}
+ \sup_{t\in\{0,\ldots,T\},\,x\in[0,1]}\{V_t(x)-J_t^\pi(x)\}\le\varepsilon.
+\end{equation}
+We solve the cost problem in an explicitly constructed inner class and identify an important case in which the minimum is global for \eqref{eq:regret} itself. Operating-value preservation, $J^\pi\ge J^{\pi^0}$, is a distinct requirement. It is checked separately in the experiment and can alternatively be built into a sufficient class.
+
+\subsection{Information and deployment}
+All solvers have the same known rewards, transition maps, probabilities, terminal payoff, and installed policy. ``No precomputed optimum'' means that the certificate constructor does not read an optimal-value or optimal-action file. It does not mean model-free or less informed than dynamic programming. An exact reference solve is performed for diagnostics, but its output is not used to build $U$, the action sets, or the cost-minimizing policy.
+
+Training and verification use different arithmetic objects. Neural and spline fitting use binary64 arithmetic. Saved coefficients are interpreted exactly as rational constants, and their decision rules are compiled into piecewise-constant policies. The guarantee concerns this compiled representation with exact rational evaluation, not an unmodeled floating-point neural forward pass. In particular, every breakpoint has its own stored action; an isolated tie is not discarded because it has probability zero under the initial distribution. The operating guarantee covers every restart, including such points.
+
+\section{Constructing the certificate inputs}\label{sec:construction}
+A function is represented by rational knots, an affine formula on every open knot interval, and a separate value at every knot. Continuous convex witnesses are a special case; policy values and cost functions can have jumps or exceptional point values. Addition, positive affine composition, integration, maximization, and constrained minimization are performed by exact partition overlays and rational intersections. These operations are finite at every finite horizon, although the number of pieces can grow substantially.
+
+\begin{lemma}[Shape-preserving dyadic upper encoding]\label{lem:encoding}
+Let $F$ be continuous, convex, piecewise affine, and rational on $[0,1]$. Fix a rational mesh $0=z_0<\cdots<z_m=1$. Let $H$ be its chord interpolant through $F(z_i)$. Round $F(0)$ and every chord slope upward to multiples of $2^{-q}$, and integrate the rounded slopes successively to obtain $G$. Then $G$ is convex and
+\begin{equation}
+ 0\le G-H\le 2^{1-q},\qquad F\le H\le G.
+\end{equation}
+If $F$ is $L$-Lipschitz and the maximum mesh width is $h$, then $0\le G-F\le Lh+2^{1-q}$. For any proposed mesh, its actual global error is determined by the union of the knots of $F$ and $G$.
+\end{lemma}
+\begin{proof}
+Convexity orders the exact chord slopes; upward rounding by a common mesh preserves that order. Each rounded slope exceeds its exact value by less than $2^{-q}$. The cumulative slope error on an interval of length at most one, plus the rounded starting value, is less than $2^{1-q}$. Convexity places the chord above $F$. For $x\in[z_i,z_{i+1}]$, the Lipschitz bounds from the endpoints imply $H(x)-F(x)\le Lh$. Finally, $G-F$ is affine between union knots, so its extrema occur at those knots.\end{proof}
+The lemma rounds slopes rather than independently rounding ordinates. Independent ordinate rounding need not preserve convexity, which is needed at the next Bellman step. The implementation proposes an adaptive coarsening, rounds retained knot locations to dyadics, recomputes their exact values, and applies the lemma. It then checks the actual complete error. A failed check increases precision or returns an unresolved result; it is never replaced by a floating tolerance. The uniform-mesh part of the lemma supplies a constructive existence bound independently of the adaptive heuristic.
+
+Put $H_T(\beta)=\sum_{j=0}^{T-1}\beta^j$ and choose
+\begin{equation}\label{eq:budget}
+ \eta=\varepsilon/H_T(\beta),\qquad \delta=\eta/4,\qquad
+ e_t=\eta\sum_{j=0}^{T-t-1}\beta^j,\quad e_T=0.
+\end{equation}
+Starting with $U_T=g$, calculate
+\begin{equation}\label{eq:construct}
+ q_t^a=T^aU_{t+1},\qquad F_t=\max_a q_t^a,
+ \qquad 0\le U_t-F_t\le\delta.
+\end{equation}
+The final step is achieved by Lemma~\ref{lem:encoding}, not assumed as an input. Positive affine transitions and affine rewards preserve convexity under expectation and maximization. The construction therefore applies recursively. A Lipschitz bound is also constructive: if $U_{t+1}$ has slope bound $L_{t+1}$, then $F_t$ has bound $1+\beta(17/20)L_{t+1}$; the next encoded bound includes its explicit rounding increment.
+
+\begin{theorem}[Constructive all-restart class]\label{thm:constructive}
+For the model \eqref{eq:primitives}--\eqref{eq:maps}, construction \eqref{eq:construct} produces finite rational upper witnesses. Define
+\begin{equation}\label{eq:allowed}
+ \mathcal B_t(x)=\{a:U_t(x)-q_t^a(x)\le\eta\}.
+\end{equation}
+The sets are nonempty at every point. Every measurable selector $\pi_t(x)\in\mathcal B_t(x)$ satisfies
+\begin{equation}\label{eq:order}
+ U_t(x)-e_t\le J_t^\pi(x)\le V_t(x)\le U_t(x),
+\end{equation}
+and consequently \eqref{eq:regret}. All certificate inputs are obtained from the primitives by finite exact operations; no optimal or own-policy value is supplied externally.
+\end{theorem}
+\begin{proof}
+Lemma~\ref{lem:encoding} gives a finite construction at each date. Equation~\eqref{eq:construct} makes $U$ a Bellman supersolution. Backward comparison yields $V_t\le U_t$. A maximizing action for $F_t$ has deficit at most $\delta<\eta$, proving nonemptiness. If $J_{t+1}^\pi\ge U_{t+1}-e_{t+1}$, positivity and unit mass of the transition probabilities give
+\[
+ J_t^\pi\ge q_t^{\pi_t}-\beta e_{t+1}\ge U_t-\eta-\beta e_{t+1}=U_t-e_t.
+\]
+The terminal condition starts the induction. Exact overlays produce $\mathcal B_t$ including all equality points. Own-policy values, when requested, follow a separate finite recursion with the policy fixed.\end{proof}
+
+The theorem replaces a verifier for supplied global objects by a construction of those objects. It does not state that the construction is cheaper than every alternative. The next sections report all of its costs and distinguish the size of a stored witness from the potentially larger intermediate envelopes and policy-value partitions.
+
+\section{Optimal costly revision}\label{sec:revision}
+With $\mathcal B$ fixed, define $D_T=0$ and
+\begin{equation}\label{eq:costdp}
+ D_t(x)=\min_{a\in\mathcal B_t(x)}\left\{
+ (1+x)\ind\{a\ne\pi_t^0(x)\}+\beta\sum_jp_jD_{t+1}(f_{aj}(x))\right\}.
+\end{equation}
+All alternatives in this equation are piecewise affine on an exactly computable finite overlay. Minimizing selectors have an exact finite representation with separately checked point values.
+
+\begin{theorem}[Endogenous-cost certificate]\label{thm:cost}
+A minimizing selector in \eqref{eq:costdp} satisfies \eqref{eq:order} and minimizes \eqref{eq:cost} from every restart among policies selecting actions from $\mathcal B$. Randomization and history dependence do not improve this minimum within the fixed class. A certificate consists of $U$, the deployed policy, its operating values $J$, and $D$. It is sufficient to check the Bellman supersolution inequalities, the selected-action deficits, the operating-value equalities, and
+\begin{equation}\label{eq:costverify}
+ D_t\le c_t^a+\beta P^aD_{t+1}\quad(a\in\mathcal B_t),\qquad
+ D_t=c_t^{\pi_t}+\beta P^{\pi_t}D_{t+1},
+\end{equation}
+where $c_t^a=(1+x)\ind\{a\ne\pi_t^0\}$.
+\end{theorem}
+\begin{proof}
+The operating claim is Theorem~\ref{thm:constructive}. Conditional on the current state and chosen eligible action, backward induction bounds every eligible future intervention cost below by $D_{t+1}$. Minimization gives the lower bound $D_t$; a minimizing selector attains equality. A randomized action gives a convex combination of eligible alternatives. The same conditional argument applies to history-dependent choices. Conditions~\eqref{eq:costverify} prove the lower bound and attainment without rerunning the minimizing envelope algorithm.\end{proof}
+
+The occupancy measure in this statement is not frozen at the installed policy. An eligible action that is more expensive now can reduce future exposure to instructions requiring revision. A pointwise guard that keeps the installed action whenever eligible ignores that tradeoff. The experiment isolates this mechanism by comparing both rules on the same $\mathcal B$ and evaluating each with its own transition law.
+
+\begin{proposition}[A global zero-intervention certificate]\label{prop:zero}
+Construct the installed value $v_t^0=T^{\pi_t^0}v_{t+1}^0$, $v_T^0=g$. If $U_t-v_t^0\le\varepsilon$ at every state and restart, then retaining $\pi^0$ solves the intervention-cost problem over all policies satisfying \eqref{eq:regret}, with minimum zero. Membership of $\pi^0$ in $\mathcal B$ is unnecessary.
+\end{proposition}
+\begin{proof}
+The upper witness proves $V-v^0\le U-v^0\le\varepsilon$. Retention has zero intervention cost, and all intervention costs are nonnegative.\end{proof}
+This test is performed before recommending a change to a certified incumbent. We preserve the class-only outputs as a diagnostic of conservative over-revision, and add separate zero-cost certificates wherever the test passes. The global claim in Proposition~\ref{prop:zero} is stronger than class-wise optimality, but applies only when its explicitly computed premise holds.
+
+\subsection{Operating preservation and certificate conservatism}
+A regret guarantee alone does not imply $J^\pi\ge v^0$. A sufficient preservation class intersects \eqref{eq:allowed} with
+\begin{equation}\label{eq:preserve}
+ T^a v_{t+1}^0(x)\ge v_t^0(x).
+\end{equation}
+When this intersection is nonempty, the same induction yields preservation and the same cost recursion minimizes cost within the intersection. Nonemptiness is an additional condition, not a consequence of \eqref{eq:construct}. In the primary experiment we use \eqref{eq:allowed} and independently evaluate $J^\pi-v^0$ on every open interval and knot. All displayed primary cases satisfy preservation, but this is a checked outcome, not a universal property of the unmodified class.
+
+The local class is an inner approximation to the globally feasible set. A policy can distribute its operating losses across dates more efficiently than the fixed allowance \eqref{eq:budget}, and then be excluded despite satisfying \eqref{eq:regret}. Proposition~\ref{prop:zero} provides a concrete correction to this conservatism. The full sensitivity comparison below is an envelope over named computed policies; it is not silently promoted to an optimization over every globally feasible policy.
+
+\section{Work, representation, and the role of proposals}\label{sec:work}
+Let $N_t$ count all partition cells generated in constructing action-continuation functions, intersections, and admissible masks at date $t$. Let $M_t$ count stored upper-witness pieces, $K_t$ count installed and deployed policy pieces, and $Z_t$ count the operating and cost-value pieces generated by evaluation and optimization. Let $b$ bound actual integer bit lengths, and let $\mathsf A(b)$ bound the cost of rational arithmetic and comparison, including normalization.
+
+\begin{proposition}[Charged finite-representation work]\label{prop:work}
+For $A$ actions and $D$ positive affine shock maps per action, a direct overlay implementation constructs the objects in Theorems~\ref{thm:constructive} and \ref{thm:cost} with a finite number of rational operations depending on the generated partitions, not on an external state-grid cardinality. A conservative bound is
+\begin{equation}\label{eq:work}
+ C_{\rm fit}+C_{\rm compile}
+ +O\!\left(\mathsf A(b)\sum_t
+ \{(AD+A^2)(N_t+K_t+Z_{t+1})^2+N_t^2\}\right)
+ +C_{\rm encode}+C_{\rm check}.
+\end{equation}
+Here $N_t^2$ includes an elementary adaptive chord check. All quantities are construction outputs, not assumed free witnesses. For the upper-witness subproblem alone, a uniform chord mesh of width $h\le\delta/(2L_t)$ and slope precision $2^{1-q}\le\delta/2$ gives $M_t=O(1+L_t/\delta)$.
+\end{proposition}
+\begin{proof}
+Each affine composition pulls back finitely many knots. An overlay has at most the sum of its input knot counts, and each action pair contributes at most one intersection on each common affine cell. Sorting, evaluation, and pairwise comparison are bounded by the deliberately conservative squared-count expression. A chord test compares its chord with every intervening source knot; recursive tests are bounded by $O(N_t^2)$. Own-policy evaluation and cost optimization produce their own partitions and are charged through $K_t,Z_t$. Lemma~\ref{lem:encoding} gives the final mesh statement. Encoding and the separate checker are added rather than hidden in a range-oracle cost.\end{proof}
+
+This is an output-sensitive finite-construction bound, not a polynomial-in-dimension theorem or a guarantee of acceleration. In particular, $Z_t$ can grow rapidly even when $M_t$ is small. Exact intersections and integrals can also have large denominators. The implementation records intermediate and stored piece counts, bit lengths, serialized bytes, and stage times, and rejects an intermediate representation exceeding 200,000 pieces. No cap is reached in the registered cohort. A memory statistic for the whole Python process is reported separately from the portable certificate size; it includes libraries and allocations and is not a bound on deployment memory.
+
+\begin{proposition}[A quantitative proposal condition]\label{prop:proposal}
+Suppose a proposal chooses a maximizer of $\widehat q_t^a$ and satisfies a verified whole-state error $\max_a\|\widehat q_t^a-q_t^a\|_\infty\le\kappa_t$. Put $\rho_t=U_t-\max_aq_t^a$. Its selected-action deficit obeys
+\begin{equation}
+ U_t-q_t^{\pi_t^0}\le\rho_t+2\kappa_t\le\delta+2\kappa_t.
+\end{equation}
+If $\delta+2\kappa_t\le\eta$ at every date, the proposal is eligible everywhere and the intervention-cost minimum in \eqref{eq:costdp} is zero. On any region carrying analogous verified local bounds, that region needs no further action-eligibility subdivision for the proposed action.
+\end{proposition}
+\begin{proof}
+For an exact maximizing action $a^*$, optimality under $\widehat q$ gives $q^{a^*}-q^{\pi^0}\le2\kappa_t$. Adding $\rho_t$ proves the bound. An eligible installed policy can be followed at every date with zero cost, which is minimal by nonnegativity. The same comparison is pointwise on a region with a valid uniform local error bound.\end{proof}
+
+The proposition identifies a causal role for a verified approximation margin: it can eliminate revisions and action-eligibility refinement. It does not remove the cost of constructing $U$, computing the approximation bounds, or compiling the proposal. Sampled fitting loss is not a premise of this proposition. The numerical study does not assume that its neural candidates satisfy it. The exact own-policy test in Proposition~\ref{prop:zero} can be substantially less conservative.
+
+For deployment, a stored piecewise policy answers an exact rational query by knot search and comparison. If an alternative online rule costs $c_{\rm on}$ per query and loading plus offline construction costs $C_{\rm off}+C_{\rm load}$, a genuine amortization claim requires $c_{\rm on}>c_{\rm stored}$ and
+\begin{equation}
+ Q>(C_{\rm off}+C_{\rm load})/(c_{\rm on}-c_{\rm stored}).
+\end{equation}
+We do not measure this denominator here and therefore make no observed deployment break-even claim. The exact online sign guard from the earlier action-independent model remains a strong control in that model, not a competing solution to the present coupled cost problem.
+
+\section{Coupled computational evidence}\label{sec:results}
+\subsection{Prospective design and complete accounting}
+The primitives, horizons $T\in\{4,8,12\}$, tolerances $\varepsilon\in\{.01,.05\}$, and proposals were specified in the inherited R31 protocol before the R32 full cohort. This is a referee-informed exploratory study, not an independent preregistered confirmation. We retain the pilot outcomes and amendments rather than describe the research history as prospective from its origin.
+
+Each horizon has an all-defer incumbent, a mechanism stress incumbent, two linear-spline fitted-Q proposals, and three neural fitted-Q proposals. Splines use 33 or 129 equally spaced nodes. Neural proposals use 257 midpoint training states, one hidden ReLU layer of width 16, three outputs, 200 Adam steps per date, learning rate .02, and seeds 31001--31003. Targets use the next fitted continuation, never optimal-value labels. Exact compilation precedes any candidate-specific certificate or reference comparison. One frozen policy is reused across the two tolerances.
+
+The stress incumbent maintains when $x\ge9/10$ at all nonterminal decision dates and otherwise defers; the final decision always defers. It is intentionally misconfigured and separately labeled. It tests whether a current revision can avoid future exposure to an expensive instruction, not whether a neural model has discovered an institutional practice. All six stress results are reported irrespective of sign.
+
+The reference is uncompressed exact piecewise-affine dynamic programming, not a large brute-force grid. A second accuracy-only control uses the same compressed witnesses, greedily maximizes $q_t^a$, evaluates its own policy, and checks its error. The two spline controls exploit the natural local basis. Fresh-process neural timing includes interpreter and library initialization, training, and compilation. We separately charge witness construction, installed-value evaluation, action-set construction, cost minimization, final evaluation, serialization, internal verification, and the independent final checker. These single-machine timings are descriptive; neither seeds nor tolerances provide independent machine-speed replications.
+
+\input{revisions/2026-09-24-r32/paper/generated/cohort}
+
+All 42 class certificates pass the independent checker, and their deployed operating values weakly exceed their installed values at every restart. Raw neural passes are zero out of 18, whereas all 12 spline cases pass. The separate own-policy witness test also certifies each spline incumbent, yielding 12 additional zero-intervention certificates by Proposition~\ref{prop:zero}. The class-only spline outputs are preserved to show, rather than conceal, the cost of a conservative sufficient class. No universal post-repair pass statistic is interpreted as neural approximation success.
+
+\subsection{End-to-end work and strong classical controls}
+\input{revisions/2026-09-24-r32/paper/generated/geometry}
+\input{revisions/2026-09-24-r32/paper/generated/timing}
+
+At horizon 12, the exact value representation reaches 108 pieces. The compressed witness reaches 27 stored pieces at tolerance .01 and 15 at .05; the largest intermediate envelope at those budgets has 48 and 28 pieces. Stored witnesses use at most 67-bit rational components, while operating and cost representations use up to 256 bits in the cohort. Thus the reduction in stored witness size is real, but it does not eliminate intermediate construction or downstream cost-value complexity. The largest intervention-cost representation has 359 pieces, and the largest uncompressed serialized primary certificate is 370,046 bytes.
+
+The timing comparison does not establish a neural advantage. The natural spline basis is both more accurate before repair and cheaper to fit in this model. The structure-aware exact operating solver is also inexpensive. The proposed cost pipeline solves an additional constrained objective, but that distinction does not justify a claim that it is a faster operating-value solver. It is precisely why the operating-only baseline and the class-minimum-cost output are reported separately. The new positive computational statement is a fully constructed coupled certificate with measured input costs, not an inferred speedup over an artificially enormous state grid.
+
+\subsection{Endogenous occupancy and economic sensitivity}
+\input{revisions/2026-09-24-r32/paper/generated/occupancy}
+
+The dynamic solution strictly reduces intervention cost relative to the pointwise rule in all six stress cases. Both select only from the same certified action class. Therefore the difference cannot be explained by a more permissive operating target or by supplying the dynamic solver a better upper witness. It arises from the action-dependent continuation of implementation costs. The complete piecewise policies and cost functions document the differing revision pattern. For the remaining candidates, equality of the two cost functions is retained; the mechanism is not asserted to operate for every installed rule.
+
+For economic interpretation, let $J_i$ and $C_i$ be the exactly integrated operating return and intervention cost of a computed deployment. Its net return at shadow price $\lambda\ge0$ is $J_i-\lambda C_i$. We store all nonnegative intersections and tie points, and report the entire upper envelope over dynamic, pointwise, certified-greedy, exact operating-optimal, and globally eligible raw policies. No large illustrative $\lambda$ is chosen to manufacture a universal favorable sign.
+\input{revisions/2026-09-24-r32/paper/generated/frontier}
+The thresholds are normalized tradeoffs, not calibrated willingness to pay. In particular, a low intervention cost does not mean a policy dominates in operating value. The envelope exposes precisely when the retained operating loss is compensated by reduced implementation cost. The distinction between this finite comparison and the globally constrained problem remains explicit.
+
+\section{A global optimum at the active stopping boundary}\label{sec:stopped}
+\subsection{The unchanged original economy}
+The original model has state $(u,x)\in\mathcal D=(1.2,2.8)\times(.5,2)$, horizon one, and dynamics
+\begin{align}
+ du_s&=\theta_s\,ds+.05\,dZ_s^u,\\
+ dx_s&=\{(.02+.06p_s)x_s-c_s\}\,ds+.2p_sx_s\,dZ_s^x,
+ \qquad d\langle Z^u,Z^x\rangle_s=-.25\,ds.
+\end{align}
+Controls $(c,\theta,p)$ lie in $[.05,.8]\times[-.2,.2]\times[-.5,.8]$. At first exit, capped at one, running utility and settlement are
+\begin{align}
+ \ell_k(u,c,\theta)&=\frac{c^{1-u}}{1-u}-\frac{k}{2}\theta^2,\\
+ G(u,x)&=-.02(u-2)^2+.1\log x,\qquad
+ g(s,u,x)=G(u,x)-8(1-s).
+\end{align}
+Payoffs discount at rate .04. The retained principal target is a current-state actor $\pi(t,u,x)$ with
+\begin{equation}\label{eq:original}
+ \sup_{(t,u,x)\in[0,1]\times\overline{\mathcal D}}
+ \{V_2(t,u,x)-J_2^\pi(t,u,x)\}\le .01.
+\end{equation}
+The retained whole-domain upper bound is 7.181834580823298. Neither the maintenance model nor the scalar theorem below changes that number. The 47-coordinate current-state derivative/residual bridge remains uninstantiated. We preserve the original target and its derivations rather than silently substitute a smaller policy class.
+
+\subsection{From a derivative diagnostic to a complete scalar certificate}
+Fix the unchanged restart $(0,61/50,5/4)$, $k=2$, $c=3/4$, $p=0$, and a constant $\theta\in[-1/5,1/5]$. Write $J(\theta)$ for the resulting original-model payoff. In the preceding validated calculation the lower-boundary exit probability at zero adjustment lay in $[.68915,.68916]$. Curvature changed sign, so a concavity-based search justified at a central restart could not be transferred to this one. We instead prove interval-wide monotonicity.
+
+\begin{theorem}[Global optimum in the active-boundary constant class]\label{thm:boundary}
+For the fixed original-model class above, $J$ is differentiable in the interior and has one-sided derivatives at its endpoints. The following uniform lower bounds hold:
+\begin{equation}\label{eq:derivativebounds}
+ J'(\theta)\ge
+ \begin{cases}
+ 8163/125000,&-1/5\le\theta\le0,\\
+ 47251/125000,&0\le\theta\le1/5.
+ \end{cases}
+\end{equation}
+Consequently the unique global maximizer is $\theta^*=1/5$. The inherited validated endpoint enclosure $[-3.7609,-3.7607]$ is therefore an enclosure of the optimal payoff in this constant class.
+\end{theorem}
+\begin{proof}
+Let $a=6/5$, $b=14/5$, $d=1/50$, and $\sigma=1/20$. Deterministic wealth is bounded below by $25/49>1/2$, so it does not exit. Stopped It\^o's formula writes the payoff as its initial settlement plus the discounted occupation integral of $h_\theta=(\partial_t+\mathcal L_\theta-.04)g+\ell_2$. On the preference interval, explicit rational bounds give $h_\theta\ge2$ and $\partial_yh_\theta>0$. Extend $h_\theta$ constantly above $b$.
+
+For the process killed only at $a$, the derivative of survival is
+\[
+ S'_\theta(t)=16e^{-16\theta}\Phi\!\left(\frac{\theta t-1/50}{(1/20)\sqrt t}\right).
+\]
+For fixed $t$ this is log-concave in $\theta$, so its minimum on a compact interval is bounded by the smaller endpoint value. Monotone coupling, with the state dependence of $h_\theta$ held fixed, bounds the derivative of the occupation expectation below by $2S'_\theta(t)$. The direct parameter derivative of $h$ is at least $-4/125$ on the negative half and $-54/125$ on the positive half.
+
+On $t\in[1/25,1/5]$ and $\theta\in[-1/5,0]$, rational Gaussian and exponential bounds give $S'_\theta(t)\ge8/25$. On $t\in[1/4,1]$ and $\theta\in[0,1/5]$, they give $S'_\theta(t)\ge352/625$. Also $e^{-.04t}\ge24/25$. These imply half-line derivative lower bounds .066304 and .379008. The likelihood-score error for paths hitting the distant upper boundary is less than .001 uniformly in $\theta$. Subtracting it proves \eqref{eq:derivativebounds}. Strict positivity gives uniqueness. The supplementary proof supplies every constant and the executable rational checks.\end{proof}
+
+The endpoint enclosure is inherited, not a newly run payoff quadrature. What is new is the global optimization certificate connecting it to the entire parameter interval. It improves the active-boundary component while keeping its scope precise: one restart and a constant-control class. A globally verified scalar optimum does not solve the feedback problem \eqref{eq:original}.
+
+\section{Conclusion}
+Uniform operating accuracy and low implementation cost are different objectives. The construction here begins with economic primitives, produces Bellman witnesses with quantified encoding error, and uses their certified action sets to optimize intervention costs under endogenous occupancy. Whole-interval and isolated-point verification make the deployed representation checkable independently of training and of the optimizing envelope routine. An additional own-policy certificate identifies globally cost-minimal zero-intervention solutions without forcing them into a conservative local class.
+
+The coupled maintenance computation establishes these steps end to end and exhibits a genuine dynamic revision mechanism. It also preserves a demanding comparison: classical spline proposals and exact structured dynamic programming are strong alternatives, and the present experiment does not establish a neural speed advantage. The active-boundary theorem converts an earlier local diagnostic into a complete scalar optimum in the original stopped economy. The larger all-domain target remains unchanged. All preceding proofs, unsuccessful experiments, and referee responses are retained in a lossless historical annex, while the current article separates its proved constructions from stronger empirical or high-dimensional claims not established by the evidence.
