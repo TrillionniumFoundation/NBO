@@ -1,0 +1,49 @@
+\section{Exact certificates for structured atomic state dynamics}\label{sec:atomic}
+The finite search is complete but potentially expensive. A distinct question is when the common-continuation problem can be reduced exactly, without searching over probability boxes or replacing atomic successors by densities. The following conditions answer that question for exogenous state dynamics. They are restrictive and testable: neither action independence alone nor a small spatial mesh suffices.
+
+\begin{assumption}[Exogenous aggregation identities]\label{ass:exogenous}
+At each date let $\{E_{ti}\}_{i=1}^{n_t}$ be a finite Borel partition and let $\mu_{ti}$ be a probability measure supported in $E_{ti}$. The rewards and implementation costs are constant on each cell for each action; the terminal payoff is constant on terminal cells. The transition $P_t$ does not depend on the action. For a stochastic matrix $\bar P_t$, require both
+\begin{align}
+ P_t(x,E_{t+1,j})&=\bar P_{tij} \quad(x\in E_{ti}),\label{eq:pointlump}\\
+ \int P_t(x,B)\mu_{ti}(dx)&=\sum_j\bar P_{tij}\mu_{t+1,j}(B)
+       \quad(B\text{ Borel}).\label{eq:measurelump}
+\end{align}
+The initial law is $\nu=\sum_i\nu_i\mu_{0i}$.
+\end{assumption}
+Equation~\eqref{eq:pointlump} is a pointwise identity, including cell boundaries. Equation~\eqref{eq:measurelump} is an identity of measures, not equality only on partition cells. It allows each $P_t(x,\cdot)$ to be finitely atomic. In particular it need not be a reset kernel.
+
+\begin{theorem}[Exact common-policy aggregation]\label{thm:atomic}
+Under Assumption~\ref{ass:exogenous}, for finite $T$, $0<\beta\leq1$, and $\varepsilon\geq0$, the optimum over all Borel common randomized Markov policies equals the finite-state optimum with primitives $(\bar r,\bar k,\bar g,\bar P,\nu)$. A finite optimal policy lifted constantly on cells is feasible at every original state and date and attains that continuum optimum. No regularity or cellwise-constant restriction is imposed on the original competitor policies.
+\end{theorem}
+\begin{proof}
+The operating optimum is cellwise constant by \eqref{eq:pointlump} and backward induction. For an arbitrary Borel policy $p$, define $\bar p_t(a\mid i)=\int p_t(a\mid x)\mu_{ti}(dx)$. Action independence is essential: its operating continuation is $P_tJ_{t+1}^p$, because $\sum_a p_t(a\mid x)=1$. Integrating the Bellman equation over $\mu_{ti}$ and using \eqref{eq:measurelump} shows that the averages of $J^p$ obey the finite Bellman equations for the one policy $\bar p$. The same argument applies to $C^p$. Every pointwise operating constraint therefore implies its finite counterpart after averaging, while the initial cost is unchanged by the mixture identity for $\nu$. The finite infimum is no larger than the original infimum. Conversely lift any finite policy constantly on cells. Equation~\eqref{eq:pointlump} makes its original values equal to the finite values at every point, proving feasibility and the reverse inequality. The finite optimum is attained by compactness.
+\end{proof}
+A deterministic original policy can average to a nondegenerate lottery. The theorem therefore concerns $K_R$, not equality between finite and continuum deterministic optima. It cannot by itself justify a deterministic lower bound for a continuum model. The deterministic separations in the original maintenance cohort continue to use their own whole-domain deterministic certificates.
+
+\subsection{An exact linear program, rather than a bilinear search}\label{sec:exactlp}
+Write $\ell_{tia}=\max_b\bar r_{tib}-\bar r_{tia}\geq0$ and let $w_0=\nu$, $w_{t+1}=w_t\bar P_t$ be the exogenous state occupancies. Because the continuation is action-independent, operating regret $D_t=V_t-J_t^p$ satisfies a linear recursion. The continuum optimum in Theorem~\ref{thm:atomic} is exactly the program
+\begin{align}
+ \min_{p,D}\quad &\sum_{t,i,a}\beta^t w_{ti}\bar k_{tia}p_{tia},\label{eq:exoglp}\\
+ D_{ti}&=\sum_a\ell_{tia}p_{tia}+\beta\sum_j\bar P_{tij}D_{t+1,j},\nonumber\\
+ \sum_ap_{tia}&=1,\quad p_{tia}\geq0,\quad 0\leq D_{ti}\leq\varepsilon,\quad D_T=0.\nonumber
+\end{align}
+For constant $n,m$, there are $(m+1)nT$ variables and $2nT$ equality constraints. A transition matrix with at most $s$ nonzeros per row gives $O(nT(m+s))$ constraint nonzeros. Rational linear programming admits polynomial bit-complexity algorithms; no such complexity claim is made for the particular simplex implementation used here. The unrestricted continuum reduction and the finite linear algebra are separate claims. The latter is ordinary linear programming, not a new global optimizer.
+
+For clarity, the corresponding occupation-measure representation of the general, action-dependent problem has one flow $y^s_{tia}$ for each restart $s=(u,j)$. With $z^s_{ti}=\sum_a y^s_{tia}$, it imposes initial mass one at $s$, the usual transition flow, and
+\begin{equation}\label{eq:compatibility}
+ y^s_{tia}=z^s_{ti}p_{tia}\qquad\text{for every restart }s\text{ and }t\geq u.
+\end{equation}
+Its operating constraint is
+$\sum_{t\geq u,i,a}\beta^{t-u}r_{tia}y^s_{tia}+\beta^{T-u}\sum_i g_i z^s_{Ti}\geq V_u(j)-\varepsilon$.
+A further flow initialized at $\nu$ evaluates implementation cost. Zero-occupancy states cause no division: \eqref{eq:compatibility} is imposed as a product equality. With controlled transitions these are genuine common-policy bilinear restrictions; independent restart occupation measures omit them. With exogenous transitions all $z^s$ are fixed, so compatibility becomes linear. Equation~\eqref{eq:exoglp} eliminates the redundant restart flows by retaining their regret recursion. This is the structural reason the exponential search disappears in this class.
+
+Finite LP approximations and their convergence rates are established tools in constrained control \citep{DufourPrietoRumeau2013,Saldi2018}. The claim here is the exact preservation of the all-restart common-policy constraint under the two identities above, including atomic kernels, and its use with a repair-based certification framework. It is not priority for occupation measures, state aggregation, or linear programming.
+
+\subsection{Arithmetic certificates and economic charges}\label{sec:exogcertificate}
+Any equality-constrained bounded LP $\min\{c'z:Az=b,\ l\leq z\leq u\}$ has, for every rational vector $y$, the lower certificate
+\begin{equation}\label{eq:equalitydual}
+ L(y)=y'b+\sum_j\min\{(c-A'y)_jl_j,(c-A'y)_ju_j\}.
+\end{equation}
+Subtract $y'(Az-b)$ from the objective and minimize each remaining term over its interval to prove the inequality. No exact dual feasibility or optimizer status is required. In \eqref{eq:exoglp}, probabilities lie in $[0,1]$ and regrets in $[0,\varepsilon]$. Rationally rounded LP probabilities are evaluated and, where needed, repaired backward; their actual cost is an upper certificate. An independent checker reconstructs both endpoints from primitives, probabilities, and multipliers. It imports neither the optimizer nor the constructor.
+
+Exogenous state dynamics make the implementation economics particularly transparent. A nonnegative state- and action-dependent administration charge that leaves operating payoffs and transitions unchanged simply adds to $\bar k_{tia}$. Program~\eqref{eq:exoglp} remains exact, rather than requiring a scalar break-even approximation. An overhead that changes rewards must also alter $\ell$ and the operating optimum; an overhead that changes the transition law can invalidate exogeneity and must be treated by the general common-policy program. Implementation units in the following service economies are designed adjustment units, not estimated monetary welfare.

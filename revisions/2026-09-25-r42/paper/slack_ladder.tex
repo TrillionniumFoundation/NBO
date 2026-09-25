@@ -1,0 +1,47 @@
+\subsection{Finite-horizon repair without strict discounting}\label{sec:ladder}
+Strict discounting supplies the constant margin in Theorem~\ref{thm:repair}, but it is not necessary for finite-horizon completeness. A date-dependent allowance supplies a different margin. This distinction is relevant for organizations that assess a finite service commitment without discounting its constituent dates. In this subsection only, allow $0<\beta\leq1$; the constants $D_J,D_C$ retain their finite-sum definitions.
+
+\begin{theorem}[A finite-horizon slack ladder]\label{thm:ladder}
+Let $\varepsilon>0$, $0<\delta<\varepsilon$, and let $p$ satisfy $J_t^p\geq V_t-\varepsilon-\delta$ at every state and date. Choose $z\in(0,1)$ with $\delta\leq\varepsilon z^T$ and put
+\begin{equation}\label{eq:ladder}
+ \gamma_t=\varepsilon z^{T-t},\qquad \tau_t=\varepsilon-\gamma_t,\qquad 0\leq t\leq T.
+\end{equation}
+Backward mixing toward an action maximizing the repaired operating continuation, with current target $V_t-\tau_t$, constructs a common Borel Markov policy $q$ satisfying
+\[
+ J_t^q\geq V_t-\tau_t\geq V_t-\varepsilon,\qquad J_t^q\geq J_t^p,\qquad
+ \sup_{t,x}\TV(q_t,p_t)\leq \frac{2z}{1+z}.
+\]
+Consequently $C_0^q\leq C_0^p+D_C\,2z/(1+z)$ pointwise. At $\delta=0$ retain $p$; at $\delta\geq\varepsilon$ an operating-optimal policy gives the bound $D_C$. With $z=(\delta/\varepsilon)^{1/T}$ the resulting modulus vanishes as $\delta\downarrow0$, including at $\beta=1$.
+\end{theorem}
+\begin{proof}
+The terminal allowance is zero. Given an already repaired continuation, write $b=V_t-\tau_t$, $q_a=T_t^aJ_{t+1}^q$, $q_p=\sum_a p_t(a\mid x)q_a$, and $q_*=\max_aq_a$. Inductive improvement gives $q_p\geq J_t^p$, while
+\[
+ q_*-b\geq s_t:=\tau_t-\beta\tau_{t+1}
+ \geq\gamma_{t+1}-\gamma_t>0.
+\]
+If $q_p\geq b$, retain the current probabilities. Otherwise the mixture share $\alpha=(b-q_p)/(q_*-q_p)$ is well defined. Its deficit is at most $\delta+\gamma_t$, so
+\[
+ \alpha\leq\frac{\delta+\gamma_t}{s_t+\delta+\gamma_t}
+ \leq\frac{\delta+z\gamma_{t+1}}{\delta+\gamma_{t+1}}
+ \leq\frac{2z}{1+z}.
+\]
+The last step uses $\gamma_{t+1}\geq\varepsilon z^{T-1}\geq\delta/z$ and monotonicity of $(u+z)/(u+1)$ in $u$. Each mixture weakly improves operating value; the first maximizing action in a fixed order is Borel. Lemma~\ref{lem:perturb} yields the cost inequality. No action-independent transition assumption is used.
+\end{proof}
+
+Replacing the repair modulus in Theorem~\ref{thm:lattice} by this modulus extends its finite-state completeness statement to $\beta=1$. At fixed $T$ its worst-case rate is $O(M^{-1/T})$, rather than the discounted linear rate. It is therefore an extension of the guarantee, not an assertion of efficient generic enumeration. A rational implementation need not evaluate an irrational root: a dyadic $z$ with $\delta\leq\varepsilon z^T$ gives a completely rational construction. For $\beta<1$, either valid repair can be used; their actual verified costs, rather than a presumed ordering of their worst-case constants, determine which candidate is retained.
+
+The same ladder can use operating witnesses. For checked $L_t\leq V_t\leq U_t$, $U_T=g$, let $d_t$ bound $U_t-\max_aT_t^aU_{t+1}$ from above, and choose $0\leq\tau_t\leq\varepsilon$, $\tau_T=0$, with
+\[
+ \sigma_t=\tau_t-\beta\tau_{t+1}-d_t>0.
+\]
+If $J_t^p\geq U_t-\varepsilon-\delta$, the same proof with target $U_t-\tau_t$ bounds the current mixture by
+$(\delta+\varepsilon-\tau_t)/(\sigma_t+\delta+\varepsilon-\tau_t)$.
+This is a checked, date-specific condition at $\beta=1$, not a claim that every approximate witness has adequate slack. In a lattice bracket the deficit is $\delta=e+D_J\theta_M$. The witness-width, residual, and policy-rounding terms remain separate.
+
+\begin{proposition}[Zero tolerance]\label{prop:zero}
+At $\varepsilon=0$, define $A_t^*(x)=\arg\max_a T_t^aV_{t+1}(x)$. The minimum implementation cost is the ordinary cost Bellman recursion restricted to $A_t^*(x)$. A deterministic Borel Markov selector attains its minimum at every state and date; randomization cannot improve it. This holds for finite $T$ and $0<\beta\leq1$.
+\end{proposition}
+\begin{proof}
+A feasible policy has $J_t^p=V_t$ everywhere, since no policy exceeds $V_t$. Thus its support is contained in $A_t^*$ at each date, by the operating Bellman equality. Conversely every policy supported on these correspondences is operating-optimal by backward induction. Minimizing implementation cost on each nonempty finite correspondence is an unconstrained finite-action Bellman problem with Borel selectors.
+\end{proof}
+The proposition assumes the optimal-action ties are known exactly; a small numerical Bellman residual does not establish an exact tie. It addresses zero tolerance without taking a singular limit of a positive-tolerance repair bound.
