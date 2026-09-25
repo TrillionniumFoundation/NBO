@@ -1,0 +1,89 @@
+name: R47 final journal typography and published-file check
+on:
+  push:
+    branches:
+      - revision/econometrica-r47-complete-referee-2026-09-26
+    paths:
+      - '.github/workflows/r47-style-check.yml'
+      - 'revisions/2026-09-26-r47/STYLE_AMENDMENT.json'
+permissions:
+  contents: write
+concurrency:
+  group: r47-publication-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  final-copy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONINTMAXSTRDIGITS: '0'
+      MPLBACKEND: Agg
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify the isolated heading-only correction
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          r=Path('revisions/2026-09-26-r47')
+          x=json.loads((r/'STYLE_AMENDMENT.json').read_text())
+          path=r/'paper/references.tex'
+          b=path.read_bytes()
+          if hashlib.sha256(b).hexdigest()==x['original_sha256']:
+              b=x['prefix'].encode()+b+x['suffix'].encode()
+              path.write_bytes(b)
+          assert hashlib.sha256(b).hexdigest()==x['amended_sha256']
+          original=b[len(x['prefix'].encode()):-len(x['suffix'].encode())]
+          assert hashlib.sha256(original).hexdigest()==x['original_sha256']
+          assert x['original_sha256']==json.loads((r/'SOURCE_MANIFEST.json').read_text())['revisions/2026-09-26-r47/paper/references.tex']
+          for p,h in json.loads((r/'history/INPUT_IDENTITY.json').read_text()).items():
+              assert hashlib.sha256(Path(p).read_bytes()).hexdigest()==h,p
+          print('Only bibliography-heading formatting changed; original entries and scientific inputs unchanged.')
+          PY
+      - name: Install document dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends latexmk texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
+          python -m pip install numpy==1.26.4 scipy==1.14.1 matplotlib==3.9.2 pypdf==5.9.0
+      - name: Rebuild final manuscripts without rerunning or changing experiments
+        run: |
+          bash R47_BUILD.sh --documents-only
+          python revisions/2026-09-26-r47/replication/finalize.py
+          pdftotext -layout ECTA_R47.pdf /tmp/r47-text.txt
+          if grep -E 'APPENDIX D:.*EFERENCES' /tmp/r47-text.txt; then exit 1; fi
+      - name: Publish final PDF and identity records
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          find revisions/2026-09-25-r45 revisions/2026-09-26-r47 -type d -name __pycache__ -prune -exec rm -rf {} +
+          git add revisions/2026-09-25-r45 revisions/2026-09-26-r47 *_R45.pdf *_R47.pdf
+          git commit -m 'revision(r47): publish final journal-formatted referee manuscripts and verified manifest [skip ci]'
+          git push origin HEAD:refs/heads/revision/econometrica-r47-complete-referee-2026-09-26
+          test "$(git ls-remote origin refs/heads/revision/econometrica-r47-complete-referee-2026-09-26 | cut -f1)" = "$(git rev-parse HEAD)"
+          git rev-parse HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r47-final-review
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            *_R47.pdf
+            *_R47.tex
+            *_R45.pdf
+            *_R45.tex
+            R47_REVIEW.md
+            R47_BUILD.sh
+            revisions/2026-09-26-r47/
+            revisions/2026-09-25-r45/
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: nbo-r47-final-build-diagnostics
+          path: revisions/2026-09-26-r47/build/
