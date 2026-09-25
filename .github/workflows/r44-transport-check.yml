@@ -1,0 +1,25 @@
+name: R44 source transport check
+on:
+  push:
+    branches: [revision/econometrica-r44-global-bellman-envelopes-2026-09-25]
+    paths: ['.github/workflows/r44-transport-check.yml']
+permissions:
+  contents: read
+jobs:
+  transport:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Report exact transport identity
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          files=sorted(Path('revisions/2026-09-25-r44/transport').glob('source.*.b64'))
+          print(json.dumps({str(p):{'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in files},indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44-source-transport
+          path: revisions/2026-09-25-r44/transport/
+          retention-days: 7
