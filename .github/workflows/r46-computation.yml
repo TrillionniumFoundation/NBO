@@ -61,7 +61,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: python -m pip install numpy scipy
+      - run: python -m pip install numpy==2.3.5 scipy==1.17.0
       - name: Price diagnostics, frozen root, and full tree on all unchanged cases
         env:
           FAMILY: ${{ matrix.family }}
@@ -70,12 +70,12 @@ jobs:
           python - <<'PY'
           import os,platform,sys,json,numpy,scipy,subprocess
           from pathlib import Path
-          Path('revisions/2026-09-25-r46/results/environment',os.environ['FAMILY']+'.json').write_text(json.dumps(dict(python=sys.version,numpy=numpy.__version__,scipy=scipy.__version__,platform=platform.platform(),cpu=platform.processor(),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),run_id=os.environ['GITHUB_RUN_ID'],threads=1,disclosure='Remote reproduction of retrospective development; not an untouched evaluation'),indent=2))
+          Path('revisions/2026-09-25-r46/results/environment',os.environ['FAMILY']+'.json').write_text(json.dumps(dict(python=sys.version,numpy=numpy.__version__,scipy=scipy.__version__,platform=platform.platform(),cpu=platform.processor(),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),run_id=os.environ['GITHUB_RUN_ID'],threads=1,disclosure='Remote reproduction of retrospective development; not an untouched evaluation. First remote attempt 36116229107 stopped on relative CLI paths; paths corrected and dependencies pinned to local development versions, with unchanged scientific source.'),indent=2))
           PY
           for i in 0 1 2 3; do
             case="${FAMILY}${i}"
             python revisions/2026-09-25-r46/replication/restart_prices.py "$case"
-            python revisions/2026-09-25-r46/replication/verify_prices.py "revisions/2026-09-25-r46/proofs/$case/constant.json.gz" "revisions/2026-09-25-r46/proofs/$case/restart.json.gz"
+            python revisions/2026-09-25-r46/replication/verify_prices.py "$PWD/revisions/2026-09-25-r46/proofs/$case/constant.json.gz" "$PWD/revisions/2026-09-25-r46/proofs/$case/restart.json.gz"
             python revisions/2026-09-25-r46/history/price_tree_root_v1.py "$case"
             python revisions/2026-09-25-r46/replication/price_tree.py --full "$case"
           done
@@ -107,7 +107,7 @@ jobs:
           merge-multiple: true
       - name: Complete independent replay and finite adversarial checks
         run: |
-          python revisions/2026-09-25-r46/replication/verify_prices.py revisions/2026-09-25-r46/proofs/*/constant.json.gz revisions/2026-09-25-r46/proofs/*/restart.json.gz
+          python revisions/2026-09-25-r46/replication/verify_prices.py "$PWD"/revisions/2026-09-25-r46/proofs/*/constant.json.gz "$PWD"/revisions/2026-09-25-r46/proofs/*/restart.json.gz
           python revisions/2026-09-25-r46/replication/verify_price_tree.py
           python revisions/2026-09-25-r46/replication/decompose_prices.py
           python revisions/2026-09-25-r46/replication/test_prices.py
