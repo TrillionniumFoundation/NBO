@@ -1,0 +1,115 @@
+name: R47 complete manuscript and exact referee replay
+on:
+  push:
+    branches:
+      - revision/econometrica-r47-complete-referee-2026-09-26
+    paths:
+      - '.github/workflows/r47-publication.yml'
+      - 'revisions/2026-09-26-r47/input/**'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: r47-publication-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  complete-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PYTHONINTMAXSTRDIGITS: '0'
+      MPLBACKEND: Agg
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      BASE: fb88b1122ce5709d36104993937083b57470d1de
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Materialize ordinary sources and verify frozen inputs
+        run: python revisions/2026-09-26-r47/input/restore.py
+      - name: Install document and replay dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends latexmk texlive-latex-extra texlive-fonts-recommended texlive-science
+          python -m pip install numpy==1.26.4 scipy==1.14.1 matplotlib==3.9.2 pypdf==5.9.0
+      - name: Replay all certificates and compile complete documents
+        run: bash R47_BUILD.sh
+      - name: Check preservation and record publication identity
+        run: |
+          find revisions/2026-09-25-r45 revisions/2026-09-26-r47 -type d -name __pycache__ -prune -exec rm -rf {} +
+          python revisions/2026-09-26-r47/replication/finalize.py
+          python - <<'PY'
+          from pathlib import Path
+          import json, hashlib
+          from pypdf import PdfReader
+          r=Path('revisions/2026-09-26-r47')
+          m=json.loads((r/'PUBLICATION_MANIFEST.json').read_text())
+          for path,digest in m['files'].items():
+              assert hashlib.sha256(Path(path).read_bytes()).hexdigest()==digest,path
+          for name in ['ECTA','SUPP','RESPONSE','COMPUTATION','HISTORY']:
+              p=Path(f'{name}_R47.pdf')
+              reader=PdfReader(p)
+              assert len(reader.pages)>0,p
+              print(p,len(reader.pages),'pages')
+          PY
+      - name: Commit complete ordinary review tree without changing inherited files
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add revisions/2026-09-25-r45 revisions/2026-09-26-r47 R47_BUILD.sh R47_REVIEW.md
+          git add ECTA_R45.tex ECTA_R45.pdf SUPP_R45.tex SUPP_R45.pdf RESPONSE_R45.tex RESPONSE_R45.pdf HISTORY_R45.tex HISTORY_R45.pdf
+          git add ECTA_R47.tex ECTA_R47.pdf SUPP_R47.tex SUPP_R47.pdf RESPONSE_R47.tex RESPONSE_R47.pdf HISTORY_R47.tex HISTORY_R47.pdf COMPUTATION_R47.tex COMPUTATION_R47.pdf
+          python - <<'PY'
+          import subprocess,os
+          base=os.environ['BASE']
+          inherited=set(subprocess.check_output(['git','ls-tree','-r','--name-only',base],text=True).splitlines())
+          changed=set(subprocess.check_output(['git','diff','--cached',base,'--name-only'],text=True).splitlines())
+          assert not inherited.intersection(changed),sorted(inherited.intersection(changed))
+          print('All',len(inherited),'inherited tracked files unchanged.')
+          PY
+          if ! git diff --cached --quiet; then
+            git commit -m 'revision(r47): publish complete Econometrica manuscript, paired witness theory and checked referee package [skip ci]'
+            git push origin HEAD:refs/heads/revision/econometrica-r47-complete-referee-2026-09-26
+          fi
+          test "$(git ls-remote origin refs/heads/revision/econometrica-r47-complete-referee-2026-09-26 | cut -f1)" = "$(git rev-parse HEAD)"
+          git rev-parse HEAD
+      - name: Store complete review documents and current replication package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r47-complete-review
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            ECTA_R47.pdf
+            SUPP_R47.pdf
+            RESPONSE_R47.pdf
+            COMPUTATION_R47.pdf
+            HISTORY_R47.pdf
+            ECTA_R47.tex
+            SUPP_R47.tex
+            RESPONSE_R47.tex
+            COMPUTATION_R47.tex
+            HISTORY_R47.tex
+            R47_REVIEW.md
+            R47_BUILD.sh
+            revisions/2026-09-26-r47/
+            revisions/2026-09-25-r45/
+            ECTA_R45.pdf
+            SUPP_R45.pdf
+            RESPONSE_R45.pdf
+            HISTORY_R45.pdf
+            ECTA_R45.tex
+            SUPP_R45.tex
+            RESPONSE_R45.tex
+            HISTORY_R45.tex
+      - name: Preserve build diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r47-build-diagnostics
+          retention-days: 14
+          path: revisions/2026-09-26-r47/build/
