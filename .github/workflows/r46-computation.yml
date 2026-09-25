@@ -1,0 +1,142 @@
+name: R46 restart-price computation and exact replay
+on:
+  push:
+    branches: [revision/econometrica-r46-tie-aware-referee-2026-09-25]
+    paths: [.github/workflows/r46-computation.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: revision/econometrica-r46-tie-aware-referee-2026-09-25
+          fetch-depth: 1
+      - name: Materialize complete hash-checked source as ordinary files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/TrillionniumFoundation/NBO/git/blobs/a44cc5c40b7b18a871fa1c9a24172874f4b2027f > /tmp/r46-blob.json
+          python - <<'PY'
+          import json,base64,bz2,hashlib
+          from pathlib import Path
+          obj=json.loads(Path('/tmp/r46-blob.json').read_text())
+          raw=base64.b64decode(obj['content'])
+          assert hashlib.sha256(raw).hexdigest()=='afdbc6354b0e4ac59d39a32ed0a7501ebfc4e1ff6a1c7cfb2d06f9689fa483c1'
+          for name,text in json.loads(bz2.decompress(raw)).items():
+              p=Path(name)
+              assert name.startswith('revisions/2026-09-25-r46/') and '..' not in p.parts
+              p.parent.mkdir(parents=True,exist_ok=True);p.write_text(text)
+          for name in ['PROTOCOL.json','PROTOCOL_EXTENSION.json']:
+              protocol=json.loads(Path('revisions/2026-09-25-r46',name).read_text())
+              for p,h in protocol['source_sha256'].items():
+                  assert hashlib.sha256(Path(p).read_bytes()).hexdigest()==h,p
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add revisions/2026-09-25-r46
+          git diff --cached --quiet || git commit -m 'revision(r46): materialize complete ordinary solver and checker sources [skip ci]'
+          git push origin HEAD:revision/econometrica-r46-tie-aware-referee-2026-09-25
+  calculate:
+    needs: source
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        family: [maintenance, inventory, queue, tie]
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: revision/econometrica-r46-tie-aware-referee-2026-09-25
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install numpy scipy
+      - name: Price diagnostics, frozen root, and full tree on all unchanged cases
+        env:
+          FAMILY: ${{ matrix.family }}
+        run: |
+          mkdir -p revisions/2026-09-25-r46/results/environment
+          python - <<'PY'
+          import os,platform,sys,json,numpy,scipy,subprocess
+          from pathlib import Path
+          Path('revisions/2026-09-25-r46/results/environment',os.environ['FAMILY']+'.json').write_text(json.dumps(dict(python=sys.version,numpy=numpy.__version__,scipy=scipy.__version__,platform=platform.platform(),cpu=platform.processor(),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),run_id=os.environ['GITHUB_RUN_ID'],threads=1,disclosure='Remote reproduction of retrospective development; not an untouched evaluation'),indent=2))
+          PY
+          for i in 0 1 2 3; do
+            case="${FAMILY}${i}"
+            python revisions/2026-09-25-r46/replication/restart_prices.py "$case"
+            python revisions/2026-09-25-r46/replication/verify_prices.py "revisions/2026-09-25-r46/proofs/$case/constant.json.gz" "revisions/2026-09-25-r46/proofs/$case/restart.json.gz"
+            python revisions/2026-09-25-r46/history/price_tree_root_v1.py "$case"
+            python revisions/2026-09-25-r46/replication/price_tree.py --full "$case"
+          done
+          python revisions/2026-09-25-r46/replication/verify_price_tree.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r46-${{ matrix.family }}
+          path: |
+            revisions/2026-09-25-r46/results/
+            revisions/2026-09-25-r46/proofs/
+          retention-days: 30
+  collect:
+    needs: calculate
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: revision/econometrica-r46-tie-aware-referee-2026-09-25
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r46-*
+          path: revisions/2026-09-25-r46
+          merge-multiple: true
+      - name: Complete independent replay and finite adversarial checks
+        run: |
+          python revisions/2026-09-25-r46/replication/verify_prices.py revisions/2026-09-25-r46/proofs/*/constant.json.gz revisions/2026-09-25-r46/proofs/*/restart.json.gz
+          python revisions/2026-09-25-r46/replication/verify_price_tree.py
+          python revisions/2026-09-25-r46/replication/decompose_prices.py
+          python revisions/2026-09-25-r46/replication/test_prices.py
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          r=Path('revisions/2026-09-25-r46')
+          checks={n:json.loads((r/'results'/n).read_text()) for n in ['independent_prices.json','independent_price_trees.json','price_property_tests.json']}
+          assert checks['independent_prices.json']['certificates']==32
+          assert checks['independent_price_trees.json']['certificates']==32
+          assert all(v['passed'] for v in checks.values())
+          for family in ['maintenance','inventory','queue','tie']:
+              for i in range(4):
+                  for method in ['constant','restart','price_root','price_search']:
+                      assert (r/'proofs'/f'{family}{i}'/(method+'.json.gz')).exists()
+          hashes={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(r.rglob('*')) if p.is_file() and '__pycache__' not in str(p)}
+          (r/'results/REMOTE_REPLAY_MANIFEST.json').write_text(json.dumps(dict(passed=True,price_certificates=32,tree_certificates=32,sha256=hashes),indent=2)+'\n')
+          PY
+          find revisions/2026-09-25-r46 -type d -name __pycache__ -prune -exec rm -rf {} +
+      - name: Publish normal proof objects and results only on R46
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add revisions/2026-09-25-r46/proofs revisions/2026-09-25-r46/results
+          git diff --cached --quiet || git commit -m 'revision(r46): publish all 64 exact-checked price and covering-tree certificates [skip ci]'
+          git pull --rebase origin revision/econometrica-r46-tie-aware-referee-2026-09-25
+          git push origin HEAD:revision/econometrica-r46-tie-aware-referee-2026-09-25
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r46-complete-exact-replay
+          path: revisions/2026-09-25-r46
+          retention-days: 30
