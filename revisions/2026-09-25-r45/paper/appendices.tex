@@ -1,0 +1,94 @@
+\appendix
+\section{Proof of the precision-dependent search bound}\label{app:search45}
+For a node $Q$, the admissible distributions in each row form a compact simplex intersected with coordinate intervals. If the sum of lower nonreference bounds exceeds one, the row is empty and removal is exact. Otherwise its lower corner is admissible. Given two row distributions $p,q$ in the box,
+\[
+ \TV(p,q)=\tfrac12\left(\sum_{a\ne a^*}|p_a-q_a|+
+       \left|\sum_{a\ne a^*}(p_a-q_a)\right|\right)
+ \le\sum_{a\ne a^*}|p_a-q_a|\le(m-1)w.
+\]
+The bound is also at most one. It does not depend on which action was used as the reference.
+
+Define $D^{\min}_{t,Q}$ by restricted Bellman minimization of nonnegative disadvantages $d$ on those row simplexes, with zero terminal value. A minimizing action distribution can be selected at each row, and the collection of these distributions is one common Markov policy. Backward induction proves that its regret equals $D^{\min}_{t,Q}$ simultaneously at all state--date pairs. Likewise restricted minimization of $k$ produces $C^{\min}_{t,Q}$. The two minimizing policies can differ: no equality of their choices is asserted or needed.
+
+If each minimum is rounded downward by at most $q$, the error relative to the exact restricted minimum at a date with $h$ decisions remaining is at most $q\Ssum h$. This follows from the stochastic row sums and the recursion $e_t\le q+\beta e_{t+1}$. A surviving node has rounded minimum regret at most $\varepsilon$ at every pair, hence $D^{\min}_{t,Q}\le\varepsilon+\gamma_b$. Let $p^c$ denote its lower corner. The policy perturbation bound gives
+\[
+ D_t^{p^c}\le D^{\min}_{t,Q}+D_J\theta(w)
+ \le\varepsilon+\gamma_b+D_J\theta(w).
+\]
+If $\underline c_Q$ is the initial-law average of the rounded minimum cost, then
+\[
+ \int C_0^{p^c}\,d\nu-\underline c_Q\le D_C\theta(w)+\gamma_b.
+\]
+Repairing $p^c$ and using Theorem~\ref{thm:repair45} gives $U_Q-\underline c_Q\le\mathcal H(w,b)$. Raising the lower endpoint by any valid LP residual or inherited parent bound preserves this inequality. Additional valid node removals cannot discard an actually feasible point.
+
+Suppose the incumbent is $U$ and a node's valid lower endpoint is $L_Q$. Once its corner has been evaluated, $U\le U_Q$. If $\mathcal H(w,b)\le\eta$, then $U-L_Q\le\eta$ and the node need not be refined. Best-bound processing therefore cannot continue splitting such nodes while a positive gap larger than $\eta$ remains. At least one widest-coordinate split in each block of eight levels reduces all widths below $w_*$ after at most $8d\lceil\log_2(1/w_*)\rceil$ levels: after $d$ widest splits the largest width is no more than half its previous worst-case bound, and intervening splits only help. A full binary tree of that finite depth bounds the number of needed evaluations.
+
+For any fixed positive $\varepsilon$ and $\beta<1$, first choose $b$ so that $\mathcal H(0,b)<\eta$, then choose $w_*>0$ by continuity. Fixed $b$ alone yields a nonzero sufficient numerical floor. The implemented $2^{-44}$ directed arithmetic is rational and valid, but the statement ``every prescribed positive accuracy'' is justified only by this precision choice or a precision-refinement schedule. Completeness does not depend on obtaining exact LP optima, because the restricted Bellman lower bound and corner repair suffice.
+
+
+\subsection{The deployed-probability grid and its repair guard}
+We prove Corollary~\ref{cor:quantized45}. Use the original lower-corner policy $p^c$ as the comparison, not its ideal repair. The implemented repair works backwards. If future rows satisfy $0\le\widehat D_{t+1}\le\varepsilon$, the operating-reference action has $q_{a^*}\le\beta\varepsilon$, and all action regrets lie in $[0,B]$. Thus its exact row guard
+$g_{ti}=\kappa\max_a|q_a-q_{a^*}|$ is at most $\mu<s$. Its target $\varepsilon-g_{ti}$ is strictly above $q_{a^*}$, so the fallback to the reference due to an inadequate target is not needed under this sufficient precision condition.
+
+Mixing changes expected regret to its minimum with that target. Downward rounding of the $m-1$ free probabilities moves total variation by at most $\kappa$ and changes expected regret upward by at most $g_{ti}$. The final regret therefore remains at most $\varepsilon$. It is also at most the proposal regret against the implemented future plus $\mu$. Let
+$e_t=\sup_i(\widehat D_t(i)-D_t^{p^c}(i))_+$. Then $e_T=0$ and
+\[
+ e_t\le\mu+\beta e_{t+1}\le\mu\Ssum{T-t}.
+\]
+The unmodified corner is feasible at allowance $\varepsilon+\delta$ by the preceding box argument. Consequently the excess of the current proposal regret over its guarded target is at most $\delta+\mu\Ssum T=\Delta$. If that excess is $u>0$, the mixing fraction is
+\[
+ \frac{u}{u+\varepsilon-g_{ti}-q_{a^*}}
+ \le\frac{u}{u+s-\mu}\le\frac{\Delta}{\Delta+s-\mu}.
+\]
+The total row variation from $p^c$ to the deployed policy is at most this fraction plus $\kappa$, and at most one. Its implementation-cost difference is bounded by $D_C$ times that quantity. Adding the corner's $D_C\theta(w)+\gamma_{b_v}$ distance from the rounded restricted cost minimum proves \eqref{eq:HQ45}. This proof explicitly accommodates regret increases caused by rounding; it does not assume the implemented rounding step is operating-value monotone.
+
+For any fixed model and positive target, increasing $b_p$ makes $\mu<s$ and sends both $\mu$ and $\kappa$ to zero. Increasing $b_v$ sends $\gamma_{b_v}$ to zero. Hence $\mathcal H_Q(0,b_v,b_p)$ tends to zero, after which the same small-box and widest-split argument supplies a finite stopping depth. The fixed-grid sufficient bounds in the supplement are exact calculations on the serialized models, not claims of an efficient search complexity.
+
+\section{Quantitative repair-density argument}\label{app:density45}
+Let $p\in\cF(\varepsilon)$, let $q$ be any Borel proposal, and write $\widehat q=\mathcal R_\varepsilon q$. Define
+\[
+ a_t=\int\TV(q_t,p_t)\,d\mu_t,
+ \quad E_t=\int|J_t^{\widehat q}-J_t^p|\,d\mu_t,
+ \quad M_t=R\Ssum{T-t}+G\beta^{T-t},\quad s=(1-\beta)\varepsilon.
+\]
+We have $E_T=0$. The action values against any valid continuation are in $[-M_t,M_t]$. Subtracting the proposal Bellman value against the repaired continuation from $J_t^p$ gives a term bounded by $2M_t\TV(q_t,p_t)$ and the continuation term $\beta P_t^{p_t}|J_{t+1}^{\widehat q}-J_{t+1}^p|$. The scalar repair replaces the former proposal value by its maximum with $V_t-\varepsilon$. Since $J_t^p\ge V_t-\varepsilon$, this projection cannot increase its distance from $J_t^p$. Moreover, for any nonnegative $f$,
+\[
+ \int P_t^{p_t}f\,d\mu_t\le\sum_a\int P_t^af\,d\mu_t=\int f\,d\mu_{t+1}.
+\]
+Consequently
+\begin{equation}\label{eq:L1E45}
+ E_t\le 2M_ta_t+\beta E_{t+1}.
+\end{equation}
+The repair fraction at each point is at most the positive deficit divided by $s$, and that deficit is at most the absolute difference of the proposal value from $J_t^p$. The triangle inequality therefore gives
+\begin{equation}\label{eq:L1p45}
+ \int\TV(\widehat q_t,p_t)\,d\mu_t
+ \le a_t+\frac{2M_ta_t+\beta E_{t+1}}{s}.
+\end{equation}
+Both inequalities hold without a uniform approximation of $p$.
+
+For any policy $u$, its state laws $\eta_t^u$ from $\nu$ satisfy $\eta_t^u\le\mu_t$ by induction. The implementation performance-difference identity between $\widehat q$ and $p$ uses the state law of $\widehat q$ and the implementation action values of $p$. Those action values belong to $[0,K\Ssum{T-t}]$. Hence
+\begin{equation}\label{eq:L1C45}
+ \left|\int(C_0^{\widehat q}-C_0^p)\,d\nu\right|
+ \le\sum_{t=0}^{T-1}\beta^tK\Ssum{T-t}
+        \left(a_t+\frac{2M_ta_t+\beta E_{t+1}}{s}\right).
+\end{equation}
+This identity follows directly by telescoping the difference of the two cost Bellman equations; it does not impose an almost-sure operating constraint in place of the pointwise one.
+
+The bounded conditional expectations $\E_{\mu_t}[p_t(a\mid\cdot)\mid\Pi_N]$ converge in $L_1(\mu_t)$ on increasing generating partitions. If a cell has zero measure, choose an arbitrary probability vector there. At each finite partition round all but one probabilities down to multiples of an increasing denominator, assigning the remainder to the last action. The resulting vectors remain probabilities, and their added total-variation error tends uniformly to zero. Because each $\mu_t$ is finite, this supplies rational simple proposals $q^N$ with every $a_t\to0$.
+
+Equations \eqref{eq:L1E45}--\eqref{eq:L1C45} imply initial implementation-cost convergence. Meanwhile backward repair enforces $J_t^{\widehat q^N}(x)\ge V_t(x)-\varepsilon$ for every $x$, including cells and singletons that have zero dominating measure. For any $\zeta>0$, choose a feasible $p$ with cost less than $\KR+\zeta$ and then a repaired simple proposal within $\zeta$ in cost. Since all members of the countable repaired class are feasible, its infimum equals \eqref{eq:target45}. Enumeration gives the monotone exact upper sequence.
+
+For a numerical use, the Bellman repair and integration must themselves be computable with certified errors tending to zero. This is an additional evaluation requirement, not implied merely by Borel measurability. The finite-horizon rational piecewise-affine maintenance specification has a finite piecewise-rational construction as described in the main text. Its number of pieces can grow rapidly. Neither the present proof nor the frozen finite experiments supply a uniform complexity bound for that construction or a two-sided convergence rate for its global constrained optimum.
+
+\section{Conditional initial laws in observable fibers}\label{app:fiber45}
+For each label $\zeta$, let the finite fiber use the primitives evaluated at $F_t(\zeta)$ and initial law $q(\zeta)$. A Borel global policy restricts to a feasible common policy in every fiber. Its cost is therefore at least $v(\zeta,q(\zeta),\varepsilon)$ before integration.
+
+For the reverse inequality, fix a denominator $M$. There are finitely many simplex-lattice policy arrays for an $n$-state, $T$-date fiber. Their Bellman values are Borel in $\zeta$, as finite sums and compositions of the Borel primitives. Their initial costs, weighted by the Borel vector $q(\zeta)$, are Borel as well. Let $\theta_M=\min\{1,(m-1)/M\}$. Rounding an arbitrary feasible policy shows that the lattice feasible set at allowance $\varepsilon+D_J\theta_M$ is nonempty. Its first cost minimizer under a fixed ordering is Borel: every selection event is a finite intersection of Borel comparison sets, including the feasibility comparisons at all finite state--date pairs.
+
+Repair that selected array by Theorem~\ref{thm:repair45}. Its dependence on $\zeta$ remains Borel, including at ties, because first-index finite maximizers and division on a strictly positive denominator are Borel. Its feasible cost is at most
+\[
+ v(\zeta,q(\zeta),\varepsilon)+D_C\{\theta_M+\rho_\varepsilon(D_J\theta_M)\},
+\]
+uniformly in $\zeta$ and in $q(\zeta)$. This also proves measurability of $v$ through the corresponding lattice lower and upper endpoints. Lifting the selected array at date $t$ using $F_t^{-1}(z)$ yields one Borel Markov policy, with no remembered latent label. Integrating and letting $M\to\infty$ proves \eqref{eq:fiber45}.
+
+For cell approximation, let a representative use $q_c$ while the true conditional initial law obeys $\sup_{\zeta\in B_c}\TV(q(\zeta),q_c)\le\delta_{q,c}$. Every feasible policy has statewise initial implementation values in $[0,K\Ssum T]$. Changing its initial regime law therefore changes cost by at most $K\Ssum T\,\delta_{q,c}$. The same bound applies to the infimum because its all-restart feasibility set is independent of the initial law. It is added to each cell's existing primitive/solver cost error. Alternatively one may integrate the representative policy's statewise costs against the exact varying conditional law. Independence between regime and label is a convenience of the earlier example, not an assumption needed for disintegration.

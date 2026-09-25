@@ -1,0 +1,52 @@
+\section{Operating witnesses and an explicit precision budget}\label{sec:witness47}
+An approximate operating value is not substituted for $V$ without a charge. Suppose bounded Borel functions $\underline V_t\le V_t\le\overline V_t$ are certified, including terminal enclosures, and let
+\[
+ w_t=\|\overline V_t-\underline V_t\|_\infty,\qquad
+ \underline d_t^a=\max\{0,\underline V_t-r_t^a-\beta P_t^a\overline V_{t+1}\}.
+\]
+Then $0\le\underline d_t^a\le d_t^a$ and
+$d_t^a-\underline d_t^a\le w_t+\beta w_{t+1}$. The max with zero uses the known nonnegativity of true operating regret, not a supposition that the approximate Bellman residual is nonnegative.
+
+\begin{proposition}[Witness-stable price lower bound]\label{prop:witnesslower47}
+Use $\underline d$ in \eqref{eq:restart47}, and round each Bellman minimum down by at most $q_t\ge0$ to obtain $\widehat u$. This gives a valid lower bound for the original operating problem. For fixed prices, its loss relative to the exact-regret, exact-arithmetic price bound is at most
+\begin{equation}\label{eq:witnessbudget47}
+ \Gamma_0=\sum_{t=0}^{T-1}\beta^t
+ \{\|\lambda_t\|_\infty(w_t+\beta w_{t+1})+q_t\}.
+\end{equation}
+A verified expectation error in a Bellman evaluation is added inside the braces. No minimum positive action disadvantage occurs in this bound.
+\end{proposition}
+\begin{proof}
+In the proof of Theorem~\ref{thm:restart47}, replacing $d$ by $\underline d$ adds the nonnegative stage slack $\lambda_t(d_t^a-\underline d_t^a)$. Hence the certificate remains valid. Minima and stochastic expectations are nonexpansive in the supremum norm. Backward induction therefore bounds the difference of the two potentials by $\Gamma_t=\|\lambda_t\|_\infty(w_t+\beta w_{t+1})+q_t+\beta\Gamma_{t+1}$, with $\Gamma_T=0$. Clipping a potential below at zero and integrating cannot increase that error.
+\end{proof}
+
+The upper policy must be certified too. There is a simple repair that uses only the upper witness and exact expectations of its own continuation. With interval expectations, the displayed row inequalities must themselves be verified conservatively. Against the already repaired continuation $\widehat J_{t+1}$, let
+\[
+ Q_t^a=r_t^a+\beta P_t^a\widehat J_{t+1},\qquad
+ a_t^+\in\arg\max_a Q_t^a,\qquad b_t=\overline V_t-\varepsilon.
+\]
+For a proposed row $p_t$, write $q_t^p=\sum_a p_t(a\mid x)Q_t^a$. Leave the row unchanged when $q_t^p\ge b_t$; otherwise mix it toward $a_t^+$ by
+\begin{equation}\label{eq:witnessrepair47}
+ \alpha_t(x)=\frac{b_t(x)-q_t^p(x)}{Q_t^{a_t^+}(x)-q_t^p(x)}.
+\end{equation}
+The best action here maximizes operating value against the actual repaired continuation. It need not be the lowest-index operating optimizer computed with $V$.
+
+\begin{theorem}[Upper-witness repair]\label{thm:witnessrepair47}
+Let $s=(1-\beta)\varepsilon>0$ and $\xi=\max_{t<T}w_t<s$. Then the construction above is well defined for every Borel proposal and yields $\widehat J_t\ge\overline V_t-\varepsilon\ge V_t-\varepsilon$ at every state and date. If the proposal was feasible at allowance $\varepsilon+\delta$, the unrounded repair changes each row in total variation by at most
+\begin{equation}\label{eq:witnessrho47}
+ \min\left\{1,\frac{\delta+\xi}{\delta+s}\right\}.
+\end{equation}
+In a finite model, rounding each of the $m-1$ probabilities other than $a_t^+$ down to a multiple of $2^{-b_p}$ and assigning the remainder to $a_t^+$ preserves feasibility. If the original proposal is feasible at $\varepsilon$, the resulting implementation-cost increase is at most
+\begin{equation}\label{eq:witnessupperbudget47}
+ D_C\min\{1,\xi/s+(m-1)2^{-b_p}\},
+\end{equation}
+where $D_C=K\sum_{t=0}^{T-1}\beta^t\mathsf S_{T-t}$ and $K$ bounds stage implementation costs. Actual row checks can certify a repair even when $\xi<s$ fails; in that event \eqref{eq:witnessupperbudget47} is not asserted.
+\end{theorem}
+\begin{proof}
+At the terminal date the continuation is the true terminal reward. If the repaired future is feasible, then $\widehat J_{t+1}\ge V_{t+1}-\varepsilon$, so
+$\max_a Q_t^a\ge V_t-\beta\varepsilon$ and
+$\max_aQ_t^a-b_t\ge s-\xi>0$. The mixing denominator is therefore positive whenever repair is needed, and the mixed operating value is exactly the target. This proves feasibility backwards. Finite action maximization with a fixed tie rule is Borel.
+
+Relative to the original proposal, the repaired continuation never reduces operating value: each current update takes the maximum of the proposal value against an improved future and $b_t$. If the original proposal is $(\varepsilon+\delta)$-feasible, its deficit against $b_t$ is at most $\delta+\xi$. Its mixing fraction is therefore at most $(\delta+\xi)/(\delta+\xi+s-\xi)$. Rounding moves mass to an action with maximal $Q_t^a$, so it cannot reduce the current operating value and preserves the backward monotonicity. It adds at most $(m-1)2^{-b_p}$ to row total variation. The implementation performance-difference bound proves \eqref{eq:witnessupperbudget47}. The rounded cost statement is restricted to $\delta=0$ as stated; it does not invoke the earlier reference-action rounding rule.
+\end{proof}
+
+Taken together, \eqref{eq:witnessbudget47} and \eqref{eq:witnessupperbudget47} provide a price-dependent lower error and an explicit upper-repair error. Large prices can amplify oracle inaccuracies, and a loose upper witness can consume the repair slack. These are measured quantities, not suppressed constants. Exact operating dynamic programming is not required by either theorem, but a numerical application must actually construct the global witnesses. The finite precision experiment below isolates that interface. It is not described as a difficult high-dimensional operating-oracle application.

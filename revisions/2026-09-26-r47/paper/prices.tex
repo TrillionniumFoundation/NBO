@@ -1,0 +1,92 @@
+\section{Restart prices and common-policy certificates}\label{sec:prices47}
+The all-restart restriction has a useful implication that does not require a unique optimal operating action. A feasible continuation has regret in $[0,\varepsilon]$ after every successor state. This interval can be priced separately at every date and state, provided that changes in prices across a transition are charged. Omitting that charge would silently replace a common continuation by independently chosen continuations.
+
+Write $D_t^p=V_t-J_t^p$ and
+\[
+ d_t^a(x)=V_t(x)-r_t(x,a)-\beta P_t^aV_{t+1}(x)\ge0.
+\]
+Let $\lambda_t:X\to[0,\infty)$ be bounded Borel functions, with $\lambda_T=0$. Their units are implementation cost per unit of operating performance. Define $u_T=0$ and, backwards,
+\begin{align}
+ u_t(x)=\min_{a\in A}\big\{&k_t(x,a)+\lambda_t(x)[d_t^a(x)-\varepsilon]\label{eq:restart47}\\
+ &+\beta\int[u_{t+1}(y)+\varepsilon\min\{\lambda_t(x),\lambda_{t+1}(y)\}]P_t^a(x,dy)\big\}.\nonumber
+\end{align}
+A certified function below the right side is also admissible. Thus downward arithmetic or a verified Bellman subsolution can replace exact evaluation.
+
+\begin{theorem}[Restart-price certificate and exact gap identity]\label{thm:restart47}
+Under the bounded Borel assumptions of Section~\ref{sec:model45}, every common policy feasible at allowance $\varepsilon$ satisfies
+\begin{equation}\label{eq:priceplane47}
+ C_t^p(x)+\lambda_t(x)[D_t^p(x)-\varepsilon]\ge u_t(x).
+\end{equation}
+Consequently $L(\lambda,u)=\int\max\{0,u_0\}\,d\nu\le\KR(\nu,\varepsilon)$.
+This conclusion permits controlled atomic transitions, operating ties, and arbitrary initial laws, including point masses.
+
+For a feasible policy $p$, define the nonnegative Bellman slack
+\[
+ a_t(x,a)=k_t(x,a)+\lambda_t(x)[d_t^a(x)-\varepsilon]
+ +\beta P_t^a[u_{t+1}+\varepsilon\min\{\lambda_t(x),\lambda_{t+1}\}](x)-u_t(x)
+\]
+and the nonnegative price-change slack
+\begin{align*}
+ h_t^p(x,y)={}&[\lambda_t(x)-\lambda_{t+1}(y)]_+D_{t+1}^p(y)\\
+ &+[\lambda_{t+1}(y)-\lambda_t(x)]_+[\varepsilon-D_{t+1}^p(y)].
+\end{align*}
+Then the exact policy-to-certificate gap is
+\begin{align}
+ \int C_0^p\,d\nu-L(\lambda,u)
+ ={}&\int\lambda_0(\varepsilon-D_0^p)\,d\nu
+ +\E_\nu^p\sum_{t=0}^{T-1}\beta^t a_t(X_t,A_t)\label{eq:gap47}\\
+ &+\E_\nu^p\sum_{t=0}^{T-1}\beta^{t+1}h_t^p(X_t,X_{t+1})
+ -\int(-u_0)_+\,d\nu.\nonumber
+\end{align}
+The final subtraction is precisely the improvement obtained from nonnegative costs; all three preceding terms are nonnegative. In particular, with $u_0\ge0$ on the initial support, their vanishing certifies optimality of the deployed common policy.
+\end{theorem}
+\begin{proof}
+Set $F_t=C_t^p+\lambda_t(D_t^p-\varepsilon)$. The two policy Bellman equations give
+\[
+ F_t=\sum_a p_t(a\mid x)\{k_t+\lambda_t(d_t^a-\varepsilon)
+ +\beta P_t^a[F_{t+1}+\varepsilon\min\{\lambda_t,\lambda_{t+1}\}+h_t^p]\}.
+\]
+Indeed, for $z\in[0,\varepsilon]$,
+\[
+ \varepsilon\lambda'+(\lambda-\lambda')z
+ =\varepsilon\min\{\lambda,\lambda'\}
+ +(\lambda-\lambda')_+z+(\lambda'-\lambda)_+(\varepsilon-z).
+\]
+Backward induction proves $F_t\ge u_t$. Since $\lambda_t(D_t^p-\varepsilon)\le0$ and $C_t^p\ge0$, this proves the lower certificate. Subtracting $u_t$ in the displayed Bellman equation, iterating to $T$, and then subtracting $\int(-u_0)_+d\nu$ proves \eqref{eq:gap47}. Boundedness justifies the finite sums and integrals. The proof uses the same $p$ in the operating recursion, cost recursion, and induced state law throughout.
+\end{proof}
+
+The minimum in \eqref{eq:restart47} is essential. Replacing it by a maximum is not an alternative strengthening: it discards the price-change slack with the wrong sign. Equation~\eqref{eq:gap47} identifies where a proposed certificate can improve: initial unused operating allowance, actions not minimizing the transformed Bellman expression, and mismatched prices along transitions. A small action disadvantage is not itself an error term. The certificate therefore remains meaningful at an operating tie, rather than becoming an inverse-gap estimate with an infinite constant.
+
+\subsection{Finite computation and the operating-optimal face}
+In an $n$-state model, price proposals are obtained by a sparse linear program. With $u_T=0$, nonnegative $\lambda_{ti}$, and edge variables $z_{tij}$, impose
+\begin{align}
+ 0\le z_{tij}&\le\lambda_{ti},\quad z_{tij}\le\lambda_{t+1,j},\label{eq:priceLP47}\\
+ u_{ti}&\le k_{ia}+\lambda_{ti}(d_{tia}-\varepsilon)
+ +\beta\sum_jP_{iaj}(u_{t+1,j}+\varepsilon z_{tij})\quad\text{for every }a.\nonumber
+\end{align}
+Maximize $\sum_i\nu_i u_{0i}$. The terminal edge term is zero. For fixed prices, increasing an edge variable to the smaller of its two price bounds can only relax these inequalities. Thus the maximal feasible potential is the Bellman recursion \eqref{eq:restart47}. The program has at most $2nT+n^2(T-1)$ variables and $nmT+2n^2(T-1)$ inequalities, with absent transition edges omitted. These are representation sizes, not a bit-complexity claim for an arbitrary LP solver.
+
+Restricting the field to one constant nonnegative price is a nested subproblem. The unrestricted exact LP optimum is therefore no smaller than its constant-price counterpart. No dominance is asserted for two different finite-time, rounded optimizer outputs, or over the aggregate-product formulation. After a numerical solve, the implementation retains only nonnegative rational prices and reconstructs \eqref{eq:restart47} by a directed Bellman pass. A floating objective, solver success flag, or global dual bound is not an input to the lower endpoint. A certificate needs $nT$ prices and its policy; the edge variables need not be trusted or even retained.
+
+At zero allowance there is a separate exact solution. Let
+$A^0_t(x)=\{a:d_t^a(x)=0\}$. Nonnegativity in the regret recursion implies that a feasible zero-regret common policy is supported on $A^0_t(x)$ at every state and date. Conversely any such policy has zero regret by induction. Accordingly
+\begin{equation}\label{eq:face47}
+ H_T^0=0,\qquad H_t^0(x)=\min_{a\in A_t^0(x)}\{k_t(x,a)+\beta P_t^aH_{t+1}^0(x)\}
+\end{equation}
+solves the zero-allowance cost problem, including a multidimensional optimal-action face. For positive allowance, \eqref{eq:restart47} retains all face actions rather than selecting a single lowest-index reference for its lower bound. In the exact-tie experiment the face dimension $\sum_{t,i}(|A^0_{ti}|-1)$ is 32; the price certificate closes that case without branching.
+
+\subsection{Adding prices to complete search and combining formulations}
+For any operating-optimal reference cost $H$ and savings $S=H-C$, \eqref{eq:priceplane47} yields the globally valid node inequality
+\begin{equation}\label{eq:pricecut47}
+ S_{ti}-\lambda_{ti}D_{ti}\le H_{ti}-u_{ti}-\lambda_{ti}\varepsilon.
+\end{equation}
+It also gives $C_{ti}\ge u_{ti}$. These inequalities can be added to either product relaxation in Section~\ref{sec:central45}. They restrict the same common-policy feasible set and do not alter the soundness of a covering tree. Prices may come from any proposal mechanism, provided the Bellman inequalities are checked first.
+
+A portfolio must be distinguished from a method with one computation budget. If separately checked algorithms return intervals $[L_j,U_j]$ for the identical model, policy class, and allowance, then
+\begin{equation}\label{eq:portfolio47}
+ [\max_j L_j,\min_j U_j]
+\end{equation}
+is valid. Its cost is the cost of all computations used, not the least individual run time. For partial covers, let $\mathcal Q_j$ be the leaves of each checked tree and form their nonempty intersections. Assign an intersection the largest applicable leaf lower bound; discard it only if a checked input leaf proves infeasibility. Taking the minimum over the remaining intersections is at least as strong as taking the largest separate whole-tree lower bound. This follows because every feasible policy lies in a cell of every cover and satisfies every applicable lower inequality. It is a deterministic dominance statement for a common refinement, not a claim that constructing the refinement is cheap. The number of cells can grow as the product of the leaf counts. The reported portfolio uses \eqref{eq:portfolio47}, not an unexecuted refinement algorithm.
+
+\subsection{More than one operating requirement}
+For operating criteria $q=1,\ldots,Q$, suppose feasibility implies $0\le D_t^{p,q}\le\varepsilon_q$ with a corresponding nonnegative disadvantage $d_t^{a,q}$. Replacing $\lambda(d-\varepsilon)$ and $\varepsilon\min\{\lambda,\lambda'\}$ by their sums over $q$ gives the same lower theorem and a sum of the gap decompositions. This statement does not guarantee that one policy satisfies all criteria. In particular, the individually optimal reference actions can disagree. Feasibility repair by mixing requires a common reference with a verified slack for every criterion; absent that assumption, the single-criterion repair theorem cannot be invoked. This separates a valid multi-criterion lower certificate from an unjustified universal feasibility claim.

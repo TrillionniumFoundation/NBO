@@ -1,0 +1,298 @@
+# Response to the R43 referee report — R45
+
+Source report: `554cae0c865498cf3fd6def18a80b75a1ee1abb3`; reviewed manuscript: `50660fd5b5f37906920511a1c62fc20300c886c3`. New remote push has not been performed in this environment.
+
+## R43-F1: The original controlled atomic problem
+
+**Concern.** The report asks for a validated convergent scheme for the original action-dependent condition process, rather than a substitution of aggregation or observable-type models.
+
+**Revision.** The unrestricted Borel common-policy target and the original maintenance cohort remain in the article. Theorem 4 and Appendix B supply a new repair-density result for arbitrary controlled Borel kernels. The action-summed measures dominate every policy occupancy; rational simple proposals approximate a feasible policy in those measures; backward repair restores every restart inequality, including measure-zero states. The repaired implementation values converge to the unrestricted infimum. For finite affine atomic successors and finitely certified incumbent regions, the repaired operating values are piecewise affine and the probabilities and cost values are piecewise rational, yielding an atom-preserving upper-evaluation route. Section 4.2 also supplies reference-free Bellman support lower witnesses evaluated at the original successor maps.
+
+**Scope.** This proves a new upper-approximation mechanism for the original class, not a paired convergence theorem. A finite support-price portfolio is not asserted to be a complete dual. The thirty original positive-cost randomized intervals were not newly optimized and remain open. The requested closure of a substantial part of that cohort is therefore not supplied by this revision.
+
+**Locations.** Main 4.1--4.2, Theorem 4 and Appendix B; Main 6; Supplement 6
+
+## R43-F2: Actual complete search rather than root-only ablation
+
+**Concern.** The report requests a global algorithm using the strengthened relaxation, with nodes, time, prescribed targets, and successful nonbinary cases.
+
+**Revision.** The article now incorporates all frozen covering trees in the newer repository record: sixteen cases under Bellman-support/disaggregated search (B) and aggregate-product search (A). Every node shares the same policy variables across restarts, keeps a rational lower bound, and evaluates a repaired lower-corner policy independently of LP success. At the registered absolute width 0.001, B closes four cases and A closes five. Q1 is a genuine non-root closure, after 49 B nodes and 153 A nodes; M0 additionally closes after 13 A nodes. All cases have three or four actions. The main table includes every case, with node/time traces for Q1; the supplement gives all root widths, final widths, node counts, stop reasons, proof sizes, and checking times.
+
+**Scope.** Several hits occur at the root or have zero cost, and the larger cases do not generally close. These limitations are recorded rather than treating every target hit as a difficult branching success. B does not uniformly outperform A.
+
+**Locations.** Main 3.3 and 5.1--5.2; Supplement 2
+
+## R43-F3: Conditionality of the quadratic theorem
+
+**Concern.** The fixed-model inverse-gap rate must not be interpreted as a uniform complexity theorem when beta, horizon, or action separation changes.
+
+**Revision.** The strict-gap theorem remains explicitly a specialization in Section 3.2, with the full disadvantage, ratio-spread, accumulated product error, rare-departure, and repair constants. It assumes an exactly optimizing LP point. Theorem 2 instead constructs Bellman support envelopes without dividing by an action gap. Proposition 1 permits an affine intercept for near-tie cost effects. Theorem 3 proves a separate stopping bound H(w,b) depending on policy-box resolution and arithmetic precision, without a minimum action gap. This establishes validity and finite-model completeness at ties while preserving the useful strictly separated result.
+
+**Scope.** The gap-free bound is conservative and exponential in the number of shared policy coordinates. It is not a uniform efficient complexity statement for state refinements or discount factors approaching one.
+
+**Locations.** Main 3.1--3.3 and Appendix A; Supplement 3
+
+## R43-F4: Complete allowance diagnostics
+
+**Concern.** The report asks for more allowances, more models, complete bound components, and a distinction between theoretical and implemented widths.
+
+**Revision.** All forty-two frozen root computations are now presented: maintenance, inventory, and queueing, seven allowances from 0.1 to 0.0000001, and two formulations. The tables give each measured width, width divided by allowance squared, and the exact-LP theoretical bound where its assumptions hold. Companion tables report accumulated operating and savings errors, implementation perturbation constant, probability cap, repair fraction, and repair term. Separate plots retain every point, including the unfavorable unscaled queueing result at 0.000001. Maintenance has an intermediate near-quadratic range; the tied inventory family and queueing arithmetic floor provide distinct counterexamples to a universal empirical slope.
+
+**Scope.** An independently certified LP optimality-loss scalar was not recorded for these numerical proposals. It remains explicitly unquantified rather than being set to zero based on solver status. Direct rational residual checking establishes the endpoints, but does not identify every contribution to the distance from the exact LP optimum. Thus this particular requested decomposition remains incomplete.
+
+**Locations.** Main 3.2 and 5.4; Supplement 4; scaling_retabulation.json
+
+## R43-F5: Near ties and switching limits
+
+**Concern.** Action gaps can vanish or reference selectors can change under economic perturbations and state refinement.
+
+**Revision.** Four frozen controlled near-tie variants use perturbations 0, 0.00000001, 0.0001, and 0.01 with different transition and implementation consequences. Their complete trees, failures to meet the target, and external comparisons are retained. The new support representation can use an arbitrary bounded potential, and its cost lower expression eliminates that potential. Section 4.2 bounds its change through operating and support-value witness errors, not through the identity of an argmax selector. Proposition 1 separates near-tie costs with an affine intercept, and the finite stopping theorem avoids inverse gaps entirely.
+
+**Scope.** This gives a robust analytic alternative, not a demonstrated uniform state-resolution rate. The four tie variants are related sensitivity cases, not independent economic draws, and none reaches the registered target.
+
+**Locations.** Main 3.1, 3.3, 4.2, 5.3; Supplement 3
+
+## R43-F6: Continuous coupling beyond recoverable labels
+
+**Concern.** The observable-fiber theorem removes cross-label coupling, whereas the motivating actions move the continuous state.
+
+**Revision.** The revised article now distinguishes two constructions rather than extending a fiber label beyond its assumptions. The repair-density theorem allows arbitrary action-dependent Borel kernels, noninvertible maps, and stochastic innovations, and the support witnesses are evaluated on the same original controlled kernel. Neither construction assumes an autonomous covariate. The observable-fiber identity remains useful under its actual bijection assumptions and is strengthened by allowing the initial regime distribution to depend measurably on the observed label, with a complete Borel-selection proof.
+
+**Scope.** The general controlled-state upper approximation and global lower witnesses have not been proved to converge together. The numerical fiber example remains a fixed-covariate example; it is not relabeled as an interacting continuous-state computation.
+
+**Locations.** Main 4 and Appendices B--C
+
+## R43-F7: Joint finite and covariate refinement
+
+**Concern.** Partition refinement alone cannot remove the residual finite root gaps; planned joint refinement and multiple covariate dynamics are requested.
+
+**Revision.** The retained fiber certificate is presented with its two distinct width components, rather than a single apparently convergent mesh error. At sixteen cells its width is about 0.110260: approximately 0.074982 from finite endpoint gaps and 0.035279 from partition/value variation. The complete nested two-, four-, eight-, and sixteen-cell accounting is preserved, with actual endpoint work reported in the supplement. The extended conditional-law identity and its variation bound state an additional term that any joint refinement must control.
+
+**Scope.** No new jointly tightened finite/fiber run, multidimensional label experiment, or nontrivial autonomous label evolution was executed here. Those requested computational extensions remain absent. New finite trees in different environments do not substitute for them.
+
+**Locations.** Main 4.3 and 6.2; Supplement 6; inherited controlled_fibers.tex
+
+## R43-F8: Economic role of the aggregation examples
+
+**Concern.** The service examples have continuous coordinates that do not enter economically relevant primitives.
+
+**Revision.** The article now identifies those examples explicitly as exact exogenous-aggregation tests with economically ancillary continuous coordinates. Rewards, implementation costs, and regime transitions are finite-regime objects, so the optimization reduces to an ordinary finite linear program. The original exactness proofs, endpoint certificates, and density-perturbation calculations are retained without using their continuous-coordinate count as evidence of high-dimensional controlled optimization. The controlled maintenance object remains separately defined and visible.
+
+**Scope.** The exact aggregation examples are not promoted into a calibrated application or a benchmark for action-dependent continuous condition dynamics.
+
+**Locations.** Main 4.3 and 6; Supplement 6; historical volume
+
+## R43-F9: Completeness versus computational usefulness
+
+**Concern.** The report asks for global progress and larger problems rather than a formal enumeration theorem presented as practical performance.
+
+**Revision.** Complete nonbinary trees, all unsuccessful stops, proof-producing work, and the external baseline now accompany the theorem. The stopping proof includes an additional issue not resolved by a formal exact-arithmetic statement: fixed denominator 2^44 leaves a positive sufficient arithmetic floor. Theorem 3 states the precision-dependent H(w,b), and Appendix A proves it through restricted Bellman minima and lower-corner repair. Sixteen model-specific exact precision calculations show sufficient widths at the registered target; the associated enormous worst-case depth bounds are reported as analytic bounds, never as executed depths. A separate exact 256-box test checks the proposed inequality at ties.
+
+**Scope.** The method remains exponential in the worst case. Large-case failures and the fact that A beats B in each largest family member remain in the main comparison. No polynomial or generally scalable solver claim is made.
+
+**Locations.** Main 3.3, 5, and Appendix A; Supplement 2--3
+
+The final implementation audit additionally charges the distinct 40-bit deployed-probability grid and safety guard, alongside 44-bit node arithmetic. Corollary 1 and Appendix A supply the two-grid bound. It passes a second exact check on the same 256 boxes, and all sixteen frozen-model sufficient floors remain below 0.001.
+
+## R43-F10: External global-optimization comparison
+
+**Concern.** Internal U-versus-S ablation is insufficient as a competitive baseline.
+
+**Revision.** The complete frozen experiment includes SCIP on the same rational common-policy objective and constraints, root domains, Bellman support information, tolerance, seed, and one-thread setting. Per-case comparisons use the same runner. SCIP receives the strengthening information rather than being artificially weakened. Native status, gap, nodes, and times are reported alongside independently repaired candidate costs. SCIP reports eight native numerical target hits and frequently tighter native lower bounds. Every proposed upper policy is independently checked, and the best valid intersection is displayed.
+
+**Scope.** SCIP native nonlinear lower bounds are not independently rationally certified by this adapter. They are identified as numerical baseline output, not discarded, but are not inserted into the rigorous intersection. The custom method does not claim universal speed superiority or that SCIP lacks other verified-solving facilities.
+
+**Locations.** Main 5.1--5.2; Supplement 2
+
+## R43-F11: Prospective identity and environment counts
+
+**Concern.** The prior arithmetic amendment and repeated endpoint objects must not be presented as untouched independent environments.
+
+**Revision.** The R43 amendment after partial observation remains documented. The newer R44 evaluation has a pre-execution scientific-source freeze and primitive manifest; the present replay matched all eleven scientific source identities and all sixteen model identities. The response and article explicitly identify the results as inherited frozen executions, not as R45 experiments first proposed after seeing them. The design is twelve family cases and four tie variants; the allowance exercise has three model families, seven allowances, and two formulations. The older 41 objects are decomposed into 16 paired finite roots, 8 allowance roots, and 17 endpoints of one fiber family.
+
+**Scope.** Source freezing establishes prospective identity, not statistical independence, correctness, or generalization to an empirical population. The three families are designed known-model environments.
+
+**Locations.** Main 5.1 and 7; Supplement 1, 7; PROVENANCE.json
+
+## R43-F12: Difficult approximate operating oracle
+
+**Concern.** The experiments use exact finite operating dynamic programming and do not charge a difficult approximate operating solution.
+
+**Revision.** The witness-driven construction is retained. Section 4.2 states explicit operating and penalized-support witness errors, expectation-error propagation, and the need to charge upper-policy repair as well as lower support witnesses. Atom displacement is handled by test-function expectation bounds where justified, not an invalid total-variation claim. These formulas make the missing input contract concrete for a difficult operating problem.
+
+**Scope.** No new high-dimensional approximate-oracle experiment, construction-time charge, or informative end-to-end interval with that bottleneck was produced. The frozen global evidence isolates policy optimization with exact operating dynamic programming. It does not answer this empirical request.
+
+**Locations.** Main 4.2; ASSUMPTIONS.json; retained witness-driven theorem
+
+## R43-F13: Nonlinear two-state optimality evidence
+
+**Concern.** The nonlinear intervals are wide and the tighter-allowance exercise lacks a feasible upper certificate.
+
+**Revision.** All selected nonlinear rows remain visible, with explicit independent-check indicators. The finest retained interval at allowance 0.5 is approximately [8.8718,11.8492], a relative width of 25.13 percent; the other wide rows are not hidden. The allowance-0.05 exercise remains lower-only. The new repair-density argument is applicable at the abstract controlled-kernel level, but is not presented as an executed box-solver closure or a proof of convergence of the historical lower boxes.
+
+**Scope.** No new paired nonlinear certificate or nontrivial improvement of the finest numerical interval was executed. Available summary records alone do not support assigning every candidate failure to true infeasibility versus enclosure conservatism; the response does not invent that diagnosis.
+
+**Locations.** Main 6; Supplement 6; historical technical evidence
+
+## R43-F14: Economic interpretation and administrative costs
+
+**Concern.** The methods evidence is synthetic, without calibration, monetary welfare, or an institutional model of randomized implementation.
+
+**Revision.** The economic target is kept intact and stated before the numerical construction. The article distinguishes departures from an installed rule, physical action switching, and fixed lottery administration. It states that the Markov lottery is redrawn conditional on the observed state and date, without hidden persistent types. For each positive signed deterministic-versus-randomized separation, an extra bounded administration charge preserves the comparison if it is smaller than the certified saving. Both percentage normalizations of all original signed comparisons are supplied, explicitly labeled as display approximations. Three different controlled model families and an external solver improve the methods evidence.
+
+**Scope.** The models remain designed and known, not estimated or calibrated. No monetary interpretation, sampling uncertainty, or empirical claim of lottery feasibility is fabricated. The conditional administration budget is a sensitivity result, not a measured implementation cost.
+
+**Locations.** Main 2 and 6; Supplement 6
+
+## R43-F15: Central contribution and relation to established ingredients
+
+**Concern.** The theorem-level contribution must be distinguished from classical McCormick inequalities, dynamic programming, and ordinary LP reductions.
+
+**Revision.** The principal article is reorganized around one common-policy certification argument: repair, gap-free Bellman supports, and a precision-dependent global stopping theorem. The new controlled-Borel repair-density theorem makes a separate exact statement about upper-policy approximation and is proved in full. The strictly separated quadratic bound is retained as a specialization, not an unqualified headline. The literature discussion identifies constrained-MDP compatibility across restarts, policy recovery, weak dual bounds, product relaxations, and independent verification, and expressly disclaims novelty for their established ingredients. The SCIP comparison supplies a direct strong computational alternative.
+
+**Scope.** The manuscript does not claim a priority result over every possible formulation in parametric nonconvex control. The mathematical statements, assumptions, and comparison objects are made explicit for referee evaluation.
+
+**Locations.** Main 1.1, 3--4, Appendices A--C; references
+
+## R43-F16: What independent checking does and does not establish
+
+**Concern.** Finite arithmetic replays and a few mutations do not validate the analytic reductions or economic primitives.
+
+**Revision.** All 32 complete trees, 16 repaired external policies, and 42 scaling roots were replayed independently of numerical optimization, with all 90 passing. The frozen adversarial archive has 17 rejected mutations, including altered discounts and disadvantages, changed labels, malformed boxes, forged policies, and incomplete or cyclic covers. Its finite transformation checks cover 145 policies and 19,720 support inequalities. R45 adds a separate exact stopping-modulus implementation on 256 tied three-action boxes, plus 16 precision-budget calculations. ASSUMPTIONS.json maps each headline theorem to its policy class, primitive assumptions, convergence type, and actual executable coverage.
+
+**Scope.** These finite tests and replays are not a machine-checked proof of density, measurable selection, aggregation, or economic appropriateness. Fiber-weight mutation coverage is not claimed where no new test was executed. General analytic validity is supported by the supplied mathematical proofs, not by a proof-object count.
+
+**Locations.** Main 7; Supplement 7; independent_recheck.json; scaling_recheck.json; search_modulus_tests.json
+
+## R43-F17: Coherent article with preservation of research history
+
+**Concern.** The report asks for a focused article rather than an omnibus of separate scopes and revision history.
+
+**Revision.** The main manuscript now develops the economic object and the central certification chain, keeps all new proofs needed for that chain in its own appendices, and presents the complete global comparison and the original economic conclusions. The numerical supplement holds exhaustive tables and implementation accounting. A separate historical volume reproduces the previous full article, previous full supplement, and inherited R42 historical volume. Earlier proofs, examples, failures, and source files are not silently deleted. The publication overlay adds R45 files only, and the inherited-file manifest checks byte preservation.
+
+**Scope.** The historical volume is an audit archive, not an assertion that all of its pages belong in the current journal article. The local bundle does not claim to contain every unmaterialized remote historical annex; the proposed add-only update leaves them untouched.
+
+**Locations.** Main complete; SUPP_R45; HISTORY_R45; preservation manifest
+
+## Additional technical and presentation comments
+
+### 1. Abstract failure counts
+
+The abstract now states both the new certified and native target counts and the earlier eight-case root failure record, including two fallback intervals.
+
+### 2. Absolute and relative widths
+
+The main global table reports absolute widths and targets; the supplement reports absolute and relative intersection widths and retains individual historical root rows.
+
+### 3. Best valid intersection
+
+All sixteen new global cases and eight historical root pairs have an intersection column. Only independently valid lower bounds and feasible upper policies enter it.
+
+### 4. LP status, availability, and fallback
+
+The new global root table gives status, primal and dual availability, and dimension. The full trees retain the exact multiplier/residual certificate. Old cases 06 and 07 are explicitly identified as zero-multiplier operating-reference fallbacks. Missing optimizer-specific decomposition fields are not fabricated.
+
+### 5. Use of the word solved
+
+A numerical LP return is called a proposal; a constrained problem is described as reaching the prescribed interval target, not as solved exactly.
+
+### 6. Registered target indicator
+
+The target is 0.001 and every global/intersection row has its target status. Exact fractions, not rounded table values, determine the Boolean.
+
+### 7. Quadratic bound components
+
+The full allowance tables include accumulated regret error, savings error, cost constant, probability cap, repair fraction, and theoretical sum. The independently certified numerical LP optimality loss is unavailable and is labeled unquantified rather than zero.
+
+### 8. All action-gap and ratio constants
+
+The supplement reports the constants for all eight old controlled cases and all sixteen new global cases. Tied cases are flagged and excluded from the inverse-gap theorem.
+
+### 9. Near-tie example
+
+Four frozen variants with perturbations 0, 1e-8, 1e-4, and 0.01 are included with complete search and SCIP records; all target misses remain visible.
+
+### 10. Reference action and rational rounding
+
+The reference is selected by exact rational comparisons of the stored model. It is not claimed stable under perturbations across a tie. The reference-free support lower expression and expectation-error contract avoid relying on that identity.
+
+### 11. Exact-LP rate versus implemented rate
+
+The abstract, strict-gap section, diagnostic discussion, and conclusion distinguish the theorem, measured widths, and fixed-precision effects.
+
+### 12. Conditional regime law
+
+The initial regime vector may depend measurably on the observable label. Main Appendix C proves the identity and gives a cost error bound for approximating this conditional law.
+
+### 13. Full Borel selection
+
+Main Appendix C supplies a finite rational-candidate, first-minimizer, backward-repair construction with uniform primitive bounds, rather than leaving the selection step implicit.
+
+### 14. Fiber primitive errors
+
+The supplementary fiber accounting reports representative-cell reward, cost, and terminal errors from the actual scaling identities; the finite regime-matrix error is zero. The sharper monotonicity certificate is kept distinct from these generic perturbation bounds.
+
+### 15. Fiber time versus width
+
+The nested 2, 4, 8, and 16 cell table sums the actual stored LP, arithmetic/construction, and check work for the required subset of endpoints. These are re-tabulated endpoint costs, not new independent mesh executions.
+
+### 16. Nontrivial autonomous evolution
+
+The theorem allows Borel bijective autonomous evolution, but no new nonidentity-covariate numerical run is supplied. The fixed-covariate example is not presented as that experiment.
+
+### 17. Ancillary continuous coordinates
+
+The article explicitly states that service-economy continuous coordinates do not enter rewards, costs, or regime transitions.
+
+### 18. Aggregation terminology
+
+Those examples are described as exact aggregation tests with economically ancillary atomic coordinates, not general solved continuous-state applications.
+
+### 19. Unfavorable inherited binary comparison
+
+The main historical-evidence discussion retains that the stronger McCormick formulation dominated interval search on the difficult binary pairs.
+
+### 20. Search progress
+
+The main article includes Q1 certified gap versus time; the supplement adds gap versus nodes. Every complete trace is retained in the machine-readable results.
+
+### 21. Median original widths
+
+The main article includes both median and maximum positive-cost randomized width by horizon; all thirty positive-cost intervals remain open.
+
+### 22. Normalized deterministic separations
+
+All forty-two signed rows, including the twenty-seven positive ones, now give both requested normalizations. The percentages are explicitly approximate because they use the preserved six-decimal display inputs; exact source certificates remain authoritative.
+
+### 23. Meaning and cost of randomization
+
+The model uses a fresh conditional state-date action draw. Fixed administration and governance costs are separate primitives; the signed-savings margin gives a conditional overhead budget.
+
+### 24. Nonlinear independent-check indicator
+
+The selected nonlinear table marks the 16-period,128-cell row as not independently checked and clearly identifies the independently checked rows.
+
+### 25. Tight nonlinear upper failures
+
+No paired feasible upper certificate is available at allowance 0.05. The retained summary does not support a per-candidate distinction between true violation and conservative enclosure; this diagnostic remains unavailable rather than being guessed.
+
+### 26. Machine-readable theorem matrix
+
+ASSUMPTIONS.json supplies assumptions, policy class, dynamics, guarantee, and executed coverage for every headline claim.
+
+### 27. Broader mutations
+
+The frozen archive includes 17 rejected mutations, covering changed disadvantages, labels, discounts, boxes, repair rows, and missing or cyclic covers. R45 adds 256 exact stopping-modulus checks. No unexecuted fiber-weight mutation is claimed.
+
+### 28. Historical narrative
+
+The main argument no longer proceeds through revision history. Exhaustive historical content is preserved separately, with byte-identity checks rather than deletions.
+
+### 29. Asymptotic versus attained accuracy
+
+The conclusion distinguishes mathematical convergence statements, actual target hits, and the open original intervals.
+
+### 30. Decomposition of object counts
+
+Every total is decomposed: 12 primary global environments plus 4 tie variants; 32 custom trees plus 16 external candidate policies; 3 by 7 by 2 scaling roots; historical 16 plus 8 plus 17 endpoint objects.
+
