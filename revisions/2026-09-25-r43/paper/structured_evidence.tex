@@ -1,0 +1,44 @@
+\subsection{Closed atomic continuous-state service economies}\label{sec:structuredexperiment}
+Consider an organization selecting one of $m$ service intensities $a/(m-1)$ in demand regime $i$. Normalized demand is $q_i=(2i+1)/(2n)$, operating reward is $-(q_i-a/(m-1))^2$, and terminal payoff is zero. The installed rule is one intensity below the lowest-index reward-maximizing action, truncated at zero. Keeping that rule has zero implementation cost; a realized departure costs $1+q_i+|a-a_i^0|/(m-1)$. Demand is exogenous to service intensity. Initial regime masses are $2(i+1)/(n(n+1))$. Banded, cyclic, and dense transition matrices are specified exactly in the supplement. These are designed known-model economies, not calibrated staffing data.
+
+The state is not merely a finite regime. It is $(i,u,v)\in\{0,\ldots,n-1\}\times[0,1)^2$. Conditional on a regime transition $i\to j$, the continuous coordinates move deterministically according to
+\begin{equation}\label{eq:shear}
+ u'=(u+v^2)\bmod1,\qquad v'=(v+(u')^2)\bmod1.
+\end{equation}
+Each shear is a translation on one circle conditional on the other coordinate and hence preserves uniform measure; their composition does too. Taking uniform measures on the two-dimensional cells verifies both aggregation identities exactly. Every transition law is finitely atomic, including at discontinuities of the modulo representation. The theorem applies to arbitrary policies that can observe and use both continuous coordinates; it does not assume them away by restricting policies in advance. Payoffs depend on the regime, so this is a structured continuum application rather than evidence of general high-dimensional numerical performance.
+
+The twelve cases were registered on the new branch before execution, including the 60-second LP limit and absolute certificate target $10^{-4}$. Source code was not frozen by that protocol commit; this experiment is consequently distinguished from the earlier fully code-frozen prospective suite. No case was removed or replaced. Table~\ref{tab:structured} reports all twelve. Every pair of endpoints is independently reconstructed in rational arithmetic. All costs are positive, and every interval meets the registered target.
+\begin{table}[t]
+\caption{Exact aggregation of atomic continuum models: all registered cases}\label{tab:structured}
+\centering\small
+\begin{tabular}{rrrlrrrrr}
+\toprule $n$&$T$&$m$&Law&$\beta$&$\varepsilon$&Lower&Upper&Gap\\\midrule
+\tablerows{revisions/2026-09-25-r43/paper/generated/structured_rows.tex}
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Endpoints are rounded outward to nine decimal places; the last column bounds the unrounded arithmetic gap. B, C, and D denote banded, cyclic, and dense regime laws. Both continuous coordinates remain atomic under \eqref{eq:shear}. Independent checks concern finite arithmetic; measure preservation and the aggregation theorem are analytic proofs.
+\end{table}
+
+The largest program has 16,384 variables and 8,192 equalities, corresponding to 4,096 state--date policy simplexes. The supplement separates model assembly, LP proposal, exact certificate construction, independent checking, and process memory. It also reports the same-object unreduced Bellman LP with ordinary presolve. Neither formulation branches on probabilities. Structure elimination is faster on several larger rows, whereas the unreduced LP is faster on some small rows. These observations establish tractable closure for this class; they do not demonstrate superiority over the best classical LP formulation or over the earlier McCormick code on its different, action-dependent problems.
+
+\subsection{An executed nonzero total-variation transfer budget}\label{sec:densityexperiment}
+For an additional continuous-state model keep the service economy but replace \eqref{eq:shear} by the within-cell density
+\[
+ P(i,u;\{j\}\times dv)=\bar P_{ij}[1+\zeta f(u)f(v)]\,dv,
+ \qquad f(u)=2u_1-1,\qquad 0\leq\zeta\leq1.
+\]
+Here $u,v$ each denote a point of $[0,1)^2$. This density is nonnegative and integrates to one. Integrating over a uniform source cell gives a uniform destination cell, so the exact aggregation theorem supplies an independent structural reference optimum. The reset approximation sets $\zeta=0$. Its operator error, in the convention of Theorem~\ref{thm:transfer}, is $\alpha_h=\zeta/2$; its probability total variation is $\zeta/4$. Reward, implementation, and terminal approximation errors are all zero. The initial law uses exactly the same uniform reference measures.
+
+For $n=T=8$, $m=3$, $\beta=0.95$, and $\varepsilon=0.05$, we construct every primitive and propagated error and solve both adjusted finite problems whenever $\varepsilon>2a_h$. Table~\ref{tab:density} retains the failed tightening condition as well as the successful transfers. The supplement gives the two finite-solver widths, $2b_h$, and the repair-cost bound separately. In particular a small measured transfer interval must not be confused with a small worst-case repair bound.
+\begin{table}[t]
+\caption{Measured continuous transfer and its explicit error terms}\label{tab:density}
+\centering\small
+\begin{tabular}{rrrrrl}
+\toprule $\zeta$&Operator $\alpha_h$&$a_h$&$2b_h$&Transferred width&Status\\\midrule
+\tablerows{revisions/2026-09-25-r43/paper/generated/density_rows.tex}
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Successful rows use independently checked finite lower and feasible upper policies at allowances $\varepsilon+2a_h$ and $\varepsilon-2a_h$. Failure of the sufficient reset condition is not economic infeasibility: the exact structural reference remains available.
+\end{table}
+
+This exercise instantiates the reset theorem rather than substituting a mesh trend for its assumptions. It also exhibits its conditioning: the largest density perturbation defeats the prescribed tightening, and the next one gives a wide interval. The exact aggregation result does not incur this transfer error. Neither result is applied to the original action-dependent maintenance kernels, which do not satisfy the new exogeneity assumption.

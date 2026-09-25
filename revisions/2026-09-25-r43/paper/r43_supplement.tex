@@ -1,0 +1,64 @@
+\section{Controlled-model primitive contract and complete accounting}
+The controlled cases use the exact generator in \texttt{regret.py}, independently reconstructed by \texttt{audit.py}. Regimes are $i=0,\ldots,n-1$. For each regime and action, four integer weights are drawn, in that order, from
+\[
+ (\max\{1,38-10a\}+u_1,\;36+u_2,\;12+7a+u_3,\;2+11a+u_4),
+ \qquad u_j\in\{0,1,2,3\}.
+\]
+Normalize these weights and assign them to successors $\max(0,i-1)$, $i$, $\min(n-1,i+1)$, and $n-1$, combining coincident successors. The seeded standard-library pseudorandom generator is advanced in regime/action order. The stage reward is
+\[
+ r_{ia}=\frac{i}{n-1}-c_a-\frac{a v}{100000},\qquad
+ c=(0,9/100,8/25,11/20),\quad v\in\{1,\ldots,19\},
+\]
+where $v$ is drawn immediately after the four transition weights. The installed action is zero for $i\geq\lfloor n/2\rfloor$ and is the seed modulo two otherwise. The implementation cost is $(1+i/(n-1))$ times the indicator of a realized departure. The terminal operating value is $i/[2(n-1)]$, and the initial law is uniform. Transitions, rewards, and costs are constant over dates; Bellman disadvantages generally are not. All primitives and every declared seed are retained in the protocol and compressed proof objects.
+
+The original registration is commit \nolinkurl{18cbcfc41a4c35660be824f6984f68a1d38288a9}. The disclosed arithmetic amendment is \nolinkurl{950b1f1ac2ebaf974d4ef528addd8b2c2e4ce72b}. The amendment retains all cases and changes only certificate accumulation and its theoretical diagnostics. Its numerical constructor, independent reader, and runner hashes are checked against the final sources. This sequence is not called a fully code-frozen holdout. The old source and partial execution record remain in the R43 history directory.
+
+\begin{longtable}{rlrrrrrrrr}
+\caption{Controlled audit: complete proposal and verification work}\label{tab:r43-work}\\
+\toprule Case&Method&Coordinates&Variables&Nonzeros&Build&LP&Arithmetic&Check&Bytes\\\midrule\endfirsthead
+\toprule Case&Method&Coordinates&Variables&Nonzeros&Build&LP&Arithmetic&Check&Bytes\\\midrule\endhead
+\tablerows{revisions/2026-09-25-r43/paper/generated/controlled_work.tex}
+\bottomrule
+\end{longtable}
+Times are seconds. Coordinates are $nT(m-1)$, not just $nT$. Each row uses one root relaxation, so its entire certified bound improvement is a one-node result; this is not a node-count scaling experiment. The LP has a 30-second cap. Model construction, exact constructor arithmetic, and independent verification are additional. Process high-water memory is recorded in the raw rows. Since the runner is sequential, that memory includes earlier allocations and cannot identify a causal per-method memory advantage. Comparing isolated peak memory would require separate fresh processes. No such comparison is asserted.
+
+\begin{table}[t]
+\caption{Sufficient root-width constants for every controlled model}
+\centering\small
+\begin{tabular}{rrrrrrr}
+\toprule Case&$\varepsilon$&$\underline d$&$\lambda_+-\lambda_-$&$\overline E_D$&$E_{S,0}$&Width bound\\\midrule
+\tablerows{revisions/2026-09-25-r43/paper/generated/controlled_constants.tex}
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Values are descriptive decimal approximations of retained rational quantities. Error recursions are rounded upward to dyadic numbers. The sufficient bound concerns an exact minimizing LP policy and exact repair; a numerical proposal gap and endpoint arithmetic losses are not included in this theoretical column. Actual certified widths in the main table include those losses and can be larger when a solver stops. Constants are not suppressed when they are uninformative.
+\end{table}
+
+\section{Directed certificate arithmetic and independent reconstruction}
+Write the root relaxation as $\min c'z$ subject to $Ez=e$, $Az\leq b$, and $\ell\leq z\leq u$. Any rational vector $y$ and any rational $\mu\geq0$ give the lower bound
+\[
+ y'e-\mu'b+\sum_j\min\{h_j\ell_j,h_ju_j\},\qquad h=c-E'y+A'\mu.
+\]
+Add the exact reference cost $\nu'H_0$ and truncate at zero. A floating-point LP success flag is neither necessary nor sufficient for this inequality. Numerical equality marginals and sign-corrected inequality marginals are merely proposals for $y,\mu$.
+
+Accumulating all distinct rational denominators before rounding is unnecessarily expensive. The implemented reader and constructor instead use denominator $2^{40}$. They round each constant contribution downward. For each residual coefficient, they accumulate dyadic lower and upper enclosures $h_j^-\leq h_j\leq h_j^+$. The safe contribution is the downward-rounded minimum of
+\[
+ h_j^-\ell_j,\ h_j^-u_j,\ h_j^+\ell_j,\ h_j^+u_j.
+\]
+Taking all four products is necessary when a savings coordinate can be negative. This procedure is valid for arbitrary proposed multipliers with the required sign, and keeps denominator growth under control. The complete lower endpoint, including reference cost, is retained as a rational number.
+
+For the upper endpoint, the constructor repairs backward toward the reference action. It reserves a local inward margin before rounding nonreference probabilities down to denominator $2^{40}$; the unused probability is assigned to the reference action. At a fixed repaired continuation, the rounding-induced regret change is at most $(m-1)2^{-40}\max_a|q_a-q_{a^*}|$. If the reserved target leaves insufficient reference slack, the constructor uses the feasible reference action. These are proposal choices. The independent reader ignores the repair routine and checks the serialized probabilities by the original operating and implementation Bellman equations. Every probability is nonnegative and sums to one, and every date/regime satisfies the original, unmodified allowance.
+
+The independent endpoint reader imports neither the constructor nor NumPy, SciPy, or any optimizer. It reconstructs the operating optimum, reference policy, disadvantage and savings coefficients, all variable bounds, all product envelopes, and every cone and Bellman constraint. A further independent audit reconstructs the declared random primitive sequence and checks each complete proof against its registered parameters. It also independently recomputes the continuum weighted sums. These checks do not mechanically prove the analytic repair, rate, or disintegration theorems. Four retained mutations test rejection of a forged endpoint, negative action probability, negative inequality multiplier, and invalid transition mass.
+
+\section{All controlled continuum endpoints}
+The model has a persistent observed size $z\in[0,1]$. Regime transitions are controlled but independent of size. Operating primitives are multiplied by $1+z$ and implementation costs by $1+z/2$. Thus the finite allowance is $0.01/(1+z)$; it is not $0.01$ after rescaling. The following table includes all 17 endpoints used by every displayed partition.
+\begin{longtable}{rrrrrr}
+\caption{Every finite endpoint used in the atomic continuum certificate}\\
+\toprule Endpoint&Allowance&Lower&Upper&Width&Check (s)\\\midrule\endfirsthead
+\toprule Endpoint&Allowance&Lower&Upper&Width&Check (s)\\\midrule\endhead
+\tablerows{revisions/2026-09-25-r43/paper/generated/all_fibers.tex}
+\bottomrule
+\end{longtable}
+Endpoint $j$ corresponds to $z=j/16$. Allowances are printed downward for display only; the actual solve and checker use the exact rational allowance. Lower endpoints are rounded down and upper endpoints and widths up. The 2-, 4-, 8-, and 16-cell calculations reuse subsets of these predeclared endpoints. No new model or initial law is substituted when the partition changes.
+
+For the general observable-fiber theorem, the bijectivity of the covariate evolution has an economic content: the label that selects a continuation is recoverable from the current observed state. Noninvertible maps can merge different labels. Selecting a different continuation for each merged label would add memory and would not prove the stated common-Markov result. Likewise, an action-dependent continuous-condition transition is not covered merely because it has finitely many successors. The original affine and nonlinear condition models are therefore retained as separate, open-width evidence.

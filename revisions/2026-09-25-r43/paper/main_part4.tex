@@ -1,0 +1,106 @@
+\section{Numerical evidence}\label{sec:experiments}
+The experiments keep model class, information, initial distribution, and operating allowance explicit. The supplement reports every configuration; no failed or budget-stopped case is removed. The computation report records proof-object sizes, memory, wall time, the exact environment, and the boundary between independent arithmetic checks and shared-code validation.
+
+\input{revisions/2026-09-25-r43/paper/controlled_evidence}
+\input{revisions/2026-09-25-r43/paper/structured_evidence}
+
+\subsection{Prospectively fixed common-Markov problems}\label{sec:holdout}
+Before generating eight new environments, we committed their seeds, joint parameter changes, two solver hashes, node cap 4,096, wall-clock cap 60 seconds per solver and case, and absolute stopping allowance $10^{-3}$. The freeze is commit \texttt{13fd3ee}; it follows development seed 390001 and precedes all eight evaluated seeds. Both solvers see the same known model. The two-state models represent low and high condition; four-state models use a pair of condition indicators with interaction terms in their transition probabilities. Horizons are 3, 4, 8, and 12; discount factors are $0.8$ or $0.95$; allowances are $0.01$ or $0.05$; operating prices, transition persistence, intervention effects, and initial masses vary jointly. The exact formulas and resulting rational matrices are in the supplement and proof objects.
+
+\begin{table}[t]
+\caption{Same-object comparison on the prospectively fixed environments}\label{tab:finite}
+\centering\small
+\begin{tabular}{rrlrrrr}
+\toprule
+States & $T$ & Method & Lower & Upper & Gap/upper (\%) & Seconds\\
+\midrule
+\tablerows{revisions/2026-09-25-r43/paper/generated/finite_rows.tex}
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize I: interval Bellman search. M: verified McCormick search. Bounds concern the identical common randomized Markov objective for each pair. Reported times include model construction and the operating solve; the search's 60-second cap is checked between iterations, not by interrupting a proof-producing node. A zero upper cost is an exact zero-cost case. Full stop reasons, node counts, and memory appear in the supplement.
+\end{table}
+
+Table~\ref{tab:finite} contains all eight pairs, including unfinished searches. A positive absolute-gap certificate is not necessarily a small relative-gap certificate when the optimum is small. We therefore report both. The linear relaxation often improves the lower endpoint substantially, but costs more per node. The four-state longer-horizon cases expose the combinatorial burden: the remaining interval is not hidden by a success count. The comparison does not establish that interval Bellman search dominates direct global programming. Instead it identifies the value and cost of the stronger relaxation under matched information and caps.
+
+\subsection{The unchanged continuous-state development cohort}\label{sec:primary}
+The original maintenance model has $x\in[0,1]$, three actions, two shocks with probabilities $3/5$ and $2/5$, $\beta=19/20$, stage reward $x-c_a$ with $c=(0,3/20,9/20)$, terminal payoff $x/2$, and revision weight $1+x$. Its two affine successors for actions 0, 1, and 2 respectively are
+\[
+ (3x/4,3x/4+1/20),\quad
+ (17x/20+1/10,17x/20+7/50),\quad
+ (x/10+4/5,x/10+17/20).
+\]
+The seven installed rules, horizons 4, 8, and 12, and allowances $0.01,0.05$ are unchanged. Neural and spline rules are fixed computational incumbents, not estimated economic policies. Exact operating values are inexpensive in this model and their computation is charged. We do not use this cohort to claim performance when operating approximation itself is difficult.
+
+The inherited deterministic comparison has 12 zero-cost and 12 positive-cost integrated equalities. Ten of the positive-cost equalities occur at horizon 4, two at horizon 8, and none at horizon 12. The maximum deterministic relative gaps at each horizon are reported alongside absolute gaps in the supplement. In the horizon-8 neural31003 case at $\varepsilon=0.05$, the two initial cost functions are identical pointwise, but the arrays differ at later restart dates. Thus initial equality does not imply equality at every restart. The new diagnostic records the full rational disagreement locus.
+
+\begin{table}[t]
+\caption{Common randomized Markov certificates on the development cohort}\label{tab:primary}
+\centering\small
+\begin{tabular}{rrrrrr}
+\toprule
+$T$ & Cases & Zero-cost exact & Strict gain over $K_D$ & Improved lower & Maximum gap/upper (\%)\\
+\midrule
+\tablerows{revisions/2026-09-25-r43/paper/generated/primary_summary.tex}
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Strict gain means that a verified randomized upper cost is below the deterministic lower bound for the same initial law and constraints. It does not mean that the randomized optimum is attained by that candidate. Improved lower compares the connected local-support bound with the prior randomized support lower bound. All 42 uniform-initial rows and both nonuniform sensitivity tables are retained.
+\end{table}
+
+The lotteries in \eqref{eq:lottery} certify strict improvement over \emph{every} feasible deterministic policy in \PrimaryStrict{} of the 42 uniform-initial configurations (Table~\ref{tab:primary}). The horizon-12 defer case at allowance $0.01$, for example, has a randomized interval $[\PrimaryExampleLower,\PrimaryExampleUpper]$ and a positive deterministic separation. This addresses the economically relevant policy-class difference directly, without substituting a fixed-restart history-conditioned frontier. The \PrimaryZero{} zero-cost cases are already optimal by feasibility and nonnegativity and are not counted as nontrivial search successes. All \PrimaryPositive{} positive-cost randomized intervals retain a reported nonzero width; the narrowest and widest relative intervals are distinguishable in the full table.
+
+Changing the initial density to $2x$ yields \PrimaryHighStrict{} strict deterministic separations; changing it to $2(1-x)$ yields \PrimaryLowStrict{}. These are sensitivity results on the same developed environments, not independent observations. The connected local program improves \LocalImproveCount{} uniform lower endpoints, including the longer-horizon cases; it thus affects the primary global interval rather than a disconnected local diagnostic. It still does not establish global strong duality or close every interval.
+
+
+\begin{table}[t]
+\caption{Open randomized intervals and guaranteed savings are different statistics}\label{tab:gapsavings}
+\centering\small
+\begin{tabular}{rrrrrrr}
+\toprule $T$&Positive&Median (\%)&Max. (\%)&Strict gains&Min. gain&Max. gain\\\midrule
+\tablerows{revisions/2026-09-25-r43/paper/generated/primary_gap_savings.tex}
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Width is $(U_R-L_R)/U_R$ among positive-cost intervals. Savings are $L_D-U_R$, not a difference between lower bounds. The last two columns condition on strictly positive savings. All 42 signed savings are in the supplement. These are exact re-tabulations of retained certificates, not new optimization runs.
+\end{table}
+
+\subsection{Nonlinear two-state bounds}\label{sec:nonlinear}
+The retained nonlinear model has $(x,y)\in[0,1]^2$, four actions, bilinear transitions, two shocks, reward $(x+y)/2-c_a$, terminal payoff $(x+y)/4$, and revision weight $1+(x+y)/2$. Its exact rational primitive specification is reproduced in the supplement. Whole-box operating witnesses and support supersolutions use outward arithmetic. The new lower construction uses 11 global support prices and five nonnegative local multipliers, including zero, at every date. It is paired with exactly the retained feasible upper policies. We run no new upper-portfolio competition and do not compare unequal proposal success fractions as evidence of optimality.
+
+\begin{table}[t]
+\caption{Selected nonlinear common-Markov intervals}\label{tab:nonlinear}
+\centering\small
+\begin{tabular}{rrrrrl}
+\toprule
+$T$ & Mesh per axis & Lower & Upper & Gap/upper (\%) & Independent check\\
+\midrule
+\tablerows{revisions/2026-09-25-r43/paper/generated/nonlinear_selected.tex}
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Uniform initial law on the square and operating allowance $1/2$. Inherited full independent scalar checks cover $(T,N)=(8,64)$ and $(32,64)$. R40 additionally replays the complete $(32,128)$ object, including the candidate upper cost and all-restart operating bound. R41 subsequently independently rebuilt the complete $(32,256)$ object; this revision incorporates that successful arithmetic audit with its source and proof hashes.
+\end{table}
+
+The old zero lower endpoint was not forced by the definition of revision cost: the operating constraints can force departures from the installed rule. Nonzero support supersolutions now detect that restriction. At $T=32,N=256$, the interval is $[\NonlinearFineLower,\NonlinearFineUpper]$, with relative width \NonlinearFineRelative\%. This is a genuine improvement over $[0,\NonlinearFineUpper]$, but it is not a near-exact optimum or a high-dimensional scalability result. Both endpoints and the all-restart operating inequality are independently rebuilt at $T=32,N=64$, the R40 audit extends this to the complete $T=32,N=128$ object, and the R41 audit extends it to the finest $T=32,N=256$ object. The latter independently checks 92,274,688 support-action inequalities over 2,097,152 state--date cells; the original interval is unchanged. Memory for the retained support arrays grows as $8N^2(T+1)(11+4)$ bytes before temporary arrays and interpreter overhead; the machine record reports the actual payload and process high-water mark.
+
+The allowance $1/2$ belongs to the inherited exploratory nonlinear design. It is not made comparable to $0.01$ simply by normalizing state variables: the operating scale and remaining horizon matter. We additionally compute lower-bound diagnostics at $\varepsilon=0.05$ on four stated configurations. None is paired with a policy certified only at $1/2$. Without a newly feasible upper policy those tighter-tolerance rows remain lower-bound-only results. A failed sufficient box certificate is labeled uncertified, not infeasible. A box crossing an installed-rule threshold can charge the upper revision weight conservatively; it does not assert that every realized state in that box changes action.
+
+\section{Verification, economic interpretation, and limits}\label{sec:verification}
+A certificate has three distinct burdens. Its mathematical reduction must preserve the target policy class. Its finite arithmetic must check the asserted inequalities with the correct direction. Its publication must correspond to the checked objects. Hashes address the third burden, not the first two. Independent arithmetic addresses part of the second burden and can expose a model-contract error, but is not a proof that every economic assumption is appropriate.
+
+The finite-state verifier uses SymPy rationals and imports neither search implementation nor the optimizer. It rebuilds the common Markov equations, primitive contracts, every policy-box split, every necessary contraction, the LP residual bounds, and the global leaf minimum. The continuous-state verifier independently checks the new lotteries, whole-cell costs, support supersolutions, and local primal vertices, using the prior independent primitive parser rather than the constructor's piecewise-affine operations. The nonlinear verifier uses symbolic rational corner geometry and arbitrary-precision scalar integer induction instead of the constructor's vectorized box operations. Its recorded coverage now includes the complete finest $(32,256)$ object, not merely selected rows. The R42 structural checker separately reconstructs every new finite primal and dual certificate without importing its constructor. The verification report specifies precisely which objects passed; it never substitutes cross-run equality or a mutation test for an inequality proof.
+
+The synthesis preserves all prior scientific material. Deterministic bounds, history-conditioned frontiers, the two-period analytic randomization example, adaptive local-LP analysis, 66 economic sensitivities, failed runs, and the stopped-control derivations remain available in full. The separate historical volume preserves the prior article and technical supplement verbatim; the current supplement supplies a direct map of the new results. The older 349-page historical annex remains unchanged as an archival object rather than a prerequisite for reading this article. The stopped consumption--portfolio problem is not relabeled solved: its inherited full-domain bound of approximately 7.1818 does not meet its 0.01 target. A killed Bellman comparison supports witness propagation but supplies neither missing action coverage nor a diffusion-discretization error bound \citep{KushnerDupuis2001}.
+
+The economic conclusion established by the new primary calculation is precise. When randomized action assignment is admissible and costs attach to realized departures, common Markov lotteries can strictly reduce the minimum implementation cost relative to every deterministic feasible rule. This conclusion holds on the certified configurations and initial laws. It does not estimate how frequently organizations permit such lotteries, how costly they are to administer, or the monetary welfare effect of a real deployment. Fixed randomization overhead, parameter uncertainty, and empirical calibration would require additional primitives and certificates. The joint-perturbation holdout study tests a fixed algorithm beyond its development seed, but is not a statistical generalization theorem.
+
+\input{revisions/2026-09-25-r43/paper/economic_margin}
+
+\section{Conclusion}\label{sec:conclusion}
+A local operating requirement becomes a global revision certificate only when continuation compatibility and the cost of restoring feasibility are controlled together. Backward repair supplies that connection. A date-dependent allowance ladder covers finite undiscounted problems, while exact operating-action restrictions handle zero tolerance. These extensions retain the same common randomized Markov objective rather than replacing it by a necessary-action relaxation.
+
+For endogenous finite-state dynamics, the operating-action disadvantage provides a probability bound, and implementation savings obey a regret cone. Their combination with reference-directed repair yields a quadratic small-allowance bound for a root relaxation at fixed action separation. This is a structural rate, not a polynomial guarantee for the unrestricted global problem. In the controlled audit, tighter relaxation geometry can materially improve a certificate, but difficult high-discount cases and solver stops remain in the evidence.
+
+Observable-covariate disintegration supplies a separate controlled atomic continuum route. It preserves every Borel common policy by using a label recoverable from the current state, and its partition bounds converge when the finite fiber solves and primitive errors are refined. Exact exogenous aggregation remains a tractable complementary class; its twelve executed service economies retain tightly closed positive-cost intervals. The density exercise retains all primitive, solver, and repair terms, including a failed sufficient tightening condition.
+
+These results do not make the original maintenance gaps disappear. Its 27 deterministic separations remain valid, all 30 positive-cost randomized intervals remain open, and the nonlinear fine interval remains wide despite complete independent arithmetic verification. Generic completeness, a small-allowance rate, observable-fiber convergence, exact structural solvability, and a designed policy-class comparison answer different questions. Stating their assumptions and retaining their unsuccessful executions permits the method to advance without altering its economic objective or converting a certificate into an unsupported empirical claim.
+
+\input{revisions/2026-09-25-r43/paper/references}
+\end{document}

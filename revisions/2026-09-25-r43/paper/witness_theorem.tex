@@ -1,0 +1,40 @@
+\subsection{Certified search without an exact operating solve}\label{sec:witnessrepair}
+The exact value in the preceding statements is not an oracle that the method must possess. A verified upper witness supplies the slack needed by the repair. This matters when operating approximation, rather than policy search alone, is expensive. Let $L_t\leq V_t\leq U_t$ be bounded Borel witnesses with $U_T=g$. Define checked scalar bounds
+\begin{align}\label{eq:witnessslack}
+ e&\geq\max_{t<T}\|U_t-L_t\|_\infty,\qquad \sigma=(1-\beta)\varepsilon-d,\nonumber\\
+ d&\geq\max\left\{0,\sup_{t<T,x}\left[U_t(x)-\max_aT_t^aU_{t+1}(x)\right]\right\}.
+\end{align}
+For the finite-state statement, let $m=|A|$, let $M\geq1$ be an integer, and set $\theta_M=\min\{1,(m-1)/M\}$. Lattice probabilities are multiples of $1/M$. The same primitive transition and reward operators occur in the witness check and the repair. Error in a different operator must first be included in its enclosure. A small residual is not, by itself, a certificate that $U\geq V$; the witness inequalities and terminal condition are also required.
+
+\begin{theorem}[Witness-driven repair and global error]\label{thm:witnessrepair}
+Suppose $\sigma>0$ and $\delta\geq0$. If a common randomized Markov policy satisfies
+$J_t^p\geq U_t-\varepsilon-\delta$ for all $t<T$, the backward construction with target $U_t-\varepsilon$ produces a common policy $\widehat p$ such that
+\begin{equation}\label{eq:witnessrepair}
+ J_t^{\widehat p}\geq U_t-\varepsilon\geq V_t-\varepsilon,\qquad
+ J_t^{\widehat p}\geq J_t^p,\qquad
+ \sup_{t,x}\TV(\widehat p_t,p_t)\leq\frac{\delta}{\sigma+\delta}.
+\end{equation}
+Its additional initial implementation cost is at most $D_C\delta/(\sigma+\delta)$.
+On a finite state space, let $v_{M,L}$ be the smallest cost among rational-lattice policies satisfying
+$J_t^p\geq L_t-\varepsilon-D_J\theta_M$. Repair a minimizer using $U$, and let its cost be $U_{M,L,U}$. Then
+\begin{align}
+ \max\{0,v_{M,L}-D_C\theta_M\}&\leq\KR(\nu,\varepsilon)\leq U_{M,L,U},\label{eq:witnessbracket}\\
+ U_{M,L,U}-\max\{0,v_{M,L}-D_C\theta_M\}
+ &\leq D_C\left\{\theta_M+
+ \frac{e+D_J\theta_M}{\sigma+e+D_J\theta_M}\right\}.\label{eq:witnessbudget}
+\end{align}
+Thus $M\to\infty$, $e\to0$, and $d\to0$ give convergence to the actual constrained optimum using checked witnesses rather than an exact operating solve. All displayed errors and the stopping test are computable for rational represented finite-state primitives.
+\end{theorem}
+\begin{proof}
+Fix a repaired continuation and put $q_a=T_t^aJ_{t+1}^{\widehat p}$, $q_p=\sum_ap_t(a\mid x)q_a$, and $b=U_t-\varepsilon$. At the final decision date $J_T^{\widehat p}=U_T$; at every earlier date the induction hypothesis gives $J_{t+1}^{\widehat p}\geq U_{t+1}-\varepsilon$. Positivity and \eqref{eq:witnessslack} imply
+\[
+ q_*:=\max_aq_a\geq\max_aT_t^aU_{t+1}-\beta\varepsilon
+ \geq U_t-d-\beta\varepsilon=b+\sigma.
+\]
+The inductive improvement gives $q_p\geq J_t^p\geq b-\delta$. Where $q_p<b$, set
+$\alpha=(b-q_p)/(q_*-q_p)$ and mix $p_t$ with the least-index maximizing action. For $z=b-q_p\in(0,\delta]$, one has $\alpha\leq z/(\sigma+z)\leq\delta/(\sigma+\delta)$. Otherwise leave $p_t$ unchanged. This proves \eqref{eq:witnessrepair}; the cost bound follows from Lemma~\ref{lem:perturb}. Finite action maximization and division on a strictly positive-denominator Borel set preserve measurability.
+
+For the lattice statement, round any genuinely feasible policy as in Theorem~\ref{thm:lattice}. Its rounded value exceeds $V-\varepsilon-D_J\theta_M\geq L-\varepsilon-D_J\theta_M$, and its cost increases by at most $D_C\theta_M$. This proves the lower endpoint. A lattice minimizer is at worst $e+D_J\theta_M$ below the upper-witness target. Apply the first assertion with that value of $\delta$ to obtain the upper endpoint and \eqref{eq:witnessbudget}. Nonnegative costs justify clipping the lower endpoint at zero.
+\end{proof}
+
+Failure of $\sigma>0$ means that this particular witness pair has not certified the repair margin; it does not establish infeasibility of the original problem. Witness refinement and complete search have different roles in \eqref{eq:witnessbudget}. Refining the witnesses alone does not close the remaining policy-search gap. Conversely, an increasingly fine policy lattice does not erase a fixed operating-witness error. The exact-value theorem is recovered by $L=U=V$ and $d=e=0$.

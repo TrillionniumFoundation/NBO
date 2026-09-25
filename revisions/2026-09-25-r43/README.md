@@ -1,5 +1,3 @@
-# Current NBO revision: R43
-
 # R43: regret-scaled controlled and atomic-fiber revision certificates
 
 Current review documents: `ECTA_R43.pdf`, `SUPP_R43.pdf`, `RESPONSE_R43.pdf`, and `COMPUTATION_R43.pdf` at the repository root. The corresponding `.tex` wrappers point to `paper/`. The article retains the title **Certified Bellman Operators for Costly Policy Revision** and the unchanged Econometrica support class.
@@ -39,6 +37,3 @@ python revisions/2026-09-25-r43/replication/publish.py
 ## Preservation and boundaries
 
 The new branch retains every inherited scientific file unchanged. The current navigation index is archived before updating. R42's exogenous structural, nonzero density-transfer, undiscounted-repair, zero-tolerance, infinite-horizon-tail and historical results are not presented as new R43 executions. The finest nonlinear independent replay is inherited from R41 via R42, not rerun here. Analytic theorems, independent arithmetic, code identity, and publication integrity are separately labeled. Difficult approximate operating oracles, empirical calibration, tighter nonlinear feasible upper policies, the original controlled continuous-condition convergence problem, and matched marginal local-work ablations are not falsely marked completed.
-
-
-The preceding complete index is preserved at `revisions/2026-09-25-r43/history/REVISION_INDEX_R42.md`.

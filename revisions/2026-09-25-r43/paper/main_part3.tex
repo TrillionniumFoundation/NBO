@@ -1,0 +1,101 @@
+\section{A single error budget for continuous-state approximation}\label{sec:transfer}
+A finite-state theorem alone does not justify replacing a continuous model by a grid. The following sufficient conditions permit such a transfer without restricting the original policy to be piecewise constant.
+
+\begin{assumption}[Certified reset approximation]\label{ass:reset}
+For a finite Borel partition $(E_i)_{i=1}^{n_h}$, let $\mu_i$ be probability measures supported on $E_i$ and write $\nu=\sum_i\nu_i\mu_i$. There are cellwise rewards $r_{h,t}$, costs $k_{h,t}\in[0,K]$, and terminal values $g_h$, and a kernel
+\[
+ Q_{h,t}^a(x,dy)=\sum_j P_{h,t}^a(i,j)\mu_j(dy),\qquad x\in E_i,
+\]
+with certified uniform errors $d_r,d_k,d_g$ and $\alpha_h$ satisfying
+\[
+ |r-r_h|\leq d_r,\quad |k-k_h|\leq d_k,\quad |g-g_h|\leq d_g,
+ \quad |(P_t^a-Q_{h,t}^a)f(x)|\leq\alpha_h\norm{f}_\infty
+\]
+for every bounded Borel $f$. The approximation rewards obey the same bounds $R,G$ as the original rewards, or $R,G$ are enlarged to cover both models. All finite transition entries and error bounds are computable with verified directions.
+\end{assumption}
+
+The last inequality uses the operator convention for total variation; it is not the half-$\ell_1$ convention for action probabilities above. Define $M_{J,t}=R\sum_{s=0}^{T-t-1}\beta^s+G\beta^{T-t}$ and $M_{C,t}=K\sum_{s=0}^{T-t-1}\beta^s$. Set
+\begin{align}
+ a_T&=d_g,& a_t&=d_r+\beta a_{t+1}+\beta\alpha_hM_{J,t+1},\label{eq:primitiveJ}\\
+ b_T&=0,& b_t&=d_k+\beta b_{t+1}+\beta\alpha_hM_{C,t+1},\label{eq:primitiveC}\\
+ a_h&=\max_t a_t,& b_h&=b_0.\nonumber
+\end{align}
+Let $v_h(s)$ be the optimum of the finite common-Markov model at operating allowance $s$ and initial masses $(\nu_i)$.
+
+\begin{theorem}[End-to-end transfer]\label{thm:transfer}
+Under Assumption~\ref{ass:reset}, if $\varepsilon>2a_h$, then
+\begin{equation}\label{eq:transfer}
+ v_h(\varepsilon+2a_h)-b_h
+ \leq\KR(\nu,\varepsilon)
+ \leq v_h(\varepsilon-2a_h)+b_h.
+\end{equation}
+Suppose finite computation returns intervals $[L_+,U_+]$ and $[L_-,U_-]$ for these relaxed and tightened optima, of widths at most $\eta_+$ and $\eta_-$. A valid global interval is
+\begin{equation}\label{eq:total}
+ [\max\{0,L_+-b_h\},U_-+b_h],
+\end{equation}
+and its width is at most
+\begin{equation}\label{eq:totalwidth}
+ \eta_++\eta_-+2b_h+
+ D_C\frac{4a_h}{(1-\beta)(\varepsilon-2a_h)+4a_h}.
+\end{equation}
+If all certified primitive errors tend to zero and both finite-solver widths tend to zero, this interval converges to the original measurable-policy optimum. Its measured width supplies a termination test for the actual economic objective.
+\end{theorem}
+\begin{proof}
+Fix any measurable Markov policy $p$, not necessarily cellwise constant. Backward subtraction of its original and reset-model Bellman equations gives \eqref{eq:primitiveJ}--\eqref{eq:primitiveC}. Bellman comparison gives the same operating error for optimal values. In the reset model, averaging the policy within $E_i$, $\bar p_t(a\mid i)=\int p_t(a\mid x)\mu_i(dx)$, averages its value exactly: after every transition the within-cell law is again $\mu_j$, and stage rewards and costs are cellwise constant. This identity follows backward, including the common continuation. An original feasible policy has reset operating value at least the reset optimum minus $\varepsilon+2a_h$ pointwise, hence also after cell averaging; its finite-model cost differs from the original initial cost by at most $b_h$. Taking an infimum gives the lower inequality. Conversely, lift a finite policy feasible at $\varepsilon-2a_h$ by using its action probabilities throughout each cell. The reset value is constant in each cell; the two operating errors make the lifted original policy feasible, and its cost differs by at most $b_h$. This proves the upper inequality. Finally apply Theorem~\ref{thm:repair} in the finite model with target allowance $\varepsilon-2a_h$ and violation $4a_h$, then add the two finite-computation widths and the cost errors.
+\end{proof}
+
+\subsection{Where the transfer theorem applies}
+On a compact domain, a transition density with computable uniform continuity in the source variable and an $L_1$-approximable density in the destination variable can furnish the reset approximation. The cell reference measures must also represent the initial law as in Assumption~\ref{ass:reset}. For example, with Lebesgue-uniform cell measures and a uniform initial law, a uniformly Lipschitz transition density gives a computable $\alpha_h=O(h)$ on a shape-regular mesh. Cellwise operating and cost approximations give $d_r,d_k,d_g=O(h)$ when their moduli are Lipschitz. Aligned discontinuities in an installed rule can be retained as exact partition boundaries. In this case \eqref{eq:totalwidth} is $O(h+\eta_++\eta_-)$ at fixed positive $\varepsilon$ and $\beta<1$, with explicitly displayed constants. The number of cells still scales as $h^{-\dim X}$; the theorem does not remove the curse of dimensionality.
+
+The primary affine-shock model and the nonlinear two-state model below have atomic transition laws. Smearing their successor atoms into cells generally leaves the total-variation error bounded away from zero. We therefore do \emph{not} apply Theorem~\ref{thm:transfer} to those models by asserting a small mesh. Their reported intervals are direct whole-domain bounds for the unchanged atomic models. They remain valid without a convergence claim for that particular spatial representation. This distinction prevents the approximation theorem from being used as an unsupported explanation for closing an atomic-model gap.
+
+\section{Certificates that accelerate the global problem}\label{sec:certificates}
+The complete search, exact structural reduction, and reset transfer provide different routes to a global certificate, each under its stated assumptions. The inherited one-sided certificates are useful accelerators and diagnostic tools, but are not substituted for that argument.
+
+\subsection{Deterministic outer restrictions and measurability}
+Let $L_t\leq V_t\leq U_t$ be bounded Borel operating witnesses, including the terminal date. Every all-restart feasible deterministic policy must select an action in
+\begin{equation}\label{eq:necessary}
+ \cN_t^{L,U}(x)=\{a:L_t(x)-T_t^aU_{t+1}(x)\leq\varepsilon\}.
+\end{equation}
+Indeed, its operating continuation cannot exceed $V_{t+1}\leq U_{t+1}$. The set is nonempty because an operating-optimal action satisfies the test. Its graph is Borel, since it is a finite union of Borel sublevel sets. Backward minimization of $k_t+\beta P_t^aB_{t+1}$ over this set yields a Borel lower function; the lowest-index minimizer is a Borel selector. Thus the general-state recursion does not rely on an implicit measurable-selection assertion.
+
+This is a necessary-action outer class, not the original constrained problem. A selected continuation can accumulate losses that violate later operating requirements. Equality between its integrated cost lower bound and a separately feasible policy's cost certifies $\KD(\nu,\varepsilon)$. Equality of the full functions certifies more. Tightening $L,U$ alone does not force equality; complete search is what controls the remaining structural gap.
+
+\subsection{Randomized support floors and a connected local program}\label{sec:local}
+For $\lambda\geq0$, a verified supersolution $W_t^\lambda$ of
+\[
+ W_T^\lambda\geq\lambda g,\qquad
+ W_t^\lambda\geq\max_a\{\lambda r_t-k_t+\beta P_t^aW_{t+1}^\lambda\}
+\]
+implies $C_t^p\geq\lambda(V_t-\varepsilon)-W_t^\lambda$ for every feasible policy, including randomized Markov policies. Define a floor $F_t$ by the maximum of zero and finitely many such terms, using $L_t$ in place of $V_t$ when necessary. Given a valid next-date lower function $B_{t+1}$, define
+\[
+ \mathcal D_t(x)=\left\{p\in\Delta(A):\sum_ap_aT_t^aU_{t+1}(x)\geq L_t(x)-\varepsilon\right\}.
+\]
+\begin{equation}\label{eq:localLP}
+ B_t(x)=\max\left\{F_t(x),\min_{p\in\mathcal D_t(x)}
+ \sum_ap_a\{k_t(x,a)+\beta P_t^aB_{t+1}(x)\}\right\},\quad B_T=0.
+\end{equation}
+The feasible action distribution of any admissible policy belongs to the local constraint, and its continuation cost dominates $B_{t+1}$. Induction proves that \eqref{eq:localLP} is a global randomized cost lower bound. It does not prove that the local optimizer can be combined into a feasible policy or that finite support prices close a global duality gap.
+
+For three actions and one local operating inequality, the local polytope has only pure feasible vertices and two-action boundary mixtures. Our new primary calculation evaluates these vertices with exact rational arithmetic on directed whole-cell bounds. Unlike the earlier diagnostic with a zero global floor, it uses the nonzero $F_t$ at every date and is paired with a feasible policy for the same uniform-initial randomized objective. It improves that lower endpoint in \LocalImproveCount{} of the 42 configurations. The prior adaptive local-LP theorem and all of its experimental records remain in the retained supplement; their target is still the local relaxation, not \eqref{eq:target}.
+
+\subsection{Whole-domain randomized deployments}\label{sec:lottery}
+A simple backward construction supplies feasible upper policies without changing the atomic model. Given a feasible next-date value $J_{t+1}$, write $q_0=T_t^{a_t^0}J_{t+1}$, $q_*=\max_aT_t^aJ_{t+1}$, and $b=V_t-\varepsilon$. If $q_0\geq b$, retain the installed action. Otherwise mix it with a lowest-index maximizing action with probability
+\begin{equation}\label{eq:lottery}
+ p_t^{\rm change}(x)=\frac{b(x)-q_0(x)}{q_*(x)-q_0(x)}.
+\end{equation}
+The denominator is positive wherever this expression is used. The resulting operating value is $J_t=\max\{q_0,b\}$ and is feasible at every state. In the piecewise-affine model, $J_t$ remains piecewise affine while the mixing probability can be a ratio of affine functions. Cost is therefore enclosed rather than falsely represented as an exact piecewise-affine function.
+
+The verifier includes isolated switching points in every operating identity. Directed cost boxes integrate against the three absolutely continuous initial laws. All affine transition slopes are strictly positive, so a finite set of switching points and its finite-horizon preimages have zero probability under these laws. That fact justifies almost-everywhere cost enclosures; it does not justify ignoring knots in a restart operating constraint or using the same cost enclosure for a Dirac initial law.
+
+\subsection{A verified direct mathematical-programming comparator}\label{sec:comparator}
+The direct finite-state formulation minimizes $\sum_i\nu_iC_{0i}$ subject to \eqref{eq:operating}--\eqref{eq:cost}, $J_{ti}\geq V_{ti}-\varepsilon$, and the common policy simplexes. The constraints are bilinear in policy probabilities and continuation values. A McCormick relaxation on each probability box provides a classical global lower program. The baseline uses the same incumbent repair, contraction rule, box selection, node allowance, initial law, and all-restart constraints as interval Bellman search. The additional work is the stronger LP bound and an LP-proposed feasible candidate after repair.
+
+Floating-point LP status is not a certificate. For a minimization relaxation $c'z$ subject to $Az\leq b$ and $\ell\leq z\leq u$, every rational vector $\lambda\geq0$ gives
+\begin{equation}\label{eq:residual}
+ \mathcal L(\lambda)=-\lambda'b+
+ \sum_j\min\{(c+A'\lambda)_j\ell_j,(c+A'\lambda)_ju_j\}
+ \leq\min c'z.
+\end{equation}
+This follows by adding $\lambda'(Az-b)\leq0$ and minimizing the resulting affine function over the box. Rounded nonnegative solver marginals are evaluated in \eqref{eq:residual} using exact rational arithmetic. A failed LP falls back to the interval Bellman lower bound; a floating infeasibility declaration never removes the policy box. A separate verifier rebuilds every relaxation and every search-tree partition from the primitive model.
+

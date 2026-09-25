@@ -1,0 +1,112 @@
+\input{revisions/2026-09-25-r43/paper/preamble}
+\setlength{\tabcolsep}{3pt}
+\begin{document}
+\begin{frontmatter}
+\title{Supplement to ``Certified Bellman Operators for Costly Policy Revision''}
+\runtitle{Structural and Regret-Scaled Certification}
+\begin{aug}\author[id=au1,addressref={add1}]{\fnms{Qian}~\snm{QI}}\address[id=add1]{\orgname{Peking University}}\end{aug}
+\begin{abstract}This supplement gives exact primitive contracts, complete computational accounting, the transfer budget, a discounted infinite-horizon tail result, and a theorem-to-checker map. The prior article and technical supplement are retained without modification in a separate historical volume. Numerical proposal, independent arithmetic verification, structural mathematical assumptions, and publication provenance are distinguished throughout.\end{abstract}
+\end{frontmatter}
+
+\input{revisions/2026-09-25-r43/paper/r43_supplement}
+
+\section{Exact service-economy contracts}
+Regimes are indexed by $i=0,\ldots,n-1$. Demand, rewards, installed actions, costs, and initial masses are defined in the main article. Ties in reward maximization use the lowest action index. All inputs are rational. The three regime laws are as follows. In the banded law, $P_{i,i+1}=P_{i+1,i}=(1+(i\bmod3))/16$ and $P_{ii}$ is the remaining row mass; other entries are zero. The cyclic law has $P_{ii}=3/4$ and $P_{i,(i+1)\bmod n}=1/4$. The dense law has $P_{ij}=1/(2n)+(1/2)\ind\{i=j\}$. Each is stochastic and independent of the action. These definitions, including the installed rule and initial distribution, are reconstructed independently by the checker.
+
+The continuous state space consists of $n$ disjoint copies of $[0,1)^2$ equipped with their Borel sigma fields; the half-open convention assigns each modulo boundary a unique image. If $S_1(u,v)=(u+v^2\bmod1,v)$, then for every bounded Borel $h$, Fubini's theorem and translation invariance on the circle give $\int h(S_1(u,v))\,du\,dv=\int h(u,v)\,du\,dv$. The analogous identity holds for $S_2(u,v)=(u,v+u^2\bmod1)$. Their composition preserves uniform measure. Conditional on each possible regime successor, this is precisely the pushforward identity required by the main aggregation theorem. Its proof concerns arbitrary bounded Borel test functions, not only partition indicators. Pointwise regime transition probabilities give the other aggregation identity. The transition from an individual state is nonetheless a finite sum of Dirac masses.
+
+The within-cell density alternative is $1+\zeta f(u)f(v)$, where $f(u)=2u_1-1$ on $[0,1)^2$. Since $\int f=0$ and $\int|f|=1/2$, it is a probability density for $|\zeta|\leq1$, and its source average is the uniform destination law. For a fixed source, its $L_1$ difference from the reset density is $|\zeta f(u)|/2$. The supremum over sources is $|\zeta|/2$ (a supremum need not be attained on the half-open cell). This is the operator norm over test functions bounded by one. Probability total variation is half this quantity. In both models the specified initial mixture uses exactly the same uniform reference measures; no approximate initial-law substitution is made.
+
+\section{Complete work accounting and finite certificates}
+\begin{longtable}{rrrrrrrrr}
+\caption{All structured cases: work and proof-object size}\label{tab:workall}\\
+\toprule Case&$nT$&Variables&Nonzeros&LP (s)&Full LP (s)&Exact (s)&Check (s)&Bytes\\\midrule\endfirsthead
+\toprule Case&$nT$&Variables&Nonzeros&LP (s)&Full LP (s)&Exact (s)&Check (s)&Bytes\\\midrule\endhead
+\tablerows{revisions/2026-09-25-r43/paper/generated/structured_work.tex}
+\bottomrule
+\end{longtable}
+``LP'' is the eliminated regret program; ``Full LP'' retains operating and implementation Bellman values with the same common policy. Both use HiGHS with presolve and the same numerical feasibility tolerances and 60-second solver limit. They solve the same rational mathematical problem, but their floating-point objective estimates are not the certificates. The exact endpoints use a separately evaluated rational policy and rational equality-multiplier residual correction. A $10^{-9}$ inward allowance is a proposal device only. Policy and dual multipliers are rounded on denominator $10^{12}$; the checker always uses the original declared allowance. Every row's exact repair fraction was zero in the recorded execution; the feasibility assertion follows from exact evaluation, not from that observation or the floating-point solver status.
+
+The raw result file additionally reports model preparation time, solver iterations, original formulation dimensions, and process high-water resident memory. Memory is measured per constructor subprocess and includes Python, NumPy, SciPy, and the optimizer; it is not isolated proof-array memory. The independent checker runs in a separate optimizer-free process. Table values are single-run descriptive timings, not statistical speed estimates. For the largest sparse program the exact checker is more expensive than the LP proposal. This cost is included rather than being hidden in publication overhead.
+
+For the regret program, order the equality multipliers as $s_{ti}$ for simplex equations and $d_{ti}$ for regret equations. With $\ell_{ia}=\max_b r_{ib}-r_{ia}$, the reduced costs are
+\[
+ h_{tia}=\beta^t w_{ti}k_{ia}-s_{ti}+\ell_{ia}d_{ti},\qquad
+ h^D_{ti}=-d_{ti}+\beta\sum_jP_{ji}d_{t-1,j},
+\]
+where the preceding-date term is zero at $t=0$. The lower certificate is
+\[
+ \max\left\{0,\sum_{ti}s_{ti}+\sum_{tia}\min(0,h_{tia})+
+                  \varepsilon\sum_{ti}\min(0,h^D_{ti})\right\}.
+\]
+The upper certificate is the implementation Bellman evaluation of the serialized common policy. Regret is evaluated at every date and regime using exact rational arithmetic. Neither endpoint is inferred from an optimizer's success flag. Four mutation tests independently reject a negative probability, a forged upper endpoint, a forged lower endpoint, and an invalid transition row. Those tests are fault probes, not a completeness proof for the checker.
+
+\section{All terms of the continuous transfer bound}
+The density experiment uses $R=\max_{i,a}|r_{ia}|$, $K=\max_{i,a}k_{ia}$, and $G=0$. Starting at the terminal date with zero error and zero payoff envelope, backward induction computes
+\[
+ a_t=\beta a_{t+1}+\beta\alpha_h B^J_{t+1},\quad
+ b_t=\beta b_{t+1}+\beta\alpha_h B^C_{t+1},\quad
+ B^J_t=R+\beta B^J_{t+1},\quad B^C_t=K+\beta B^C_{t+1}.
+\]
+The reported $a_h$ and $b_h$ are the maxima over dates. The two finite problems have allowances $\varepsilon+2a_h$ and $\varepsilon-2a_h$. The first supplies a lower endpoint; the second supplies a feasible lifted upper policy. Their independently checked arithmetic widths are $\eta_+$ and $\eta_-$. No finite solve is attempted when the tightening is nonpositive.
+\begin{table}[h]
+\caption{Computed terms in the sufficient transfer-width bound}
+\centering\small
+\begin{tabular}{rrrrrr}
+\toprule $\zeta$&$\eta_+$&$\eta_-$&$2b_h$&Repair bound&Total bound\\\midrule
+\tablerows{revisions/2026-09-25-r43/paper/generated/density_budget.tex}
+\bottomrule
+\end{tabular}
+\end{table}
+The repair term is $D_C4a_h/[(1-\beta)(\varepsilon-2a_h)+4a_h]$. Every displayed total is computed from rational values, with decimal displays only for readability. The measured interval width in the main article is appreciably smaller than this sufficient worst-case bound. For $\zeta=1/10$, $a_h$ exceeds the permissible tightening threshold; that row is retained with its actual error budget and a failed sufficient condition. The exact structural reference is still available because its two aggregation identities hold at that parameter as well. This separates failure of a particular error bound from failure of the economic model or of the optimization problem.
+
+\section{An exact tail bridge for discounted infinite-horizon revision}
+The main computational experiments are finite horizon. There is also a simple infinite-horizon extension with an explicit terminal trust boundary. Consider time-homogeneous bounded primitives, finite actions, and $0<\beta<1$. Let $V^\infty$ be the exact operating fixed point and let $a^*$ be a Borel stationary maximizing selector. Allow common Markov policies to be time dependent, and impose $J_t^p(x)\geq V^\infty(x)-\varepsilon$ for every date and state. Denote this infinite-horizon minimum by $K_R^\infty$. Let $v_T$ be the finite-horizon revision minimum with terminal operating payoff $V^\infty$ and zero terminal implementation cost.
+\begin{proposition}[Tail enclosure]
+For any initial law and $\varepsilon\geq0$,
+\[
+ v_T\leq K_R^\infty\leq v_T+\frac{K\beta^T}{1-\beta}.
+\]
+Thus a finite certificate $[L_T,U_T]$ gives the infinite-horizon certificate $[L_T,U_T+K\beta^T/(1-\beta)]$.
+\end{proposition}
+\begin{proof}
+Take an arbitrary infinite-horizon feasible policy. Replacing its continuation from date $T$ by the operating-optimal selector weakly improves operating values at earlier dates. Its unchanged prefix is therefore feasible for the finite problem with terminal payoff $V^\infty$, and its truncated implementation cost does not exceed its full nonnegative cost. Taking infima proves the lower bound. Conversely, append $a^*$ to any finite feasible prefix. This supplies an operating-feasible common Markov policy at all dates and adds at most $K\beta^T/(1-\beta)$ implementation cost. Approximate minimizers prove the upper bound without assuming a Borel function-space optimizer exists.
+\end{proof}
+This proposition does not give a stationary-policy optimum: the admissible prefix is time dependent. It also does not treat an approximate terminal value as exact, or an average-cost problem as discounted. A numerical use requires a certified terminal fixed point and tail policy, or additional witness errors. No infinite-horizon execution is claimed in the tables.
+
+\section{Data-dependent repair accounting}
+For any two finite-horizon common policies $p,q$, define the implementation action values $Q^p_{k,t}(x,a)=k_t(x,a)+\beta P_t^aC^p_{t+1}(x)$. Their exact performance difference under the state law induced by $q$ is
+\[
+ \int(C_0^q-C_0^p)d\nu
+ =\sum_{t=0}^{T-1}\beta^t\E_q\left[\sum_a(q_t(a\mid X_t)-p_t(a\mid X_t))Q^p_{k,t}(X_t,a)\right].
+\]
+Subtract the two cost Bellman equations and iterate the resulting $q$-transition recursion to prove the identity. If $q_t=(1-\alpha_t)p_t+\alpha_t\delta_{a_t}$, its additional cost is at most the discounted $q$-occupancy average of $\alpha_t$ times the action span of $Q^p_{k,t}$. For a given finite repaired policy this can be much sharper than $D_C\sup\alpha_t$. The generic stopping theorem still needs a uniform bound over unexplored policies; a favorable realized repair cost does not replace that requirement. The new structural cases use exact primal evaluation, and do not charge an unnecessary worst-case repair cost to their actual upper endpoints.
+
+\section{All signed savings in the retained primary cohort}
+The next table is an exact re-tabulation of R40 rational endpoints. It does not change any policy or rerun the primary optimizer. A positive signed saving $L_D-U_R$ proves a gain over every feasible deterministic policy; a nonpositive value establishes no such separation. None of these signs establishes equality of $L_R$ and $U_R$.
+\begin{longtable}{rlrrrrr}
+\caption{All 42 uniform-initial primary certificates and signed deterministic savings}\\
+\toprule $T$&Installed rule&$\varepsilon$&$L_R$&$U_R$&$L_D-U_R$&Width (\%)\\\midrule\endfirsthead
+\toprule $T$&Installed rule&$\varepsilon$&$L_R$&$U_R$&$L_D-U_R$&Width (\%)\\\midrule\endhead
+\tablerows{revisions/2026-09-25-r43/paper/generated/primary_savings_full.tex}
+\bottomrule
+\end{longtable}
+
+\section{Theorem-to-checker map and evidence classification}
+\begin{longtable}{p{.23\textwidth}p{.35\textwidth}p{.32\textwidth}}
+\toprule Object&What is established&What is not inferred\\\midrule\endfirsthead
+\toprule Object&What is established&What is not inferred\\\midrule\endhead
+Slack ladder&Analytic Borel proof; 48 exact tests with action-dependent three-state, three-action kernels, including $\beta=1$&Finite tests are not a machine proof; the rate deteriorates with horizon.\\
+Atomic aggregation&Two explicit kernel identities and a proof over arbitrary Borel policies; exact shear pushforward identity&Not a convergence theorem for arbitrary controlled atomic kernels or approximate lumpability.\\
+Structured LP intervals&Independent rational probabilities, all-restart regrets, actual cost, and residual-corrected lower bounds for every new row&No reliance on solver success as a proof; no assertion about the continuum deterministic optimum.\\
+Density transfer&Nonzero operator error and full propagated budget, plus independent finite certificates at both adjusted allowances&No assertion that every error budget is useful; the failed tightening row is retained.\\
+R41 finest nonlinear audit&Complete independent scalar rebuild of the retained $(32,256,1/2)$ object in the previously successful recorded run&Not a new upper policy, tighter operating tolerance, narrower optimum interval, or local rerun in R42.\\
+Protocol and publication&Pre-execution case registration; content hashes and additive preservation checks&The source was not frozen in the case-registration commit; hashes do not verify a mathematical inequality.\\
+Economic interpretation&Known-model adjustment costs and all-restart operating protection&No estimated primitives, empirical confidence sets, or monetary welfare estimates.\\
+\bottomrule
+\end{longtable}
+The inherited R41 audit reports 92,274,688 support-action inequalities and 2,097,152 state--date cells. It independently reproduces upper cost and lower bound\[U=\frac{1667622841980339}{140737488355328},\qquad L=\frac{2497217525995195}{281474976710656},\]with regret at most $2147483439/4294967296<1/2$. Its arithmetic replay took approximately 1,596 seconds. The manifest retains the source commit, verifier hash, proof hash, successful workflow identifier, and retrieved result. R42 does not misclassify this recorded prior run as a new local re-execution.
+
+\section{Unchanged earlier technical material}
+All earlier repository files remain intact. The separate file \texttt{HISTORY\_R42.pdf} combines the complete R40 article and technical supplement without editing their pages; the latter already includes the R38 article and supplement. Revision-relative labels in that archive are historical. The current article and this supplement state R42's additions directly. The original primary and nonlinear experiments, failed sufficient certificates, adaptive local-LP work, model sensitivities, and stopped-control derivations are not discarded. The stopped-control calculation is archival and is not included among the new completed targets.
+\end{document}

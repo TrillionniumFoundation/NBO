@@ -1,0 +1,77 @@
+\section{Regret-scaled global bounds with endogenous transitions}\label{sec:regret-scaled}
+The linear reduction above requires exogenous transitions. A different structure is available when actions change future state probabilities. Tight operating allowances limit how often a policy can depart from an operating-maximizing action. Expressing implementation cost relative to that action then contracts both factors in the remaining bilinear products. This yields a quantitative bound for a classical McCormick relaxation, rather than only a finite-termination argument.
+
+Throughout this section the state space is finite, $0<\beta<1$, and $\varepsilon>0$. Let $a^*_{ti}$ be the unique operating-maximizing action at $(t,i)$, and let $H$ be its implementation cost. Define the operating disadvantage and the implementation advantage
+\begin{align}
+ d_{tia}&=V_{ti}-r_{tia}-\beta P^a_tV_{t+1}(i),\label{eq:regret-gap}\\
+ g_{tia}&=H_{ti}-k_{tia}-\beta P^a_tH_{t+1}(i).\label{eq:saving-gap}
+\end{align}
+Both vanish at $a^*_{ti}$, while $d_{tia}>0$ for the other actions. Put $\underline d=\min_{t,i,a\ne a^*_{ti}}d_{tia}$. With a fixed finite model, $\underline d>0$. This is a checkable separation condition, not a uniform assertion over a family in which operating actions become tied.
+
+For a common policy $p$, write $D^p=V-J^p$ and $S^p=H-C^p$. Their exact recursions are
+\begin{equation}\label{eq:regret-saving-recursion}
+ D^p_{ti}=\sum_ap_{tia}(d_{tia}+\beta P_t^aD^p_{t+1}(i)),\qquad
+ S^p_{ti}=\sum_ap_{tia}(g_{tia}+\beta P_t^aS^p_{t+1}(i)),
+\end{equation}
+with zero terminal values. Let
+\[
+ \lambda_- =\min\left\{0,\min_{t,i,a\ne a^*_{ti}}\frac{g_{tia}}{d_{tia}}\right\},\qquad
+ \lambda_+ =\max\left\{0,\max_{t,i,a\ne a^*_{ti}}\frac{g_{tia}}{d_{tia}}\right\}.
+\]
+
+\begin{lemma}[Disadvantage and savings cones]\label{lem:savings-cone}
+Every feasible common policy satisfies
+\begin{equation}\label{eq:savings-cone}
+ \sum_{a\ne a^*_{ti}}d_{tia}p_{tia}\leq\varepsilon,\quad
+ \sum_{a\ne a^*_{ti}}p_{tia}\leq\min\{1,\varepsilon/\underline d\},\quad
+ \lambda_-D^p_{ti}\leq S^p_{ti}\leq\lambda_+D^p_{ti}.
+\end{equation}
+In particular, $0\leq D^p\leq\varepsilon$ and
+$\lambda_-\varepsilon\leq S^p\leq\lambda_+\varepsilon$.
+\end{lemma}
+\begin{proof}
+Operating optimality gives $D^p\geq0$. The first recursion in \eqref{eq:regret-saving-recursion} and feasibility give the first inequality; strict action separation gives the second. Iterating the two recursions expresses $D^p$ and $S^p$ as discounted expected sums of $d$ and $g$ under the same policy and state law. The stage inequalities $\lambda_-d\leq g\leq\lambda_+d$ also hold at the maximizing action, where both terms are zero. Taking expectations proves the cone inequalities. The last bounds use the signs of $\lambda_-$ and $\lambda_+$.
+\end{proof}
+
+Eliminate $p_{ti,a^*}=1-\sum_{a\ne a^*}p_{tia}$ and write $\Delta P^a_t=P^a_t-P^{a^*}_t$. The two recursions become
+\begin{align}
+ D_{ti}&=\beta P^{a^*}_tD_{t+1}(i)+\sum_{a\ne a^*}p_{tia}\{d_{tia}+\beta\Delta P^a_tD_{t+1}(i)\},\label{eq:reduced-D}\\
+ S_{ti}&=\beta P^{a^*}_tS_{t+1}(i)+\sum_{a\ne a^*}p_{tia}\{g_{tia}+\beta\Delta P^a_tS_{t+1}(i)\}.\label{eq:reduced-S}
+\end{align}
+The objective is $\nu'H_0-\nu'S_0$. Use the probability simplexes, the first inequality in \eqref{eq:savings-cone}, the savings cones, and ordinary nonnegative-cost bounds. Replace each remaining product $p_{tia}D_{t+1,j}$ or $p_{tia}S_{t+1,j}$ by its four McCormick inequalities over its certified rectangle. All unrestricted feasible policies remain in this linear relaxation. The construction preserves one probability variable per date, state, and action; it does not relax common continuations into restart-specific policies.
+
+\begin{lemma}[Repair of rare departures]\label{lem:rare-repair}
+Suppose a policy is feasible at allowance $\varepsilon+\delta$ and its nonmaximizing action mass is at most $\chi$ at every date and state. Backward repair toward the reference action $a^*_{ti}$, rather than a maximizer of the repaired continuation, gives a feasible common policy with
+\begin{equation}\label{eq:rare-repair}
+ \sup_{t,i}\TV(\widehat p_{ti},p_{ti})\leq
+ \chi\frac{\delta}{(1-\beta)\varepsilon+\delta},\qquad
+ \nu'C_0^{\widehat p}\leq\nu'C_0^p+D_C\chi\frac{\delta}{(1-\beta)\varepsilon+\delta}.
+\end{equation}
+\end{lemma}
+\begin{proof}
+A repaired continuation obeys $J_{t+1}^{\widehat p}\geq V_{t+1}-\varepsilon$. Since $a^*_{ti}$ maximizes the original operating Bellman equation, its value with that continuation is at least $V_{ti}-\beta\varepsilon$. It therefore lies strictly above the target whenever a repair is needed. The proof of Theorem~\ref{thm:repair} applies with this fixed action and bounds the mixing fraction by $\rho_\varepsilon(\delta)$. The total-variation change is exactly that fraction times $1-p_{ti,a^*}$, at most $\chi\rho_\varepsilon(\delta)$. Operating value still improves at every backward step. Lemma~\ref{lem:perturb} gives the cost bound.
+\end{proof}
+
+\begin{theorem}[Quadratic small-allowance relaxation width]\label{thm:quadratic-root}
+Let $L^{\rm LP}_\varepsilon$ be the exact optimum of the regret-scaled relaxation. Set $e_{D,T-1}=0$ and, for $t<T-1$, set
+\[
+ e_{D,t}=\frac{\beta\varepsilon^2}{4}
+ \max_i\sum_{a\ne a^*_{ti}}
+       \frac{\|\Delta P^a_t(i,\cdot)\|_1}{d_{tia}},\qquad
+ e_{S,t}=(\lambda_+-\lambda_-)e_{D,t},\quad e_{S,T-1}=0.
+\]
+Define $E_{D,T}=E_{S,T}=0$ and $E_{D,t}=e_{D,t}+\beta E_{D,t+1}$, $E_{S,t}=e_{S,t}+\beta E_{S,t+1}$. Write $\overline E_D=\max_tE_{D,t}$ and $\chi_\varepsilon=\min\{1,\varepsilon/\underline d\}$. An exact minimizing LP policy can be repaired to a feasible policy of cost $U^{\rm rep}_\varepsilon$ such that
+\begin{equation}\label{eq:quadratic-width}
+ 0\leq U^{\rm rep}_\varepsilon-L^{\rm LP}_\varepsilon
+ \leq E_{S,0}+D_C\chi_\varepsilon
+        \frac{\overline E_D}{(1-\beta)\varepsilon+\overline E_D}.
+\end{equation}
+For a fixed finite model with a strictly positive operating-action gap and fixed $\beta<1$, the right side is $O(\varepsilon^2)$ as $\varepsilon\downarrow0$.
+\end{theorem}
+\begin{proof}
+For any point in a McCormick rectangle, the discrepancy between its product coordinate and the actual product of its two factor coordinates is at most one quarter of the product of their interval lengths. Here a nonreference probability has length at most $\varepsilon/d_{tia}$. A regret coordinate has length $\varepsilon$, and a savings coordinate has length at most $(\lambda_+-\lambda_-)\varepsilon$. Applying the triangle inequality to \eqref{eq:reduced-D}--\eqref{eq:reduced-S} gives one-step errors $e_D,e_S$. Recombining the reference and nonreference terms gives the stochastic kernel $P^p$; its sup-norm is one. Backward comparison therefore bounds actual regret by $\varepsilon+\overline E_D$ and the actual policy cost by $L^{\rm LP}_\varepsilon+E_{S,0}$. The LP's local disadvantage inequality bounds its nonreference mass by $\chi_\varepsilon$. Lemma~\ref{lem:rare-repair} proves \eqref{eq:quadratic-width}. For fixed primitives, $E_D,E_S=O(\varepsilon^2)$ and $\chi_\varepsilon=O(\varepsilon)$; the repair ratio is $O(\varepsilon)$.
+\end{proof}
+
+This theorem does not bound the time required to solve an arbitrary LP, nor the size of a general global search. Its gain is quantitative: shrinking the operating allowance contracts both bilinear factors, and rare-departure repair prevents a first-order feasibility penalty from destroying the quadratic bound. An exact operating tie, a vanishing action gap, or a discount factor tending to one can invalidate the uniform rate. Such a case retains the ordinary finite-state certificates and complete search; it is not discarded. For a nonoptimal feasible LP proposal, its LP objective gap must be added to \eqref{eq:quadratic-width}. In computation we instead report independently checked lower and deployed-policy upper endpoints, which already include numerical proposal and rounding losses.
+
+The use of McCormick envelopes and variable-bound tightening is classical \citep{McCormick1976}. The additional result is the disadvantage/savings reduction and its tolerance-dependent repair rate for the same all-restart constrained problem. The direct unscaled formulation remains a legitimate competitor. The experiment below tests the incremental contribution of these bounds without claiming dominance over every implementation of global optimization.
