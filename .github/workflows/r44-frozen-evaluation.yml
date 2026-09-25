@@ -1,0 +1,67 @@
+name: R44 frozen complete-solver evaluation
+on:
+  push:
+    branches: [revision/econometrica-r44-global-bellman-envelopes-2026-09-25]
+    paths: ['.github/workflows/r44-frozen-evaluation.yml']
+permissions:
+  contents: read
+env:
+  OPENBLAS_NUM_THREADS: '1'
+  OMP_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  PYTHONINTMAXSTRDIGITS: '0'
+jobs:
+  environment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        case: [maintenance0, maintenance1, maintenance2, maintenance3, inventory0, inventory1, inventory2, inventory3, queue0, queue1, queue2, queue3, tie0, tie1, tie2, tie3]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 88314815c10f197e6cac10fc503658dbdbe16bd4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install numpy==2.3.5 scipy==1.17.0 pyscipopt==6.2.1
+      - name: Execute and independently check all three methods on one registered environment
+        run: |
+          python revisions/2026-09-25-r44/replication/run_case.py '${{ matrix.case }}'
+      - name: Record frozen source and run identity
+        if: always()
+        run: |
+          mkdir -p revisions/2026-09-25-r44/results/${{ matrix.case }}
+          printf '{"source_commit":"88314815c10f197e6cac10fc503658dbdbe16bd4","run_id":"%s","case":"%s"}\n' '${{ github.run_id }}' '${{ matrix.case }}' > revisions/2026-09-25-r44/results/${{ matrix.case }}/RUN_IDENTITY.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r44-case-${{ matrix.case }}
+          path: |
+            revisions/2026-09-25-r44/results/${{ matrix.case }}
+            revisions/2026-09-25-r44/proofs/${{ matrix.case }}
+          retention-days: 30
+  allowance-diagnostics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 88314815c10f197e6cac10fc503658dbdbe16bd4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install numpy==2.3.5 scipy==1.17.0 pyscipopt==6.2.1
+      - name: Execute all predeclared allowance points and complete theorem constants
+        run: python revisions/2026-09-25-r44/replication/diagnostics.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r44-allowance-diagnostics
+          path: |
+            revisions/2026-09-25-r44/results/scaling_diagnostics.json
+            revisions/2026-09-25-r44/results/all_model_constants.json
+            revisions/2026-09-25-r44/proofs/scaling
+          retention-days: 30
