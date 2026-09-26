@@ -1,0 +1,65 @@
+\input{revisions/2026-09-26-r50/paper/preamble}
+\input{revisions/2026-09-26-r50/paper/generated/metrics}
+\begin{document}
+\begin{frontmatter}
+\title{Certified Bellman Operators for Costly Policy Revision}
+\runtitle{Common Policies and Paired Certification}
+\begin{aug}\author[id=au1,addressref={add1}]{\fnms{Qian}~\snm{QI}\ead[label=e1]{qiqian@pku.edu.cn}}\address[id=add1]{\orgname{Peking University}}\end{aug}
+\begin{abstract}
+An organization revises a decision rule at minimum implementation cost while protecting operating performance after every state--date restart. One randomized Markov continuation must serve all restarts. We characterize the occupation relaxation optimized by restart prices and certify the loss from a computed price portfolio. Refinement over shared regret budgets restores the common continuation with an explicit approximation bound. For continuous-density kernels, restriction and averaging yield paired finite approximations of the original Borel-policy optimum. Uniform-reset dynamics admit a linear moment representation and integrated lower certificates valid for all Borel policies. In a source-frozen study, all 39 diffuse-state models attain certificate width $10^{-3}$ with each of two proposal backends. Separate occupation audits tightly resolve the price optimum in six previously unfinished finite cases. All historical intervals and unsuccessful finite refinements are retained.
+\end{abstract}
+\begin{keyword}\kwd{Dynamic programming}\kwd{Policy revision}\kwd{Common Markov policies}\kwd{Constrained control}\kwd{Verified computation}\end{keyword}
+\end{frontmatter}
+
+\section{Introduction}\label{sec:intro50}
+An organization may promise operating protection whenever its decision rule is restarted while evaluating implementation expense under its initial population. These commitments restrict a single policy in different ways. The operating promise applies at every state and date, including states that have little initial probability. Implementation expense is an ex ante objective and is affected by the states the policy subsequently visits. Plans optimized separately for individual restarts need not prescribe the same behavior at their common successor states.
+
+We study minimum-cost policy revision under this common-continuation requirement. The decision variable is a Borel randomized Markov policy: one probability vector at each state and date, with fresh randomization conditional on that state and date. We do not replace it by a hidden initial lottery over persistent plans. The implementation cost can price departures from an installed action rule; operating protection requires that the value loss relative to operating-optimal behavior never exceed a specified allowance. The economic object is the least cost of meeting that promise, not the least initial-average operating loss.
+
+The paper supplies a chain from this policy object to paired, independently readable cost bounds. Its first component identifies what restart prices optimize. An occupation-flow relaxation permits different incoming edges to allocate a successor's regret allowance differently. A shared successor-budget equation restores the original policy problem, whereas the relaxed price problem can have a strict gap. A two-period rational example separates a constant multiplier, the complete restart-price family, and the common-policy optimum. We also construct feasible occupation witnesses that place an upper bound on the optimum of the \emph{entire} price family. Thus a small numerical price bound is no longer confused with a certificate that price optimization has been exhausted.
+
+The second component exploits the missing consistency directly. Instead of subdividing every action probability, a covering algorithm subdivides one regret budget for each noninitial, nonterminal state--date pair. Conditional on budget intervals, its lower problem is a sequence of one-constraint simplex programs. A common-policy repair supplies an upper endpoint. The approximation bound separates budget diameter, operating-witness error, and deployment rounding. The coordinate count is $n(T-1)$ rather than $nTm$; the covering guarantee remains exponential. This is a structural reduction with a quantitative guarantee, not an inference of polynomial complexity from a bilinear reformulation.
+
+The third component establishes paired approximation for genuinely diffuse states. For a kernel with a certified total-variation approximation by a cellwise density, averaging an arbitrary Borel policy gives a finite policy in the approximating model without changing its initial cost or violating its all-restart constraints. Uniform primitive-error bounds then transfer a finite lower endpoint at a relaxed allowance and a finite upper endpoint at a tightened allowance to the original continuous-state problem. The allowance perturbation vanishes under refinement by a constructive repair argument. The initial distribution is kept fixed; it is not replaced by a finitely observed population.
+
+A uniform-reset subclass makes the continuum construction especially transparent. Its common continuation is represented by cumulative regret moments. The policy and the moments obey linear constraints, and a Lagrange certificate integrates the minimum of finitely many affine functions. This lower bound is valid against \emph{all} Borel policies, not only the cell policies used to construct the upper bound. Endpoint checks establish operating protection everywhere on each cell. The associated numerical study varies horizon, action count, discounting, allowance, and spatial slope one factor at a time, with three new seeds. All 39 models attain the $10^{-3}$ absolute certificate target with both proposal backends. The kernels have continuous densities and the initial law is uniform; these results are distinct from the earlier finite-fleet theorem.
+
+The finite comparisons identify a different computational boundary. At construction budgets of two and eight seconds, the new budget cover certifies \RFFBudgetTwo{} and \RFFBudgetEight{} of the twelve historical primary cases, respectively; the probability-space price formulation certifies \RFFPriceTwo{} and \RFFPriceEight{}. We retain these outcomes rather than present a coordinate reduction as a universal speed improvement. A separate audit brackets the uncapped price optimum to width below $10^{-8}$ in six of the eight historically unclosed cases. Further price searching alone cannot resolve a common-policy gap in those rows. The other two price audits remain visibly wider. The thirty earlier positive-cost intervals for moving atomic dynamics under a uniform initial law are retained unchanged; the new density theorem is not invoked across their singular transition approximation.
+
+\subsection{Relation to the literature}
+Occupation measures are a standard representation for expected constrained Markov decision problems \citep{Altman1999}. Theorem~\ref{thm:flow} instead derives the occupation program of this particular restart-price family and identifies its missing common-budget equations. The strict separation in Theorem~\ref{thm:separation} is essential: ordinary occupation duality does not turn an initial-average constraint into every restart's constraint. Information-relaxation bounds \citep{BrownSmithSun2010,BrownSmith2014} relax information restrictions; our price relaxation separates allocations of a common successor budget and does not change nonanticipativity.
+
+The LP approximation of a value function in a chosen basis \citep{deFariasVanRoy2003} and finite-state approximation of constrained control \citep{DufourPrietoRumeau2013,Saldi2018} address related numerical problems. The distinctive transfer in Theorem~\ref{thm:density-pair50} concerns both endpoints of an all-state constrained \emph{revision-cost} optimum, with the same initial law and an explicit allowance correction. Its averaging lemma is stated for the whole Borel policy class. Weak convergence alone would not control arbitrary discontinuous policies; the total-variation assumption is deliberate. The existing exact finite-atomic restriction--extension theorem is retained as a separate result.
+
+Robust dynamic programming uses uncertainty sets for transition laws and rectangularity to obtain recursive optimization \citep{Iyengar2005,NilimElGhaoui2005}. We keep the target transition law fixed and use an enclosure of its approximation error to protect the target policy, rather than optimize a newly specified robust-control objective. Safe policy improvement from batch data protects performance relative to a data-generating baseline \citep{Laroche2019}. Here the operating reference is the optimal operating value, the guarantee is at every restart, and implementation cost is minimized subject to that guarantee. Statistical kernel uncertainty would require an additional simultaneous error event; arithmetic certification alone is not such an event.
+
+The covering constructions use established global-optimization ideas, including McCormick envelopes \citep{McCormick1976}. Moment hierarchies offer another approach to polynomial optimization \citep{Lasserre2001}; we do not claim dominance over them. Our contribution is a smaller continuation-budget cover, its explicit repair modulus, and an auditable cost interval for the original policy object. The reset reduction similarly uses linear semi-infinite optimization principles \citep{HettichKortanek1993}, but provides explicit cumulative-moment equations, a Borel-valid integrated dual, and a whole-cell deployment check for this contract. Numerical proposals are separated from mathematical evidence as in verified computation \citep{Rump2010}.
+
+The economic motivation is computational rather than an estimated application. Dynamic economic modeling requires approximation and error accounting \citep{Judd1998,BrummScheidegger2017}; an operating oracle with certified error can enter our bounds without revealing exact values. The present experiments do not establish the cost of a learned high-dimensional oracle. Unlike the replacement application of \citet{Rust1987}, the fleet and reset primitives here are designed, not estimated. Decision-cost normalization is therefore reported without an empirical dollar or welfare interpretation.
+
+\section{The common-policy revision problem}\label{sec:model48}
+Let $X$ be a standard Borel space, $A=\{1,\ldots,m\}$, and $t=0,\ldots,T-1$. The known transition kernels $P_t^a$ are Borel. Rewards, nonnegative implementation costs, and terminal rewards are Borel and satisfy
+\[
+ |r_t(x,a)|\le R,\qquad 0\le k_t(x,a)\le K,\qquad |g(x)|\le G.
+\]
+Throughout, $0<\beta<1$, $T<\infty$, and $\varepsilon>0$. Define $\Ssum h=\sum_{j=0}^{h-1}\beta^j$ and $\Ssum0=0$. A policy $p$ is a family of Borel probability vectors $p_t(\cdot\mid x)$. Its operating and implementation values and the optimal operating value satisfy
+\begin{align}
+ J_T^p&=V_T=g,& C_T^p&=0,\nonumber\\
+ V_t(x)&=\max_a\{r_t(x,a)+\beta P_t^aV_{t+1}(x)\},\label{eq:value48}\\
+ J_t^p(x)&=\sum_a p_t(a\mid x)\{r_t(x,a)+\beta P_t^aJ_{t+1}^p(x)\},\label{eq:policy48}\\
+ C_t^p(x)&=\sum_a p_t(a\mid x)\{k_t(x,a)+\beta P_t^aC_{t+1}^p(x)\}.\nonumber
+\end{align}
+For a specified initial probability law $\nu$, the target is
+\begin{equation}\label{eq:target48}
+ \KR(\nu,\varepsilon)=\inf_{p\in\cF(\varepsilon)}\int C_0^p\,d\nu,
+ \qquad \cF(\varepsilon)=\{p:J_t^p(x)\ge V_t(x)-\varepsilon\text{ for every }t,x\}.
+\end{equation}
+An operating-optimal Borel policy exists by backward first-maximizer selection, so this feasible set is nonempty. We use an infimum when a general Borel optimizer has not been established. Finite models have a compact policy simplex and continuous constraints, hence attain the minimum.
+
+Set
+\begin{equation}\label{eq:regret48}
+ d_t(x,a)=V_t(x)-r_t(x,a)-\beta P_t^aV_{t+1}(x),\qquad D_t^p=V_t-J_t^p.
+\end{equation}
+Then $d_t\ge0$, $D_T^p=0$, and $D_t^p=\sum_a p_t(a\mid x)(d_t(x,a)+\beta P_t^aD_{t+1}^p(x))$. The economic restriction is $0\le D_t^p\le\varepsilon$ everywhere. Its initial-law analogue, $\int D_0^p\,d\nu\le\varepsilon$, is weaker and will be used only as a comparison.
+
+For an installed rule $a^0$, a representative cost is $k_t(x,a)=w_t(x)\ind\{a\ne a_t^0(x)\}$. Physical switching from the previous action is a different friction and requires augmenting the state. A fixed lottery-administration fee $f$ can be compared with a certificate in a designed budget exercise, but is not silently included in $k$. Scaling implementation costs by $c>0$ scales $\KR,L,U$, and an appropriate absolute target by $c$, while leaving the operating constraint unchanged.

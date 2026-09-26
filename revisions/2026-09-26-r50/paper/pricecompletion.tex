@@ -1,0 +1,47 @@
+\section{Certifying the price-search loss}\label{sec:price-completion50}
+The price supremum is a relaxation value, but even that value need not be attained by a capped, time-limited, partially enumerated search. A certificate for the relaxation itself separates this numerical question from the common-policy question. Write $\mathcal O(\mu)$ for the occupation program in Theorem~\ref{thm:flow}, and let $I=\{i:\nu_i>0\}$. For $S\subseteq I$, put $\mu_i^S=\nu_i\ind\{i\in S\}$. The clipped price optimum is
+\[
+ L^*_{\rm price}=\max_{S\subseteq I}\mathcal O(\mu^S).
+\]
+This is a finite maximum; states of zero initial weight need not be enumerated in the masks.
+
+\begin{proposition}[A complete portfolio-loss certificate]\label{prop:portfolio50}
+For every nonempty initial-support mask $S$, suppose $B_S$ is the objective of a verified feasible occupation witness for $\mathcal O(\mu^S)$, or the masked cost of a verified feasible common policy. Let $\ell$ be any clipped price lower endpoint reconstructed from nonnegative prices and valid operating lower disadvantages. Then
+\begin{equation}\label{eq:portfolio50}
+ \ell\le L^*_{\rm price}\le B:=\max(0,\max_{S\ne\varnothing}B_S),
+ \qquad 0\le L^*_{\rm price}-\ell\le B-\ell.
+\end{equation}
+The upper bound is independent of the cap, candidate mask selection, and numerical time limit used to construct $\ell$. A mask can be discarded from further optimization once its verified upper bound is below the best retained lower bound. A missing or unsuccessful occupation construction can always be replaced by the corresponding feasible-policy cost.
+\end{proposition}
+\begin{proof}
+Weak duality gives $\mathcal O(\mu^S)\le B_S$. The common-policy completion in Theorem~\ref{thm:flow} shows that a feasible policy supplies an occupation witness for every masked initial measure, so the alternative upper bound is valid. Taking the maximum over masks gives the right inequality. The price inequality, witness monotonicity, and mask characterization give the left inequality. No numerical claim of LP optimality is used. The pruning assertion follows immediately from the two inequalities.\end{proof}
+
+We construct an occupation witness without trusting approximate flow equalities. Normalize a numerical occupation row into an action distribution and propagate that distribution from $\mu^S$ using exact transitions. The resulting $y$ satisfies flow conservation exactly. On each edge put $f_{tij}=\beta\sum_a y_{tia}P_{tiaj}$. Reconstruct a number $b_{tij}\in[0,\varepsilon]$ from the numerical allocation and set
+\[
+ \alpha_{tij}=f_{tij}b_{tij},\qquad
+ \gamma_{tij}=f_{tij}(\varepsilon-b_{tij}).
+\]
+These equations enforce the edge inequalities with equality, but the state capacities may still fail. The following repair is entirely in the occupation relaxation; it does not pretend that its edge budgets already define a common policy.
+
+\begin{lemma}[Strict occupation repair]\label{lem:occupation-repair50}
+In a finite model with exact disadvantages $d$, let $\bar d=\max d_{tia}$. At every row mix an operating-best action with the uniform action distribution, giving the uniform distribution weight
+\[
+ \theta=\min\{1/2,\varepsilon(1-\beta)/(4\bar d)\}
+\]
+when $\bar d>0$, and $\theta=1/2$ otherwise. Propagate its exact occupation $y^\circ$ from $\mu^S$ and set $\alpha^\circ=\gamma^\circ=\varepsilon f^\circ/2$. Its state-capacity slack is strictly positive at every state reachable from $S$ under any action sequence. If $s_{ti}$ is the capacity slack of a flow-feasible reconstructed candidate and $s^\circ_{ti}$ that of this reference, then mixing the two occupations with reference weight
+\begin{equation}\label{eq:occupation-mix50}
+ \tau=\max_{s_{ti}<0}\frac{-s_{ti}}{s^\circ_{ti}-s_{ti}},
+ \qquad \max\varnothing=0,
+\end{equation}
+produces a feasible occupation witness. All quantities are computable by finite rational operations.
+\end{lemma}
+\begin{proof}
+At a noninitial state with mass $z^\circ_{ti}$, the incoming $\gamma^\circ$ sum is $\varepsilon z^\circ_{ti}/2$, and the outgoing $\alpha^\circ$ sum is at most $\beta\varepsilon z^\circ_{ti}/2$. The expected disadvantage is at most $\theta\bar d\le\varepsilon(1-\beta)/4$. Thus the capacity slack is at least $\varepsilon(1-\beta)z^\circ_{ti}/4$. An initial state has no incoming allocation and an at least as large margin. At the terminal decision date there is no outgoing allocation, which also only increases the margin. The reference uses every action with positive probability, so its mass is positive wherever any candidate can send flow from $S$. At unreachable states both occupations and their edge allocations vanish. Flow conservation and the edge inequalities are linear and survive mixing. Equation~\eqref{eq:occupation-mix50} makes each remaining capacity slack nonnegative.\end{proof}
+
+An alternative finite completion uses only rational LP theory. After splitting free variables and adding slacks, clear row denominators in the price program to obtain $Ax=b$, $x\ge0$. Delete redundant equations and let $r$ be the row rank and $H\ge1$ an integer bound on the absolute entries of $[A\ b]$. For every mask the finite optimum has a basic feasible solution. Cramer's rule gives a common sufficient coordinate cap
+\[
+ \Lambda_* = r!H^r.
+\]
+Indeed a nonsingular integer basis has determinant of magnitude at least one and every numerator determinant is bounded by $r!H^r$. The constraint matrix and right-hand side do not change with the mask. Enumerating masks and exact bases therefore completes the price problem in finitely many steps. This cap can be extremely large; we use occupation witnesses, not this worst-case number, in the numerical audit.
+
+Proposition~\ref{prop:portfolio50} is a bound on the loss of the \emph{whole computed portfolio}. It does not assign an unidentified portion of that loss separately to cap choice, omitted masks, operating enclosures, and premature LP stopping. The fixed-field operating-enclosure loss is bounded separately in the appendix. When $B-\ell$ is small but the original common-policy interval remains wide, further searching within the price family cannot supply the missing common-continuation consistency.

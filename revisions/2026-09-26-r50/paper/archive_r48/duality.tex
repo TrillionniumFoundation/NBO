@@ -1,0 +1,98 @@
+\section{What restart prices optimize}\label{sec:dual48}
+For bounded nonnegative Borel prices $\lambda_t$ with $\lambda_T=0$, define $u_T=0$ and
+\begin{equation}\label{eq:price48}
+ u_t(x)=\min_a\left\{k_t(x,a)+\lambda_t(x)(d_t(x,a)-\varepsilon)
+ +\beta P_t^a\!\left[u_{t+1}+\varepsilon\min\{\lambda_t(x),\lambda_{t+1}\}\right](x)\right\}.
+\end{equation}
+Every feasible common policy satisfies $C_t^p+\lambda_t(D_t^p-\varepsilon)\ge u_t$. Indeed, backward substitution leaves the nonnegative hinge
+\[
+ (\lambda_t(x)-\lambda_{t+1}(y))_+D_{t+1}^p(y)
+ +(\lambda_{t+1}(y)-\lambda_t(x))_+(\varepsilon-D_{t+1}^p(y)).
+\]
+Together with $C_t^p\ge0$, this proves the lower bound
+\begin{equation}\label{eq:clipped48}
+ L(\lambda)=\int\max\{0,u_0\}\,d\nu\le\KR(\nu,\varepsilon).
+\end{equation}
+The same induction permits lower disadvantages in place of $d$, an observation used by the implemented witness-only method.
+
+\subsection{An exact finite occupation interpretation}
+For this subsection let $X=\{1,\ldots,n\}$. Write $P_{tia,j}$ for the transition probability and let $\mu$ be any nonnegative initial subprobability. For nonnegative variables $y_{tia}$ define $z_{ti}=\sum_a y_{tia}$ and $f_{tij}=\beta\sum_a y_{tia}P_{tia,j}$. Edges only run from date $t$ to date $t+1$, for $t<T-1$. Set missing edge sums to zero. Consider the linear program
+\begin{align}
+ \mathcal O(\mu)=\min_{y,\alpha,\gamma\ge0}\quad&\sum_{t,i,a}k_{tia}y_{tia},\label{eq:occupation48}\\
+ z_{0i}=\mu_i,\quad z_{ti}&=\sum_h f_{t-1,hi}\quad(t\ge1),\nonumber\\
+ \sum_a y_{tia}(\varepsilon-d_{tia})&\ge\sum_j\alpha_{tij}+\sum_h\gamma_{t-1,hi},\label{eq:budget48}\\
+ \alpha_{tij}+\gamma_{tij}&\ge\varepsilon f_{tij}.\label{eq:edge48}
+\end{align}
+The variables $y$ are discounted occupations. The two nonnegative allocations on an incoming edge need not encode the same successor regret as allocations from other incoming states.
+
+\begin{theorem}[Price supremum and common-budget completion]\label{thm:flow}
+For every finite model satisfying Section~\ref{sec:model48},
+\begin{equation}\label{eq:duality48}
+ \sup_{\lambda\ge0}\sum_i\mu_i u_{0i}(\lambda)=\mathcal O(\mu).
+\end{equation}
+Both sides have finite attained optima. Adding variables $b_{ti}\in[0,\varepsilon]$, $1\le t<T$, and the equations
+\begin{equation}\label{eq:shared48}
+ \alpha_{tij}=f_{tij}b_{t+1,j},\qquad
+ \gamma_{tij}=f_{tij}(\varepsilon-b_{t+1,j})
+\end{equation}
+to \eqref{eq:occupation48}--\eqref{eq:edge48} makes its optimum equal to the original all-restart common-policy value with objective measure $\mu$. Thus price optimization solves an explicitly identified relaxation; restoring shared successor budgets solves the stated policy problem.
+\end{theorem}
+\begin{proof}
+Introduce free variables $v_{ti}$ and nonnegative variables $\lambda_{ti},h_{tij}$, with $v_T=\lambda_T=0$. The price linear program maximizes $\sum_i\mu_i v_{0i}$ subject to
+\begin{align}
+ v_{ti}-\beta\sum_jP_{tia,j}v_{t+1,j}
+ +(\varepsilon-d_{tia})\lambda_{ti}
+ -\beta\varepsilon\sum_jP_{tia,j}h_{tij}&\le k_{tia},\label{eq:priceLP48}\\
+ h_{tij}\le\lambda_{ti},\qquad h_{tij}&\le\lambda_{t+1,j}.\nonumber
+\end{align}
+There are no $h$ variables in the last period. Given a price field, increasing $h$ to the corresponding minimum can only relax these inequalities. Backward maximization of $v$ then gives exactly \eqref{eq:price48}. Conversely, \eqref{eq:price48} and those minima are feasible. This identifies the linear-program value with the supremum on the left of \eqref{eq:duality48}.
+
+Assign dual multipliers $y$ to \eqref{eq:priceLP48} and $\alpha,\gamma$ to the two upper bounds on $h$. The free $v$ variables give occupation conservation. The nonnegative $\lambda$ variables give \eqref{eq:budget48}; the nonnegative $h$ variables give \eqref{eq:edge48}. The resulting dual is precisely \eqref{eq:occupation48}. It is feasible: for any feasible policy set $y_{tia}=\beta^t\Pr_\mu^p(X_t=i)p_t(a\mid i)$, $\alpha_{tij}=f_{tij}D_{t+1,j}^p$, and $\gamma_{tij}=f_{tij}(\varepsilon-D_{t+1,j}^p)$. At a positive-date node the budget inequality is an equality; at a root it is its all-restart regret inequality. The primal price program is also feasible, for example with zero prices and sufficiently small $v$. Its value is bounded by a feasible policy's cost. Finite-dimensional linear-program duality proves equality and attainment.
+
+The same policy construction satisfies \eqref{eq:shared48} with $b=D^p$, so the completed program has value at most the original optimum. In the reverse direction, take a completed feasible solution. At every node with $z_{ti}>0$, put $p_t(a\mid i)=y_{tia}/z_{ti}$. Conservation ensures that a positive-probability transition of this policy goes to a positive-occupation node. For $t\ge1$, substituting \eqref{eq:shared48} in \eqref{eq:budget48} and using incoming conservation gives
+\[
+ b_{ti}\ge\sum_a p_t(a\mid i)\{d_{tia}+\beta\sum_jP_{tia,j}b_{t+1,j}\},
+\]
+with terminal budget zero. At roots of positive $\mu$ mass the same argument replaces $b_{0i}$ by $\varepsilon$. Backward induction gives actual regret at most $b$ at positive-date occupied nodes and at most $\varepsilon$ at roots. At an unoccupied node choose a first maximizer of $r_t+\beta P_tJ_{t+1}^p$ after the later policy has been completed. If the future policy is globally feasible, this yields $J_t^p\ge V_t-\beta\varepsilon\ge V_t-\varepsilon$. Occupied transitions do not enter unoccupied successors, so this extension does not change their values. It is globally feasible and has objective $\sum ky$. This proves the reverse inequality.
+\end{proof}
+
+The theorem does not say that a usual occupation-measure formulation is incapable of expressing common policies. It gives the additional bilinear compatibility which this particular price relaxation omits. The problem-specific content is the precise edge allocation and its completion, not linear-program duality itself.
+
+\begin{corollary}[Clipping and constant multipliers]\label{cor:clipping48}
+In a finite model,
+\begin{equation}\label{eq:masks48}
+ \sup_\lambda L(\lambda)=\max_{S\subseteq\operatorname{supp}\nu}\mathcal O(\nu\ind_S).
+\end{equation}
+For a constant price $\lambda_{ti}=\ell$ at all nonterminal dates, the un-clipped objective is
+\[
+ \sum_i\nu_i u_{0i}=\inf_p\left\{\int C_0^p\,d\nu+\ell\left(\int D_0^p\,d\nu-\varepsilon\right)\right\}.
+\]
+Consequently the best constant-multiplier bound is no larger than the un-clipped state--date-price supremum, which is no larger than $\KR$.
+\end{corollary}
+\begin{proof}
+For every vector $v$, $\sum_i\nu_i\max(0,v_i)=\max_S\sum_{i\in S}\nu_i v_i$. A finite maximum commutes with a supremum, so Theorem~\ref{thm:flow} proves \eqref{eq:masks48}. For the second statement, the price correction cancels successive constant-price allowance terms. Summing them along a trajectory leaves $-\ell\varepsilon$, while the disadvantages telescope to $D_0^p$. Backward minimization of the transformed objective proves the identity.
+\end{proof}
+
+The implementation uses a finite price cap and numerically proposed prices. It enumerates all nonempty masks when $n\le4$ and otherwise proposes the full mask and positive-mass singletons, subject to a declared time budget. Every proposed field is reconstructed rationally and ranked by its clipped certificate. A truncated mask search is not advertised as attaining \eqref{eq:masks48}; the earlier un-clipped-only objective is not silently equated with the displayed bound. Appendix~\ref{app:clipping48} gives an exact example in which the full-mask optimum is $3/8$ while a clipped field attains $15/32$.
+
+\subsection{A strict separation with exact rational values}
+\begin{theorem}\label{thm:separation}
+There is a two-state, two-period, two-action model with action-independent transitions for which the constant-multiplier optimum, the clipped restart-price supremum, and the common-policy optimum are respectively
+\begin{equation}\label{eq:strict48}
+ \frac54\;<\;\frac{27}{16}\;<\;\frac74.
+\end{equation}
+The first two values have exact matching primal and dual witnesses. The final value follows from a one-variable affine minimization.
+\end{theorem}
+\begin{proof}
+Take $\beta=\varepsilon=1/2$, zero terminal reward, and actions $G,B$ with operating rewards $0,-1$. Every transition goes to state 1. At date 0 the cost of $G$ is 1 in state 1 and 3 in state 2; at date 1 it is $3/2$ in either state. Action $B$ costs zero. Let $\nu=(1/2,1/2)$. Then $V=0$ and $d(G)=0,d(B)=1$.
+
+Let $q$ denote the probability of $B$ at date 1 in state 1 and $q_i$ the two date-0 probabilities. Feasibility requires $0\le q\le1/2$ and $q_i\le1/2-q/2$. Costs decrease with each $q_i$, so they equal these upper limits at an optimum. The objective becomes $7/4+q/4$, minimized at $q=0$ with value $7/4$.
+
+Set $\lambda_0=(1,3)$ and $\lambda_1=(3/2,3/2)$. The recurrence gives $u_1=(3/4,3/4)$ and $u_0=(9/8,9/4)$, hence the lower value $27/16$. A feasible occupation witness in \eqref{eq:occupation48} takes the date-0 probabilities of $B$ as $(1/4,1/2)$ and the date-1 probability as $1/4$. The discounted occupations are $y_{01}=(3/8,1/8)$, $y_{02}=(1/4,1/4)$, and $y_{11}=(3/8,1/8)$. On the two incoming edges use $(\alpha,\gamma)=(1/8,0)$ and $(0,1/8)$. Every occupation, node-budget, and edge inequality holds, and the objective is $27/16$. These matching witnesses prove the un-clipped supremum.
+
+Clipping cannot improve it. With initial mass only at state 1 the original optimum is $9/8$ (choose $q=1/2$); with mass only at state 2 it is $9/4$ (choose $q=0$). Every price potential at the corresponding root is bounded by that positive optimum, hence so is its positive part. The same price field attains both bounds simultaneously.
+
+Finally, for the expected-initial-regret problem choose $(q_1,q_2,q)=(0,1,0)$. Its average regret is $1/2$ and its cost is $5/4$. The constant price $\ell=3$ gives $u_0=(1/4,9/4)$ and the same value. Weak duality proves the constant-multiplier optimum $5/4$. The conflicting preferred terminal randomizations explain the gap between the middle and final values: incoming edges cannot deploy different values of $q$ at their common successor.
+\end{proof}
+
+The separation supplies a constructive reason to refine shared policy variables rather than assuming that more price proposals alone must close every interval. It also distinguishes a policy-to-certificate identity from a true optimization error. The former's clipping correction is explicitly negative: if its un-clipped nonnegative slack sum is $\mathcal S$, then $C^p(\nu)-L(\lambda)=\mathcal S-\int(-u_0)_+d\nu$. We do not call this clipped expression a sum of nonnegative terms. The full earlier identity and its case-level diagnostics are retained in the supplement.

@@ -1,0 +1,82 @@
+\section{Refinement over shared continuation budgets}\label{sec:budget50}
+The exact occupation completion identifies a smaller set of coordinates in which to enforce consistency. In a finite model, give every state $i$ at dates $t=1,\ldots,T-1$ one interval $[l_{ti},h_{ti}]\subseteq[0,\varepsilon]$ for its \emph{actual cumulative regret}. Set $l_{0i}=0$, $h_{0i}=\varepsilon$, and $l_{Ti}=h_{Ti}=0$. One budget is shared across all incoming edges. There are $d_B=n(T-1)$ variable coordinates, independently of the action count.
+
+Let $\underline d$ be the nonnegative lower disadvantage constructed from the operating witnesses. At each row define the necessary local polytope
+\begin{equation}\label{eq:budget-row50}
+ \mathcal P_{ti}(l,h)=\left\{p\in\Delta_m:
+ \sum_a p_a\left(\underline d_{tia}+\beta\sum_jP_{tiaj}l_{t+1,j}\right)\le h_{ti}\right\}.
+\end{equation}
+Starting from $H_T=0$, compute
+\begin{equation}\label{eq:budget-bellman50}
+ H_{ti}=\min_{p\in\mathcal P_{ti}(l,h)}
+ \sum_a p_a\left(k_{tia}+\beta\sum_jP_{tiaj}H_{t+1,j}\right).
+\end{equation}
+An empty row certifies an empty budget box. Otherwise each minimum is attained by a feasible pure action or a mixture of two actions. To see this, a simplex with one additional inequality has extreme points with at most two nonzero coordinates. Enumerating the $m$ pure actions and the crossing pairs is therefore an exact rational node solver, without a floating LP or a bilinear product at that node.
+
+\begin{proposition}[Budget-box lower bound]\label{prop:budget-lower50}
+For any feasible common policy whose regrets lie in the specified box, $C^p_{ti}\ge H_{ti}$ at every state and date. Consequently $\nu H_0$ is a valid box lower bound. A partition of $[0,\varepsilon]^{d_B}$ by such boxes, together with a feasible policy of cost $U$, gives the global lower endpoint
+\[
+ L=\min\{U,\min_{B\text{ live}}\nu H_0(B)\}.
+\]
+Infeasible boxes may be discarded, and child lower bounds may be increased to their parent's lower bound.
+\end{proposition}
+\begin{proof}
+The regret recursion and $D^p_{t+1}\ge l_{t+1}$ imply that the row of any such policy lies in \eqref{eq:budget-row50}. Backward induction in the nonnegative transition probabilities proves $C^p\ge H$. Every feasible common policy has a regret vector in the original cube and therefore in a retained box or a certified infeasible box; the latter alternative is impossible. The global statement and inherited bounds follow.\end{proof}
+
+\subsection{Price-enhanced budget nodes}
+A nonnegative price field can tighten a budget node without adding coordinates. Set $Z_T=0$ and
+\begin{align}
+ Z_{ti}=\max\bigg\{&\lambda_{ti}l_{ti},\ 
+ \min_{p\in\mathcal P_{ti}(l,h)}\sum_a p_a\bigg[k_{tia}+\lambda_{ti}\underline d_{tia}\nonumber\\[-2pt]
+ &+\beta\sum_jP_{tiaj}\{Z_{t+1,j}
+ +\min((\lambda_{ti}-\lambda_{t+1,j})l_{t+1,j},
+       (\lambda_{ti}-\lambda_{t+1,j})h_{t+1,j})\}\bigg]\bigg\}.
+ \label{eq:budget-price50}
+\end{align}
+Then $C^p_{ti}+\lambda_{ti}D^p_{ti}\ge Z_{ti}$ for every policy represented by the box. The first entry uses $C^p\ge0$ and $D^p\ge l$. For the second, substitute the regret and cost recursions and bound $(\lambda_{ti}-\lambda_{t+1,j})D^p_{t+1,j}$ over its interval. Therefore
+\[
+ \sum_i\nu_i\max\{0,Z_{0i}-\lambda_{0i}\varepsilon\}
+\]
+is another node lower bound. We take the maximum of this bound, the cost-node bound, zero, and the parent bound. Prices strengthen a valid cover but are not required for its completion.
+
+\subsection{A computable completion modulus}
+We give a modulus for the cost-minimizing row policy in \eqref{eq:budget-bellman50}; retaining this policy is important even when a price-enhanced node has a different minimizer. Let $w=\max_{t,i}(h_{ti}-l_{ti})$ over the variable coordinates, and suppose
+\[
+ 0\le d_{tia}-\underline d_{tia}\le e_d,
+ \qquad 0\le\overline V_{ti}-V_{ti}\le\xi,
+ \qquad \xi<s:=(1-\beta)\varepsilon.
+\]
+All these bounds are obtained from the supplied operating enclosures. Define
+\[
+ \delta=(\beta w+e_d)\Ssum T,
+ \qquad D_C=K\sum_{t=0}^{T-1}\beta^t\Ssum{T-t}.
+\]
+Here row total variation is half the $\ell^1$ distance; the cost Lipschitz constant $D_C$ is the same as in the finite refinement theorem.
+
+\begin{theorem}[Budget-cover completion]\label{thm:budget-completion50}
+Let $q$ be the common Markov policy obtained from the minimizers of \eqref{eq:budget-bellman50}. Its exact cost is $\nu H_0$ and its all-state operating violation is at most $\delta$. Backward repair against $\overline V-\varepsilon$, followed by downward quantization of the nonbest probabilities on a $2^{-b}$ grid, gives a feasible policy $\widehat q$ with
+\begin{equation}\label{eq:budget-rate50}
+ C_0^{\widehat q}(\nu)-\nu H_0
+ \le D_C\left\{\frac{\delta+\xi}{\delta+s}+(m-1)2^{-b}\right\}.
+\end{equation}
+Thus a complete cover with this expression at most $\eta$ certifies the target width $\eta$. For fixed $\eta>0$, sufficiently accurate witnesses, sufficiently fine deployment precision, and a sufficiently fine budget cover achieve the target after finitely many rational node operations.
+\end{theorem}
+\begin{proof}
+The Bellman minimizers use the same continuation $H$ at every incoming edge, so evaluating their common policy gives exactly $H$. Write $E_t=\max_i(D^q_{ti}-h_{ti})_+$. From \eqref{eq:budget-row50}, $d\le\underline d+e_d$, and $D^q_{t+1}\le h_{t+1}+E_{t+1}$,
+\[
+ E_t\le e_d+\beta w+\beta E_{t+1},\qquad E_T=0.
+\]
+The term $\beta w$ can be omitted at the last decision date; retaining it gives $E_t\le\delta$. In particular $D^q\le\varepsilon+\delta$ everywhere. During backward repair the actual successor operating values only increase. If a row remains below $\overline V_t-\varepsilon$, its shortfall to that threshold is at most $\delta+\xi$. The continuation-best action has operating value at least $V_t-\beta\varepsilon$, hence margin at least $s-\xi$ above the threshold. Mixing reaches the threshold with mass at most
+\[
+ (\delta+\xi)/\{(\delta+\xi)+(s-\xi)\}
+ = (\delta+\xi)/(\delta+s).
+\]
+The repaired row moves by no more than this amount in total variation. Rounding every nonbest coordinate downward transfers the removed mass to that same best action, preserves feasibility, and adds at most $(m-1)2^{-b}$ to the row movement. The policy-cost Lipschitz inequality gives \eqref{eq:budget-rate50}. On every live box, a retained feasible candidate is therefore within that amount of the cost lower bound, and the enhanced lower bound is no weaker. Covering the compact budget cube by a finite mesh proves the last assertion.\end{proof}
+
+The proof provides an explicit sufficient mesh. After allocating rounding and witness error, choose $w$ so that \eqref{eq:budget-rate50} is at most $\eta$. A regular cover needs at most
+\[
+ \left\lceil\frac{\varepsilon}{w}\right\rceil^{n(T-1)}
+\]
+boxes. Each node uses $O(Tnm^2)$ comparisons after $O(Tn^2m)$ continuation products. Rational bit lengths and the number of boxes are still consequential. For $T=1$, no continuation coordinates are needed and the row program directly solves the finite problem up to witness and deployment error.
+
+The implementation uses midpoint bisection. Every fourth depth splits a widest coordinate, while other splits prioritize disagreement between a candidate's actual regret and the assigned budget. Along any sufficiently deep path the widest-coordinate steps force the diameter to zero. Both the unpriced cost-node minimizer and the price-node minimizer are repaired and considered as incumbents. The complete cover, including pruned and infeasible boxes, is serialized for an independently written reader. Time limits are soft: a started exact node operation and final serialization and verification finish before the corresponding budget check. The measured all-in cost, not the declared construction budget, is reported.

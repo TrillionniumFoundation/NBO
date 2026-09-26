@@ -1,0 +1,92 @@
+\section{End-to-end certification from operating enclosures}\label{sec:finite48}
+The algorithm's inputs are the rational finite model, $\varepsilon$, an interval target $\eta>0$, and a work budget. The only operating information supplied to price generation, candidate construction, or node relaxations is a pair of certified Bellman witnesses. Exact optimal operating values and inherited feasible policies are not inputs.
+
+\subsection{Enclosures and feasible policy generation}
+Let $\underline V,\overline V$ satisfy terminal bounds and the componentwise Bellman inequalities
+\begin{equation}\label{eq:witness48}
+ \underline V_T\le g\le\overline V_T,\quad
+ \underline V_t\le\max_a(r_t^a+\beta P_t^a\underline V_{t+1}),\quad
+ \overline V_t\ge\max_a(r_t^a+\beta P_t^a\overline V_{t+1}).
+\end{equation}
+Backward induction gives $\underline V\le V\le\overline V$. Write $w_t=\norm{\overline V_t-\underline V_t}_\infty$ and $\xi=\max_{t<T}w_t$. The implementation uses exact rational sums followed by outward dyadic rounding in each Bellman pass; it never computes an exact optimal $V$ as an intermediate oracle. In representable tied examples, the two witnesses may coincide, which is disclosed rather than described as difficult approximation.
+
+The two useful advantage quantities are
+\begin{align}
+ \underline d_{tia}&=\max\{0,\underline V_{ti}-r_{tia}-\beta P_{tia}\overline V_{t+1}\}\le d_{tia},\label{eq:dlo48}\\
+ d^0_{tia}&=\underline V_{ti}-r_{tia}-\beta P_{tia}\underline V_{t+1}.\label{eq:dzero48}
+\end{align}
+The second need not be nonnegative. For $B_t^p=\underline V_t-J_t^p$, it gives the exact signed recursion $B_t^p=\sum_a p_{tia}(d^0_{tia}+\beta P_{tia}B_{t+1}^p)$, with the appropriate actual terminal payoff. The lower-node program uses $\underline V-\varepsilon\le J\le\overline V$, not a fiction that $\underline V$ is an exact optimal value.
+
+To create the initial incumbent, proceed backwards. Given the already constructed continuation, put
+\[
+ Q_a=r_t(x,a)+\beta P_t^a\widehat J_{t+1}(x),\qquad
+ Z_a=k_t(x,a)+\beta P_t^a\widehat C_{t+1}(x).
+\]
+Minimize $\sum_a p_aZ_a$ over the probability simplex subject to $\sum_a p_aQ_a\ge\overline V_t(x)-\varepsilon$. An extreme minimizer has at most two positive actions and is found by enumerating feasible pure actions and pairs straddling the threshold. This is a conditional greedy construction, not a claim of globally optimal implementation. It supplies a feasible policy without any earlier run. A separately timed local nonlinear proposal can improve it; every resulting candidate is repaired and checked exactly.
+
+\begin{lemma}[Upper-witness repair]\label{lem:repair48}
+Put $s=(1-\beta)\varepsilon$ and assume $\xi<s$. If a common proposal $q$ satisfies $J_t^q\ge V_t-\varepsilon-\delta$ everywhere, a backward repair produces $\widehat p$ with $J_t^{\widehat p}\ge\overline V_t-\varepsilon$ and $J_t^{\widehat p}\ge J_t^q$. Its maximum row total-variation displacement, before deployment quantization, is at most
+\begin{equation}\label{eq:repair48}
+ \min\left\{1,\frac{\delta+\xi}{\delta+s}\right\}.
+\end{equation}
+Rounding every action except an operating-best continuation action down to a mesh $h$ and assigning the remaining probability to that best action preserves feasibility and adds at most $(m-1)h$ to this bound.
+\end{lemma}
+\begin{proof}
+At a given step evaluate the original row of $q$ against the repaired future. By induction its value $v$ is no smaller than $J_t^q$. The best continuation action has value $M\ge V_t-\beta\varepsilon$. Its margin above $\overline V_t-\varepsilon$ is at least $s-\xi>0$. If $v$ is below the threshold, mix the original row with that best action using the minimal fraction. If the threshold deficit is $z$, then $z\le\delta+\xi$ and the fraction is at most $z/(z+s-\xi)\le(\delta+\xi)/(\delta+s)$. Otherwise no mixture is needed. Values weakly increase at each step. Downward rounding of nonbest probabilities moves at most $(m-1)h$ probability mass to a weakly better action, so preserves both value inequalities.
+\end{proof}
+
+For policies whose rows differ by at most $\rho$ in total variation, uniform perturbation constants sufficient here are
+\begin{equation}\label{eq:moduli48}
+ D_J=2(R\Ssum T+G)\Ssum T,\qquad
+ D_C=K\sum_{t=0}^{T-1}\beta^t\Ssum{T-t}.
+\end{equation}
+Then $\norm{J^p-J^q}_\infty\le D_J\rho$ and $|C^p(\nu)-C^q(\nu)|\le D_C\rho$. These conservative constants follow by bounding the range of each continuation action value and iterating the one-step perturbation inequality. They require no action separation.
+
+\subsection{Two node formulations and exact endpoints}
+A node is a box for all $nTm$ probabilities, intersected rowwise with the simplex. At a nonempty box, rectangular Bellman minimization and maximization give exact bounds $J^{\min},J^{\max},C^{\min},C^{\max}$ for every policy in the box. Each extremum is itself attained by a common Markov selector because the box is rectangular across state--date rows. A node can be eliminated if its simplex intersection is empty or if $J^{\max}_{ti}<\underline V_{ti}-\varepsilon$ somewhere. These are rational conditions, not numerical infeasibility flags.
+
+The direct-value formulation writes the original Bellman equations in $J,C$ and uses McCormick envelopes for each aggregate product $p_{tia}(r_{tia}+\beta P_{tia}J_{t+1})$ and its implementation analogue. The price formulation writes the signed $B=\underline V-J$ equations and disaggregates products by successor. It imposes $\sum_a(p_{tia}B_{t+1,j})=B_{t+1,j}$ and the analogous cost identity. It additionally uses the certificate planes
+\begin{equation}\label{eq:planes48}
+ C_{ti}+\lambda_{ti}\{B_{ti}+w_{ti}-\varepsilon\}\ge u_{ti},\qquad
+ C_{ti}\ge\max\{0,u_{ti}\},
+\end{equation}
+where $w_{ti}=\overline V_{ti}-\underline V_{ti}$ and $u$ is reconstructed with \eqref{eq:dlo48}. Since $D_{ti}^p\le B_{ti}^p+w_{ti}$, the first plane follows from the price inequality for every truly feasible policy. The variable shift and product identities do not change the underlying common-policy object. Neither formulation dominates the other as a general polyhedral statement.
+
+For a node relaxation $\min c'z$ subject to $Az=b$, $Ez\le f$, and $l\le z\le u$, rounded proposals $y$ and $\tau\ge0$ give the exact rational lower endpoint
+\begin{equation}\label{eq:residual48}
+ y'b-\tau'f+\sum_j\min\{r_jl_j,r_ju_j\},\qquad r=c-A'y+E'\tau.
+\end{equation}
+No dual feasibility tolerance is needed: the residual is explicitly paid. The node lower bound is the maximum of this endpoint, zero, the rectangular cost bound, the reconstructed price bound, and its inherited parent bound. An exact common feasible policy supplies the upper endpoint. The global lower bound is the minimum over the complete leaf cover, clipped above by that feasible upper value. The checker reconstructs each row and split independently of the optimizer.
+
+\subsection{A matched finite stopping result}
+\begin{theorem}[Witness-only finite completion]\label{thm:finite48}
+Let a retained policy box have maximum row total-variation diameter at most $\rho$. Suppose \eqref{eq:witness48} holds, $\xi<s$, and its rectangular operating test does not eliminate it. Evaluating and repairing any box member gives a cost at most
+\begin{equation}\label{eq:width48}
+ \Omega(\rho,\xi,h)=D_C\left[\rho+
+ \min\left\{1,\frac{D_J\rho+2\xi}{D_J\rho+\xi+s}\right\}+(m-1)h\right]
+\end{equation}
+above the box's rectangular cost lower bound. Consequently, choose witnesses and deployment mesh with
+\begin{equation}\label{eq:precision48}
+ D_C\{\xi/s+(m-1)h\}\le\eta/64,
+ \qquad \xi<s.
+\end{equation}
+Without work caps, midpoint best-bound search that bisects a widest coordinate at least every fourth depth, and evaluates a box member, terminates with a valid interval of width at most $\eta$. The statement holds for both node formulations, even when every numerical LP proposal is unavailable.
+\end{theorem}
+\begin{proof}
+A retained box has $J^{\max}\ge\underline V-\varepsilon$ everywhere. Any member $q$ differs from its rectangular operating-maximizing policy by at most $\rho$ per row, hence
+\[
+ J^q\ge V-\varepsilon-(\xi+D_J\rho).
+\]
+Apply Lemma~\ref{lem:repair48} with $\delta=\xi+D_J\rho$. The rectangular cost minimizer is another policy in the same box, so its objective differs from $C^q(\nu)$ by at most $D_C\rho$. The repair and deployment change the cost by at most $D_C$ times their maximum row displacement. This proves \eqref{eq:width48}. Relaxation strengthening and inherited lower bounds can only improve the interval.
+
+Under \eqref{eq:precision48}, the limit of \eqref{eq:width48} as $\rho\downarrow0$ is at most $2D_C\xi/s+D_C(m-1)h\le\eta/32$. Choose a positive coordinate width $w_*$ such that \eqref{eq:width48}, with $\rho=mw_*$, is below $\eta$. There are $d=nTm$ coordinates. Along a path, after at most $4d\lceil\log_2(1/w_*)\rceil$ levels every coordinate has width at most $w_*$: the scheduled widest-coordinate splits alone suffice. Thus every deeper retained node already has a repaired feasible policy within $\eta$ of its lower bound. While the global interval exceeds $\eta$, best-bound search selects a leaf below the current upper value minus $\eta$, which cannot be such a sufficiently refined node. Only finitely many shallower nodes exist. Exact elimination cannot remove a feasible solution. The asserted stopping follows.
+\end{proof}
+
+The node bound implicit in this proof is exponential in the sufficient depth. It is an accuracy guarantee, not a polynomial complexity claim. What changes relative to an idealized exact-oracle theorem is that the implemented pipeline supplies the witnesses and the feasible upper policy appearing in the proof, and its arithmetic level depends on the requested target.
+
+For lower-price conditioning, the implementation starts at 8 bits and adds 8 bits until \eqref{eq:precision48} holds and
+\begin{equation}\label{eq:pricebudget48}
+ \Lambda\sum_{t=0}^{T-1}\beta^t(w_t+\beta w_{t+1})\le\eta/64,
+ \qquad \Lambda=4096.
+\end{equation}
+The cap is fixed before model generation. Since the price field is generated only afterwards, this is an ex ante conditioning rule, not a favorable exact-model price reused with noisy values. Directed finite Bellman widths tend to zero as precision increases, so the rule terminates. Exact rational residuals still certify any proposed multipliers, irrespective of their quality. There is no claim that increasing precision alone eliminates optimization slack.

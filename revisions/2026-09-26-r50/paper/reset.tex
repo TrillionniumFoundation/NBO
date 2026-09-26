@@ -1,0 +1,59 @@
+\section{A diffuse model with directly executable paired certificates}\label{sec:reset50}
+The general transfer theorem allows controlled densities. A reset subclass permits a direct integrated lower bound and avoids paying a conservative kernel-approximation error. Let $X=[0,1]$, let $\nu$ and every transition kernel be uniform on $[0,1]$, and take
+\[
+ r_t(x,a)=\gamma_a g_t(x),\qquad 0\le\gamma_a\le1,
+ \quad\max_a\gamma_a=1,
+\]
+with positive affine $g_t$ and nonnegative affine implementation costs $k_{ta}$. The terminal reward is zero. Transitions have a continuous density and a diffuse initial law. They are independent of state and action, so this subclass exploits a reset structure rather than test the generic controlled-kernel search.
+
+The operating advantage is $d_{ta}(x)=(1-\gamma_a)g_t(x)$. Define cumulative regret moments
+\begin{equation}\label{eq:reset-moments50}
+ M_T=0,\qquad
+ M_t=\int_0^1\sum_a p_t(a\mid x)d_{ta}(x)\,dx+\beta M_{t+1}.
+\end{equation}
+The continuation term in this equation is essential; $M_t$ is not merely the one-period expected disadvantage. The original contract and objective become
+\begin{align}
+ \sum_a p_t(a\mid x)d_{ta}(x)+\beta M_{t+1}&\le\varepsilon
+ &&\text{for all }x,t,\label{eq:reset-contract50}\\
+ C_0^p(\nu)&=\sum_{t=0}^{T-1}\beta^t\int_0^1\sum_a p_t(a\mid x)k_{ta}(x)\,dx.\label{eq:reset-objective50}
+\end{align}
+Equations~\eqref{eq:reset-moments50}--\eqref{eq:reset-objective50} are linear in the measurable probabilities and moments. They retain one common continuation moment at every date, rather than an independent choice of that moment for each restart.
+
+\begin{proposition}[Integrated lower certificate for all Borel policies]\label{prop:reset-dual50}
+Choose arbitrary nonnegative bounded Borel multipliers $\lambda_t(x)$ and arbitrary real numbers $q_t$. Set $\Lambda_t=\int\lambda_t(x)dx$ and
+\[
+ s_0=-q_0,\qquad s_t=-q_t+\beta(q_{t-1}+\Lambda_{t-1})\quad (t\ge1).
+\]
+Then the following is a lower bound on the original unrestricted Borel-policy optimum:
+\begin{equation}\label{eq:reset-dual50}
+ \begin{split}\mathcal L(\lambda,q)=\max\bigg\{0,
+ &\sum_t\int_0^1\min_a\{\beta^tk_{ta}(x)+(\lambda_t(x)+q_t)d_{ta}(x)\}\,dx\\
+ &-\varepsilon\sum_t\Lambda_t+\varepsilon\sum_t\min(0,s_t)\bigg\}.\end{split}
+\end{equation}
+For stepwise constant $\lambda_t$ and rational affine primitives, its integrals can be evaluated with finite rational operations.
+\end{proposition}
+\begin{proof}
+For a feasible policy, multiply \eqref{eq:reset-contract50} minus $\varepsilon$ by $\lambda_t(x)$ and integrate. Add $q_t$ times \eqref{eq:reset-moments50} written as $\int p_td_t+\beta M_{t+1}-M_t=0$. These additions do not increase the feasible objective. The coefficient of $M_t$ is $s_t$. Every feasible moment lies in $[0,\varepsilon]$, so its contribution is at least $\varepsilon\min(0,s_t)$. Minimizing each policy row over the simplex gives the pointwise minimum in \eqref{eq:reset-dual50}. This inequality holds for every feasible Borel policy before any cell restriction. Nonnegative costs permit clipping the lower bound at zero.
+
+On a cell where $\lambda_t$ is constant, each expression inside the minimum is affine. Partition the cell further at pairwise line intersections; one line minimizes on each resulting open interval. Its integral is the rational trapezoidal integral. Endpoint ties have zero Lebesgue measure and do not change the value.\end{proof}
+
+\subsection{Constructing a globally feasible upper endpoint}
+Partition $[0,1]$ into $N$ equal intervals and use one policy row $p_{tca}$ on each cell. Let $\bar d_{tca}$ and $\bar k_{tca}$ be their exact cell averages, and let $d^{\max}_{tca}$ be the maximum of the two endpoint disadvantages. The following finite LP generates a proposal:
+\begin{align}
+ \min_{p,M}\quad &\sum_{t,c,a}\frac{\beta^t}{N}p_{tca}\bar k_{tca},\nonumber\\
+ M_t&=N^{-1}\sum_{c,a}p_{tca}\bar d_{tca}+\beta M_{t+1},\nonumber\\
+ \sum_a p_{tca}d^{\max}_{tca}+\beta M_{t+1}&\le\varepsilon,
+ \quad p_{tc}\in\Delta_m,\quad M_T=0.\label{eq:reset-lp50}
+\end{align}
+The sums of actionwise maxima can be conservative when slopes differ. They guarantee the pointwise constraint without assuming a cellwise optimum of the unrestricted problem. The LP has $TNm+T$ variables and $2TN+T$ stated equality and inequality rows, before simple variable bounds.
+
+Numerical probabilities are reconstructed as dyadic rationals and normalized. Process dates backward using the actual moment of the already reconstructed successor. The remaining allowance is $a_t=\varepsilon-\beta M_{t+1}>0$. If a row's expected endpoint-maximum disadvantage exceeds $a_t$, mix toward an action with $\gamma_a=1$ by the exact amount needed. This action has zero disadvantage. Round all other probabilities downward to a dyadic grid and transfer the remainder to the zero-disadvantage action. The row remains feasible. Recompute the exact integrated moment using \eqref{eq:reset-moments50}, not the one-period integral alone. Since every row satisfies \eqref{eq:reset-contract50}, integrating proves $M_t\le\varepsilon$ and justifies the next step.
+
+The resulting piecewise constant Borel policy provides an exactly integrated upper cost. The lower certificate uses the same continuous primitives but is not restricted to this policy class. A numerical LP status is neither necessary nor sufficient for accepting an endpoint: a failed numerical solve can supply a weaker proposal, and only the reconstructed inequalities determine validity.
+
+\subsection{Arithmetic, stopping, and approximation}
+Policy and multiplier proposals use 40-bit dyadic reconstruction. Each affine-envelope integral is evaluated rationally and rounded \emph{downward} to 50 binary fractional bits before accumulation. This adds less than $TN2^{-50}$ of total downward error, prevents unnecessary denominator growth, and leaves the lower inequality valid. The upper endpoint is a rational integral of the deployed policy, without downward rounding. The independent readers repeat these conventions.
+
+The operational stopping condition is the original continuous-model inequality $U-\mathcal L\le10^{-3}$. The same units apply to every primary model. Relative width and width normalized by the cost of the always-preferred action are secondary reports and do not change target status. A lower bound on implementation savings relative to that feasible reference is its exact cost minus $U$. A fixed administration fee is worth incurring only when it is smaller than a justified cost saving against the specified comparator; no dollar conversion is built into the certificate.
+
+Refining the cells can be justified independently of a numerical solver's dual selection. Here $a_P=0$ in Theorem~\ref{thm:density-pair50}; affine reward and cost approximation errors are explicitly of order $N^{-1}$. The cell model has action-independent transitions, so its common-policy moment formulation is a finite LP. Solving the two corrected-allowance finite programs and using Corollary~\ref{cor:density-stop50} gives a complete paired approximation algorithm for this subclass. The direct integrated dual often gives a substantially narrower interval than that sufficient transfer bound. We accept the direct interval only through its own certificate; we do not assume that every sequence of floating LP marginals must converge.

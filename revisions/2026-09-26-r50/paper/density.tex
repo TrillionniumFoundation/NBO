@@ -1,0 +1,94 @@
+\section{Paired approximation with continuous transition densities}\label{sec:density50}
+Exact forward closure serves finitely supported initial populations under finite-atomic transitions. We now give a different route that leaves a diffuse initial law unchanged and permits action-dependent continuous-density transitions. The approximation is two-sided for the original Borel-policy optimization, not merely an upper approximation within a grid policy class.
+
+\subsection{A cellwise-density model and unrestricted-policy averaging}
+Let $X$ be compact and let $\{B_i\}_{i=1}^n$ be a finite Borel partition. Fix a probability measure $\mu$ with $\mu(B_i)>0$, and write $\mu_i=\mu(\cdot\mid B_i)$. Consider a surrogate model whose rewards, costs, and terminal reward are constant on each cell, and whose kernels are
+\begin{equation}\label{eq:block-kernel50}
+ \bar P_t^a(x,dy)=\sum_j Q_{tiaj}\mu_j(dy),\qquad x\in B_i,
+ \quad Q_{tiaj}\ge0,\quad\sum_jQ_{tiaj}=1.
+\end{equation}
+The coefficients can depend on the origin cell, action, and date. The within-destination-cell conditional law, however, is the same $\mu_j$ for every incoming edge. The surrogate remains a continuous-state process when $\mu$ is diffuse. Its finite model uses transitions $Q$ and initial cell probabilities $\nu_i=\nu(B_i)$.
+
+\begin{lemma}[Exact averaging of Borel policies]\label{lem:averaging50}
+For every allowance $e>0$, the surrogate's unrestricted Borel-policy revision optimum equals the finite cell model's common-policy optimum, with initial weights $\nu_i$. A finite feasible policy extends as a constant policy on each cell. Conversely, every feasible Borel policy admits a feasible finite policy with exactly the same surrogate initial implementation cost. The original initial measure $\nu$ need not equal $\mu$.
+\end{lemma}
+\begin{proof}
+The surrogate optimal operating value is cellwise constant by backward induction. A cell-constant finite policy clearly has the same operating and implementation values in the two models. Conversely, take any Borel policy $p$. At dates $t\ge1$, average its action probabilities on cell $B_i$ with respect to $\mu_i$. Suppose the resulting finite continuation values equal the $\mu_j$-averages of the original continuation values. Equation~\eqref{eq:block-kernel50} makes the continuation contribution at date $t$ constant within each origin cell for each action. Averaging the policy-value identities therefore proves the same equality at date $t$. Backward induction begins at the cell-constant terminal reward. Averaging the original pointwise operating constraint proves the finite operating constraint at every such cell and date.
+
+At date zero, average the policy with respect to $\nu(\cdot\mid B_i)$ whenever $\nu(B_i)>0$, and with respect to $\mu_i$ otherwise. The date-one continuation still uses $\mu_j$, so the same identities prove finite feasibility at date zero and equality of the initial implementation objective. Taking infima in both directions proves equality of optima. No history-dependent or persistent root lottery has been introduced; each averaged row is a single Markov action distribution.\end{proof}
+
+The common within-cell conditional law is the key assumption. A point-mass quadrature on a grid need not approximate a diffuse transition law in total variation and does not justify this lemma for the \emph{target} model. We first obtain an exact finite representation of the surrogate, then account for its distance from the target model.
+
+\subsection{Uniform transfer with an allowance correction}
+Use $\TV(P,Q)=\sup_A|P(A)-Q(A)|$. For a bounded function $f$, $|Pf-Qf|\le\TV(P,Q)\operatorname{span}(f)$. Suppose certified primitive bounds are available:
+\begin{align}
+ \|r-\bar r\|_\infty&\le a_r,&
+ \|k-\bar k\|_\infty&\le a_k,&
+ \|g-\bar g\|_\infty&\le a_g,\nonumber\\
+ \sup_{t,x,a}\TV(P_t^a(x,\cdot),\bar P_t^a(x,\cdot))&\le a_P.
+ \label{eq:primitive-errors50}
+\end{align}
+Let $R_*,G_*,K_*$ bound both models' absolute rewards, absolute terminal rewards, and nonnegative costs. Define, backwards,
+\begin{align}
+ A_T&=a_g,&
+ A_t&=a_r+\beta A_{t+1}+2\beta a_P\{R_*\Ssum{T-t-1}+\beta^{T-t-1}G_*\},\label{eq:operating-transfer50}\\
+ E_T&=0,&
+ E_t&=a_k+\beta E_{t+1}+\beta a_PK_*\Ssum{T-t-1},\label{eq:cost-transfer50}\\
+ \zeta&=2\max_{t<T}A_t.&&\nonumber
+\end{align}
+These recursions bound errors uniformly over every Borel policy, including discontinuous policies. The same $A_t$ also bounds the difference between the two optimal operating values.
+
+\begin{theorem}[Paired density approximation]\label{thm:density-pair50}
+Assume \eqref{eq:block-kernel50}--\eqref{eq:primitive-errors50} and $\varepsilon>\zeta$. Write $K_h(e)$ for the finite surrogate optimum at allowance $e$. Then
+\begin{equation}\label{eq:density-bracket50}
+ K_h(\varepsilon+\zeta)-E_0
+ \le \KR(\nu,\varepsilon)
+ \le K_h(\varepsilon-\zeta)+E_0.
+\end{equation}
+More generally, a verified finite lower endpoint $L_h^+$ for allowance $\varepsilon+\zeta$ and a verified feasible finite upper endpoint $U_h^-$ for allowance $\varepsilon-\zeta$ give the target interval
+\begin{equation}\label{eq:density-computable50}
+ [\,\max(0,L_h^+-E_0),\ U_h^-+E_0\,].
+\end{equation}
+The cellwise extension of the tightened-allowance policy is feasible for the original all-state contract. The endpoints use the original initial distribution through its exact cell weights.
+\end{theorem}
+\begin{proof}
+For any fixed Borel policy, subtract its two Bellman recursions, use the reward error, and apply the total-variation inequality to the surrogate continuation value. Backward induction gives $|J_t^p-\bar J_t^p|\le A_t$. The maximum over finitely many actions is nonexpansive in the supremum norm, giving $|V_t-\bar V_t|\le A_t$. Hence $|D_t^p-\bar D_t^p|\le2A_t\le\zeta$. For costs use $0\le\bar C_{t+1}^p\le K_*\Ssum{T-t-1}$ to obtain $|C_t^p-\bar C_t^p|\le E_t$.
+
+Every feasible target policy is thus feasible for the surrogate at allowance $\varepsilon+\zeta$. By Lemma~\ref{lem:averaging50}, its surrogate objective is at least $K_h(\varepsilon+\zeta)$. Taking infima and subtracting the objective error proves the lower inequality. Conversely, extend a finite policy feasible at $\varepsilon-\zeta$ to the cells. Its target regret is at most $\varepsilon$, and its target cost is at most its finite cost plus $E_0$. Finite attainment gives the upper inequality, and the same argument applies to verified finite endpoints.\end{proof}
+
+\begin{corollary}[An explicit continuum stopping rule]\label{cor:density-stop50}
+Suppose a sequence of certified surrogates has $a_r,a_k,a_g,a_P\to0$, and let both finite endpoint computations have width at most $\eta_h$. For fixed $T$, $\beta<1$, and $\varepsilon>0$, the width in \eqref{eq:density-computable50} is at most
+\begin{equation}\label{eq:density-rate50}
+ 2E_0+2\eta_h+
+ D_C^*\frac{2\zeta}{2\zeta+(1-\beta)(\varepsilon-\zeta)},
+ \qquad D_C^*=K_*\sum_{t=0}^{T-1}\beta^t\Ssum{T-t}.
+\end{equation}
+It therefore tends to zero as the surrogate errors and $\eta_h$ tend to zero. Given a requested width, finite refinement can stop either when the directly computed interval meets it or when the displayed sufficient bound does.
+\end{corollary}
+\begin{proof}
+Start with an optimum for the finite model at allowance $\varepsilon+\zeta$. Relative to allowance $\varepsilon-\zeta$, it is $2\zeta$-infeasible. The exact-value repair argument of Theorem~\ref{thm:budget-completion50}, with no witness or quantization error, gives a feasible policy at the smaller allowance after row movement at most
+\[
+ 2\zeta/\{2\zeta+(1-\beta)(\varepsilon-\zeta)\}.
+\]
+The implementation-cost Lipschitz bound therefore bounds the difference between the two finite optima by the last term of \eqref{eq:density-rate50}. Each finite endpoint is within $\eta_h$ of its optimum. Adding the two objective-transfer errors proves the result. Finite paired solvers from the preceding sections supply any fixed finite accuracy; the resulting continuum algorithm is constructive, although not uniformly inexpensive.\end{proof}
+
+\subsection{Computing the primitive bounds from density regularity}
+For example, take $X=[0,1]^d$, $\mu$ uniform, and a partition whose cells have diameter at most $h$. Suppose each target density $p_t^a(x,y)$ satisfies
+\[
+ |p_t^a(x,y)-p_t^a(x',y')|
+ \le L_x\|x-x'\|+L_y\|y-y'\|.
+\]
+Average the density in the origin and destination cells. The resulting surrogate has the form \eqref{eq:block-kernel50}, is nonnegative and normalized, and satisfies
+\[
+ a_P\le\tfrac12(L_x+L_y)h.
+\]
+If rewards, costs, and the terminal reward are Lipschitz, cell averages give $a_r\le L_rh$, $a_k\le L_kh$, and $a_g\le L_gh$. Verified integral enclosures and normalization corrections add their stated errors to these bounds. Thus all terms in \eqref{eq:density-rate50} are calculable before claiming continuum accuracy. The number of cells still grows with state dimension.
+
+A concrete action-dependent density is
+\[
+ p^a(x,y)=1+\vartheta_a(2x-1)(2y-1),\qquad |\vartheta_a|\le1,
+ \quad x,y\in[0,1].
+\]
+It is nonnegative and integrates to one. Its uniform-cell averages have rational transition probabilities whenever $\vartheta_a$ is rational, and the preceding bound gives $a_P\le2\max_a|\vartheta_a|/N$ for $N$ equal intervals. This example illustrates a directly checkable controlled density, not a reported high-dimensional performance result.
+
+The theorem does not convert the earlier moving-atom uniform-initial-law computations into density computations. A point mass and a diffuse law have total-variation distance one. Those original intervals remain separate in the retained history. Likewise, model estimation error is not arithmetic error: applying \eqref{eq:primitive-errors50} to estimated primitives requires justified simultaneous bounds covering the target law. The theorem specifies where those bounds would enter rather than assuming them from a numerical residual.
