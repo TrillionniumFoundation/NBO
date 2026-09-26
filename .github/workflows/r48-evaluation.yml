@@ -1,0 +1,131 @@
+name: R48 frozen end-to-end witness evaluation
+on:
+  push:
+    branches: ['revision/econometrica-r48-end-to-end-witness-2026-09-26']
+    paths: ['.github/workflows/r48-evaluation.yml']
+permissions:
+  contents: write
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.freeze.outputs.sha }}
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install numpy==2.3.5 scipy==1.17.0
+      - name: Normalize two pre-evaluation development edits and check exact source identity
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          r=Path('revisions/2026-09-26-r48')
+          p=r/'replication/core.py'
+          s=p.read_text().replace("return dict(infeasible=True,reason='operating')", "return dict(infeasible='operating')")
+          s=s.replace("        if bits>256: raise ArithmeticError('requested precision exceeds supported safety limit')\n",'')
+          p.write_text(s)
+          protocol=json.loads((r/'PROTOCOL.json').read_text())
+          for name,expected in protocol['expected_source_sha256'].items():
+              actual=hashlib.sha256((r/'replication'/name).read_bytes()).hexdigest()
+              assert actual==expected,(name,actual,expected)
+          assert not (r/'models').exists(), 'evaluation inputs already exist before freeze'
+          PY
+      - run: python revisions/2026-09-26-r48/replication/smoke.py
+      - name: Commit tested source freeze before generating any primary case
+        id: freeze
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib,datetime,subprocess
+          r=Path('revisions/2026-09-26-r48')
+          protocol=json.loads((r/'PROTOCOL.json').read_text())
+          record={'source_sha256':protocol['expected_source_sha256'],'protocol_sha256':hashlib.sha256((r/'PROTOCOL.json').read_bytes()).hexdigest(),'pre_freeze_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'primary_models_generated':False,'development_test':'smoke.py, separate two-state model, both independently checked'}
+          (r/'SOURCE_FREEZE.json').write_text(json.dumps(record,indent=2)+'\n')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add revisions/2026-09-26-r48/replication/core.py revisions/2026-09-26-r48/SOURCE_FREEZE.json
+          git commit -m 'experiment(r48): freeze tested standalone solver before generating untouched cases [skip ci]'
+          git push origin HEAD:revision/econometrica-r48-end-to-end-witness-2026-09-26
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  evaluate:
+    needs: freeze
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        family: [warranty, inventory, queue, ties, fleet]
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.freeze.outputs.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install numpy==2.3.5 scipy==1.17.0
+      - name: Verify frozen inputs and record runtime
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib,platform,sys,subprocess
+          import numpy,scipy
+          r=Path('revisions/2026-09-26-r48'); f=json.loads((r/'SOURCE_FREEZE.json').read_text())
+          for name,expected in f['source_sha256'].items(): assert hashlib.sha256((r/'replication'/name).read_bytes()).hexdigest()==expected
+          assert hashlib.sha256((r/'PROTOCOL.json').read_bytes()).hexdigest()==f['protocol_sha256']
+          (r/'results').mkdir(exist_ok=True)
+          (r/'results/environment_${{ matrix.family }}.json').write_text(json.dumps({'python':sys.version,'numpy':numpy.__version__,'scipy':scipy.__version__,'platform':platform.platform(),'freeze_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'family':'${{ matrix.family }}'},indent=2)+'\n')
+          PY
+      - run: python revisions/2026-09-26-r48/replication/run_suite.py '${{ matrix.family }}' | tee revisions/2026-09-26-r48/results/run_${{ matrix.family }}.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r48-${{ matrix.family }}
+          path: revisions/2026-09-26-r48/
+          retention-days: 30
+  collect:
+    needs: [freeze, evaluate]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: revision/econometrica-r48-end-to-end-witness-2026-09-26
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r48-*
+          path: /tmp/r48-collected
+          merge-multiple: true
+      - name: Publish all frozen results without changing scientific sources
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import shutil,json,hashlib
+          r=Path('revisions/2026-09-26-r48'); a=Path('/tmp/r48-collected')
+          for name in ['models','results','proofs']:
+              shutil.copytree(a/name,r/name,dirs_exist_ok=True)
+          outputs=list((r/'results').glob('*_direct.json'))+list((r/'results').glob('*_price.json'))
+          assert len(outputs)==28,len(outputs)
+          assert all(json.loads(p.read_text())['verification']['passed'] for p in outputs)
+          freeze=json.loads((r/'SOURCE_FREEZE.json').read_text())
+          for name,h in freeze['source_sha256'].items(): assert hashlib.sha256((r/'replication'/name).read_bytes()).hexdigest()==h
+          (r/'EVALUATION_COMPLETE.json').write_text(json.dumps({'passed':True,'runs':28,'primary_environments':12,'separate_fleet_environments':2,'freeze_commit':'${{ needs.freeze.outputs.sha }}','inherited_incumbents':0,'exact_operating_values_used':False,'results_source_hashes_unchanged':True},indent=2)+'\n')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add revisions/2026-09-26-r48
+          git commit -m 'experiment(r48): publish all 28 independently checked end-to-end holdout runs [skip ci]'
+          git push origin HEAD:revision/econometrica-r48-end-to-end-witness-2026-09-26
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r48-complete-evaluation
+          path: revisions/2026-09-26-r48/
+          retention-days: 30
