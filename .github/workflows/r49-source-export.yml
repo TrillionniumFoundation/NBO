@@ -1,0 +1,23 @@
+name: R49 pinned source export
+on:
+  push:
+    branches: [revision/econometrica-r49-structural-diffuse-2026-09-26]
+    paths: [.github/workflows/r49-source-export.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Archive reviewed source tree
+        run: |
+          git rev-parse HEAD > /tmp/SOURCE_COMMIT.txt
+          git archive --format=tar HEAD | gzip -1 > /tmp/NBO-r49-source.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NBO-r49-pinned-source
+          path: |
+            /tmp/NBO-r49-source.tar.gz
+            /tmp/SOURCE_COMMIT.txt
+          retention-days: 14
