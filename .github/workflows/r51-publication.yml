@@ -9,10 +9,10 @@ permissions:
   contents: write
 concurrency:
   group: nbo-r51-publication
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
@@ -45,6 +45,7 @@ jobs:
               assert hashlib.sha256((root/name).read_bytes()).hexdigest()==want,name
           print('All source members and all pre-evaluation frozen hashes match.')
           PY
+          python revisions/2026-09-27-r51/replication/assemble_pdfs.py --install
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -f R51_BUILD.sh R51_REPRODUCE.sh revisions/2026-09-27-r51
