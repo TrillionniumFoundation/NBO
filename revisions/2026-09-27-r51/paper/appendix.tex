@@ -1,0 +1,60 @@
+\appendix
+\section{Additional error and dual details}\label{app:details48}
+\subsection{Operating-witness sensitivity of a price field}
+Suppose $u$ is reconstructed with exact disadvantage $d$, and $\underline u$ with \eqref{eq:dlo48}, using the same nonnegative field. The inequalities
+\[
+ 0\le d_{tia}-\underline d_{tia}\le w_t+\beta w_{t+1}
+\]
+follow directly from the operating enclosure (including the clipping at zero). Backward minimum stability yields
+\[
+ 0\le u_{ti}-\underline u_{ti}\le\Gamma_t,
+ \quad \Gamma_t=\sum_{s=t}^{T-1}\beta^{s-t}\norm{\lambda_s}_\infty(w_s+\beta w_{s+1}).
+\]
+The positive-part map is 1-Lipschitz, so the same $\Gamma_0$ bounds the change in the displayed clipped lower endpoint. Any directed approximation of the price expectation adds its certified one-step error to this recursion. In the executed model the expectation is an exact rational finite sum. This is a perturbation result for a \emph{fixed} field; the algorithm's cap-based rule is imposed before generating the field, so it does not presuppose stability of an exact-model price optimizer.
+
+\subsection{Clipping can change the optimizing price}\label{app:clipping48}
+The mask maximization is not merely a different display of the full-mask optimum. Modify the two-period example in Theorem~\ref{thm:separation} as follows. Keep $\beta=\varepsilon=1/2$ and deterministic transitions to state 1. At date 0, rewards of $G,B$ are $0,-1$, while costs are $(0,0)$ in state 1 and $(3,0)$ in state 2. At date 1, rewards of $G,B$ are $0,-1/4$ and costs are $(1,0)$ in both states. Let $\nu=(3/4,1/4)$ and $g=0$. The operating value is zero.
+
+Let $l$ be the price at the reached terminal decision state. Its potential is
+\[
+ u_1(l)=\min\{1-l/2,-l/4\}.
+\]
+For this fixed $l$, the best root potentials use prices 0 and 3 and equal $u_{01}=u_1(l)/2$ and $u_{02}=3/2+\min(3,l)/4+u_1(l)/2$. The first claim follows from the zero-cost good action; the second follows by checking the positive slope before root price 3 and the negative slope thereafter. Thus the optimized full-mask objective is
+\[
+ 3/8+\min(3,l)/16+u_1(l)/2,
+\]
+whose maximum $3/8$ occurs at $l=0$. Its clipped value there is also $3/8$. But $l=3$ gives potentials $(-3/8,15/8)$ and clipped value $15/32>3/8$. The latter is the actual common-policy optimum: take the terminal bad action with probability 1, use the root bad action with probability $3/8$ in state 2, and use the good action in state 1. Its operating shortfalls obey all restart bounds, its objective is $15/32$, and the displayed certificate matches it. Hence optimizing the un-clipped objective can select a strictly inferior clipped certificate. Enumerating the relevant initial masks fixes this mismatch without altering the validity of any field.
+
+\subsection{A quantitative form of repaired Borel upper density}
+The inherited upper-density result can be stated with a finite error modulus, although not with a universal computable partition-size rate. Fix a globally feasible policy $p$ and define finite dominating measures
+\[
+ \mu_0=\nu,\qquad \mu_{t+1}=\sum_{a=1}^m\mu_tP_t^a.
+\]
+Their total masses are $m^t$. For any Borel proposal $q$, let $e_t(x)=\TV(q_t(\cdot\mid x),p_t(\cdot\mid x))$ and $E_t=\int e_t\,d\mu_t$. Put $M=2(R\Ssum T+G)$, $s=(1-\beta)\varepsilon$, $c=1+M/s$, and
+\begin{align*}
+ A_t&=cE_t+\frac{Mc\beta}{s}\sum_{v=t+1}^{T-1}(\beta c)^{v-t-1}E_v,\\
+ \mathcal B(E)&=K\sum_{t=0}^{T-1}\beta^t\Ssum{T-t}A_t.
+\end{align*}
+Then exact continuation-best repair of $q$ gives a globally feasible $\widehat p$ with
+\begin{equation}\label{eq:L1modulus48}
+ |C_0^{\widehat p}(\nu)-C_0^p(\nu)|\le\mathcal B(E).
+\end{equation}
+To verify this, write $a_t=\TV(\widehat p_t,p_t)$ and $\Delta_t=|J_t^{\widehat p}-J_t^p|$. The threshold deficit before repair is at most $Me_t+\beta P_t^p\Delta_{t+1}$ because $p$ is feasible. The best repaired continuation has margin at least $s$, so the repair mass is at most this deficit divided by $s$. Therefore
+\[
+ a_t\le ce_t+(\beta/s)P_t^p\Delta_{t+1},\qquad
+ \Delta_t\le Mc e_t+\beta c P_t^p\Delta_{t+1}.
+\]
+Integrating and using $\mu_tP_t^p\le\mu_{t+1}$ proves $\int a_t\,d\mu_t\le A_t$. The implementation performance-difference expansion and the range bound $K\Ssum{T-t}$ then give \eqref{eq:L1modulus48}.
+
+Rational simple proposals can approximate $p$ in these finitely many $L_1(\mu_t)$ norms; the displayed expression gives value convergence after repair. But the dominating masses and factors $c$ can grow rapidly, arbitrary Borel integrals need not be effectively evaluable, and a repaired simple proposal need not itself remain simple. Thus \eqref{eq:L1modulus48} is not a two-sided computable scheme for a diffuse initial law. The finite-observation theorem in the main text obtains such a scheme by exact closure, not by suppressing these difficulties.
+
+\subsection{Exact finite products and common budgets}
+For $p\in[l,u]$, $v\in[a,b]$, each product $z=pv$ obeys the sign-safe inequalities
+\begin{align*}
+ z&\ge ap+lv-la,& z&\ge bp+uv-ub,\\
+ z&\le ap+uv-ua,& z&\le bp+lv-lb.
+\end{align*}
+The displayed four McCormick inequalities, not any sign shortcut, are reconstructed by the reader. Signed $B=\underline V-J$ variables are allowed. For a probability simplex, $\sum_a p_a v=v$ supplies an exact product conservation identity. These constraints preserve one continuation variable per successor. The occupation completion \eqref{eq:shared48} is an alternative exact formulation, while the implemented probability-box search enforces the same compatibility through the original Bellman equations. The occupancy LP itself is not falsely described as complete for $\KR$.
+
+\section{Organization of retained material}\label{app:preserve48}
+The current supplement contains all 54 controlled-density runs and appends the complete R50 supplement, including its 78 diffuse reset runs, 48 retrospective finite runs, price audits, and reconstructed complete R48 article. The older statement about 28 new rows belonged to R48 and remains in that historical article, not as a count for the current revision. Earlier manuscripts retain the strict-gap quadratic analysis, exact aggregation, observable fibers, original uniform-law intervals and nonlinear examples. The original sources and proof records remain unchanged in the parent history. The new preservation and dependency manifests distinguish unchanged inherited inputs from new generated material; preservation is not evidence of an additional numerical target hit.
