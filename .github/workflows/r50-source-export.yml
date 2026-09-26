@@ -1,0 +1,31 @@
+name: R50 pinned source export
+on:
+  push:
+    branches: [revision/econometrica-r50-complete-diffuse-2026-09-26]
+    paths: [.github/workflows/r50-source-export.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Export inherited scientific additions
+        run: |
+          git rev-parse HEAD > /tmp/SOURCE_COMMIT.txt
+          python - <<'PY'
+          import pathlib, subprocess, tarfile
+          names = subprocess.check_output(['git','diff','--name-only','fd116d0f5876cec5d0395c5496beccac7c1564fd','HEAD']).decode().splitlines() if False else subprocess.check_output(['git','ls-files']).decode().splitlines()
+          with tarfile.open('/tmp/NBO-r50-inherited.tar.gz','w:gz') as out:
+              for name in names:
+                  p=pathlib.Path(name)
+                  if p.is_file() and ('r49' in name.lower() or name.endswith('R49.tex')):
+                      out.add(name,arcname=name)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NBO-r50-inherited-source
+          path: |
+            /tmp/NBO-r50-inherited.tar.gz
+            /tmp/SOURCE_COMMIT.txt
+          retention-days: 14
