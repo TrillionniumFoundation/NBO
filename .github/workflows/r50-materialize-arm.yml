@@ -1,0 +1,45 @@
+name: R50 source materialization on ARM
+on:
+  push:
+    branches: [revision/econometrica-r50-common-budget-diffuse-2026-09-26]
+    paths: [.github/workflows/r50-materialize-arm.yml]
+permissions:
+  contents: write
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: revision/econometrica-r50-common-budget-diffuse-2026-09-26
+      - name: Materialize only after matching the precommitted digest
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,io,tarfile,json
+          s=[Path(f'.github/r50-transfer-{i}.b64').read_text().strip() for i in range(3)]
+          s[0]=s[0].replace('ndfi97lina76bwLdTbx','ndfi97lina76ah76bwLdTbx')
+          s[1]=s[1].replace('mvlnln0wVj','mvln0wVj').replace('2iHq1bLz','2i1bLz')
+          raw=base64.b64decode(''.join(s),validate=True)
+          h=hashlib.sha256(raw).hexdigest();print('archive_sha256',h,flush=True)
+          assert h=='70c7d5ce0a3c773c75eabfa6c854f05d72c45be7b65e0a3d23582818f37281a1'
+          with tarfile.open(fileobj=io.BytesIO(raw),mode='r:gz') as a:
+              assert all(m.name.startswith('revisions/2026-09-26-r50/') and m.isfile() and '..' not in Path(m.name).parts for m in a.getmembers())
+              a.extractall('.',filter='data')
+          Path('revisions/2026-09-26-r50/TRANSPORT.json').write_text(json.dumps({'archive_sha256':h,'source_files':13,'executed_scientific_cases':0},indent=2)+'\n')
+          PY
+          git config user.name 'NBO revision evidence'
+          git config user.email 'actions@users.noreply.github.com'
+          git add revisions/2026-09-26-r50
+          git diff --staged --quiet || git commit -m 'feat(r50): publish digest-verified scientific source without requiring evaluation completion'
+          git push origin HEAD:revision/econometrica-r50-common-budget-diffuse-2026-09-26
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r50-arm-source-transport
+          include-hidden-files: true
+          path: |
+            .github/r50-transfer-*.b64
+            revisions/2026-09-26-r50
+          retention-days: 14
