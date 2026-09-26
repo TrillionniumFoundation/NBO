@@ -1,0 +1,22 @@
+name: R50 transport audit
+on:
+  push:
+    branches: [revision/econometrica-r50-common-budget-diffuse-2026-09-26]
+    paths: [.github/workflows/r50-transport-audit.yml]
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          mkdir -p /tmp/r50-transport
+          cp .github/r50-transfer-*.b64 /tmp/r50-transport/
+          sha256sum /tmp/r50-transport/*.b64
+          git rev-parse HEAD > /tmp/r50-transport/COMMIT.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r50-transport-audit
+          path: /tmp/r50-transport
+          retention-days: 14
