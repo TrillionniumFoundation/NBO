@@ -10,13 +10,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Archive reviewed source tree
+      - name: Archive sources and current evidence
         run: |
           git rev-parse HEAD > /tmp/SOURCE_COMMIT.txt
-          git archive --format=tar HEAD | gzip -1 > /tmp/NBO-r49-source.tar.gz
+          python - <<'PY'
+          import pathlib, subprocess, tarfile
+          paths = subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          with tarfile.open('/tmp/NBO-r49-source.tar.gz','w:gz') as out:
+              for name in paths:
+                  p=pathlib.Path(name)
+                  if p.is_file() and (p.suffix in {'.tex','.cls','.cfg','.bst','.sty','.py','.sh','.bib','.md','.yml'} or name.startswith('revisions/2026-09-26-r48/')):
+                      out.add(name,arcname=name)
+          PY
       - uses: actions/upload-artifact@v4
         with:
-          name: NBO-r49-pinned-source
+          name: NBO-r49-compact-source
           path: |
             /tmp/NBO-r49-source.tar.gz
             /tmp/SOURCE_COMMIT.txt
