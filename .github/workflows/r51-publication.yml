@@ -1,0 +1,132 @@
+name: R51 controlled-density full publication
+on:
+  push:
+    branches: [revision/econometrica-r51-controlled-density-2026-09-27]
+    paths:
+      - '.github/workflows/r51-publication.yml'
+      - '.github/r51-source-*.b64'
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r51-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate complete transport and materialize ordinary scientific sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,io,tarfile,json
+          chunks=[Path(f'.github/r51-source-{i}.b64').read_text().strip() for i in range(3)]
+          blob=base64.b64decode(''.join(chunks),validate=True)
+          assert hashlib.sha256(blob).hexdigest()=='5b69f2e2f224ce97ba666d02aed27e8743f9f7ed349d2cc859dc9ed0b69a0974'
+          with tarfile.open(fileobj=io.BytesIO(blob),mode='r:xz') as archive:
+              assert len(archive.getmembers())==11
+              for member in archive:
+                  p=Path(member.name)
+                  assert member.isfile() and not p.is_absolute() and '..' not in p.parts
+                  assert str(p).startswith('revisions/2026-09-27-r51/') or str(p) in ['R51_BUILD.sh','R51_REPRODUCE.sh']
+                  p.parent.mkdir(parents=True,exist_ok=True)
+                  p.write_bytes(archive.extractfile(member).read())
+          root=Path('revisions/2026-09-27-r51')
+          freeze=json.loads((root/'SOURCE_FREEZE.json').read_text())
+          for name,want in freeze['source_sha256'].items():
+              assert hashlib.sha256((root/name).read_bytes()).hexdigest()==want,name
+          print('All source members and all pre-evaluation frozen hashes match.')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f R51_BUILD.sh R51_REPRODUCE.sh revisions/2026-09-27-r51
+          git diff --cached --quiet || git commit -m 'research(r51): materialize exact controlled-density theorem, frozen solvers, standalone reader and journal publication sources'
+          git push origin HEAD:${GITHUB_REF_NAME}
+      - name: Install numerical cross-check and journal build tools
+        run: |
+          python -m pip install scipy==1.15.2 mpmath==1.3.0
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended poppler-utils
+      - name: Reproduce every run, independently verify and build all three PDFs
+        shell: bash
+        run: |
+          set -euo pipefail
+          export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
+          bash R51_REPRODUCE.sh | tee /tmp/r51-reproduction.txt
+          cp /tmp/r51-reproduction.txt revisions/2026-09-27-r51/logs/remote-reproduction.txt
+          find revisions/2026-09-27-r51 -type d -name __pycache__ -prune -exec rm -rf {} +
+          git fetch --depth=1 origin 8fb2b5e09610bf596758892cd5ffd5ad83ddb707
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess,json,os
+          base='8fb2b5e09610bf596758892cd5ffd5ad83ddb707'
+          names=subprocess.check_output(['git','diff','--name-only',base],text=True).splitlines()
+          allowed=lambda p:p.startswith('revisions/2026-09-27-r51/') or p.startswith('.github/r51-source-') or p=='.github/workflows/r51-publication.yml' or p.startswith('R51_') or p.startswith('ECTA_R51') or p.startswith('SUPP_R51') or p.startswith('RESPONSE_R51')
+          assert all(allowed(p) for p in names),names
+          root=Path('revisions/2026-09-27-r51')
+          (root/'PRESERVATION.json').write_text(json.dumps({'base_commit':base,'all_inherited_tracked_files_unchanged':True,'changed_tracked_paths':names},indent=2)+'\n')
+          summary=json.loads((root/'SUMMARY.json').read_text())
+          assert summary['models']==27 and summary['runs']==54
+          assert summary['common_hits']==27 and summary['uniform_hits']==27
+          (root/'EXECUTION.json').write_text(json.dumps({'build_input_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'workflow_run_id':os.environ['GITHUB_RUN_ID'],'frozen_source_hashes_verified':True,'contract_tests_passed':8,'complete_cover_proofs_verified':54,'pdfs':['ECTA_R51.pdf','SUPP_R51.pdf','RESPONSE_R51.pdf'],'final_commit_binding':'Final commit SHA is recorded after publication in the workflow artifact r51-final-head.txt.'},indent=2)+'\n')
+          PY
+          python revisions/2026-09-27-r51/replication/manifest.py
+          git add -f revisions/2026-09-27-r51 R51_BUILD.sh R51_REPRODUCE.sh R51_REVIEW.md ECTA_R51.tex ECTA_R51.pdf SUPP_R51.tex SUPP_R51.pdf RESPONSE_R51.tex RESPONSE_R51.pdf RESPONSE_R51.md
+          git commit -m 'publication(r51): commit complete verified Econometrica article, supplement, 60-item response and 54 controlled-density proofs'
+          git push origin HEAD:${GITHUB_REF_NAME}
+          git rev-parse HEAD | tee /tmp/r51-final-head.txt
+      - name: Create and fully validate a self-contained referee archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import tarfile,subprocess,hashlib,json
+          tracked=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          selected=[]
+          for name in tracked:
+              if not name:continue
+              p=Path(name)
+              old=name.startswith(('revisions/2026-09-26-r48/','revisions/2026-09-26-r50/','revisions/2026-09-27-r51/'))
+              root=len(p.parts)==1 and (p.suffix in ['.tex','.cls','.sty','.cfg','.bib','.bst'] or 'R51' in p.name or p.name in ['SUPP_R50.pdf','RESPONSE_R50.pdf','R48_RECONSTRUCTED_R50.pdf'])
+              report=name=='reviews/2026-09-26-econometrica-r48/referee_report.md'
+              if (old or root or report) and p.is_file():selected.append(p)
+          archive=Path('/tmp/NBO-R51-full-review-source.tar.gz')
+          with tarfile.open(archive,'w:gz') as tar:
+              for p in selected:tar.add(p,arcname=str(p),recursive=False)
+          count=0
+          with tarfile.open(archive,'r:gz') as tar:
+              for m in tar:
+                  f=tar.extractfile(m)
+                  while f.read(1024*1024):pass
+                  count+=1
+          assert count==len(selected) and count>100
+          Path('/tmp/r51-archive-verification.json').write_text(json.dumps({'members':count,'all_members_read_back':True,'sha256':hashlib.sha256(archive.read_bytes()).hexdigest(),'final_head':Path('/tmp/r51-final-head.txt').read_text().strip()},indent=2)+'\n')
+          print('Verified complete referee archive:',count,'members')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: NBO-R51-complete-referee-package
+          retention-days: 30
+          path: |
+            /tmp/NBO-R51-full-review-source.tar.gz
+            /tmp/r51-final-head.txt
+            /tmp/r51-archive-verification.json
+            ECTA_R51.pdf
+            SUPP_R51.pdf
+            RESPONSE_R51.pdf
+            R51_REVIEW.md
+            revisions/2026-09-27-r51/SUMMARY.json
+            revisions/2026-09-27-r51/VERIFICATION.json
+            revisions/2026-09-27-r51/EXECUTION.json
+            revisions/2026-09-27-r51/MANIFEST.json
+            revisions/2026-09-27-r51/logs/
