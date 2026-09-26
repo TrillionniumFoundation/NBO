@@ -1,0 +1,143 @@
+name: R50 frozen common-budget and diffuse evaluation
+on:
+  push:
+    branches: [revision/econometrica-r50-common-budget-diffuse-2026-09-26]
+    paths: [.github/workflows/r50-evaluation.yml]
+permissions:
+  contents: write
+env:
+  OPENBLAS_NUM_THREADS: '1'
+  OMP_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  PYTHONHASHSEED: '0'
+jobs:
+  freeze:
+    runs-on: ubuntu-24.04
+    outputs:
+      sha: ${{ steps.freeze.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: revision/econometrica-r50-common-budget-diffuse-2026-09-26
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Decode and verify the exact scientific source
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,io,tarfile,json
+          paths=[Path(f'.github/r50-transfer-{i}.b64') for i in range(3)]
+          s=[p.read_text().strip() for p in paths]
+          # Repair identified text-transport slips only; the final SHA is mandatory.
+          s[0]=s[0].replace('ndfi97lina76bwLdTbx','ndfi97lina76ah76bwLdTbx')
+          s[1]=s[1].replace('mvlnln0wVj','mvln0wVj').replace('2iHq1bLz','2i1bLz')
+          raw=base64.b64decode(''.join(s),validate=True)
+          actual=hashlib.sha256(raw).hexdigest()
+          print('archive_sha256',actual,flush=True)
+          assert actual=='70c7d5ce0a3c773c75eabfa6c854f05d72c45be7b65e0a3d23582818f37281a1','transport digest mismatch: no scientific execution permitted'
+          with tarfile.open(fileobj=io.BytesIO(raw),mode='r:gz') as a:
+              assert all(m.name.startswith('revisions/2026-09-26-r50/') and m.isfile() and '..' not in Path(m.name).parts for m in a.getmembers())
+              a.extractall('.',filter='data')
+          for p,v in zip(paths,s):p.write_text(v)
+          Path('revisions/2026-09-26-r50/TRANSPORT.json').write_text(json.dumps({'archive_sha256':actual,'files':13,'source_only':True},indent=2)+'\n')
+          PY
+      - run: python -m pip install numpy==2.3.5 scipy==1.17.0
+      - name: Fixed analytic tests and second arithmetic stack
+        run: |
+          g++ -std=c++17 -O2 revisions/2026-09-26-r50/replication/check_price.cpp -o /tmp/r50-check-price-cpp
+          python revisions/2026-09-26-r50/replication/unit_tests.py
+      - name: Commit and remotely freeze before generating any registered case
+        id: freeze
+        run: |
+          git config user.name 'NBO revision evidence'
+          git config user.email 'actions@users.noreply.github.com'
+          git add .github/r50-transfer-*.b64 revisions/2026-09-26-r50
+          git commit -m 'feat(r50): materialize checked common-budget, ideal-price and diffuse sources'
+          git push origin HEAD:revision/econometrica-r50-common-budget-diffuse-2026-09-26
+          python revisions/2026-09-26-r50/replication/freeze.py
+          git add revisions/2026-09-26-r50/SOURCE_FREEZE.json
+          git commit -m 'science(r50): freeze protocol and exact source before new model generation'
+          git push origin HEAD:revision/econometrica-r50-common-budget-diffuse-2026-09-26
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r50-freeze-and-transport
+          include-hidden-files: true
+          path: |
+            .github/r50-transfer-*.b64
+            revisions/2026-09-26-r50
+          retention-days: 14
+  evaluate:
+    needs: freeze
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [warranty, inventory, queue, ties, price_audit, diffuse, ofat201, ofat202]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.freeze.outputs.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install numpy==2.3.5 scipy==1.17.0
+      - name: Record environment and run every registered case in this group
+        env:
+          GROUP: ${{ matrix.group }}
+        run: |
+          mkdir -p revisions/2026-09-26-r50/validation
+          { uname -a; lscpu; python --version; python -m pip freeze; git rev-parse HEAD; } > revisions/2026-09-26-r50/validation/environment-${GROUP}.txt
+          python revisions/2026-09-26-r50/replication/run_group.py "$GROUP" 2>&1 | tee revisions/2026-09-26-r50/validation/execution-${GROUP}.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r50-group-${{ matrix.group }}
+          path: |
+            revisions/2026-09-26-r50/models
+            revisions/2026-09-26-r50/results
+            revisions/2026-09-26-r50/proofs
+            revisions/2026-09-26-r50/validation
+          retention-days: 14
+  collect:
+    needs: [freeze, evaluate]
+    runs-on: ubuntu-24.04
+    if: always() && needs.freeze.result == 'success'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: revision/econometrica-r50-common-budget-diffuse-2026-09-26
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: r50-group-*
+          path: revisions/2026-09-26-r50
+          merge-multiple: true
+      - name: Preserve all executed results and declare actual completion
+        env:
+          FREEZE_SHA: ${{ needs.freeze.outputs.sha }}
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,os,hashlib,datetime
+          r=Path('revisions/2026-09-26-r50');groups=['warranty','inventory','queue','ties','price_audit','diffuse','ofat201','ofat202']
+          done={g:(r/'validation'/f'group_{g}.json').exists() for g in groups}
+          results=list((r/'results').glob('*.json'))
+          record={'version':'r50-execution-1','source_freeze_commit':os.environ['FREEZE_SHA'],'groups':done,'complete':all(done.values()),'result_count':len(results),'result_sha256':{str(p.relative_to(r)):hashlib.sha256(p.read_bytes()).hexdigest() for p in results},'utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+          (r/'EVALUATION_COMPLETE.json').write_text(json.dumps(record,indent=2)+'\n')
+          print(json.dumps({k:v for k,v in record.items() if k!='result_sha256'},indent=2))
+          PY
+          git config user.name 'NBO revision evidence'
+          git config user.email 'actions@users.noreply.github.com'
+          git add revisions/2026-09-26-r50
+          git commit -m 'science(r50): retain every executed model, certificate, timing and validation receipt'
+          git push origin HEAD:revision/econometrica-r50-common-budget-diffuse-2026-09-26
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r50-complete-scientific-evidence
+          path: revisions/2026-09-26-r50
+          retention-days: 30
+      - run: python -c "import json;assert json.load(open('revisions/2026-09-26-r50/EVALUATION_COMPLETE.json'))['complete']"
