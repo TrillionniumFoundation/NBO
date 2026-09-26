@@ -66,7 +66,6 @@ def witness(d,target,cap=F(4096)):
         history.append(dict(bits=bits,width=xi,price_budget=budget,repair_budget=ubudget))
         if xi<s and budget<=target/64 and ubudget<=target/64: break
         bits+=8
-        if bits>256: raise ArithmeticError('requested precision exceeds supported safety limit')
     dl=[[[max(Z,lo[t][i]-d['r'][t][i][a]-b*dot(d['P'][t][i][a],hi[t+1])) for a in range(m)] for i in range(n)] for t in range(T)]
     d0=[[[lo[t][i]-d['r'][t][i][a]-b*dot(d['P'][t][i][a],lo[t+1]) for a in range(m)] for i in range(n)] for t in range(T)]
     return dict(lo=lo,hi=hi,widths=widths,dl=dl,d0=d0,bits=bits,policy_bits=policy_bits,history=history,seconds=time.perf_counter()-start,DC=DC)
@@ -255,7 +254,7 @@ def rectangular(d,w,box):
             for arr,stage,ma in [(jmin,d['r'],False),(jmax,d['r'],True),(cmin,d['k'],False),(cmax,d['k'],True)]:
                 q=[stage[t][i][a]+b*dot(d['P'][t][i][a],arr[t+1]) for a in range(m)]
                 arr[t][i]=row_extreme(q,bd,ma)[0]
-            if jmax[t][i]<w['lo'][t][i]-d['epsilon']: return dict(infeasible=True,reason='operating')
+            if jmax[t][i]<w['lo'][t][i]-d['epsilon']: return dict(infeasible='operating')
     return dict(infeasible=None,jmin=jmin,jmax=jmax,cmin=cmin,cmax=cmax,lower=dot(d['nu'],cmin[0]))
 
 def build(d,w,box,rect,method,price):
