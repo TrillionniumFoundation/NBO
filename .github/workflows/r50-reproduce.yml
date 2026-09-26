@@ -1,0 +1,70 @@
+name: R50 frozen scientific reproduction
+on:
+  push:
+    branches: [revision/econometrica-r50-complete-diffuse-2026-09-26]
+    paths: [.github/workflows/r50-reproduce.yml]
+permissions:
+  contents: write
+concurrency:
+  group: r50-science-reproduction
+  cancel-in-progress: false
+jobs:
+  reproduce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check complete capsule and materialize ordinary source files
+        run: |
+          python - <<'PY'
+          import pathlib,base64,lzma,hashlib,json
+          root=pathlib.Path('revisions/2026-09-26-r50')
+          text=''.join((root/'transport'/f'science.{i}.b64').read_text().strip() for i in range(2))
+          assert len(text)==21264
+          data=base64.b64decode(text,validate=True)
+          assert hashlib.sha256(data).hexdigest()=='7285db41774333a03275275a94951b63582bd82902baf6239707ecb9e246cebc'
+          files=json.loads(lzma.decompress(data));assert len(files)==12
+          for name,content in files.items():
+              p=pathlib.Path(name)
+              assert not p.is_absolute() and '..' not in p.parts and name.startswith(str(root)+'/replication/')
+              p.parent.mkdir(parents=True,exist_ok=True);p.write_text(content)
+          for name,digest in json.loads((root/'PROTOCOL.json').read_text())['code_sha256'].items():
+              assert hashlib.sha256((root/name).read_bytes()).hexdigest()==digest,name
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add revisions/2026-09-26-r50/replication
+          git commit -m 'science(r50): materialize frozen constructors and independent arithmetic readers'
+          git push origin HEAD:revision/econometrica-r50-complete-diffuse-2026-09-26
+      - name: Install pinned numerical dependencies
+        run: python -m pip install numpy==2.3.5 scipy==1.17.0
+      - name: Reproduce every row, cap audit and cross-language check
+        run: |
+          set -o pipefail
+          mkdir -p revisions/2026-09-26-r50/logs
+          python revisions/2026-09-26-r50/replication/run_evaluation.py 2>&1 | tee revisions/2026-09-26-r50/logs/clean-run-evaluation.log
+          python revisions/2026-09-26-r50/replication/verify_all.py 2>&1 | tee revisions/2026-09-26-r50/logs/clean-run-verification.log
+      - name: Commit complete evidence without replacing historical objects
+        run: |
+          git add revisions/2026-09-26-r50
+          git commit -m 'evidence(r50): retain all diffuse, finite and price-audit results with exact replay'
+          git pull --rebase origin revision/econometrica-r50-complete-diffuse-2026-09-26
+          git push origin HEAD:revision/econometrica-r50-complete-diffuse-2026-09-26
+          git rev-parse HEAD > revisions/2026-09-26-r50/logs/EVIDENCE_COMMIT.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: NBO-R50-clean-scientific-evidence
+          path: revisions/2026-09-26-r50/
+          retention-days: 30
