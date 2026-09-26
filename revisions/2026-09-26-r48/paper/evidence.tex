@@ -1,0 +1,67 @@
+\section{Frozen end-to-end evaluation}\label{sec:evidence48}
+\subsection{Information, cases, and work accounting}
+The final numerical source and the model generator were frozen at commit \texttt{b636c40609863b498658db9d404676a5f74a236b}, before generating the twelve primary environments or the two fleet inputs. The development smoke test used a separate two-state model. The primary cases combine warranty maintenance, inventory, queueing, and time-varying ties, at three sizes:
+\begin{gather*}
+(n,T,m)\in\{(3,4,3),(5,8,3),(8,12,4)\},\\
+\beta\in\{7/8,15/16,63/64\},\qquad\varepsilon\in\{1/50,1/100,1/200\}.
+\end{gather*}
+The parameters vary jointly; these rows do not identify a separate causal effect of each dimension. Nonuniform initial probabilities are used, with the largest level placing mass only on two states. The tie family has nonzero, time-varying operating values and different optimal faces across states and dates; it is one generator family, not three independent applications. Its hidden construction potential is not passed to either solver. The three other families have genuinely nonzero witness widths. No primary outcome was used to alter the frozen solver.
+
+Each method starts from the same raw model and independently constructs its own witnesses and initial policy. A conditional greedy policy and a local proposal are charged to that run. Prices are generated from the witnesses, never from exact-run prices. The methods have the same 30-second soft construction allocation, 255-node cap, 3-second local allocation, and a 3-second allocation for each LP proposal. The price allocation is capped at 5 seconds \emph{within} construction. Exact certificate operations finish before a budget check. Reported all-in time additionally includes encoding, compression, and independent replay, and is not capped at 30 seconds. Thus the comparison has equal declared construction rules and measured cumulative costs, not an assertion that every run consumes exactly the same total CPU time.
+
+The environment is Python 3.13 with NumPy 2.3.5 and SciPy 1.17.0, one numerical thread, on GitHub-hosted Linux runners. Family jobs use separate machines; direct and price runs are sequential within a family process. Process high-water memory is therefore not a method-isolated peak. The supplement retains that limitation and reports all original timings. Floating optimization is only a proposal mechanism; both lower endpoints and deployed policies have exact rational checks.
+
+\subsection{Primary results: tighter intervals but unchanged target counts}
+Table~\ref{tab:primary48} reports the complete primary sample. Both methods have four target hits: W0, I0, Q0, and T1. T1 is zero cost, Q0 closes at the root, and W0 and I0 require branching. The price formulation needs respectively 5 and 9 nodes on the branching successes, compared with 69 and 63 for the direct formulation. All four successes are new inputs generated after the freeze, but the price formulation adds \emph{zero} method-relative target hits on this sample. This is different from counting cumulative historical closures.
+
+\begin{table}[t]
+\caption{All twelve source-frozen primary cases}\label{tab:primary48}
+\centering\small
+\begin{tabular}{lrrrrrl}\toprule
+Case & Price upper & Direct width & Price width & Price rel.\% & P nodes & P stop\\\midrule
+\tablerows{revisions/2026-09-26-r48/paper/generated/primary_rows.tex}
+\bottomrule\end{tabular}
+\begin{minipage}{0.97\linewidth}\footnotesize
+W, I, Q, and T denote warranty, inventory, queue, and ties. Indices 0--2 have the sizes listed in the text. The primary criterion is absolute width $\le10^{-3}$; \texttt{target} denotes only that criterion. Relative width divides by the upper endpoint (zero is displayed for the exact zero-cost row). Direct and price upper endpoints, all costs, and all trajectories appear separately in the supplement. Rounded table entries do not replace the exact endpoints used to decide success.
+\end{minipage}
+\end{table}
+
+All eight cases left open by the direct formulation remain open with prices, but each has a smaller price interval. The largest price widths are about $0.01110$, $0.01086$, and $0.01174$ in W2, I2, and Q2. T2 still has width $0.05238$, although below the direct width $0.95040$. These are informative improvements, not successful applications of the $10^{-3}$ stopping rule. T0 also reaches the node cap with a nonzero width. Increasing precision cannot remove these optimization gaps: the tied witnesses already have zero width in exact dyadic arithmetic.
+
+Across the twelve primary cases, the direct method uses about 286.26 seconds of measured all-in work and the price method about 340.52 seconds. The largest individual all-in time is about 53.42 seconds. The more expensive price relaxation trades fewer processed nodes for tighter lower values; it is not declared a uniform speed winner. Full per-stage costs and proof sizes are available in Supplement Tables S2--S4, while every recorded lower/upper improvement appears in the machine-readable trajectory file. The search refinement and feasible upper generation are actually executed; these rows are not a price-only attachment to old incumbents.
+
+\subsection{Observed-fleet intervals and the full-state interpretation}
+\begin{table}[t]
+\caption{Paired certificates for the original affine atoms with an observed initial fleet}\label{tab:fleet48}
+\centering\small
+\begin{tabular}{lrrrrrl}\toprule
+Case & Price upper & Direct width & Price width & Price rel.\% & P nodes & P stop\\\midrule
+\tablerows{revisions/2026-09-26-r48/paper/generated/fleet_rows.tex}
+\bottomrule\end{tabular}
+\begin{minipage}{0.97\linewidth}\footnotesize
+F0 and F1 have horizons 2 and 3. Their common initial law is $(3/4)\delta_{1/5}+(1/4)\delta_{4/5}$. Theorem~\ref{thm:closure48}, not a state-quantization approximation, makes these intervals valid for the full Borel-state contract. Both methods generate their own incumbents. These are two designed contracts, not independent empirical applications or closures of uniform-initial-law rows.
+\end{minipage}
+\end{table}
+
+The price widths are approximately $2.28\times10^{-9}$ and $8.27\times10^{-9}$; the direct three-period width is about $3.67\times10^{-4}$. All four intervals meet the predeclared target. Their independent arithmetic checks concern the finite forward model, while the independently written contract check reconstructs the exact original affine maps and terminal folding. The extension proof transfers those checks to the unrestricted Borel-policy target. It is an analytic theorem, not a machine-checked proof of global Borel measurability. The zero spatial-error assertion follows from exact forward closure and should not be attributed to the finite reader alone.
+
+\subsection{Precision and verification boundaries}
+The adaptive rule chooses 32, 40, and 48 bits across the three non-tie size levels and 32 bits for the fleet cases. The tied construction is exactly representable at the starting 8-bit witness level; deployment still uses at least 32 bits. Every table reports price magnitude, the actual witness guard ratio, and the price-amplification budget. Large prices and high discounting impose a real enclosure requirement; the reported finite passes do not demonstrate a cheap high-dimensional learned or sparse-grid oracle.
+
+All 28 proof objects are independently reconstructed from raw primitives, witnesses, prices, complete covers, and policies. The publication stage repeats this reconstruction without rerunning the optimizers and adds model-contract and corruption checks. This separates source identity, finite arithmetic validity, analytic validity, and performance generalization. The two formulations are separately reconstructed but share a search driver and proposal routine; they are not independent external replications. The historical SCIP native lower bounds remain outside the rational portfolio and are preserved as numerical comparisons, not relabeled certified results.
+
+\paragraph{Post-execution diagnostics.}
+A separate diagnostic program computes exact finite operating values only after
+all frozen prices, policies, and proof objects have been produced. It checks the
+policy-to-certificate identity and the fixed-field witness-loss inequality on the
+fourteen price runs. These exact values are not inputs to any price proposal,
+policy proposal, repair, branching decision, or reported endpoint. The supplement
+reports the clipping correction separately from the three nonnegative slacks,
+and separates price-certificate width from the final tree width.
+
+\section{Implications and remaining numerical questions}\label{sec:conclusion48}
+The results identify the common continuation as the organizing constraint. Restart prices have a precise occupation-flow meaning; the missing shared budgets can be written explicitly and restored by a convergent finite refinement. A finite solver can construct both endpoints using only certified operating enclosures. For finitely observed initial populations and controlled finite-atomic dynamics, exact forward closure and global extension turn those finite intervals into paired full-state certificates.
+
+The successful fleet calculations and the new source-frozen sample answer different questions. The former exercise a matched continuous-state theorem on original action-dependent atoms with an observed initial law. The latter show that an end-to-end witness-only implementation works without privileged exact-model discoveries, while exposing remaining failures under finite budgets. Four of twelve primary targets are met by each formulation, and eight remain open. These results do not imply polynomial search complexity, superiority to modern uncertified global solvers, or an empirical welfare conclusion.
+
+The diffuse-initial-law continuous problem remains consequential. Its old intervals are retained without revision of their endpoints; finite observations are not used as a substitute initial law in those calculations. Broader settings involving continuous actions, unbounded primitives, learned kernels, or multiple operating constraints also require their own approximation and feasibility arguments. The inherited lower-only multicriterion extension is not promoted into an unproved general repair theorem. The present contribution keeps the original common-policy target and supplies an explicit algorithmic chain where the stated hypotheses make that chain complete.
