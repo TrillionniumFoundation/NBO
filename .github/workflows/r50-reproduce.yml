@@ -7,10 +7,10 @@ permissions:
   contents: write
 concurrency:
   group: r50-science-reproduction
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   reproduce:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 45
     env:
       OPENBLAS_NUM_THREADS: '1'
@@ -45,7 +45,8 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add revisions/2026-09-26-r50/replication
-          git commit -m 'science(r50): materialize frozen constructors and independent arithmetic readers'
+          git diff --cached --quiet || git commit -m 'science(r50): materialize frozen constructors and independent arithmetic readers'
+          git pull --rebase origin revision/econometrica-r50-complete-diffuse-2026-09-26
           git push origin HEAD:revision/econometrica-r50-complete-diffuse-2026-09-26
       - name: Install pinned numerical dependencies
         run: python -m pip install numpy==2.3.5 scipy==1.17.0
@@ -58,7 +59,7 @@ jobs:
       - name: Commit complete evidence without replacing historical objects
         run: |
           git add revisions/2026-09-26-r50
-          git commit -m 'evidence(r50): retain all diffuse, finite and price-audit results with exact replay'
+          git diff --cached --quiet || git commit -m 'evidence(r50): retain all diffuse, finite and price-audit results with exact replay'
           git pull --rebase origin revision/econometrica-r50-complete-diffuse-2026-09-26
           git push origin HEAD:revision/econometrica-r50-complete-diffuse-2026-09-26
           git rev-parse HEAD > revisions/2026-09-26-r50/logs/EVIDENCE_COMMIT.txt
