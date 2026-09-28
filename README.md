@@ -1,41 +1,16 @@
-# texsupport.econometricsociety-ecta
+# Neural Bellman Operators — Econometrica-style revision
 
-LaTeX author support files for the Econometric Society journal 
-[Econometrica (ECTA)](https://www.econometricsociety.org/publications/econometrica/browse)
+This revision branch contains the revised **Neural Bellman Operators** manuscript by Qian QI and its coherent supplement, addressing the repository's September 15, 2026 advisory referee report.
 
-## Before beginning
+- Main article: [ECTA.tex](ECTA.tex).
+- Supplement: [supp.tex](supp.tex).
+- Revision guide and reproduction commands: [revisions/2026-09-28/README.md](revisions/2026-09-28/README.md).
+- Point-by-point response R1–R12: [RESPONSE_TO_REFEREE.md](revisions/2026-09-28/RESPONSE_TO_REFEREE.md).
+- Original-to-revision content map: [SECTION_MAP.md](revisions/2026-09-28/SECTION_MAP.md).
+- Local execution and document identities: [LOCAL_VALIDATION.json](revisions/2026-09-28/results/LOCAL_VALIDATION.json).
 
-`econsocart` LaTeX package is the updated version of now obsolete `ectaart`.
+The main manuscript and supplement compile to 32 and 9 pages in the recorded local environment. They use the existing `econsocart` class. The original manuscript, supplement, comments, and template README are preserved under the revision archive; original bibliographies, images, and review materials remain in the repository.
 
-## Contents
+The revision includes three principal error/selection theorems, model-specific derivations, a block-specific differential core, 29 executed calibration/reference experiments, and eight passing regression tests. The original twelve referee diagnostics were separately reproduced. These counts do not mean that unrestricted neural comparisons or a full dynamic Cournot MPNE computation have been completed. The response states those remaining empirical tasks explicitly.
 
-The following files are given in the repository (or directly in `.zip` archive):
-
--   `econsocart.cls`, `econsocart.cfg` - LaTeX style files designed for articles of the Econometric Society journals. 
-    (See also [QE](https://github.com/vtex-soft/texsupport.econometricsociety-qe) and [TE](https://github.com/vtex-soft/texsupport.econometricsociety-te).)
-    Please do not change them. These files are already loaded in the respective template files;
--   `ecta_template.tex` - the main template file should be used for article preparation;
--   `ecta_sample.pdf` - sample file and instructions for the preparation of a
-    camera-ready paper in LaTeX. This document contains useful information regarding the structure 
-    of your document, proper tagging style, layout features, etc;
--   `ecta_sample_final.pdf` - sample file with `final` option for prepublication;
--   `ecta_sample.tex` - source file for the instructions paper `ecta_sample.pdf`;
--   `figure_sample.eps`, `figure_sample.pdf` - sample figures for `ecta_sample.pdf`.
--   `ecta-fullname.bst` - BibTeX styles to prepare bibliography file.
-    More information can be found [here](http://www.bibtex.org/Using/) 
-    or [here](https://www.latex-tutorial.com/tutorials/bibtex/).
-
-## Setup
-
--   Clone the repository or download the `.zip` archive;
--   Install LaTeX style files (`econsocart.cls`, `econsocart.cfg`) in your TeX system or 
-    place them in the same directory where your `*.tex` file is;
--   Read the instructions (`ecta_sample.pdf`) for the preparation of your LaTeX document;
--   Use the template file `ecta_template.tex` to prepare your manuscript.
-
-## Bug reports
-
-Please submit bug reports and/or feature requests
-at [GitHub page](https://github.com/vtex-soft/texsupport.econometricsociety-ecta/issues) or 
-[latex-support@vtex.lt](mailto:latex-support@vtex.lt).
-
+The workflow is read-only with respect to repository contents and uploads raw arrays, iteration logs, and compiled PDFs as exact-source execution artifacts. A local result is not a remote CI pass or journal acceptance. Main and review branches are not changed by this revision.

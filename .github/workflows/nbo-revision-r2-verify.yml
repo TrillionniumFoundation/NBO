@@ -1,0 +1,61 @@
+name: NBO R2 read-only verification
+on:
+  push:
+    branches: [revision/econometrica-nbo-r2-2026-09-28]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Record immutable source
+        run: |
+          mkdir -p execution
+          git rev-parse HEAD > execution/source-commit.txt
+          git rev-parse HEAD^{tree} > execution/source-tree.txt
+          uname -a > execution/runner.txt
+      - name: Install numerical environment
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.10.0
+          python -m pip freeze > execution/python-environment.txt
+      - name: Execute full numerical suite and regression tests
+        run: |
+          set -o pipefail
+          python revisions/2026-09-28/code/experiments.py | tee execution/experiments.log
+          python revisions/2026-09-28/code/test_revision.py 2>&1 | tee execution/tests.log
+          python reviews/2026-09-15-econometrica/verify_counterexamples.py --output execution/reviewer-diagnostics.json
+      - name: Install manuscript toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y texlive-latex-extra texlive-fonts-recommended texlive-science
+          pdflatex --version > execution/tex-environment.txt
+          bibtex8 --version >> execution/tex-environment.txt
+      - name: Compile authoritative manuscript and supplement
+        run: |
+          pdflatex -interaction=nonstopmode -halt-on-error ECTA.tex > execution/ecta-pass1.log
+          bibtex8 ECTA > execution/bibliography.log
+          pdflatex -interaction=nonstopmode -halt-on-error ECTA.tex > execution/ecta-pass2.log
+          pdflatex -interaction=nonstopmode -halt-on-error ECTA.tex > execution/ecta-pass3.log
+          pdflatex -interaction=nonstopmode -halt-on-error supp.tex > execution/supp-pass1.log
+          pdflatex -interaction=nonstopmode -halt-on-error supp.tex > execution/supp-pass2.log
+          ! grep -E 'There were undefined|multiply defined|Overfull' ECTA.log supp.log
+          git diff --exit-code -- ECTA.tex supp.tex revision_reference.bib revisions/2026-09-28/code
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r2-${{ github.sha }}
+          path: |
+            execution/
+            revisions/2026-09-28/results/
+            ECTA.pdf
+            supp.pdf
+          retention-days: 30

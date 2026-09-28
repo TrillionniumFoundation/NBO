@@ -1,0 +1,7 @@
+# Superseded development execution — not final evidence
+
+The first local development run and its script are preserved in the complete attached execution package as `first_pass.json` and `first_pass_script.py`. Their SHA-256 hashes are recorded in `../LOCAL_VALIDATION.json`. This Git checkout also stores a lossless unified patch from the final `code/experiments.py` to that historical script. Apply it to a temporary copy, never to the authoritative source when validating the revision.
+
+Inspection identified a sign error in the first run's REPORTED quadratic evaluation residual; agreement of its solutions with Riccati values did not validate that incorrectly signed diagnostic. Its acceptance condition checked only coefficient error and was insufficient. The corrected suite includes the residual and actor gap in acceptance and independently tests the saved matrix identity. The first symmetric drift/payoff pair was replaced by a dense nonnormal drift and noncommuting payoff matrix to avoid a common independent-coordinate reduction. The NDU wealth stopping values were made explicit at every time level before rerunning both cost parameters and resolutions.
+
+The final `experiments.json.gz` records a complete rerun after those corrections. Historical acceptance flags are not promoted into final evidence. The complete package preserves both histories rather than overwriting the diagnostic record.
