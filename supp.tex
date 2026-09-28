@@ -1,260 +1,150 @@
 \documentclass[ecta,draft]{econsocart}
-
-% --- PREAMBLE AND PACKAGES ---
-% Basic packages from the main paper for consistency
 \RequirePackage[colorlinks,citecolor=blue,linkcolor=blue,urlcolor=blue]{hyperref}
-\usepackage{setspace,amsmath,amsfonts,amssymb,amsthm}
-\usepackage{enumitem}
-\usepackage{bm}
-\usepackage{mathpazo,newpxtext}
+\usepackage{amsmath,amsfonts,amssymb,amsthm,booktabs,array,longtable}
 \usepackage[T1]{fontenc}
-\usepackage{algorithm}
-\usepackage{algorithmicx}
-\usepackage{algpseudocode}
-\usepackage{cleveref}
-
-% --- LOCAL DEFINITIONS ---
+\usepackage{mathpazo,microtype}
 \startlocaldefs
-
-\theoremstyle{plain}
-\newtheorem{theorem}{Theorem}
-\newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{proposition}{Proposition}
-\newtheorem{assumption}{Assumption}
-
-\theoremstyle{remark}
-\newtheorem{definition}{Definition}
-\newtheorem{example}{Example}
-\newtheorem{remark}{Remark}
-
-\newcommand{\E}{\mathbb{E}}
-\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb E}
+\newcommand{\R}{\mathbb R}
+\newcommand{\HH}{\mathcal H}
+\newcommand{\LL}{\mathcal L}
+\newcommand{\tr}{\operatorname{tr}}
 \DeclareMathOperator*{\argmax}{arg\,max}
-\DeclareMathOperator*{\argmin}{arg\,min}
-\newcommand{\hamiltonian}{\mathcal{H}}
-\newcommand{\diffop}{\mathcal{D}}
-
 \endlocaldefs
-
-% --- DOCUMENT START ---
 \begin{document}
-
 \begin{frontmatter}
-
-\title{Supplementary Material for: \\ Neural Bellman Operators}
-\runtitle{NBO Supplementary Material}
-
+\title{Supplement to Neural Bellman Operators}
+\runtitle{NBO Supplement}
 \begin{aug}
-\author[id=au1,addressref={add1}]
-{\fnms{Qian}~\snm{QI}}
+\author[id=au1,addressref={add1}]{\fnms{Qian}~\snm{QI}}
 \address[id=add1]{Peking University}
 \end{aug}
-
 \end{frontmatter}
 
-\section{Introduction}
+\section{Relation to the Main Text}
+This supplement expands the models and algorithms of the revised main manuscript. It does not introduce an alternative total loss or a different equilibrium definition. Policy evaluation freezes all actor outputs. Policy improvement freezes the critic's value and derivative channels. For games, only the acting player's objective is differentiated. For temporal selves, both exponential components evaluate the same future policy. The earlier main and supplementary sources are preserved in the revision archive for comparison; they are not alternative implementations of the revised method.
 
-This supplementary document provides a detailed formalization of the extensions of the Neural Bellman Operators (NBO) method discussed in Section 8 of the main paper, ``Neural Bellman Operators.'' We present the precise mathematical formulation and the detailed algorithmic implementation for solving two classes of models that are central to modern economics but computationally challenging: (1) problems with time-inconsistent preferences, focusing on sophisticated quasi-hyperbolic agents, and (2) high-dimensional, continuous-time dynamic games, focusing on the computation of Markov Perfect Nash Equilibria (MPNE).
+The numerical laboratories have explicit approximation classes. The portfolio calibration uses homothetic output parameters; the coupled quadratic calculation uses a quadratic neural critic with exact policy evaluation; and the NDU calculation is an independent grid reference. The general differential core supports smooth batch-separable multilayer networks. Its gradient-routing tests are not presented as evidence that such a network was trained on every application. This distinction is important when reproducing the numerical results.
 
-For each case, we first define the economic problem and its equilibrium concept, characterized by a generalized or coupled system of Hamilton-Jacobi-Bellman (HJB) equations. We then present a step-by-step NBO algorithm designed to find the specific equilibrium structure of that problem. This includes the parameterization of policies and value functions with neural networks, the definition of the specialized loss functions, and the logic of the optimization procedure.
+\section{Policy Evaluation and the Recursive Policy Gradient}
+Let $a_\phi$ be differentiable in a scalar parameter direction, and suppose $V^{a_\phi}$ is sufficiently differentiable for the following calculation. The terminal payoff is independent of the policy parameter. Assume differentiation under the expectation is justified, that the differentiated state and utility equations are integrable, and that the boundary conditions of the differentiated problem are zero. Denote the directional derivative of the policy value by $w$.
 
-\section{A Formal Framework for Time-Inconsistent Agents}
-\label{sec:supp_time_inconsistency}
+Differentiating the fixed-policy equation gives
+\[
+ 0=w_t+\LL^{a_\phi}w+f_y(t,x,a_\phi,V^{a_\phi})w
+  +D_a\HH^{a_\phi}[V^{a_\phi}]\,D_\phi a_\phi.
+\]
+The operator derivative includes the dependence of both drift and covariance on the action. The derivative of the generator acting on the changing value is contained in $\LL^{a_\phi}w$, while the action derivative of the generator acting on the fixed value is contained in $D_a\HH$. No Hessian-action channel is discarded.
 
-We formalize the NBO framework for finding the subgame-perfect equilibrium consumption plan for a sophisticated agent with quasi-hyperbolic preferences in continuous time. Such an agent understands their future selves will also be present-biased and acts accordingly. The equilibrium is an intra-personal Nash equilibrium between the agent's successive temporal selves.
+Applying the linear Feynman--Kac formula to the differentiated equation gives
+\[
+ w(t,x)=\E_{t,x}^{a_\phi}\int_t^\tau
+ \exp\left(\int_t^s f_y(v,S_v,a_v,V^{a_\phi})dv\right)
+ D_a\HH^{a_\phi}[V^{a_\phi}](s,S_s)D_\phi a_\phi(s,S_s)ds.
+\]
+This formula concerns the performance derivative from the stated initial state. A domain-uniform Hamiltonian objective uses a different weighting. Such an objective is useful for approximate pointwise improvement, but it becomes a lifetime policy gradient only with the appropriate occupation and adjoint weights. Trajectories sampled by the current actor are detached in the implemented domain objective. Differentiating through their sampling law would define a different gradient estimator and must be analyzed separately.
 
-\subsection{The Model and the Generalized HJB Equation}
+The critic's residual derivative is the derivative of the entire fixed-policy equation. In particular, its level is determined by the recursive evaluation equation together with boundary data. A separate negative-Hamiltonian gradient in the critic is not an innocuous level anchor: in the scalar stationary example it moves the minimizer away from the Bellman root.
 
-Consider an agent with a time-inconsistent objective. From the perspective of time $t$, the agent's objective is to choose a consumption plan $\{c_s\}_{s \geq t}$ to maximize a utility functional that overweights the present. The behavior of a sophisticated agent is characterized by a time-consistent policy $c^*(t, S_t)$ that constitutes a subgame-perfect equilibrium. This equilibrium policy and its associated value function $V(t, S_t)$ must satisfy a \textit{generalized} HJB equation.
+\section{Representation, Boundary Conditions, and Error Measurement}
+\subsection{Smooth approximation and what it establishes}
+A derivative-approximation result concerns a smooth target on a compact domain and a family of networks whose capacity can increase. It does not imply that a fixed network attains zero residual, that optimization finds its best approximation, or that a nonsmooth target has classical derivatives everywhere. In a smooth problem, increasing the representation class can reduce approximation error in the value and derivatives. In a nonsmooth problem, NBO instead evaluates a consistent positive-weight Bellman equation, or solves an explicitly regularized equation before taking a justified limit.
 
-Let the state vector $S_t \in \R^d$ evolve according to the SDE:
-\begin{equation}
-dS_t = \mu(t, S_t, c_t) dt + \sigma(t, S_t, c_t) dM_t,
-\end{equation}
-where $c_t$ is the control (e.g., consumption). The value function $V(t,S_t)$ of a sophisticated agent is the lifetime utility evaluated from that point forward, *given* that all future selves will follow the equilibrium policy $c^*(s, S_s)$ for $s > t$. The current self, however, gets to choose $c_t$ optimally, taking the future selves' actions as given.
+The hard-terminal architecture is $v(t,x)=G(x)+(T-t)N(t,x)$. It exactly enforces $v(T,x)=G(x)$ independently of training. A lateral Dirichlet face needs an additional compatible lifting and vanishing factor. For a reflected state, the Neumann condition is a different constraint. A loss on only interior points leaves all of these boundary questions unanswered. The regression test evaluates the terminal architecture at randomly chosen states and checks exact equality, not merely a small mean terminal error.
 
-\begin{definition}[Generalized HJB for Sophisticated Agents]
-The value function $V(t,S)$ and the equilibrium policy $c^*(t,S)$ for a sophisticated agent solve the following fixed-point problem. The value function must satisfy the generalized HJB equation:
-\begin{equation} \label{eq:supp_ghjb}
--\partial_t V(t,S) = \sup_{c \in \mathcal{A}} \left\{ u(c) - u(c^*(t,S)) \right\} + \left( u(c^*(t,S)) + \diffop^{c^*}V(t,S) \right),
-\end{equation}
-with terminal condition $V(T,S) = G(S)$. The operator $\diffop^{c^*}V$ is the standard It\^o differential operator for the value function $V$, evaluated at the equilibrium policy $c^*$:
-\begin{equation}
-\diffop^{c^*}V(t,S) = (\nabla_S V)^\top \mu(t,S,c^*) + \frac{1}{2}\text{Tr}\left(\sigma(t,S,c^*) Q_t \sigma(t,S,c^*)^\top \nabla_{SS}^2 V\right).
-\end{equation}
-The term $u(c) - u(c^*(t,S))$ represents the one-shot deviation incentive for the current self. The equilibrium condition is a fixed point: the policy that achieves the supremum in \eqref{eq:supp_ghjb} must be the equilibrium policy $c^*(t,S)$ itself. At equilibrium, the supremum term evaluates to zero, and the equation collapses to the standard HJB equation for the equilibrium policy.
-\end{definition}
+The recursive Epstein--Zin domain is $bV>0$. An exponential output ensures positivity, while an interval transformation can keep $bV$ between declared positive barriers. If $bG>0$, one terminal-compatible positive representation is
+\[
+ bv(t,x)=\exp\left[\log(bG(x))+(T-t)N(t,x)\right].
+\]
+Its terminal value is exact. It does not by itself impose a lateral exit payoff or a two-sided barrier. These additional conditions must be built into the architecture or measured explicitly. Clipping an invalid utility argument inside a fractional power changes the equation and is not an acceptable hidden numerical repair.
 
-\subsection{The NBO Algorithm for Time-Inconsistency}
+\subsection{From residual samples to a uniform bound}
+Let $r$ be $K$-Lipschitz on a domain in $\R^d$. If every point is within distance $h_V$ of a validation point, the triangle inequality gives $\|r\|_\infty\leq\max_{x\in\mathcal V}|r(x)|+Kh_V$. If $K$ is estimated from samples rather than bounded, the resulting expression is itself a diagnostic, not a certified uniform bound.
 
-To solve this fixed-point problem, we propose a "two-policy" NBO algorithm. This algorithm uses three neural networks to find the equilibrium by explicitly modeling the acting self and the anticipated future selves.
+An integral bound needs more assumptions. Suppose the sampling density is at least $p_0>0$, and each ball of radius $r_0$ or less centered in the domain intersects the domain in volume at least $c_Dr^d$. Let $M=\|r\|_\infty$ and assume $M/(2K)\leq r_0$. Near a point approaching the maximum, Lipschitz continuity gives $|r|\geq M/2$ on a ball of radius $M/(2K)$. Hence
+\[
+ \E r^2\geq\frac{p_0c_D}{2^{d+2}K^d}M^{d+2},\qquad
+ M\leq\left(\frac{2^{d+2}K^d\E r^2}{p_0c_D}\right)^{1/(d+2)}.
+\]
+For larger $M$, use the capped radius $r_0$ and the corresponding two-case inequality. A concentration argument is additionally needed to replace the population mean by an empirical one. This calculation explains why a dimension-free uniform certificate cannot be read directly from an average training loss.
 
-\begin{enumerate}
-    \item \textbf{Acting Policy Network $\mathcal{C}_{\phi}(t,S)$:} Represents the current self's choice of consumption, $c_t$. Its parameters are $\phi$.
-    \item \textbf{Future Policy Network $\mathcal{C}_{\hat{\phi}}(t,S)$:} Represents the anticipated equilibrium policy of all future selves, $\hat{c}_t$. Its parameters are $\hat{\phi}$. This network acts as a "target" that evolves slowly.
-    \item \textbf{Value Network $V_{\xi}(t,S)$:} Approximates the equilibrium value function. Its parameters are $\xi$.
-\end{enumerate}
+The action gap is treated similarly. If an action net has covering radius $h_A$ and the Hamiltonian is $K_A$-Lipschitz in the action, the unobserved supremum exceeds the net maximum by at most $K_Ah_A$. Thus the net gap plus this term is an upper bound. A collection of successful deviations without a covering or duality argument is only a lower bound on exploitability.
 
-The algorithm minimizes a composite loss function designed to drive the system to the equilibrium fixed point.
+\section{Benchmark Derivations}
+\subsection{Merton consumption and transversality}
+Write $b=1-\gamma$ and $V=KX^b/b$. Then $V_X=KX^{-\gamma}$ and $V_{XX}=-\gamma KX^{-\gamma-1}$. Substituting $c=mX$ into the stationary time-additive equation and dividing by the positive number $KX^b$ gives
+\[
+ 0=\frac{m^b}{bK}-\frac\rho b+r+p(\mu-r)-m-\tfrac12\gamma p^2\sigma^2.
+\]
+Consumption maximization gives $m^{-\gamma}=K$; portfolio maximization gives $p=(\mu-r)/(\gamma\sigma^2)$ when interior. With a no-short-sale constraint and negative excess return, the maximizing share is zero. Let $R_*=r+p(\mu-r)-\gamma p^2\sigma^2/2$. After substitution, $\gamma m=\rho+(\gamma-1)R_*$.
 
-\begin{definition}[NBO Loss for Time-Inconsistency]
-The total loss function is a weighted sum of three components:
-\begin{equation}
-\mathcal{L}(\phi, \hat{\phi}, \xi) = L_{\text{PERF}}(\phi, \xi) + \omega L_{\text{HJB}}(\phi, \hat{\phi}, \xi) + \lambda_{EQ} L_{\text{EQ}}(\phi, \hat{\phi}).
-\end{equation}
-The components are:
-\begin{enumerate}
-    \item \textbf{Performance Loss ($L_{\text{PERF}}$):} This is the standard actor loss for the acting policy network $\mathcal{C}_\phi$. It encourages the current self to maximize the total perceived utility, as evaluated by the critic $V_\xi$.
-    \begin{equation}
-    L_{\text{PERF}} = - \E \left[ \int_0^T u(\mathcal{C}_{\phi}(t,S_t)) dt + G(S_T) \right].
-    \end{equation}
-    
-    \item \textbf{Generalized HJB Loss ($L_{\text{HJB}}$):} This is the critic loss, which enforces the Bellman equation. Critically, the Hamiltonian is constructed using the anticipated \textit{future} policy $\mathcal{C}_{\hat{\phi}}$ for the dynamic terms.
-    \begin{equation}
-    L_{\text{HJB}} = \E \left[ \int_0^T \left( -\partial_t V_\xi - \left( u(\mathcal{C}_{\hat{\phi}}) + \diffop^{\mathcal{C}_{\hat{\phi}}}V_\xi \right) \right)^2 dt \right].
-    \end{equation}
-    This loss forces $V_\xi$ to be the correct value function for the policy $\mathcal{C}_{\hat{\phi}}$.
-    
-    \item \textbf{Equilibrium Consistency Loss ($L_{\text{EQ}}$):} This term enforces the fixed-point condition of the equilibrium by penalizing differences between the acting policy and the future policy.
-    \begin{equation}
-    L_{\text{EQ}} = \E \left[ \int_0^T \left\| \mathcal{C}_{\phi}(t,S_t) - \mathcal{C}_{\hat{\phi}}(t,S_t) \right\|^2 dt \right].
-    \end{equation}
-\end{enumerate}
-\end{definition}
+For the optimal constant shares, $e^{-\rho t}\E[X_t^{1-\gamma}]$ decays as $e^{-m t}$. Thus $m>0$ gives the candidate's additive transversality condition. Verification against a larger policy class also requires the relevant localization and integrability conditions for the competitors, as specified in the main text. Policies with minus-infinite utility are not preferred to the finite candidate. The numerical laboratory checks the candidate formulas and does not silently apply a stationary constant to an unspecified finite-horizon terminal problem.
 
-The full algorithm is detailed in Algorithm \ref{alg:ti}. A key feature is the slow update of the future policy network's parameters $\hat{\phi}$ using Polyak averaging. This stabilizes training by preventing the equilibrium target from moving too quickly.
+\subsection{Recursive coefficient and the utility interval}
+For $f(c,V)=\rho[c^a(bV)^{1-a/b}-bV]/a$, the same homothetic substitution gives
+\[
+ 0=\frac\rho a[m^aK^{-a/b}-1]+R_*-m.
+\]
+Since $f_c=V_X$ implies $\rho m^{a-1}K^{-a/b}=1$, the first term becomes $(m-\rho)/a$. Consequently, $m=\psi\rho+(1-\psi)R_*$ and $K=[\rho m^{a-1}]^{b/a}$. The formula assumes the stationary candidate has positive consumption. It is not an infinite-horizon utility-selection theorem.
 
-\begin{algorithm}[H]
-\caption{NBO Algorithm for Sophisticated Time-Inconsistent Agents}
-\label{alg:ti}
-\begin{algorithmic}[1]
-\State \textbf{Initialize} acting policy network $\mathcal{C}_{\phi}$, value network $V_{\xi}$.
-\State \textbf{Initialize} future policy network $\mathcal{C}_{\hat{\phi}}$ with same weights as $\mathcal{C}_{\phi}$ (i.e., $\hat{\phi} \leftarrow \phi$).
-\State \textbf{Initialize} hyperparameters: learning rate $\eta$, loss weights $\omega, \lambda_{EQ}$, Polyak averaging rate $\tau \in (0,1)$.
+For the finite-horizon matching-bequest test at $a>0>b$, define $Y=bV$. The consumption domain is compact and bounded away from zero. At sufficiently small positive $Y$, $c^aY^{-a/b}<1$ uniformly in consumption, so $f<0$. At sufficiently large $Y$, the reverse inequality holds and $f>0$. Because dividing by negative $b$ reverses the order of the utility endpoints, the large-$Y$ constant is a lower utility barrier and the small-$Y$ constant is an upper utility barrier. The matching bequest lies between them after enlarging the interval. Lipschitz scalar comparison then keeps each policy utility inside the interval, on which the aggregator and its utility derivative are bounded. This verifies the finite-horizon interpretation without claiming an unrestricted infinite-horizon result at those parameters.
 
-\For{training iteration $k=1, 2, \dots$}
-    \State Sample a batch of initial states $\{S_0^{(i)}\}_{i=1}^M$.
-    \State Simulate state trajectories $\{S_t^{(i)}\}$ using a policy (e.g., from $\mathcal{C}_\phi$ with exploration noise).
-    \State Sample a batch of state-time points $\{(t_j, S_j)\}_{j=1}^B$ from the trajectories.
-    
-    \State \textbf{Compute Actions:}
-    \State $c_j \leftarrow \mathcal{C}_{\phi}(t_j, S_j)$
-    \State $\hat{c}_j \leftarrow \mathcal{C}_{\hat{\phi}}(t_j, S_j)$
-    
-    \State \textbf{Compute Derivatives:}
-    \State Compute $\partial_t V_\xi(t_j, S_j), \nabla_S V_\xi(t_j, S_j), \nabla_{SS}^2 V_\xi(t_j, S_j)$ via automatic differentiation.
-    
-    \State \textbf{Compute Loss Components:}
-    \State $L_{\text{PERF}} \leftarrow -\frac{1}{B}\sum_{j=1}^B \left( u(c_j) \Delta t + \dots \right)$ \Comment{Approximation of the integral performance loss}
-    \State $L_{\text{HJB}} \leftarrow \frac{1}{B}\sum_{j=1}^B \left( -\partial_t V_\xi - \left( u(\hat{c}_j) + \diffop^{\hat{c}_j}V_\xi \right) \right)^2$
-    \State $L_{\text{EQ}} \leftarrow \frac{1}{B}\sum_{j=1}^B \| c_j - \hat{c}_j \|^2$
-    
-    \State \textbf{Total Loss:} $\mathcal{L} \leftarrow L_{\text{PERF}} + \omega L_{\text{HJB}} + \lambda_{EQ} L_{\text{EQ}}$.
-    
-    \State \textbf{Update Acting and Critic Networks:}
-    \State Update $\phi$ and $\xi$ using one step of gradient descent on $\mathcal{L}$:
-    \State $(\phi, \xi) \leftarrow (\phi, \xi) - \eta \nabla_{(\phi, \xi)} \mathcal{L}$
-    
-    \State \textbf{Update Future Policy Network (Polyak Averaging):}
-    \State $\hat{\phi} \leftarrow \tau \phi + (1-\tau) \hat{\phi}$
-\EndFor
-\State \textbf{Return} trained networks $(\mathcal{C}_{\phi}, V_{\xi})$, which approximate $(c^*, V)$.
-\end{algorithmic}
-\end{algorithm}
+\section{Endogenous-Preference Details}
+\subsection{State restrictions and the reference experiment}
+In the baseline application, the risk-aversion interval lies strictly above one and the process is reflected. The reference wealth problem is stopped at positive finite bounds. Consumption shares are bounded away from zero, adjustment efforts are bounded, and the horizon is finite. These choices bound the flow utility, its relevant derivatives away from the terminal-boundary compatibility issue, and the bequest. They provide a well-defined finite reference calculation. The numerical reflection is a folded reflection of Brownian cubature endpoints; the wealth boundary is absorbing with the prescribed payoff. The same terminal and boundary values are imposed for both adjustment-cost parameters.
 
+The grid reference operates in $y=\log X$. Its drift is
+\[
+ b_y=r+p(\mu-r)-m-\tfrac12p^2\sigma_X^2,
+\]
+and its covariance with $u$ is $\varrho\sigma_u p\sigma_X$. The two Brownian-factor columns can be written $(\sigma_u,\varrho p\sigma_X)^\top$ and $(0,\sqrt{1-\varrho^2}p\sigma_X)^\top$. Four symmetric cubature directions reproduce this covariance. The correction $-p^2\sigma_X^2/2$ in log wealth is essential; omitting it would change the economic diffusion.
 
-\section{A Formal Framework for Dynamic Games}
-\label{sec:supp_games}
+For each action, the backward update is current utility times the time step plus the exponentially discounted positive-weight interpolation of next-period value. Feasible actions are enumerated on the declared 27-element grid. Because the terminal/exit payoff is fixed, raising $k$ weakly lowers each action's payoff and, by backward induction, lowers value at every state and time. The recorded arrays permit a direct check of this order. The reported grid-refinement difference is not an estimate of unrestricted neural approximation error.
 
-We now formalize the NBO framework for computing Markov Perfect Nash Equilibria (MPNE) in high-dimensional, continuous-time stochastic games with $N$ players.
+\subsection{Policy conditions and comparative statics}
+The consumption marginal utility in reference units is $U_c=\bar c^{-1}(c/\bar c)^{-u}$. Equating it to $V_X$ yields $c=\bar c(\bar cV_X)^{-1/u}$. Adjustment maximizes $\theta V_u-k\theta^2/2$ and hence uses the projection of $V_u/k$ under a box. Portfolio choice maximizes a quadratic with coefficient $X^2\sigma_X^2V_{XX}/2$. The projected first-order solution is valid only when this coefficient is negative. These conditions clarify why numerical curvature and feasibility must be checked independently.
 
-\subsection{The Model and the System of Coupled HJB Equations}
+The cross derivative $V_{uX}$ is an endogenous object. Its sign cannot be inferred from the label ``risk aversion'' or from a negative shock correlation. Nor can the sign of $\partial_k\theta^k$ be inferred by differentiating $1/k$ while keeping $V_u^k$ fixed. In contrast, the value monotonicity in $k$ holds policy by policy. At a differentiable optimum the envelope formula follows because $k$ appears only in the quadratic running cost. Changing the normalization function $\kappa(u)$ can change both adjustment and portfolio policies even while leaving utility curvature in consumption unchanged.
 
-Consider a game with $N$ players, indexed by $i \in \{1, \dots, N\}$. The state of the game is a vector $S_t \in \R^d$ that may include player-specific components, $S_t = (S_t^1, \dots, S_t^N)$. Player $i$ chooses an action $a_t^i \in \mathcal{A}^i$ to maximize their own objective functional, $V^i(t,S_t)$. The evolution of player $i$'s state can depend on their own actions and the actions of all other players, $a_t^{-i}$:
-\begin{equation}
-dS_t^i = \mu^i(t, S_t, a_t^i, a_t^{-i})dt + \sigma^i(t, S_t, a_t^i, a_t^{-i})dM_t^i.
-\end{equation}
+An observation model is needed for structural estimation. With latent $u$, uncertainty in $\kappa$, and unknown adjustment or shock parameters, a sensitivity plot for one policy component does not prove identification. A practical estimation exercise would compute moment derivatives jointly, inspect their rank after normalization restrictions, and propagate numerical approximation error into the implied moment map. Those are distinct tasks from solving the controlled economy.
 
-\begin{definition}[Markov Perfect Nash Equilibrium (MPNE)]
-An MPNE is a set of policy functions (strategies) $\{\alpha^{1,*}(t,S), \dots, \alpha^{N,*}(t,S)\}$ such that for each player $i$, the policy $\alpha^{i,*}$ is a best response to the other players' equilibrium policies $\{\alpha^{j,*}\}_{j \neq i}$. This means that no player has a unilateral incentive to deviate.
-\end{definition}
+\section{Temporal-Self Deviations}
+For the two-exponential kernel, the component value under constant consumption share $m$ is $W_j(X)=m^bX^b/[b\lambda_j(m)]$, where $\lambda_j(m)=\rho_j-b(r-m)$. A deviation to share $z$ for duration $\epsilon$, followed by $m$, has component value at $X=1$
+\[
+ J_j(z,\epsilon)=\frac1b\left[
+ z^b\frac{1-e^{-\lambda_j(z)\epsilon}}{\lambda_j(z)}
+ +e^{-\lambda_j(z)\epsilon}\frac{m^b}{\lambda_j(m)}\right].
+\]
+The continuous extension is used if $\lambda_j(z)=0$. The deviation gain is $\sum_jw_jJ_j(z,\epsilon)-\sum_jw_jW_j(1)$, with weights $(\beta,1-\beta)$. This is the quantity independently maximized in the experiment, rather than a restatement of the equilibrium first-order condition.
 
-The MPNE is characterized by a system of $N$ coupled HJB equations. Each player's value function must satisfy their own Bellman equation, taking the other players' strategies as given.
+At an equilibrium share, the first-order gain is nonpositive for every feasible instantaneous share and equals zero at the equilibrium share. A finite-duration self can generally choose a slightly different share, so the maximized gain need not be exactly zero for positive duration. The required diagnostic is its gain divided by duration as duration tends to zero. For $\beta=1$ the ordinary exponential solution is recovered.
 
-\begin{definition}[System of Coupled HJB Equations]
-The set of value functions $\{V^1, \dots, V^N\}$ and policies $\{\alpha^{1,*}, \dots, \alpha^{N,*}\}$ at an MPNE must satisfy the following system of $N$ PDEs:
-\begin{equation} \label{eq:supp_hjb_game}
--\partial_t V^i(t,S) = \sup_{a^i \in \mathcal{A}^i} \left\{ f^i(S, a^i, \alpha^{-i,*}(S)) + \diffop^{a^i, \alpha^{-i,*}}V^i(t,S) \right\},
-\end{equation}
-for each player $i=1, \dots, N$, with terminal conditions $V^i(T,S) = G^i(S)$. The It\^o operator for player $i$, $\diffop^{a^i, \alpha^{-i,*}}$, is evaluated using player $i$'s choice $a^i$ and the other players' equilibrium policies $\alpha^{-i,*}$. The system is coupled because the right-hand side of the HJB for player $i$ depends on the policies $\alpha^{j,*}$ of all other players $j \neq i$.
-\end{definition}
+As $\kappa$ grows, the kernel becomes increasingly concentrated near the present before approaching its long-run component. Taking the instantaneous-deviation limit and taking $\kappa\to\infty$ are conceptually different operations. The finite-$\kappa$ model in this paper explicitly specifies the order: the spike condition is derived for fixed $\kappa$, and any duration-limit comparative static is taken afterward. This avoids assigning an undefined continuous-time meaning to a discrete present-bias multiplier.
 
-\subsection{The NBO Algorithm for Dynamic Games}
+\section{Games and Independent Best Responses}
+A fixed rival profile turns each player's problem into an ordinary controlled Markov problem, so the main verification results apply player by player. The derivative graph must implement this reduction. During player $i$'s actor step, every rival policy and every derivative of player $i$'s critic is detached. During player $i$'s critic step, all players' actions are detached. A sum of these reporting losses can be logged, but differentiation of a joint-profit objective is not equivalent to those block steps.
 
-The NBO framework for games parameterizes the value function and policy function for each of the $N$ players with a dedicated pair of neural networks. The algorithm then simultaneously optimizes all network parameters to find a joint solution that constitutes a Nash equilibrium.
+The two-firm static diagnostic has best response $q_i=(1-q_j)/2$ when interior. At the joint-profit allocation $(1/4,1/4)$, the deviating firm chooses $3/8$ and improves profit from $1/8$ to $9/64$, a gain of $1/64$. The own-action derivative is $1/4$ at the joint optimum. These numbers verify a graph-level distinction; they are not a computation of the dynamic capital game.
 
-The framework requires $2N$ neural networks:
-\begin{itemize}
-    \item \textbf{Policy Networks:} $\{\mathcal{A}_{\phi_i}^i(t,S)\}_{i=1}^N$, one for each player.
-    \item \textbf{Value Networks:} $\{V_{\xi_i}^i(t,S)\}_{i=1}^N$, one for each player.
-\end{itemize}
-The complete set of trainable parameters is $(\phi_1, \dots, \phi_N, \xi_1, \dots, \xi_N)$.
+For the dynamic problem, a reported equilibrium should include an independent solution of each fixed-rival best-response problem, or an upper bound on the unilateral Hamiltonian gap over the entire verification domain. A finite list of unsuccessful deviations does not supply such an upper bound. Multiple initializations, asymmetric profiles, boundary actions, and the market-size normalization are part of the same experiment. The specification in the main text retains the dynamic Cournot application but does not invent a dynamic Nash table from the static arithmetic.
 
-\begin{definition}[NBO Loss for Dynamic Games]
-The global loss function is the sum of individual NBO loss functions for all players. Finding a Nash equilibrium corresponds to finding a parameter set that jointly minimizes this total loss.
-\begin{equation}
-\mathcal{L}_{\text{Game}}(\{\phi_i, \xi_i\}_{i=1}^N) = \sum_{i=1}^N \mathcal{L}^i(\{\phi_j\}_{j=1}^N, \xi_i) = \sum_{i=1}^N \left( L_{\text{PERF}}^i + \omega_i L_{\text{HJB}}^i \right).
-\end{equation}
-For each player $i$, the components are:
-\begin{enumerate}
-    \item \textbf{Player $i$'s Performance Loss ($L_{\text{PERF}}^i$):} The actor loss for player $i$, encouraging policy $\mathcal{A}_{\phi_i}^i$ to maximize player $i$'s own utility stream, evaluated by their own critic $V_{\xi_i}^i$.
-    \begin{equation}
-    L_{\text{PERF}}^i = - \E \left[ \int_0^T f^i(S_t, \mathcal{A}_{\phi_i}^i, \{\mathcal{A}_{\phi_j}^j\}_{j \neq i}) dt + G^i(S_T) \right].
-    \end{equation}
+\section{Stochastic Hessian Objectives and Complexity}
+Let $B=\Sigma^\top D^2v\Sigma$, a symmetric matrix in Brownian-factor space. For Gaussian probes, Isserlis' identity gives $\E(z^\top Bz)=\tr B$ and $\operatorname{Var}(z^\top Bz)=2\tr(B^2)=2\|B\|_F^2$. Averaging $K$ independent probes divides the variance by $K$. Rademacher probes instead have variance $2\sum_{i\ne j}B_{ij}^2/K$. The variance depends on the chosen covariance factor and probe law, both of which must be specified.
 
-    \item \textbf{Player $i$'s HJB Loss ($L_{\text{HJB}}^i$):} The critic loss for player $i$. It enforces player $i$'s HJB equation from the system \eqref{eq:supp_hjb_game}. The Hamiltonian is constructed using player $i$'s policy $\mathcal{A}_{\phi_i}^i$ and the \textit{current policies of all other players}, $\{\mathcal{A}_{\phi_j}^j\}_{j \neq i}$.
-    \begin{equation}
-    L_{\text{HJB}}^i = \E \left[ \left( -\partial_t V_{\xi_i}^i - \hamiltonian^i(\cdot, \mathcal{A}_{\phi_i}^i, \{\mathcal{A}_{\phi_j}^j\}_{j\neq i}, V_{\xi_i}^i) \right)^2 \right],
-    \end{equation}
-    where $\hamiltonian^i$ is the Hamiltonian for player $i$ from the RHS of \eqref{eq:supp_hjb_game}, evaluated with the current network policies.
-\end{enumerate}
-\end{definition}
+Write $\widehat q_j=q+\epsilon_j$, with conditionally mean-zero independent errors. Then
+\[
+ \E[(d-\widehat q_1/2)(d-\widehat q_2/2)]
+ =(d-q/2)^2+\tfrac14\E[\epsilon_1\epsilon_2]=(d-q/2)^2.
+\]
+Using one bank twice would retain its variance term. In the scalar Gaussian example, a single-bank squared residual has expectation $1-h+3h^2/4$, minimized at $h=2/3$, whereas the exact residual $(1-h/2)^2$ is minimized at $h=2$. The independent product restores the latter population objective. The saved Monte Carlo diagnostic uses 400,000 pairs and records both empirical estimates; it does not claim that the sampling error is identically zero.
 
-Minimizing this joint loss function drives the system to a fixed point where each player's policy is an approximate best response to the others. The full procedure is detailed in Algorithm \ref{alg:game}.
+The core implementation uses exact Hessians to make the covariance contraction independently testable. A Hessian-vector implementation can replace it without changing the conditional-independence requirement. The cost of a Hessian-vector product depends on the network graph, not just the state dimension. Total cost also includes sampling, optimization, domain coverage, action maximization, and stopping at an agreed error level. A quadratic-neural representation with a Lyapunov solve has different approximation and optimization costs from a generic multilayer network. The coupled laboratory is explicitly the former.
 
-\begin{algorithm}[H]
-\caption{NBO Algorithm for N-Player Dynamic Games}
-\label{alg:game}
-\begin{algorithmic}[1]
-\State \textbf{Initialize} $N$ policy networks $\{\mathcal{A}_{\phi_i}^i\}_{i=1}^N$ and $N$ value networks $\{V_{\xi_i}^i\}_{i=1}^N$.
-\State \textbf{Initialize} hyperparameters: learning rate $\eta$, loss weights $\{\omega_i\}_{i=1}^N$.
+\section{Reproduction and Further Comparisons}
+From the repository root, execute the experiment program and then the regression suite. The dependency versions and CPU setting are recorded with the results. The experiment output distinguishes acceptance of a calibration or identity test from execution of a reference computation. A separate reviewer-check output reproduces the original twelve diagnostics against the archived original manuscript, not against the revised article.
 
-\For{training iteration $k=1, 2, \dots$}
-    \State Sample a batch of state-time points $\{(t_j, S_j)\}_{j=1}^B$.
-    \State Let $\mathcal{L}_{\text{Game}} \leftarrow 0$.
-    
-    \For{each player $i=1, \dots, N$}
-        \State \textbf{Compute Policies for All Players:}
-        \State For $p=1,\dots,N$, compute $a_j^p \leftarrow \mathcal{A}_{\phi_p}^p(t_j, S_j)$. Let $\mathbf{a}_j = (a_j^1, \dots, a_j^N)$.
-        
-        \State \textbf{Compute Derivatives for Player $i$:}
-        \State Compute $\partial_t V_{\xi_i}^i, \nabla_S V_{\xi_i}^i, \nabla_{SS}^2 V_{\xi_i}^i$ via automatic differentiation.
-        
-        \State \textbf{Compute Player $i$'s Loss Components:}
-        \State $L_{\text{PERF}}^i \leftarrow -\frac{1}{B}\sum_{j=1}^B \left( f^i(S_j, a_j^i, a_j^{-i}) \Delta t + \dots \right)$
-        \State $L_{\text{HJB}}^i \leftarrow \frac{1}{B}\sum_{j=1}^B \left( -\partial_t V_{\xi_i}^i - \hamiltonian^i(S_j, a_j^i, a_j^{-i}, V_{\xi_i}^i) \right)^2$
-        
-        \State \textbf{Add to Total Loss:} $\mathcal{L}_{\text{Game}} \leftarrow \mathcal{L}_{\text{Game}} + L_{\text{PERF}}^i + \omega_i L_{\text{HJB}}^i$.
-    \EndFor
-    
-    \State \textbf{Update All Networks Simultaneously:}
-    \State Update all parameters $(\{\phi_i\}, \{\xi_i\})$ using one step of gradient descent on $\mathcal{L}_{\text{Game}}$:
-    \State $(\{\phi_i\}, \{\xi_i\}) \leftarrow (\{\phi_i\}, \{\xi_i\}) - \eta \nabla_{(\{\phi_i\}, \{\xi_i\})} \mathcal{L}_{\text{Game}}$
-\EndFor
-\State \textbf{Return} trained networks $(\{\mathcal{A}_{\phi_i}^i\}, \{V_{\xi_i}^i\})$, which approximate the MPNE.
-\end{algorithmic}
-\end{algorithm}
+A broader method comparison should use one problem specification and evaluate value error, policy error, boundary error, and the independent action gap at matched accuracy. A direct neural-HJB comparator eliminates the actor with the same feasible maximization routine. A temporal-regression comparator uses the same recursive discretization and utility domain, without adding discount twice. A separability-aware classical comparator exploits all available economic structure. Network capacity, sampling, covariance treatment, random seeds, failures, wall time, and memory should all be reported. These are declared comparison requirements; no missing run is represented as a measured advantage in the article.
 
-
-
+The read-only verification workflow rebuilds the experiments and PDFs from its checked-out revision commit and uploads execution artifacts. It does not modify source, rewrite acceptance status, or push results back into the candidate branch. A locally passed test, a remote workflow result, and independent referee acceptance remain separate facts.
 \end{document}
