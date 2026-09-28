@@ -1,0 +1,26 @@
+name: NBO R3 source and verification
+on:
+  push:
+    branches: [revision/econometrica-nbo-r3-2026-09-28]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Preserve exact review and revision source
+        run: |
+          mkdir -p /tmp/nbo-r3-source
+          git rev-parse HEAD > /tmp/nbo-r3-source/source-commit.txt
+          git archive --format=tar HEAD > /tmp/nbo-r3-source/repository.tar
+          sha256sum /tmp/nbo-r3-source/repository.tar > /tmp/nbo-r3-source/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r3-source-${{ github.sha }}
+          path: /tmp/nbo-r3-source/
+          retention-days: 30
