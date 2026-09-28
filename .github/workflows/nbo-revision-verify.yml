@@ -1,0 +1,33 @@
+name: NBO revision verification
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r1-2026-09-28
+    paths:
+      - '.github/workflows/nbo-revision-verify.yml'
+      - 'revisions/2026-09-28/**'
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Record immutable source and preserve manuscript materials
+        run: |
+          mkdir -p /tmp/nbo-source
+          git rev-parse HEAD > /tmp/nbo-source/source-commit.txt
+          git archive --format=tar HEAD > /tmp/nbo-source/repository.tar
+          sha256sum /tmp/nbo-source/repository.tar > /tmp/nbo-source/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-source-${{ github.sha }}
+          path: /tmp/nbo-source/
+          retention-days: 30
+      - name: Run revision verification when present
+        run: |
+          if test -f revisions/2026-09-28/code/verify_revision.py; then
+            python3 revisions/2026-09-28/code/verify_revision.py
+          fi
