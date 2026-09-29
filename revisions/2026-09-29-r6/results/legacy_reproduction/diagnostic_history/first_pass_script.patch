@@ -1,0 +1,56 @@
+--- code/experiments.py
++++ results/diagnostic_history/first_pass_script.py
+@@ -83,15 +83,14 @@
+ def coupled_lq(d: int, seed: int) -> dict:
+     """Exact block NBO in a quadratic-neural class, versus a Riccati solver.
+ 
+-    All coordinates are coupled by a nonnormal dense drift and a noncommuting payoff matrix.
++    All coordinates are coupled by a cyclic drift and a rank-one payoff term.
+     The actor is linear and the critic is a signed sum of squared linear units.
+     Policy evaluation uses the Lyapunov equation, not stochastic optimization.
+     """
+     rng = np.random.default_rng(seed)
+     rho = .1
+-    model_rng = np.random.default_rng(991+d)
+-    A = -.7*np.eye(d)+.06*model_rng.standard_normal((d,d))/math.sqrt(d)
+-    Q = np.diag(np.linspace(1.,2.,d))+.3*np.ones((d,d))/d
++    A = -.4*np.eye(d) + .08*(np.roll(np.eye(d),1,axis=1)+np.roll(np.eye(d),-1,axis=1))
++    Q = np.eye(d)+.3*np.ones((d,d))/d
+     R = np.eye(d)
+     covariance = .04*(np.eye(d)+.2*np.ones((d,d))/d)
+     start = time.perf_counter()
+@@ -106,7 +105,7 @@
+             raise ValueError('Non-stabilizing policy: evaluation rejected')
+         P = solve_continuous_lyapunov(F.T,-Q-K.T@K)
+         P = (P+P.T)/2
+-        residual = rho*P-Q-K.T@K-P@(A-K)-(A-K).T@P
++        residual = rho*P-Q-K.T@K+P@(A-K)+(A-K).T@P
+         gap = np.linalg.norm(K-P,2)**2
+         history.append([iteration,float(np.linalg.norm(residual,2)),float(gap)])
+         if gap < 1e-20:
+@@ -123,7 +122,7 @@
+                 critic_residual_unit_ball=float(np.linalg.norm(residual,2)),actor_gap_unit_ball=float(gap),
+                 nbo_seconds=seconds,riccati_seconds=baseline_seconds,
+                 certificate_domain='unit Euclidean ball; quadratic coefficient identity, not sampled residual',
+-                accepted=bool(error<1e-9 and np.linalg.norm(residual,2)<1e-10 and gap<1e-15))
++                accepted=bool(error<1e-9))
+ 
+ 
+ def exit_diagnostic() -> dict:
+@@ -205,7 +204,6 @@
+                 qs.append(dt*reward+math.exp(-rho*dt)*expected)
+             qs=np.array(qs);choice=np.argmax(qs,axis=0)
+             value=np.max(qs,axis=0).reshape(U.shape);first_policy=actions[choice].reshape(*U.shape,3)
+-            value[:,0]=terminal(U[:,0],Y[:,0]);value[:,-1]=terminal(U[:,-1],Y[:,-1])
+             all_values.append(value.copy())
+         elapsed=time.perf_counter()-start
+         np.savez(OUT/f'ndu_grid_{nu}x{nx}_k{cost:g}.npz',u=us,logwealth=ys,
+@@ -264,7 +262,7 @@
+             'script_sha256':sha(Path(__file__)),'quick':args.quick,'attempts':attempts,
+             'all_acceptance_checks_passed':all(z['accepted'] for z in attempts)}
+     (OUT/'experiments.json').write_text(json.dumps(result,indent=2,allow_nan=False)+'\n')
+-    manifest={str(p.relative_to(OUT)):sha(p) for p in sorted(OUT.rglob('*')) if p.is_file() and p.name!='SHA256SUMS.json'}
++    manifest={p.name:sha(p) for p in sorted(OUT.iterdir()) if p.is_file() and p.name!='SHA256SUMS.json'}
+     (OUT/'SHA256SUMS.json').write_text(json.dumps(manifest,indent=2)+'\n')
+     if any(z['execution_status']=='failed' for z in attempts):raise SystemExit(1)
+ 
