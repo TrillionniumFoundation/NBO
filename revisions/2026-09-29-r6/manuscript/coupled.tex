@@ -1,0 +1,19 @@
+\subsection{Trained, coupled nonquadratic capital economies}\label{sec:coupled-neural}
+To separate neural scaling from exact quadratic algebra, consider $d$ positive capital stocks and write $Y_i=\log X_i$. Consumption is $c_i=m_iX_i$, with $m_i\in[.02,2]$, and
+\begin{align}\label{eq:coupled-r6}
+ dY_i&=\left[.10+.15\tanh((B_dY)_i)-m_i-\tfrac12(.15^2+.10^2)\right]dt
+       +.15\,dW_i+.10\,dW_0,\\
+ r_0(Y,m)&=d^{-1}\sum_i(\log m_i+Y_i)-.10\bar m^2,
+ \qquad \bar m=d^{-1}\sum_i m_i.\nonumber
+\end{align}
+The dense row-normalized matrix $B_d$ is generated once from a recorded seed. Horizon is one, discount is $.04$, and terminal utility is $\bar Y-.03d^{-1}\sum_i(Y_i-\bar Y)^2$. The actual state domain is $\R^d$; no artificial lateral stopping condition is imposed. Dense nonlinear productivity, shared adjustment cost, common noise, and terminal dispersion couple the coordinates. Neither the solver nor its comparator calls a Riccati or Lyapunov routine, and no exact solution is built into the network.
+
+Strict concavity gives a global Hamiltonian maximizer at each queried state. For $p_i=\partial_i v$, its components satisfy
+\[
+ m_i^*=\operatorname{clip}\left((dp_i+.2\bar m^*)^{-1},.02,2\right),
+\]
+with the upper bound selected when the denominator is nonpositive. The scalar consistency equation for $\bar m^*$ is monotone and is solved by bisection. This supplies the same feasible maximization routine to the direct-HJB comparator and to action-gap measurement; it does not supply the value function.
+
+Both networks have two hidden tanh layers of width thirty-two. The critic enforces the terminal payoff exactly. The main design uses three seeds at $d=2,5,10,20$, 600 Adam updates, and batches of 128 independently sampled state--time points. Exact automatic differentiation supplies the trace. The held-out set contains 512 fixed independent points in $[0,1]\times[-.5,.5]^d$. A common diagnostic target is residual root mean square at most $.025$ and maximum queried action gap at most $.01$. The recorded first crossing is not necessarily sustained; final failures are also reported.
+\input{revisions/2026-09-29-r6/manuscript/table_coupled.tex}
+The experiment measures real neural approximation and optimization costs rather than exact quadratic identities. It also shows why a diagnostic target is not a welfare certificate. Simulated policy paths can leave the fitted state box; Euler policy-payoff estimates from the initial state need not agree with a critic that has a small sampled residual inside that box. A follow-up expands the fitting and verification box to $[-1.5,.5]^d$ and uses 1,000 updates at dimensions ten and twenty. Both designs, paired policy-payoff samples, and forty/eighty-step simulation outputs are retained. Sampling standard errors do not remove time-discretization bias or certify an optimum. Process high-water memory is labeled as such, not interpreted as an isolated per-network allocation. No high-dimensional uniform residual bound is claimed for these sampled quantities.

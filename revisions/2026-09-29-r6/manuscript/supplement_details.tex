@@ -1,0 +1,53 @@
+\section{Implemented Error Accounts and Arithmetic}
+The implemented map returns a candidate and a verification record, rather than assigning authority to an optimizer's exit code. In the differential consumption economy, the record identifies the binary64 weights, both stopping faces, all dyadic leaves, global consumption maximization, and the error bounds for the continuous diffusion. In NDU it instead identifies the finite state--action--time model, its positive transition weights, and time-indexed evaluation and improvement errors. The dynamic-game record fixes the entire rival policy before an independent backward best-response solve. An unchecked continuous-action or time-discretization term is represented as unavailable in the machine-readable output, not as zero.
+
+For finite time levels, let $\delta_t=\|v_t-T_t^av_{t+1}\|_\infty$ and $\epsilon_t=\|T_tv_{t+1}-T_t^av_{t+1}\|_\infty$. If both maps are $\beta_t$-Lipschitz, the triangle inequality gives
+\[
+ \|v_t-V_t^a\|\leq\delta_t+\beta_t\|v_{t+1}-V_{t+1}^a\|,
+ \qquad
+ \|v_t-V_t^*\|\leq\delta_t+\epsilon_t+\beta_t\|v_{t+1}-V_{t+1}^*\|.
+\]
+Summing the two inequalities yields the regret account. The same recurrence with a player's unilateral gap bounds the gain from a dynamic deviation when that player's policy evaluation is exact. Accounts must be checked at each time level: a time-zero bound need not dominate a later-time bound when discounting and errors differ. The coarse-game regression exercises this distinction and verifies that a missing pure equilibrium is reported rather than silently treated as exact.
+
+\subsection{Full-domain interval implementation}
+An interval $[l,u]$ encloses an exact real quantity. Each elementary operation expands its rounded endpoints with the adjacent binary64 number. Affine layers split positive and negative weights and include a conservative dot-product forward-error allowance. The arithmetic contract requires binary64 round-to-nearest arithmetic, the stated dot-product error bound, and absence of exceptional overflow or flush-to-zero behavior. Stored parameters denote their exact binary64 real values; the verifier does not assert an unrecorded decimal model identity.
+
+For an exponential argument $x$, range reduction gives $r=x/2^s$ with $|r|\leq1/8$. A degree-fourteen Taylor polynomial has remainder bounded by
+\[
+ e^{|r|}|r|^{15}/15!<2(1/8)^{15}/15!<2^{-80}.
+\]
+Interval Horner evaluation and repeated squaring enclose $e^x$. The identity $\tanh x=1-2/(e^{2x}+1)$ then supplies tanh values and derivative channels $1-\tanh^2x$ and $-2\tanh x(1-\tanh^2x)$. Powers of two and the range-reduction domain are checked in the code.
+
+For logarithms, exact binary decomposition gives $x=2^km$, with $1\leq m<2$. Writing $z=(m-1)/(m+1)$,
+\[
+ \log m=2\sum_{j=0}^{24}\frac{z^{2j+1}}{2j+1}+R,
+ \qquad |R|\leq\frac{2|z|^{51}}{51(1-z^2)}<2^{-72}
+\]
+for the outward-enclosed range $|z|<.334$. The same expansion encloses $\log2$. Neither construction presumes correctly rounded library tanh or logarithm functions. The saved test suite checks transcendental endpoints against eighty-digit arithmetic, differentiates the trained network independently, and checks all certificate hashes and leaf adjacencies. These tests supplement, but do not replace, the arithmetic contract.
+
+The scalar action objective $h(c)=\log c-pc$ has second derivative $-1/c^2$. If $C$ encloses both the actor and its maximizing alternative, strong concavity on their joining segment gives
+\[
+ h(c^*)-h(c)\leq h'(c)(c^*-c)-(c^*-c)^2/(2C^2)
+ \leq C^2h'(c)^2/2.
+\]
+The argument includes constrained endpoints. Taking the minimum with the natural interval action-gap enclosure markedly reduces verification cost, without using a sampled gradient as a bound. Residual targets are decided on every leaf; reaching a maximum subdivision depth does not change a failed target into a pass.
+
+\subsection{Application-specific hypotheses}
+The stopped consumption diffusion is uniformly nondegenerate on its compact domain; controls and coefficients are bounded and its endpoint data are continuous. The smooth networks and strictly positive consumption map meet the regularity and log-domain requirements of the verification argument. Both stopping-face errors and the full action interval are checked. The upwind reference error is not a premise of its continuous certificate.
+
+The NDU computation is a positive-weight, finite-action, finite-horizon economy with prescribed discrete stopping and folded preference transitions. Positivity, all terminal and wealth-face values, and every finite action are evaluated. The continuous reflected PDE's corner compatibility, continuous-action coverage error, and diffusion approximation error are not inferred from these tests. Expanding a feasible box changes the constrained economy; densifying a fixed box does not. The sensitivity record keeps these operations separate.
+
+The dense capital computation uses bounded nonlinear drift in log coordinates, bounded positive consumption fractions, constant diffusion, and finite horizon. Its flow has at most linear log-state growth and its terminal payoff at most quadratic growth; these are integrable under the declared bounded-drift diffusion. The fitted box is a sampling domain, not a state constraint. Its sampled differential residuals do not check comparison barriers or uniform errors on $\mathbb R^d$. Euler payoff estimates carry both sampling error and unbounded-state/time-discretization issues not covered by the reported Monte Carlo standard error.
+
+The dynamic capital game is a fully enumerated finite approximation with stopped joint boundaries. Stage equilibria and dynamic fixed-rival best responses are numerical statements about that model. The continuous-control best-response comparison assumptions in the main theorem remain logically distinct. The retained homothetic recursive-utility and temporal-self examples use their stated utility domains, bequests, and integrability conditions; R6 does not relabel them as unrestricted neural experiments.
+
+\section{Design, Budgets, and Reproducibility}
+The stopped-consumption study uses float64 and the existing generic derivative core. Identical seed labels fix initialization and collocation construction across methods. L-BFGS iteration caps are matched, but line-search closure counts need not match. Those counts, fit times, and separate verification times are saved. The grid reference uses exact maximization within each upwind drift region, not the learned actor. Reference comparisons omit four endpoint-adjacent nodes only for finite-difference derivative comparisons; all endpoints enter the boundary check and the interval certificate.
+
+The NDU actor predicts one of the finite feasible triples. Its normalized Bellman-loss objective gives economically costly action mistakes more weight than ordinary classification would. Absorbing boundary rows are excluded only from actor fitting, because their actions have no effect; they remain in policy evaluation and verification. The failed initial classification implementation is archived with its actual outputs. Principal seed 11 misses the declared policy-regret target even after the improvement; its result is not discarded. The direct finite-Bellman comparator uses the same critic class and total inner-iteration cap.
+
+The dense-capital primary study uses exact Hessians; the trace follow-up actually backpropagates through Hessian-vector products. Product and single-bank implementations use four probes in total, but only the product splits them into conditionally independent banks. The Monte Carlo regression separately checks the value and gradient of the product objective with tolerances $.012$ and $.025$. An unbiased objective can have higher variance, and no claim of superior finite-sample accuracy follows merely from its expectation. The covariance in the retained experiment is modest; the reported results reflect that scale.
+
+The initial high-dimensional state box was too narrow to certify the realized policy paths. The wider-box design is therefore identified as a follow-up, not a preregistered experiment. Forty- and eighty-step policy simulations share the same seed convention across methods at a given resolution. They are not a coupled Brownian extrapolation across resolutions. Raw per-path payoffs allow paired policy comparisons, but neither a Monte Carlo confidence interval nor a critic--payoff agreement proves closeness to the optimal value.
+
+Each executed program records all declared seeds, its budget, residual or deviation arrays, and an explicit scope. Process peak resident memory is a high-water mark of the process, potentially including earlier runs. It is not an isolated memory-complexity measurement for an individual method. CPU timings are execution-specific and do not reproduce the historical accelerator claims. The independent raw-output workflow binds its source commit and file hashes; the source archive keeps the R2 manuscript and supplement byte-for-byte for comparison.

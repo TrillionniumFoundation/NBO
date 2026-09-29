@@ -1,0 +1,50 @@
+\section{A Trained Neural Boundary-Value Problem}\label{sec:nonquadratic}
+Consider a household with labor income, risky wealth, and a prescribed retirement payoff on exit. Before exit from $D=(0.5,2.5)$,
+\begin{equation}\label{eq:stopped-consumption-r6}
+ dX_s=(0.12+0.02X_s-c_s)\,ds+0.15X_s\,dW_s,
+ \qquad c_s\in[0.02,0.6].
+\end{equation}
+Discount is $\rho=0.08$, flow utility is $\log c$, and exit pays $g(x)=\log(0.12+0.08x)/0.08$. This is a specified stopped economy, not a claim about an unbounded-wealth problem. Income and the exit option destroy the homothetic reduction used in the portfolio calibration. Bounded coefficients, a compact positive consumption interval, positive diffusion variance on the closed domain, and continuous endpoint data yield the usual stopped-domain comparison problem. A neural approximation must solve its nonlinear differential equation and both boundary conditions.
+
+The critic has two hidden tanh layers of width sixteen and the lifting
+\[
+ v_\xi(x)=g(\ell)+\frac{g(u)-g(\ell)}{u-\ell}(x-\ell)
+ +(x-\ell)(u-x)N_\xi\!\left(2\frac{x-\ell}{u-\ell}-1\right).
+\]
+The actor uses the same hidden architecture and a sigmoid into the consumption interval. Here the optimum is not forced to an endpoint by that representation. Independent verification nevertheless maximizes over the \emph{closed} interval: for $p=v'(x)$,
+\begin{equation}\label{eq:exact-action-r6}
+ c^*(p)=\begin{cases}\operatorname{clip}(1/p,0.02,0.6),&p>0,\\0.6,&p\leq0.\end{cases}
+\end{equation}
+Training imports the general differential core used for the earlier routing tests. It does not fit reference values, derivatives, or policy labels.
+
+\begin{proposition}[Continuous-domain economic certificate]\label{prop:stopped-r6}
+For a stopped discounted additive economy obeying comparison, let $v\in C^2(D)\cap C(\overline D)$ and let $a$ be admissible. Suppose throughout $D$ that
+\[
+ |\rho v-r_0^a-\LL^av|\leq e,\qquad
+ 0\leq\sup_b(r_0^b+\LL^bv)-(r_0^a+\LL^av)\leq\eta,
+ \qquad\|v-g\|_{\partial D}\leq B.
+\]
+Then
+\begin{equation}\label{eq:stopped-bounds-r6}
+ \|v-V^a\|_\infty\leq B+\frac e\rho,\quad
+ \|v-V^*\|_\infty\leq B+\frac{e+\eta}\rho,\quad
+ 0\leq V^*-V^a\leq2B+\frac{2e+\eta}\rho.
+\end{equation}
+\end{proposition}
+Indeed, constant upper and lower shifts of $v$ dominate the evaluation or optimality residual and the stopping data; comparison gives the first two inequalities and their sum gives the third. No reference-grid error is used in this argument.
+
+The executable verifier covers the entire state interval by dyadic subintervals. Outward-rounded propagation through the stored network encloses $v$, $v'$, $v''$, and the actor on every leaf. Equation~\eqref{eq:exact-action-r6} supplies a global action enclosure. We also use the concavity bound
+\begin{equation}\label{eq:concavity-gap-r6}
+ \log c^*-pc^*-(\log c-pc)
+ \leq \tfrac12 C^2(1/c-p)^2,\qquad C\geq\max\{c,c^*\},
+\end{equation}
+which follows by completing the square in the strong-concavity inequality on the segment joining the two actions. It does not assume an interior maximizer. Taking the better of this bound and a direct interval enclosure avoids dependency inflation. Terminal-free boundary errors are evaluated separately at both endpoints, including rounding in the lifting constants.
+
+The certificate saves every leaf, verifies that their union is exactly $[0.5,2.5]$, and binds the parameter and arithmetic files by hashes. Exponential and logarithmic enclosures use range reduction and polynomial remainder bounds rather than an assumed accuracy of a library transcendental. Its mathematical conclusion is conditional on the stated binary64 arithmetic contract; high-precision and derivative tests check the implementation but are not a formal machine proof. The construction does not estimate a global Lipschitz constant from samples.
+
+\subsection{Controlled comparison and failures}
+We use seeds 11, 29, and 47, each with 256 prespecified jittered collocation points. Eight outer rounds have a common cap of 800 L-BFGS inner iterations. NBO allocates each round sixty iterations to evaluation and forty to improvement; direct neural HJB uses the same critic and the global action rule in all one hundred iterations. A joint-loss ablation differentiates the sum of squared residual and negative Hamiltonian through both blocks. Line searches use different numbers of closures, so this is a matched iteration cap, not an assertion of equal floating-point work. Closure counts and elapsed times are saved.
+
+An independent positive-rate upwind policy-iteration solver uses continuous-action maximization within each drift region. Reference grids have 320, 640, 1,280, and 2,560 intervals. Value and derivative comparisons use the finest grid; its refinement differences are not substituted for a rigorous discretization bound. The continuous certificate instead checks the neural functions directly.
+\input{revisions/2026-09-29-r6/manuscript/table_consumption.tex}
+All three NBO and direct-HJB runs attain the declared interval-verification thresholds. The joint-loss ablation does not: a residual near one half is accompanied by large value and action errors. Width, depth, and update-allocation variations are retained in the supplement, including unfavorable outcomes. The direct method is a strong comparator: these results do not establish that carrying an actor is uniformly faster or more accurate. They establish an end-to-end neural solve with an independently computable welfare bound, and identify a concrete failure of joint differentiation. Fitting and full-domain verification are separately timed because their computational burdens are different.
