@@ -1,0 +1,61 @@
+\section{The Implemented Operator and Its Error Accounts}\label{sec:implemented}
+An operator interpretation requires a specified map, not merely a name for a neural network. Fix an economic model, a boundary realization, an approximation architecture, a training budget, and a verification specification, collectively denoted by $\vartheta$. Let $\mathcal P$ be the admissible feedback policies, $\Xi$ the critic parameter space, and $\Omega$ a space of random seeds and sampling streams. The implemented neural Bellman map is
+\begin{equation}\label{eq:implementedmap}
+ \mathcal N_\vartheta:\mathcal P\times\Xi\times\Omega
+ \longrightarrow\mathcal V_\vartheta\times\mathcal P_\vartheta\times\mathcal C_\vartheta,
+ \qquad (a,\xi,\omega)\longmapsto(v,\widetilde a,C).
+\end{equation}
+Here $v=E_\vartheta(a;\xi,\omega)$ is the policy-evaluation output, $\widetilde a=I_\vartheta(v,a;\omega)$ is the policy-improvement output, and $C$ is the result of an independent verification procedure. An element of $\mathcal C_\vartheta$ contains a model identifier, the verification domain, the candidate parameters, error bounds with their scopes, checked assumptions, and an acceptance decision. Failure to obtain a finite useful bound is an admissible output. It is not replaced by a sample maximum. With the seed fixed, the map is deterministic; otherwise it is a randomized numerical map. It is not a claim that a network has learned the Bellman operator on an unrestricted function space.
+
+The evaluation and improvement components are instances of approximate policy iteration. Their relationship to modified policy iteration is substantive rather than terminological: partial evaluation, approximation error, and greedification error play distinct roles \citep{scherrer2015}. The particular NBO construction specifies their derivative graph for recursive economic utility, feasibility, boundary data, and player-specific deviations. Its additional structure is the common error account linking a differential implementation to a positive-weight Bellman implementation. The monotonicity and contraction properties of the latter are inherited from the underlying scheme; they are not properties acquired by neural training.
+
+\subsection{A quantitative differential--Bellman connection}
+Consider first the stationary, discounted additive case $f(x,a,v)=r_0(x,a)-\rho v$, with $\rho>0$. Let $R_h$ restrict a smooth candidate to the nodes of a positive-weight scheme and let $P_h^a$ be its Markov transition operator. On interior nodes define
+\[
+ T_h^a w=\frac{P_h^aw+h r_0^a}{1+\rho h},\qquad q_h=(1+\rho h)^{-1}.
+\]
+Stopping nodes have their prescribed payoff. The following statement makes the connection operational without asserting that stochastic optimization enforces consistency.
+
+\begin{proposition}[Differential--Bellman error transfer]\label{prop:bridge-r5}
+Suppose that, on the verification nodes and uniformly over the declared actions,
+\[
+ \left\|h^{-1}(P_h^aR_hv-R_hv)-R_h\LL^av\right\|_\infty\leq\kappa_h.
+\]
+Suppose also that the represented policy belongs to the scheme's action class. If its differential residual and feasible-action gap are bounded by $e$ and $\eta$, respectively, then
+\begin{align}
+ \|R_hv-T_h^aR_hv\|_\infty&\leq q_hh(e+\kappa_h),\label{eq:bridge-eval}\\
+ \|T_hR_hv-T_h^aR_hv\|_\infty&\leq q_hh(\eta+2\kappa_h).\label{eq:bridge-gap}
+\end{align}
+If a finite action net replaces a continuous action set, its maximization error is a separate nonnegative term. The inequalities concern the specified discrete problem; a continuous-payoff comparison requires its own discretization estimate.
+\end{proposition}
+
+The constant $\kappa_h$ contains the interpolation, time-step, and boundary-realization errors of the chosen scheme. On a smooth interior problem, positive cubature and multilinear interpolation give the familiar contributions of order $h$ and $\Delta x^2/h$ under the appropriate derivative bounds. This observation is not used to set either contribution to zero at an unverified boundary. Conversely, a small discrete residual does not by itself establish a small differential residual for an arbitrary oscillatory interpolant.
+
+For a finite horizon the accounts are especially transparent. If the one-step maps have Lipschitz factors $\beta_t$, let $\delta_t$ be evaluation error and $\epsilon_t$ be maximization error at step $t$. Repeated comparison gives policy-value error bounded by the discounted terminal discrepancy plus
+\begin{equation}\label{eq:finiteaccount-r5}
+ \sum_{s=t}^{N-1}\left(\prod_{j=t}^{s-1}\beta_j\right)\delta_s.
+\end{equation}
+Replace $\delta_s$ by $\delta_s+\epsilon_s$ for optimal-value error, or by $2\delta_s+\epsilon_s$ for policy regret, with the corresponding boundary terms. Representation and incomplete optimization enter through the observed evaluation account. Action coverage enters through maximization. Neither is silently absorbed into time discretization. If a uniform comparison between continuous and discrete policy payoffs is bounded by $D_h$, the corresponding continuous regret bound acquires $2D_h$. An unavailable $D_h$ is recorded as unavailable, not as zero.
+
+\subsection{A continuous-domain certificate}
+The next result is used directly by the neural boundary-value computation below. Unlike a grid comparison, it requires no estimate of the reference solution's discretization error.
+
+\begin{proposition}[Discounted stopped-domain certificate]\label{prop:stationary-r5}
+Let $D$ be a bounded regular stopped domain, and suppose that the stationary fixed-policy and optimality equations obey comparison. Let $v\in C^2(D)\cap C(\overline D)$, let $a$ be an admissible feedback policy, and suppose that
+\[
+ |\rho v-r_0^a-\LL^av|\leq e,\qquad
+ 0\leq\sup_b\{r_0^b+\LL^bv\}-(r_0^a+\LL^av)\leq\eta,
+ \qquad |v-g|_{\partial D}\leq B.
+\]
+Then
+\begin{align}
+ \|v-V^a\|_\infty&\leq B+e/\rho,\label{eq:stationarypolicy-r5}\\
+ \|v-V^*\|_\infty&\leq B+(e+\eta)/\rho,\label{eq:stationaryvalue-r5}\\
+ 0\leq V^*-V^a&\leq2B+(2e+\eta)/\rho.\label{eq:stationaryregret-r5}
+\end{align}
+The bounds apply to the real-valued functions represented by the stored network parameters. A sampled residual is not a substitute for either uniform premise.
+\end{proposition}
+
+The implementation in Section~\ref{sec:nonquadratic} partitions the entire state interval into dyadic boxes. Outward-rounded interval propagation bounds the critic, its first two derivatives, and the actor on every box. The exact feasible maximization is enclosed on the same boxes. The union of the saved leaves is checked to be the full domain, including both endpoints. Tanh is enclosed through a range-reduced exponential Taylor expansion with an explicit remainder; affine layers include conservative dot-product roundoff bounds. The certificate identifies its binary64 parameter file and arithmetic implementation by content hashes. Its mathematical claim is conditional on the stated IEEE-754 arithmetic contract, not on sampled estimates of network Lipschitz constants. Tests against 80-digit arithmetic and automatic-differentiation jets are implementation checks, not a replacement for that contract.
+
+This implementation deliberately separates two costs. Neural fitting need not cover the state domain uniformly. Verification must cover the domain on which its conclusion is asserted. Dyadic interval verification is effective in the one-state economy; the paper does not extrapolate its cost to a high-dimensional box. The higher-dimensional computation reports independent reference errors and exact-trace diagnostic residuals, with no continuous-domain certificate attached to those sampled numbers.
