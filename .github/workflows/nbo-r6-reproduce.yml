@@ -1,0 +1,109 @@
+name: NBO R6 source, reproduction and durable evidence
+on:
+  push:
+    branches: [revision/econometrica-nbo-r6-2026-09-29]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r6-evidence
+  cancel-in-progress: false
+jobs:
+  reproduce:
+    if: github.ref == 'refs/heads/revision/econometrica-nbo-r6-2026-09-29' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONHASHSEED: '0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify and materialize the locally validated revision source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = 'revision/econometrica-nbo-r6-2026-09-29'
+          python - <<'PY'
+          import hashlib,io,json,tarfile
+          from pathlib import Path, PurePosixPath
+          p=Path('revisions/2026-09-29-r6/bootstrap')
+          m=json.loads((p/'manifest.json').read_text())
+          parts=sorted(p.glob('source.part*'))
+          assert len(parts)==m['parts']
+          data=b''.join(f.read_bytes() for f in parts)
+          assert len(data)==m['bytes'] and hashlib.sha256(data).hexdigest()==m['sha256']
+          with tarfile.open(fileobj=io.BytesIO(data),mode='r:xz') as t:
+              for f in t.getmembers():
+                  path=PurePosixPath(f.name)
+                  assert f.isfile() and not path.is_absolute() and '..' not in path.parts
+                  assert f.name=='revision_reference.bib' or f.name.startswith('revisions/2026-09-29-r6/')
+              t.extractall('.',filter='data')
+          PY
+          python revisions/2026-09-29-r6/code/assemble_revision.py
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          v=json.loads(Path('revisions/2026-09-29-r6/LOCAL_VALIDATION.json').read_text())
+          for path,sha in v['files'].items():
+              assert hashlib.sha256(Path(path).read_bytes()).hexdigest()==sha,path
+          print('Verified',len(v['files']),'source and assembly identities')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ECTA.tex supp.tex revision_reference.bib revisions/2026-09-29-r6
+          if ! git diff --cached --quiet; then
+            git commit -m 'revision(r6): materialize revised manuscript, supplement and executable evidence [skip ci]'
+            git push origin HEAD:"$GITHUB_REF_NAME"
+          fi
+          echo "NBO_SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install pinned numerical and manuscript dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install numpy==2.3.5 scipy==1.17.0 mpmath==1.3.0
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Independently execute every declared computation and regression test
+        run: python revisions/2026-09-29-r6/code/replicate.py
+      - name: Compile the manuscript and supplement
+        run: bash revisions/2026-09-29-r6/code/build_pdf.sh
+      - name: Commit raw arrays, weights, logs and PDFs to the R6 candidate only
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = 'revision/econometrica-nbo-r6-2026-09-29'
+          python - <<'PY'
+          import hashlib,json,shutil
+          from pathlib import Path
+          p=Path('revisions/2026-09-29-r6')
+          for d in p.rglob('__pycache__'):
+              if d.is_dir(): shutil.rmtree(d)
+          m={str(f):hashlib.sha256(f.read_bytes()).hexdigest() for f in sorted(p.rglob('*')) if f.is_file() and f.name!='MANIFEST.json' and 'bootstrap' not in f.parts}
+          (p/'MANIFEST.json').write_text(json.dumps(m,indent=2)+'\n')
+          PY
+          git add ECTA.tex supp.tex revision_reference.bib revisions/2026-09-29-r6
+          git add -f revisions/2026-09-29-r6/results revisions/2026-09-29-r6/artifacts revisions/2026-09-29-r6/logs revisions/2026-09-29-r6/environment.lock revisions/2026-09-29-r6/REMOTE_EXECUTION.json revisions/2026-09-29-r6/MANIFEST.json
+          git commit -m 'evidence(r6): commit exact-source recomputation, raw weights and referee PDFs [skip ci]'
+          git push origin HEAD:"$GITHUB_REF_NAME"
+          echo "Evidence commit: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Computed source: $NBO_SOURCE_COMMIT" >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve execution artifacts as an additional copy
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r6-evidence-${{ github.run_id }}
+          retention-days: 90
+          path: |
+            revisions/2026-09-29-r6
+            ECTA.tex
+            supp.tex
+            revision_reference.bib
+          if-no-files-found: error
