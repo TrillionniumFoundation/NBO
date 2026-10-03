@@ -1,0 +1,135 @@
+name: NBO R11 evidence replay with historical-root compatibility
+on:
+  push:
+    branches: [revision/econometrica-nbo-r11-source-2026-10-04]
+    paths: [revisions/2026-10-04-r11/POSTPROCESSING.json]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: nbo-r11-evidence-replay
+  cancel-in-progress: false
+env:
+  OMP_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  PYTHONHASHSEED: '0'
+  NBO_NUMERICAL_SOURCE_COMMIT: 83d4cb7fc934e98a577afe2a8e5c0e03e65bb571
+  NBO_SOURCE_COMMIT: ${{ github.sha }}
+jobs:
+  evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Await all unchanged numerical shards
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ready=0
+          for attempt in $(seq 1 125); do
+            gh api 'repos/TrillionniumFoundation/NBO/actions/runs/37156523704/jobs?per_page=100' > /tmp/r11-jobs.json
+            state=$(python - <<'PY'
+          import json
+          jobs=[j for j in json.load(open('/tmp/r11-jobs.json'))['jobs'] if j['name'].startswith('study (')]
+          failed=[j['name'] for j in jobs if j['status']=='completed' and j['conclusion']!='success']
+          if failed: print('failed')
+          elif len(jobs)==11 and all(j['status']=='completed' for j in jobs):print('ready')
+          else:print('running')
+          PY
+            )
+            echo "Unchanged numerical run state: $state"
+            if [ "$state" = failed ]; then cat /tmp/r11-jobs.json; exit 1; fi
+            if [ "$state" = ready ]; then ready=1; break; fi
+            sleep 60
+          done
+          test "$ready" = 1
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 37156523704
+          pattern: r11-shard-*-37156523704-1
+          merge-multiple: true
+          path: revisions/2026-10-04-r11/results/
+      - name: Install pinned verification and journal dependencies
+        run: |
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended texlive-science cm-super poppler-utils
+          git fetch --depth=1 origin 3ad498fa0647533da210f248fb6b1ebd27cffca5
+          git fetch --depth=1 origin 83d4cb7fc934e98a577afe2a8e5c0e03e65bb571
+      - name: Retain and reproduce the original layout compatibility failures
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p revisions/2026-10-04-r11/logs /tmp/nbo-r11-candidate
+          python -m pip freeze > revisions/2026-10-04-r11/logs/environment.txt
+          set +e
+          python - <<'PY' > revisions/2026-10-04-r11/logs/inherited_original.log 2>&1
+          from pathlib import Path
+          import subprocess
+          name='revisions/2026-10-04-r11/code/replay_inherited.py'
+          code=subprocess.check_output(['git','show','83d4cb7fc934e98a577afe2a8e5c0e03e65bb571:'+name],text=True)
+          exec(compile(code,name,'exec'),{'__file__':str(Path(name).resolve()),'__name__':'__main__'})
+          PY
+          status=$?
+          set -e
+          test "$status" = 1
+          cp revisions/2026-10-04-r11/results/INHERITED_TESTS.json revisions/2026-10-04-r11/results/INHERITED_ORIGINAL.json
+      - name: Verify unchanged numerical evidence and compile the complete revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -u revisions/2026-10-04-r11/code/test_r11.py 2>&1 | tee revisions/2026-10-04-r11/logs/new_tests.log
+          python -u revisions/2026-10-04-r11/code/replay_inherited.py 2>&1 | tee revisions/2026-10-04-r11/logs/inherited_tests.log
+          python -u revisions/2026-10-04-r11/code/report.py 2>&1 | tee revisions/2026-10-04-r11/logs/report.log
+          python -u revisions/2026-10-04-r11/code/build.py 2>&1 | tee revisions/2026-10-04-r11/logs/build.log
+          python -u revisions/2026-10-04-r11/code/finalize.py
+      - name: Publish durable evidence and referee branches atomically
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$NBO_SOURCE_COMMIT"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          find revisions/2026-10-04-r11 -type d -name __pycache__ -prune -exec rm -rf '{}' +
+          git add revisions/2026-10-04-r11
+          git commit -m 'revision(r11): verified independent study, historical replay, and complete referee manuscript [skip ci]'
+          evidence=revision/econometrica-nbo-r11-evidence-2026-10-04
+          referee=revision/econometrica-nbo-r11-referee-2026-10-04
+          test -z "$(git ls-remote --heads origin "$evidence")"
+          test -z "$(git ls-remote --heads origin "$referee")"
+          git push --atomic origin HEAD:"$evidence" HEAD:"$referee"
+          git rev-parse HEAD > /tmp/nbo-r11-candidate/EVIDENCE_COMMIT.txt
+          printf '%s\n' "$NBO_SOURCE_COMMIT" > /tmp/nbo-r11-candidate/SOURCE_COMMIT.txt
+          printf '%s\n' "$NBO_NUMERICAL_SOURCE_COMMIT" > /tmp/nbo-r11-candidate/NUMERICAL_SOURCE_COMMIT.txt
+          git archive --format=tar.gz --output=/tmp/nbo-r11-candidate/source.tar.gz HEAD
+          cp revisions/2026-10-04-r11/build/{ECTA,supp,response}.pdf /tmp/nbo-r11-candidate/
+          cp revisions/2026-10-04-r11/{REMOTE_EXECUTION.json,EVIDENCE_MANIFEST.json,SOURCE_MANIFEST.json,TABLE_MANIFEST.json,EDITORIAL_MAP.json,PROTOCOL.json,POSTPROCESSING.json,README.md} /tmp/nbo-r11-candidate/
+          cp revisions/2026-10-04-r11/results/{AUDIT.json,PRIMARY.csv} /tmp/nbo-r11-candidate/
+          (cd /tmp/nbo-r11-candidate && sha256sum source.tar.gz ECTA.pdf supp.pdf response.pdf > SHA256SUMS)
+          echo "Numerical source: $NBO_NUMERICAL_SOURCE_COMMIT" >> "$GITHUB_STEP_SUMMARY"
+          echo "Verification source: $NBO_SOURCE_COMMIT" >> "$GITHUB_STEP_SUMMARY"
+          echo "Evidence and referee: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain compiled files, logs, and incomplete evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r11-complete-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            /tmp/nbo-r11-candidate/
+            revisions/2026-10-04-r11/logs/
+            revisions/2026-10-04-r11/build/
+            revisions/2026-10-04-r11/results/AUDIT.json
+            revisions/2026-10-04-r11/REMOTE_EXECUTION.json
