@@ -1,0 +1,127 @@
+name: NBO R10 continuous-capital revision
+on:
+  push:
+    branches: [revision/econometrica-nbo-r10-source-2026-10-04]
+    paths: [revisions/2026-10-04-r10/RUN.json]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r10-integrated
+  cancel-in-progress: false
+jobs:
+  reproduce:
+    if: github.ref == 'refs/heads/revision/econometrica-nbo-r10-source-2026-10-04'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONHASHSEED: '0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Pin source and immutable base
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --depth=1 origin f8215d6df9026afa108a03c2823cbd6e054a9de8
+          echo "NBO_SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          python - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+          r=Path('revisions/2026-10-04-r10')
+          paths=[p for p in r.rglob('*') if p.is_file()]
+          paths.append(Path('.github/workflows/nbo-r10-integrated.yml'))
+          record={'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+           'files':{str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}}
+          (r/'SOURCE_MANIFEST.json').write_text(json.dumps(record,indent=2)+'\n')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+      - name: Install pinned numerical and journal dependencies
+        run: |
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install numpy==2.3.5 scipy==1.17.0 mpmath==1.3.0
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended texlive-science cm-super poppler-utils
+      - name: Execute, audit, integrate and compile
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p revisions/2026-10-04-r10/logs
+          python -u revisions/2026-10-04-r10/code/replicate.py | tee revisions/2026-10-04-r10/logs/driver.log
+          python -u revisions/2026-10-04-r10/code/build.py | tee revisions/2026-10-04-r10/logs/compilation.log
+      - name: Verify preservation and publish complete referee branches
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$NBO_SOURCE_COMMIT"
+          python - <<'PY'
+          import hashlib,json,os,re,subprocess
+          from pathlib import Path
+          r=Path('revisions/2026-10-04-r10')
+          execution=json.loads((r/'results/EXECUTION_COMPLETE.json').read_text())
+          assert execution['complete'] and execution['all_returncodes_zero']
+          compilation=json.loads((r/'results/COMPILATION.json').read_text())
+          assert all(not v['undefined'] and not v['overfull_hbox_pt'] for v in compilation.values())
+          old=json.loads((r/'archive/R9_FILES_SHA256.json').read_text())
+          for name,h in old.items():
+              target=r/'archive'/('ECTA.r9.tex' if name=='ECTA.tex' else 'supp.r9.tex') if name in ['ECTA.tex','supp.tex'] else Path(name)
+              assert hashlib.sha256(target.read_bytes()).hexdigest()==h,name
+          changed=subprocess.check_output(['git','diff','--name-only'],text=True).splitlines()
+          assert set(changed)<=set(['ECTA.tex','supp.tex']),changed
+          for name,h in json.loads((r/'SOURCE_MANIFEST.json').read_text())['files'].items():
+              assert hashlib.sha256(Path(name).read_bytes()).hexdigest()==h,name
+          table=json.loads((r/'TABLE_MANIFEST.json').read_text())
+          # The command journal is not a numerical table input and grows after
+          # table generation. Keep only the immutable data provenance here.
+          table['inputs'].pop(str(r/'results/EXECUTION.json'),None)
+          (r/'TABLE_MANIFEST.json').write_text(json.dumps(table,indent=2)+'\n')
+          for group in ['inputs','outputs']:
+              for name,h in table[group].items():
+                  assert hashlib.sha256(Path(name).read_bytes()).hexdigest()==h,name
+          inherited=json.loads((r/'results/INHERITED_TESTS.json').read_text())
+          assert inherited['history_unchanged'] and all(x['success'] for x in inherited['suites'])
+          testlog=(r/'logs/01_new_regression.log').read_text()
+          newtests=int(re.findall(r'Ran (\d+) tests?',testlog)[-1])
+          record={'source_commit':os.environ['NBO_SOURCE_COMMIT'],
+           'base_commit':'f8215d6df9026afa108a03c2823cbd6e054a9de8',
+           'report_commit':'3fb6d5bd5cac245a7f693f0b8db76a5075b1c732',
+           'workflow_run_id':os.environ['GITHUB_RUN_ID'],'workflow_attempt':os.environ['GITHUB_RUN_ATTEMPT'],
+           'historical_files_preserved':len(old)-2,'prior_roots_archived_exactly':True,
+           'new_tests':newtests,'inherited_tests':inherited,'compilation':compilation,
+           'execution':execution,'audit':json.loads((r/'results/AUDIT.json').read_text()),
+           'scope':'continuous capital theorem; conditional arithmetic; no universal actor superiority or preference diffusion-transfer claim'}
+          (r/'REMOTE_EXECUTION.json').write_text(json.dumps(record,indent=2)+'\n')
+          paths=[Path('ECTA.tex'),Path('supp.tex')]+[p for p in r.rglob('*') if p.is_file() and '__pycache__' not in p.parts]
+          manifest={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
+          (r/'EVIDENCE_MANIFEST.json').write_text(json.dumps({'files':manifest},indent=2)+'\n')
+          PY
+          find revisions/2026-10-04-r10 -type d -name __pycache__ -prune -exec rm -rf '{}' +
+          git add ECTA.tex supp.tex revisions/2026-10-04-r10
+          git commit -m 'revision(r10): continuous-capital regret theorem, neural deployment and complete evidence [skip ci]'
+          evidence=revision/econometrica-nbo-r10-evidence-2026-10-04
+          referee=revision/econometrica-nbo-r10-referee-2026-10-04
+          test -z "$(git ls-remote --heads origin "$evidence")"
+          test -z "$(git ls-remote --heads origin "$referee")"
+          git push --atomic origin HEAD:"$evidence" HEAD:"$referee"
+          echo "Source: $NBO_SOURCE_COMMIT" >> "$GITHUB_STEP_SUMMARY"
+          echo "Evidence and referee: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain outputs and failure logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r10-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            revisions/2026-10-04-r10/logs/
+            revisions/2026-10-04-r10/results/
+            revisions/2026-10-04-r10/build/
+            revisions/2026-10-04-r10/REMOTE_EXECUTION.json

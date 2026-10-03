@@ -1,0 +1,70 @@
+\section{Continuous-Economy Guarantees for Neural Capital Policies}\label{sec:r10continuous}
+The distinction between a nodal certificate and an economic diffusion bound is substantive. This section obtains the latter for the original dense, nonlinear capital economy, without replacing its primitives, restricting the comparison policy class, or extrapolating a sampled residual. The construction uses the curvature of consumption utility to control the gain from an arbitrary adapted deviation. A neural actor is then confined to a known neighbourhood of a feasible schedule. Its approximation class is restricted; the economic optimum against which it is assessed is not.
+
+Write $\bar z=d^{-1}\sum_i z_i$, $\|z\|_d^2=d^{-1}\sum_i z_i^2$, and $\Pi z=z-\bar z\bm1$. In the capital model already specified, the state and payoff are
+\begin{align}
+ dY_i&=\{a+\kappa\tanh((BY)_i)-m_i-\nu^2/2\}\,dt
+       +\sigma_I\,dW_i+\sigma_C\,dW_0,\label{eq:r10state}\\
+ J_y(m)&=\E_y\left[\int_0^T e^{-\rho t}
+  \{\overline{\log m_t}+\bar Y_t-\tfrac\zeta2\bar m_t^2\}\,dt
+  +e^{-\rho T}\{\bar Y_T-\chi\|\Pi Y_T\|_d^2\}\right],\label{eq:r10payoff}
+\end{align}
+where $\nu^2=\sigma_I^2+\sigma_C^2$ and each control lies in $[\underline m,M]$. Controls are progressively measurable and the state equation is interpreted on $\R^d$. Bounded control and the globally Lipschitz bounded production term yield the required state moments and finite payoffs. The historical parameters are $T=1$, $\rho=.04$, $a=.10$, $\kappa=.15$, $\sigma_I=.15$, $\sigma_C=.10$, $\zeta=.2$, $\chi=.03$, and $[\underline m,M]=[.02,2]$. The stored coupling matrices are unchanged in dimensions ten and twenty. Dimension fifty uses the same stated matrix-generation rule.
+
+Define
+\begin{align}
+ w(t)&=\frac{1-e^{-\rho(T-t)}}{\rho}+e^{-\rho(T-t)},&
+ m_0(t)&=\frac{2}{w(t)+\sqrt{w(t)^2+4\zeta}}.\label{eq:r10anchor}
+\end{align}
+This schedule is strictly interior for the parameters above. It is a feasible benchmark, not an asserted solution of the coupled economy. Let $\beta\geq\kappa\|B\|_2$, let $s_0$ bound the initial cross-sectional standard deviation, and set
+\begin{align}
+ Q_d&=s_0+\kappa T+\sigma_I\sqrt{(1-1/d)T},\label{eq:r10Q}\\
+ K(s)&=\beta\int_s^T e^{-\rho t}w(t)e^{\beta(t-s)}\,dt
+       +2\chi e^{-\rho T}Q_de^{\beta(T-s)},\label{eq:r10K}\\
+ \mu(t)&=\frac{2\{\log[m_0(t)/M]+[M-m_0(t)]/m_0(t)\}}
+                    {[M-m_0(t)]^2}.\label{eq:r10mu}
+\end{align}
+The quantity $\mu(t)$ is the smallest tangent-remainder curvature of log utility on the entire primitive action interval, relative to $m_0(t)$. It is not a Hessian bound estimated from training points. In particular, it can be substantially sharper than the uniform lower curvature $M^{-2}$.
+
+\begin{theorem}[Curvature-controlled policy guarantee]\label{thm:r10tube}
+Suppose $\rho>0$, $\zeta,\chi,\kappa\geq0$, the schedule in \eqref{eq:r10anchor} is interior, and $\|\Pi y\|_d\leq s_0$. Let $V^*(y)=\sup_m J_y(m)$, where the supremum is over the full original admissible class. Then
+\begin{equation}\label{eq:r10anchorbound}
+ 0\leq V^*(y)-J_y(m_0)\leq
+ G_d:=\frac12\int_0^T e^{\rho s}\frac{K(s)^2}{\mu(s)}\,ds.
+\end{equation}
+For $\epsilon\geq0$ satisfying
+$[m_0(t)-\epsilon,m_0(t)+\epsilon]\subset[\underline m,M]$, every admissible policy $m^\phi$ with
+$|m_i^\phi(t,Y)-m_0(t)|\leq\epsilon$ for all coordinates, times, and states satisfies
+\begin{equation}\label{eq:r10neuralbound}
+ 0\leq V^*(y)-J_y(m^\phi)\leq G_d+D_{d,\epsilon},
+\end{equation}
+where, with $A_\beta(T)=\int_0^T e^{\beta t}dt$,
+\begin{align}
+ D_{d,\epsilon}={}&\int_0^T\left[\epsilon K(s)
+ +\frac{\epsilon^2 e^{-\rho s}}2
+       \{[m_0(s)-\epsilon]^{-2}+\zeta\}\right]ds\notag\\
+ &+\chi e^{-\rho T}\epsilon^2 A_\beta(T)^2.\label{eq:r10tubeallowance}
+\end{align}
+These bounds hold for every initial mean, every initial state with the stated dispersion bound, and arbitrary adapted competitors in the original action box. They require no neural training convergence or discretization error estimate.
+\end{theorem}
+
+The proof uses synchronous state comparison, an exact discounted mean-state identity, and completion of a quadratic bound on an arbitrary policy deviation. It is provided in the appendix. The result is a model-specific numerical principle: curvature limits the benefit from changing consumption, whereas a spectral bound limits the propagation of that change through dense nonlinear production. Their balance yields a scalar integral certificate for a high-dimensional policy. Bounded nonlinearity, the additive diffusion structure, and the chosen felicity are essential assumptions, rather than generic properties of all HJB equations.
+
+\subsection{The deployed neural map and its numerical guard}
+The actor is a two-hidden-layer network with the closed-form output map
+\begin{equation}\label{eq:r10actor}
+ m_i^\phi(t,Y)=m_0(t)+\epsilon\tanh N_{\phi,i}(t,Y).
+\end{equation}
+The weights are trained by the same block-specific NBO losses as before. No maximizing policy labels, nodal action table, or online local search enter this actor. Input clipping at very large log-capital values protects numerical evaluation; it does not stop or truncate the economic state. The theorem remains valid for any bounded proposal followed by the stated output constraint, including this clipped-input network.
+
+Numerical implementation must not replace the exact schedule by an unverified floating-point centre. The deployment routine therefore encloses $m_0(t)$ by $[\ell(t),u(t)]$ using the inherited outward arithmetic kernel and projects the proposal onto
+\begin{equation}\label{eq:r10inward}
+ [\,\operatorname{up}(u(t)-\epsilon),\,
+       \operatorname{down}(\ell(t)+\epsilon)\,].
+\end{equation}
+This interval lies inside the exact tube. Adjacent clock floats enclose rounding of the input time. An empty interval causes an error; a nonfinite proposal is replaced by its interval midpoint and is not evidence of successful training. This scalar feasibility guard is neither an action-maximization oracle nor a stored policy correction table. Its cost is included in the deployment measurements.
+
+\subsection{Computable scope and cost}
+An SVD is used only to propose a scalar $\lambda$. Positive pivots in an outward interval $LDL^\top$ calculation for $\lambda I-B^\top B$ certify the spectral majorant. A failed pivot triggers enlargement, not acceptance of the SVD output. The remaining integrals use outward rectangle sums, polynomial exponential and logarithm bounds, and square-root endpoints checked by interval squaring. For a fixed majorant with verified pivots, this certificate requires $O(d^3)$ arithmetic operations and $O(d^2)$ storage for the matrix check, followed by $O(N)$ scalar quadrature work. This is not a dimension-independent training theorem or a worst-case bound on the number of attempted majorants.
+
+The guarantee holds already at initialization. Training is intended to improve the feasible policy inside the tube, not to manufacture its certificate. The anchor itself has the tighter bound $G_d$ and requires no training. A comparison omitting it would overstate the role of the actor. Neither a small $G_d+D_{d,\epsilon}$ nor faster actor evaluation proves a net economic advantage over that benchmark.
