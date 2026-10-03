@@ -17,6 +17,7 @@ def run():
  env['packages']=subprocess.check_output([sys.executable,'-m','pip','freeze'],text=True).splitlines();(O/'ENVIRONMENT.json').write_text(json.dumps(env,indent=2)+'\n')
  py('coarse_complete_action','action_cover.py','revisions/2026-10-03-r8/results/continuous_actor_s29_search.npz','--max-boxes',2000000)
  py('common_accounts','audit.py')
+ py('complete_cost_account','accounting.py')
  for nu,nx,nt,guard in [(17,25,20,True),(33,49,40,False),(33,49,40,True)]:
   for seed in [11,29,47]:
    for method in ['actor','search']:
@@ -31,5 +32,6 @@ def run():
  py('integrate_manuscripts','assemble.py')
  py('inherited_regression','replay_inherited.py')
  py('r9_regression','test_r9.py')
+ py('cost_accounting_regression','test_accounting.py')
  (O/'EXECUTION_COMPLETE.json').write_text(json.dumps(dict(complete=True,commands=len(records),all_returncodes_zero=all(r['returncode']==0 for r in records),seconds=time.perf_counter()-start,source_commit=env['source_commit'],scope='execution and accounting success, not universal economic-target success'),indent=2)+'\n')
 if __name__=='__main__':run()
