@@ -1,0 +1,77 @@
+\begin{appendix}
+\section{Proofs}\label{app:proofs}
+\subsection{Proof of Theorem~\ref{thm:verification}}
+Extend the aggregator Lipschitz-continuously outside its invariant interval for this comparison argument. The extension leaves all policy utilities and the candidate residual unchanged. For a nonnegative number $c$, define $d_c(t)=Be^{L(T-t)}+cA_L(T-t)$. Then $d_c(T)=B$, $d_c(t)\geq B$, and $-d_c'=Ld_c+c$. Since a spatially constant shift leaves the generator unchanged and $f$ is $L$-Lipschitz in utility,
+\[
+ F[v+d_c]\geq F[v]-d_c'-Ld_c=F[v]+c,
+ \qquad F[v-d_c]\leq F[v]+d_c'+Ld_c=F[v]-c.
+\]
+Because $F[v]=r^a[v]-g^a[v]\in[-e-\eta,e]$, $v+d_{e+\eta}$ is a supersolution and $v-d_{e+\eta}$ a subsolution. They dominate the required stopping data on every boundary face. A spatially constant shift also preserves an exactly satisfied homogeneous reflected boundary condition. Comparison proves \eqref{eq:valuebound}.
+
+Apply the same argument to the fixed-policy operator $F^a[v]=-v_t-\HH^a[v]$, with $c=e$, to obtain \eqref{eq:policybound}. The triangle inequality gives \eqref{eq:regret}, and policy admissibility gives its nonnegative lower bound. The construction uses $L\geq0$ and $d_c(t)\geq B$ specifically to cover lateral stopping boundaries; it does not incorrectly discount their errors as if every path stopped only at $T$. For nonsmooth candidates the same argument applies when their residual inequalities are verified in the viscosity sense. The theorem's differential implementation, however, requires the stated smooth candidate.\qed
+
+\subsection{Exact policy improvement}
+Suppose $v=V^a$ solves the fixed-policy problem and a feasible $\tilde a$ satisfies $\HH^{\tilde a}[v]\geq\HH^a[v]$ pointwise. Then $F^{\tilde a}[v]\leq0$ with the same boundary payoff. Policy comparison gives $V^{\tilde a}\geq V^a$. This is a policy-space statement. A single gradient step on a domain-averaged actor loss does not automatically meet its pointwise premise. The measured action gap and policy-evaluation errors are retained precisely because approximate neural improvement can violate that premise.
+
+\subsection{Proof of Theorem~\ref{thm:discrete}}
+For a fixed state and action, let $z$ and $\tilde z$ solve \eqref{eq:implicit} for $w$ and $\tilde w$. Strict monotonicity of $z-hf(z)$ gives
+\[
+ |z-\tilde z|\leq\frac{|P_h^a(w-\tilde w)|}{1+\lambda h}
+ \leq q_h\|w-\tilde w\|_\infty.
+\]
+The same monotonicity implies order preservation. Taking the maximum over actions preserves both order and the Lipschitz constant. Banach's fixed-point argument supplies the two fixed points on the invariant complete value domain.
+
+Now $\|v-v_h^a\|\leq\|v-T_h^av\|+q_h\|v-v_h^a\|$, which gives the first bound. Also $\|v-T_hv\|\leq\delta+\epsilon$, giving the second. The triangle inequality gives the third. All norms are over every state of the specified finite model. An omitted action changes $T_h$ and must be accounted for as a separate error, not hidden in $\delta$.\qed
+
+\subsection{Proof of Theorem~\ref{thm:viscosity}}
+First, \eqref{eq:discretebound} gives
+\[
+ \|v_h-v_h^*\|_\infty\leq\frac{\delta_h+\epsilon_h}{1-q_h}
+ =\frac{1+\lambda h}{\lambda}\frac{\delta_h+\epsilon_h}{h}\longrightarrow0.
+\]
+It remains to identify the limit of the exact monotone scheme. Stability makes the upper and lower half-relaxed limits finite. At a strict local maximum of the upper limit minus a smooth test function, select nearby maximizing grid points. Monotonicity compares the neighboring scheme values to that test function plus the vanishing contact offset. Local consistency then gives the viscosity subsolution inequality. The corresponding minima give the supersolution inequality for the lower limit. Consistent boundary data and the assumed barriers give the required boundary inequalities. Comparison orders the upper limit below the lower limit. The reverse order follows by definition, so the two limits coincide with the unique continuous viscosity solution. The vanishing distance between $v_h$ and $v_h^*$ transfers that convergence to the neural arrays. The discrete policy-value conclusion follows from the third bound. Interpreting a discrete policy as a continuous-time implementation additionally requires convergence of its controlled interpolation and payoff; the theorem does not infer this merely from convergence of its state arrays. This is the usual monotone-scheme selection argument, with the neural approximation error made explicit; see \citet{barles1991,crandall1992}.\qed
+
+\subsection{Finite-horizon Bellman error accumulation}
+Let $T_n$ and $T_n^a$ be the time-$n$ Bellman and fixed-policy maps, with Lipschitz constants $q_n$ (which may exceed one). For arrays $v_n$, define $\delta_n=\|v_n-T_n^av_{n+1}\|$ and $\epsilon_n=\|T_nv_{n+1}-T_n^av_{n+1}\|$. If the terminal error is $B_N$, backward induction gives
+\[
+ \|v_n-v_n^*\|\leq\left(\prod_{j=n}^{N-1}q_j\right)B_N
+ +\sum_{k=n}^{N-1}\left(\prod_{j=n}^{k-1}q_j\right)(\delta_k+\epsilon_k).
+\]
+The policy-evaluation bound replaces $\delta_k+\epsilon_k$ by $\delta_k$. Their sum bounds regret. Empty products equal one. For the implicit Lipschitz recursive step, $q_n\leq(1-hL)^{-1}$; for additive exponential discount, $q_n=e^{-\rho h}$. Thus a per-step error $o(h)$ and consistent terminal data suffice on a fixed finite horizon, without asserting a stationary contraction in an inapplicable utility regime.
+
+\subsection{Derivation of the temporal-self condition}
+A self at $(t,x)$ replaces $a^*$ by a fixed feasible local action $a$ for duration $\epsilon$ and then returns to $a^*$. For each exponential component, the deviation value is
+\[
+ \E\left[\int_t^{t+\epsilon}e^{-\rho_j(s-t)}u(a)ds
+     +e^{-\rho_j\epsilon}W_j(t+\epsilon,S_{t+\epsilon}^{a})\right].
+\]
+It\^o expansion gives its first-order increment relative to $W_j(t,x)$ as $\epsilon[u(a)+(W_j)_t+\LL^aW_j-\rho_jW_j]+o(\epsilon)$. Weighting the two components and subtracting their evaluation equations under $a^*$ leaves
+\[
+ \epsilon\{u(a)-u(a^*)+(\LL^a-\LL^{a^*})V\}+o(\epsilon).
+\]
+Nonpositive first-order gain for every feasible action is exactly \eqref{eq:spike}. This derivation assumes the smoothness and local integrability needed for the expansion; it is an equilibrium deviation condition, not an assertion of optimal commitment over a finite interval. The homothetic derivation follows by integrating $e^{-[\rho_j-b(r-m)]s}$ and applying the consumption first-order condition.\qed
+
+\input{revisions/2026-10-03-r9/manuscript/proofs.tex}
+\input{revisions/2026-10-04-r10/manuscript/proofs.tex}
+\section{Replication and Scope of Numerical Evidence}\label{app:replication}
+\paragraph*{Integrated R8 candidate.}
+The present article incorporates the following immutable repository inputs.
+\begin{quote}\small
+R7 source: \texttt{5bab4649\allowbreak 728860fb\allowbreak 655c5371\allowbreak f3705787\allowbreak f10b4a78}\\
+R7 evidence: \texttt{b1409008\allowbreak 625f5501\allowbreak 95ce9ead\allowbreak 468391ad\allowbreak 2449a240}\\
+R7 advisory report: \texttt{c63f6817\allowbreak f498e1cf\allowbreak e9a65313\allowbreak 9f7a25bf\allowbreak 44a4418a}
+\end{quote}
+The preceding main manuscript and supplement are preserved by exact Git blob identity in the R8 archive. R8 source, all executed development configurations, raw arrays, independent certificates, method-paired comparisons, generated tables, and compilation logs belong to the candidate itself. The response answers every B1--B7 and M1--M9 comment of the latest report. The later unexecuted R7 development protocol is not imported as evidence. A table manifest checks each printed number against its input file; the execution manifest identifies the exact R8 source and candidate workflow. Earlier review and revision branches remain unchanged.
+
+The revision directory contains the executable block core, the experiment program, the regression tests, raw numerical outputs, and a response-to-referee document. The reviewed manuscript, supplement, and historical comments are preserved byte-for-byte in the archive, and the review branch remains unchanged. The new main manuscript is authoritative for the revised equations. The archive is not compiled into the revised article and its unsupported numerical statements are not reused as evidence.
+
+The inherited R2 execution contains 29 recorded experiments and eight regression tests, all retained and rerun. The R6 record adds nine primary stopped-consumption runs, six architecture/update sensitivities, six full-domain certificates, six principal NDU neural runs, sixteen NDU reference sensitivities, twenty-four dense-capital primary fits, six stochastic-trace fits, twelve coverage follow-ups, and six principal dynamic-game solves. Pilot failures and coarse-game counterchecks are retained separately rather than counted as successful primary runs. The original referee diagnostics continue to concern their pinned original sources.
+
+The initial development summary and the corresponding script are preserved separately. Inspection found a sign error in the \emph{reported} quadratic residual formula even though the Lyapunov solutions agreed with Riccati values. The formula was corrected, its acceptance test strengthened to include that residual, and the complete experiment suite rerun. The wealth stopping boundary was also imposed explicitly at all NDU time levels before the final run. The earlier results are marked superseded diagnostics rather than silently relabelled as final evidence.
+
+The R6 directory contains complete source, generated tables, model and numerical arrays, optimizer histories, certificate covers, tests, and a provenance manifest. The replication workflow materializes the revision source, independently reruns its computations, and commits the resulting evidence only to the designated R6 candidate branch; an exact-source snapshot and raw-result hashes identify each execution. Local execution, remote replication, and independent referee acceptance remain different facts. No historical GPU benchmark, unexecuted deep-BSDE comparison, unrestricted neural Cournot equilibrium, or empirical identification result is inferred from the computations reported here.
+\end{appendix}
+\paragraph{R9 revision record.} The authoritative R9 source descends from the review of the R8 candidate, dated 3 October 2026. Its new material, all raw runs, complete-action arrays, full-domain refinement summaries, proofs, response, and execution identities are stored under \texttt{revisions/2026-10-03-r9}. The archived R8 main text and supplement preserve the pre-revision scholarly record. Every inherited section and label is retained. The new response addresses the R8 report's B1--B7 and M1--M10 comments. Earlier replication and response descriptions in this historical record refer to their respective R6--R8 rounds; historical workflow success is not substituted for a run of the current source.
+
+
+\paragraph{R10 revision record.} The current source descends from the complete R9 evidence commit. Section~\ref{sec:r10continuous} and its proof give the continuous-capital guarantee; Section~\ref{sec:r10study} reports the complete training and deployment comparison. Exact previous roots, all new source and results, the response to the 3 October 2026 R8 advisory report, and the current execution identities are stored under \texttt{revisions/2026-10-04-r10}. Earlier numerical accounts and unsuccessful experiments remain unchanged.

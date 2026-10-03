@@ -1,0 +1,138 @@
+\section{Proofs for Policy-Specific Verification}\label{app:r11proofs}
+This section proves the continuous-time transfer, clipping, and statistical statements used in the main text. Norms are normalized by dimension throughout. The internal controller and the economic state are distinct. This distinction is maintained in every comparison below.
+
+\subsection{Generator and stochastic local-error bounds}
+Let $f_i(y)=\kappa\tanh(B_{i\cdot}y)$, $b(y,m)=c\bm1+f(y)-m$, and let $\Sigma$ have idiosyncratic columns $\sigma_I e_i$ and common column $\sigma_C\bm1$. For the ordinary spectral majorant $\beta\geq\kappa\|B\|_2$,
+\[
+ \|f(y)-f(z)\|_d\leq\beta\|y-z\|_d,
+ \qquad \|b(y,m)\|_d\leq M_\epsilon.
+\]
+Each row of $D f(y)\Sigma$ has squared norm at most $\kappa^2q_i$, so its normalized squared Hilbert--Schmidt norm is at most $H^2$. Also
+\[
+ \left|\frac12\operatorname{tr}\{\Sigma\Sigma^\top D^2 f_i(y)\}\right|
+ \leq\frac\kappa2 q_i,
+\]
+because $|\tanh''|\leq1$. The generator of $f$ under any held admissible action therefore satisfies
+\begin{equation}\label{eq:r11generator}
+ \|\mathcal A^m f(y)\|_d\leq\beta M_\epsilon+Q=K_\epsilon.
+\end{equation}
+The controls used during the comparison are adapted, but fixed over each cell. The same bound applies to the reference's deterministic, time-varying common control, with $\epsilon=0$ and the time-dependent generator.
+
+First take exact arithmetic and untruncated internal innovations. On cell $k$, It\^o's formula and stochastic Fubini give
+\begin{align*}
+ \int_{t_k}^{t_{k+1}}\{f(Y_s)-f(Y_{t_k})\}ds
+ ={}&\int_{t_k}^{t_{k+1}}(t_{k+1}-v)\mathcal A^{a_k} f(Y_v)dv\\
+ &+\int_{t_k}^{t_{k+1}}(t_{k+1}-v)D f(Y_v)\Sigma\,dW_v
+ =:D_k+M_k.
+\end{align*}
+The deterministic term has $L^2$ norm at most $K_\epsilon h^2/2$. The stochastic terms are martingale increments over disjoint cells. It\^o's isometry, not a sum of their absolute norms, gives
+\[
+ \left(\E\left\|\sum_{j<k}M_j\right\|_d^2\right)^{1/2}
+ \leq Hh\sqrt{t_k/3}.
+\]
+Set $e_k=Y_{t_k}-Z_k$. The chosen actions cancel from the recursions. The triangle inequality yields
+\[
+ (\E\|e_k\|_d^2)^{1/2}
+ \leq\beta h\sum_{j<k}(\E\|e_j\|_d^2)^{1/2}
+       +h\{K_\epsilon t_k/2+H\sqrt{t_k/3}\}.
+\]
+The inhomogeneous term is nondecreasing in $t_k$. Discrete Gronwall and $(1+\beta h)^k\leq e^{\beta t_k}$ prove \eqref{eq:r11strong}. Importantly, no derivative of $a_k$ with respect to its internal state appears in this recursion. Replacing $a_k$ by a policy evaluated separately at $Y_{t_k}$ and $Z_k$ would destroy this cancellation and would be a different proposition.
+
+For $t_k\leq t<t_{k+1}$, conditioning It\^o's formula gives
+\[
+ \|\E\{f(Y_t)-f(Y_{t_k})\}\|_d\leq K_\epsilon(t-t_k).
+\]
+Combining this inequality with the grid-point strong error bounds the absolute bias in the weighted mean-production sum by
+\[
+ \beta\sum_k B_k u_\epsilon(t_k)+
+ K_\epsilon\sum_k\int_{t_k}^{t_{k+1}}W(t)(t-t_k)dt.
+\]
+The common components of drift, action, and Brownian noise vanish after applying $\Pi$. The policy's coordinate deviations from its common schedule at grid dates are at most $\epsilon$. Therefore
+\[
+ (\E\|\Pi Y_T\|_d^2)^{1/2}
+ \leq s_0+(\kappa+\epsilon)T+\sigma_I\sqrt{(1-1/d)T}=S_\epsilon.
+\]
+For any coupled $Y,Z$, Cauchy--Schwarz gives
+\[
+ \left|\E\{\|\Pi Y\|_d^2-\|\Pi Z\|_d^2\}\right|
+ \leq (\E\|Y-Z\|_d^2)^{1/2}
+       \{2(\E\|\Pi Y\|_d^2)^{1/2}+(\E\|Y-Z\|_d^2)^{1/2}\}.
+\]
+This proves the terminal term in \eqref{eq:r11bias}. Applying the calculation once to the policy and once to the reference proves Proposition~\ref{prop:r11transfer} in exact arithmetic.
+
+\subsection{Clipped innovations and numerical integration}
+Let $g$ be a standard normal variable and $\operatorname{clip}_z(g)$ its projection onto $[-z,z]$. Symmetry gives zero mean for $g-\operatorname{clip}_z(g)$, and
+\[
+ \begin{aligned}\E\{g-\operatorname{clip}_z(g)\}^2
+ &\leq \E[g^2\bm1\{|g|>z\}]
+ =2\{z\varphi(z)+\Pr(g>z)\}\\
+ &\leq2\varphi(z)(z+z^{-1})=:v_z.\end{aligned}
+\]
+Thus the accumulated internal-noise discrepancy has normalized $L^2$ norm at most
+$\sqrt{\sigma_I^2+\sigma_C^2}\sqrt{Tv_z}$.
+It is added to the same Gronwall recurrence, giving the conservative enlargement
+$e^{\beta T}\sqrt{\sigma_I^2+\sigma_C^2}\sqrt{Tv_z}$ at every grid point. This bounds a change in the controller's internal update, not a replacement of the economic innovation law.
+
+The scalar weights $A_k,B_k$ are integrated from their exponential expressions. $C_k$, the reference action integral, and the within-cell production weight are enclosed on a dyadic subdivision with 64 panels per cell. Their midpoint errors are explicitly accumulated. If $\delta_M$ bounds the sum of the absolute errors in the integrated reference actions, $e^{\beta T}\delta_M$ enlarges the reference state error. The errors in $A_k,B_k,C_k$ are multiplied by global bounds on consumption, its logarithm, and bounded production, and are added to the statistic error. These terms are not inferred from a difference between two grids.
+
+\subsection{Arithmetic contract and forward-error budget}\label{app:r11arithmetic}
+All stored binary64 model coefficients denote exact real inputs to the economic problem. The computation assumes round-to-nearest elementary arithmetic, the usual dot-product forward-error bound, and correctly rounded input conversion. It does not assume correct rounding of a platform exponential, logarithm, or hyperbolic tangent when proving a payoff endpoint. Network library functions produce proposals only; the interval schedule and inward projection enforce feasibility independently of proposal accuracy. The simulation drift and log utility use the polynomial kernels described next. The Python interpreter, numerical libraries, compiler, hardware, and random-number generator are not machine-formally verified.
+
+For $|x|\leq20$, write $r=x/256$ and approximate $e^r$ by its degree-14 Taylor polynomial in Horner form. Nine squarings approximate $e^{2x}$. The Taylor remainder is bounded by
+$e^{|r|}|r|^{15}/15!$. The coefficient representation and Horner operations satisfy the standard $\gamma_{30}$ forward bound, with $\gamma_j=ju/(1-ju)$ and $u=2^{-52}$, a conservative choice relative to binary64 unit roundoff. Propagating relative error through nine squarings bounds the exponential relative error by less than $2^{-35}$ on this range. The derivative of $1-2/(1+z)$ with respect to $\log z$ is $2z/(1+z)^2\leq1/2$. Including the final arithmetic and saturation outside $[-20,20]$ therefore bounds absolute tanh error by $2^{-34}$. The saturation error itself is below $2e^{-40}$.
+
+For positive consumption, binary exponent extraction writes $x=2^{e-1}(2m)$, with $m\in[1/2,1)$. Then
+\[
+ \log x=2\sum_{j=0}^{\infty}\frac{q^{2j+1}}{2j+1}
+                 +(e-1)\log2,\qquad q=\frac{2m-1}{2m+1}\in[0,1/3].
+\]
+The implementation retains 18 terms and evaluates $\log2$ with the same series at $q=1/3$. The geometric remainder and Horner forward error, including the bounded exponents on the primitive consumption interval, are below $2^{-34}$. No empirical comparison with the platform logarithm serves as this error bound. The optional compiled kernels use identical binary64 coefficients, operation order, and disabled fast-math transformations; the array implementation is retained as a fallback.
+
+Clipped innovations yield a deterministic internal state cap. A conservative cap for the implemented ranges is
+\[
+ S_{\rm cap}=2\{\|y\|_\infty+M_\epsilon T+
+           (\sigma_I+\sigma_C)10T/\sqrt h+1\}.
+\]
+Using $\gamma_{d+2}S_{\rm cap}\max_i\sum_j|B_{ij}|$ for the matrix-product error, the code propagates drift, innovation-combination, and state-addition errors through the same discrete Gronwall bound. It verifies the bootstrap condition that this enlargement is less than one. This condition, together with the doubled cap, bounds the entire numerical path. Separately, it accumulates the errors of all statistic sums, log evaluations, and terminal squares. The exact formulas and intermediate constants are returned by \texttt{constants}; each final record saves the resulting state cap, forward-roundoff bound, scalar-integration bound, and total bias endpoint. Scalar transcendental evaluations used only to assemble conservative budgets receive additional $10^{-12}$ bias and $10^{-10}$ clipping cushions on the declared bounded parameter range; they do not replace the enclosed spectral or integral calculations.
+
+The sampling contract is ideal independent standard-normal innovations rounded to binary64 before the specified clipping, with the forward-error allowance for their conversion. Pseudorandom draws are a reproducible implementation of this contract, not a proof of ideal independence. The resulting certificate is conditional numerical mathematics and conditional statistical inference. It must not be described as a machine-formal guarantee of a particular hardware random stream.
+
+\subsection{A global clipping envelope}
+Let $Z^0$ denote the internal reference trajectory. In exact arithmetic, synchronous coupling gives
+\[
+ \|Z_k^\phi-Z_k^0\|_d\leq D_k,
+ \qquad D_k=\epsilon_{\rm eff}\{e^{\beta t_k}-1\}/\beta,
+\]
+where $\epsilon_{\rm eff}$ also covers schedule movement within one cell, integrated-action error, and both forward-rounding increments. For the retained parameters, $|m_0'|\leq1$, so $\epsilon+h$ suffices before these numerical enlargements. Define $D_T$ analogously. Production differences have absolute sum at most $\beta\sum_k B_kD_k$. The consumption deficit is at most
+\[
+ \frac{\epsilon_{\rm eff}^2}{2}
+  \{[m_0(0)-\epsilon_{\rm eff}]^{-2}+\zeta\}
+                 \int_0^T e^{-\rho t}dt.
+\]
+The code verifies the strictly positive denominator. Terminal differences are bounded by
+$\chi e^{-\rho T}\{D_T^2+2D_T\|\Pi Z_T^0\|_d\}$.
+
+The projected reference state satisfies
+\[
+ \|\Pi Z_T^0\|_d\leq s_0+\kappa T+e_{\rm round}
+  +\frac{\sigma_I\sqrt T}{\sqrt d}\,H_0,
+\]
+where $H_0$ is the Euclidean norm of the projected sum of the standardized clipped idiosyncratic innovations, normalized to unit total variance. As a function of all underlying independent standard Gaussians, $H_0$ is one-Lipschitz. Independence, symmetry, and the variance reduction under clipping give $\E H_0\leq\sqrt{d-1}$. Gaussian concentration therefore gives
+$\Pr\{H_0>\sqrt{d-1}+v\}\leq e^{-v^2/2}$.
+Collecting the deterministic terms defines $C_\phi$ and setting
+$A_\phi=2\chi e^{-\rho T}D_T\sigma_I\sqrt{T/d}$ gives the claimed tail envelope. Integrating that envelope beyond $v_*>0$ gives
+\[
+ \E[(|X_{\phi,h}|-b_\phi)_+]
+ \leq A_\phi\int_{v_*}^{\infty}e^{-v^2/2}dv
+ \leq A_\phi e^{-v_*^2/2}/v_*.
+\]
+The construction does not require the learned network to be Lipschitz as a function of shocks; only its feasible action range is used in the deterministic separation bound.
+
+For completeness, the Gaussian concentration fact can be obtained from the Gaussian logarithmic Sobolev inequality. If $P_t$ is the Ornstein--Uhlenbeck semigroup, entropy differentiation and the identity $\nabla P_t=e^{-t}P_t\nabla$ imply
+$\operatorname{Ent}(e^g)\leq\tfrac12\E[e^g\|\nabla g\|^2]$ by Cauchy--Schwarz and integration of $e^{-2t}$. For $g=\lambda H_0$, the one-Lipschitz bound gives
+$\log\E e^{\lambda(H_0-\E H_0)}\leq\lambda^2/2$ by integrating the entropy inequality in $\lambda$. Chernoff optimization yields the stated one-sided tail. Smooth approximation and truncation justify the calculation for the norm and clipping functions.
+
+\subsection{Finite families, selection, and interpretation}
+Conditioning on the fitted weights and their validation selection makes each final-test statistic a fixed function of one fresh path. Each row is therefore an independent sample across paths, even when its Brownian bank is shared with other policies. Applying \citet[Theorem~4]{maurer2009} to both signs and taking a union bound proves the simultaneous statement. The implementation allocates 2,000 one-sided statements, so at most 1,000 two-sided rows may be reported under this allocation. The audit rejects an overrun. It also checks source weights, path counts, raw-array hashes, every recomputed mean and variance, and all displayed table inputs.
+
+A certificate may fail to establish improvement. That is distinct from an exception in the numerical code. Both outcomes are retained. A zero correction, a deliberately saturated poor correction, and trained corrections are compared under the same accounting. Small training loss or successful completion is never substituted for a positive lower improvement endpoint. If a candidate is chosen after inspecting several final rows, the simultaneous guarantee continues to hold only within the predeclared finite family; an undeclared search requires a new allocation and independent data.

@@ -1,0 +1,119 @@
+\section{Policy-Specific Verification after Bellman Improvement}\label{sec:r11specific}
+The bound in Theorem~\ref{thm:r10tube} is a useful starting point, but not a measure of what training accomplishes. Every policy in the same tube receives the same allowance, including a poorly trained policy. We now replace that allowance by an independently verified, policy-specific payoff difference. The economic primitives, initial state, and full adapted comparison class in \eqref{eq:r10state}--\eqref{eq:r10payoff} are unchanged. The implementation to which the new bound applies is specified explicitly below. It is not identified with continuously observed-state feedback.
+
+\subsection{The deployed controller}
+Fix a deterministic grid $t_k=kh$, $Nh=T$. The controller has an internal state $Z_k$, initially $y$, and observes the Brownian innovations at the grid dates. At date $t_k$ it selects
+\begin{equation}\label{eq:r11implementation}
+ a_k=\mathcal P_k\{m_\phi(t_k,Z_k)\},\qquad
+ Z_{k+1}=Z_k+h\{c\bm1+f(Z_k)-a_k\}+\Sigma\Delta\widetilde W_k,
+\end{equation}
+where $c=a-\nu^2/2$, $f(z)=\kappa\tanh(Bz)$, and $\mathcal P_k$ projects inward onto the declared action interval around $m_0(t_k)$. The vector $\Delta\widetilde W_k$ clips each standardized innovation at ten before rescaling by $\sqrt h$. The numerical implementation and its rounding convention form part of the controller. Between dates it holds $a_k$ fixed. Its economic state, denoted $Y^\phi$, nevertheless satisfies
+\[
+ dY^\phi_t=\{c\bm1+f(Y^\phi_t)-a_k\}\,dt+\Sigma\,dW_t,
+ \qquad t_k\leq t<t_{k+1}.
+\]
+In particular, the economic Brownian motion and state are not clipped, stopped, or replaced by $Z$. The controller is adapted to the original innovation filtration and remains feasible. Observing innovations is an implementation assumption, not a conclusion inferred from a state-only observation model. The continuously evaluated R10 policies remain separate objects in the supplement.
+
+This specification has an important analytical consequence. When the numerical state and the economic state are compared, they use exactly the same chosen actions. Their state discrepancy therefore depends on the smoothness of the economic drift, not on a global Lipschitz bound for the learned network. The following construction uses this fact rather than inserting sampled residuals into a uniform verification theorem.
+
+\subsection{An exact improvement identity}
+Write $W(t)=e^{-\rho t}w(t)$ and define the nonnegative consumption deficit
+\begin{equation}\label{eq:r11deficit}
+ R_t(m)=\log m_0(t)-\overline{\log m}
+       +w(t)\{\bar m-m_0(t)\}
+       +\frac\zeta2\{\bar m^2-m_0(t)^2\}.
+\end{equation}
+The first-order identity $m_0^{-1}=w+\zeta m_0$ and concavity of the logarithm imply $R_t(m)\geq0$. The exact mean-state identity in the proof of Theorem~\ref{thm:r10tube} gives
+\begin{align}
+ \Delta_\phi:=J_y(a^\phi)-J_y(m_0)
+ ={}&\E\int_0^T W(t)\,\overline{f(Y^\phi_t)-f(Y^0_t)}\,dt
+       -\E\int_0^T e^{-\rho t}R_t(a^\phi_t)\,dt\notag\\
+ &-\chi e^{-\rho T}\E\{\|\Pi Y^\phi_T\|_d^2-\|\Pi Y^0_T\|_d^2\}.
+ \label{eq:r11gain}
+\end{align}
+Thus state-dependent consumption has to earn its utility-curvature cost through production or terminal dispersion. The identity is also an effective variance reduction: the common mean-state martingale cancels before simulation statistics are formed. Positive neural output is not itself evidence of positive economic improvement.
+
+For each cell, calculate the scalar integrals
+\begin{align*}
+ A_k&=\int_{t_k}^{t_{k+1}}e^{-\rho t}dt,&
+ B_k&=\int_{t_k}^{t_{k+1}}W(t)dt,\\
+ C_k&=\int_{t_k}^{t_{k+1}}e^{-\rho t}
+       \{\log m_0(t)-w(t)m_0(t)-\zeta m_0(t)^2/2\}\,dt.
+\end{align*}
+The consumption-deficit integral for a held action is exactly
+$C_k-A_k\overline{\log a_k}+B_k\bar a_k+\zeta A_k\bar a_k^2/2$.
+Consequently, consumption need not be approximated by a left-point utility sum. Let $X_{\phi,h}$ be the paired statistic obtained from \eqref{eq:r11gain} by using the internal Euler states in the production and terminal terms and these integrated consumption terms. The reference internal state uses the integrated common action $\int_{t_k}^{t_{k+1}}m_0(t)dt$. All scalar integral enclosures and their midpoint errors are saved.
+
+\subsection{A network-independent diffusion-transfer bound}
+Here the word independent concerns the transfer constants, not the economic statistic. Let
+\begin{align*}
+ q_i&=\sigma_I^2\|B_{i\cdot}\|_2^2+
+                  \sigma_C^2\Big(\sum_jB_{ij}\Big)^2,\\
+ H&=\kappa\Big(d^{-1}\sum_i q_i\Big)^{1/2},&
+ Q&=\frac\kappa2\Big(d^{-1}\sum_i q_i^2\Big)^{1/2}.
+\end{align*}
+The letter $Q$ here denotes a generator bound, not the dispersion bound $Q_d$ in \eqref{eq:r10Q}. For a policy in a radius-$\epsilon$ interval at sampling dates, put
+\[
+ M_\epsilon=\max_{m\in[m_0(0)-\epsilon,m_0(T)+\epsilon]}|c-m|+\kappa,
+ \quad K_\epsilon=\beta M_\epsilon+Q.
+\]
+The terminal dispersion majorant is
+\[
+ S_\epsilon=s_0+(\kappa+\epsilon)T+
+                         \sigma_I\sqrt{(1-1/d)T}.
+\]
+The formula uses the monotonicity of this economy's $m_0$. For more general schedules their extrema replace the endpoints. Define
+\begin{align}
+ u_\epsilon(t)&=h e^{\beta t}
+       \{K_\epsilon t/2+H\sqrt{t/3}\},\label{eq:r11strong}\\
+ E_\epsilon(h)&=\beta\sum_k B_k u_\epsilon(t_k)
+       +K_\epsilon\sum_k\int_{t_k}^{t_{k+1}}W(t)(t-t_k)dt\notag\\
+ &\quad+\chi e^{-\rho T}u_\epsilon(T)
+                             \{2S_\epsilon+u_\epsilon(T)\}.
+ \label{eq:r11bias}
+\end{align}
+
+\begin{proposition}[Transfer of paired policy values]\label{prop:r11transfer}
+For exact arithmetic and untruncated internal innovations, the preceding construction satisfies
+\[
+ |\Delta_\phi-\E X_{\phi,h}|
+       \leq E_\epsilon(h)+E_0(h).
+\]
+With clipped internal innovations, forward rounding, and enclosed scalar integration, replace each $u_\epsilon$ by its stated enlarged bound and add the statistic's quadrature and arithmetic error. Denote the resulting saved upper bound by $E_{\phi,h}^{\rm all}$. It is $O(h)$ apart from these explicit numerical terms and does not involve a network derivative bound. The economic process remains the original continuous diffusion.
+\end{proposition}
+
+The proof is in the supplement. Its key step is to retain the martingale cancellation in the accumulated local drift error. Bounding each local stochastic error separately by its absolute magnitude would yield only an $O(\sqrt h)$ account and would obscure the small policy differences studied here. This proposition concerns the sampled implementation \eqref{eq:r11implementation}; it does not prove this rate for arbitrary state-observed neural feedback.
+
+\subsection{A post-training certificate}
+Paired statistics are not uniformly bounded, because the terminal dispersion difference contains Gaussian shocks. This is dealt with explicitly, rather than ignored in a bounded concentration inequality. For each declared initial state and radius, the supplement constructs constants $C_\phi,A_\phi$ such that
+\[
+ \Pr\{|X_{\phi,h}|>C_\phi+A_\phi(\sqrt{d-1}+v)\}
+       \leq e^{-v^2/2},\qquad v\geq0.
+\]
+They are obtained from synchronous state separation and the norm of the projected reference innovations. Neither an empirical output range nor an empirical maximum enters their construction. With $v_*=8$, put
+$b_\phi=C_\phi+A_\phi(\sqrt{d-1}+v_*)$ and
+$\tau_\phi=A_\phi e^{-v_*^2/2}/v_*$.
+Then clipping $X_{\phi,h}$ to $[-b_\phi,b_\phi]$ changes its expectation by at most $\tau_\phi$.
+
+For $n$ fresh independent paths, let $\bar X^c_\phi$ and $s^2_\phi$ be the clipped empirical mean and unbiased variance. Fix a family of at most $F$ one-sided statements before inspecting this noise bank, and set $\ell=\log(2F/\alpha)$. Define
+\begin{equation}\label{eq:r11lower}
+ L_\phi=\bar X^c_\phi-
+     \sqrt{2s_\phi^2\ell/n}-\frac{14b_\phi\ell}{3(n-1)}
+     -E_{\phi,h}^{\rm all}-\tau_\phi.
+\end{equation}
+In the implementation the empirical mean is enclosed downward and the variance and every subtracted quantity upward. The upper payoff endpoint uses the same terms with reversed signs. The factor $F$ counts both tails when both are reported.
+
+\begin{theorem}[Policy-specific continuous-time certificate]\label{thm:r11certificate}
+Condition on the training and validation data, and suppose the specified final simulation paths are independent draws from the declared innovation law. Under the arithmetic contract and transfer assumptions above, with probability at least $1-\alpha$, simultaneously for all declared policies and initial states,
+\begin{equation}\label{eq:r11regret}
+ J_y(a^\phi)-J_y(m_0)\geq L_\phi,
+ \qquad 0\leq V^*(y)-J_y(a^\phi)\leq G_d-L_\phi.
+\end{equation}
+The optimum $V^*$ still ranges over all adapted feasible controls in the original continuous economy, not merely the networks, schedules, or sampled controllers used in the experiment. Common shocks may be reused across policies; independence across those policies is not required. The guarantee is pointwise in each declared initial state and conditional on training, rather than uniform on an uncountable state domain.
+\end{theorem}
+
+\begin{proof}
+Apply the empirical Bernstein inequality of \citet[Theorem~4]{maurer2009} to $(X^c_{\phi,h}+b_\phi)/(2b_\phi)$ and use a union bound over the declared one-sided statements. Rescaling gives the first two error terms in \eqref{eq:r11lower}. The clipping expectation bound and Proposition~\ref{prop:r11transfer} then give the first inequality in \eqref{eq:r11regret}. Subtract it from the deterministic anchor bound \eqref{eq:r10anchorbound}. Feasibility yields nonnegative regret. An observed negative upper regret endpoint would indicate failure of the confidence event or of an implementation assumption, not a negative optimality gap.
+\end{proof}
+
+Unlike $G_d+D_{d,\epsilon}$, the new endpoint depends on the deployed policy through its paired outcomes and sample variance. It can distinguish seeds and unsuccessful policies in the same architectural tube. When $L_\phi>0$, the post-training guarantee is tighter than the analytical schedule's guarantee. This is a statement about the verified policy, not a deterministic promise that every training run improves welfare. The concentration inequality, the identity that transfers a lower improvement bound into a regret bound, and conservative policy improvement are established ideas \citep{kakade2002,pirotta2013,scherrer2015}. The contribution here is their operational connection to the continuous capital economy through \eqref{eq:r11gain}--\eqref{eq:r11bias}, without a state-covering certificate or a global bound on the trained network's derivatives.

@@ -1,0 +1,27 @@
+\section{Bellman Evaluation with Costate Targets}\label{sec:r11learning}
+The post-training certificate applies to any admissible candidate; it does not select a numerical method in advance. We therefore change the evaluation experiment as well as the verification step. The purpose is to determine whether a separately trained continuation value and feasible actor produce economically useful state dependence, rather than merely remain inside a safe architectural interval.
+
+For a frozen policy $a^{(j)}$, a positive-time Euler rollout from $(t,y)$ supplies a sample return $\widehat V^{(j)}(t,y)$ and its pathwise derivative $\widehat p^{(j)}(t,y)$. Differentiation includes the state dependence of subsequent policy actions. Freezing the policy means freezing its parameters, not deleting that derivative. The targets evaluate the current policy, not the optimal policy, and contain no maximizing action labels. For fixed finite weights, bounded actions and smooth bounded production justify pathwise differentiation of this finite rollout away from the harmless clipping kinks. These are derivatives of the discretized evaluation problem, not asserted unbiased derivatives of its continuous-time limit.
+
+The critic minimizes
+\begin{equation}\label{eq:r11critic}
+ \widehat{\E}\left[
+  .05\{v_\theta-\widehat V^{(j)}\}^2+
+  \|d(D_yv_\theta-\widehat p^{(j)})\|_d^2\right].
+\end{equation}
+The factor $d$ puts normalized marginal values on an order-one scale. The critic has the same two hidden tanh layers and hard terminal component as the R10 implementation. Holding its new derivative fixed, the actor then maximizes
+\begin{equation}\label{eq:r11actor}
+ \widehat{\E}\left[
+ \overline{\log a_\phi}-\tfrac\zeta2\bar a_\phi^2
+                          -a_\phi\mathbin{\cdot}\operatorname{sg}(D_yv_\theta)\right].
+\end{equation}
+Terms independent of actions have been omitted. Consumption is represented directly by $m_0(t)+\epsilon\tanh N_\phi(t,y)$; there is no online Hamiltonian search in its deployment. Value evaluation, costate evaluation, and feasible improvement are distinct operations, with their own stored losses and work counts. Five critic steps and five actor steps are performed for each fresh rollout batch. Failure of either numerical block is recorded, not interpreted as successful policy improvement.
+
+The stochastic gradient targets make the economically relevant marginal continuation values visible to the evaluation loss. This is not a new Bellman principle, nor an assumption that derivative regression invariably dominates differential residual fitting. It is a concrete implementation of the NBO evaluation map. The preserved differential implementation and its two independent trace banks continue to test a different evaluation procedure. Both feed the same economic distinction between policy evaluation and feasible improvement.
+
+\subsection{Comparison and selection}
+The primary comparisons include direct policy optimization through the same simulator and an affine state-dependent actor followed by tanh and the same feasibility guard. Direct policy optimization has the same nonlinear actor architecture but no learned critic; the affine method exploits a simpler representation. They receive the same mixture of training states, the same seeds, the same rollout length, and the same number of simulation-state visits. Their optimizer-step counts differ by design and are reported, as are wall time and deployment cost. Equality of simulator work is not described as equality of total computation.
+
+Every twentieth iteration is saved. Each method chooses the checkpoint with the highest return on its own fixed validation bank before any final-test shocks are examined. The archive includes all six checkpoints, not only the selected one. Longer direct-policy and affine runs expose whether a short baseline budget is responsible for a comparison. Cost--accuracy frontiers use the saved checkpoints and the same final statistical accounting. The method is not declared superior merely because one direct greedification of an inaccurate critic performs poorly.
+
+Training and validation use finite Euler rollouts. Verification instead uses the specified sampled controller, an independent fine-grid paired statistic, and Proposition~\ref{prop:r11transfer}. An empirical rollout improvement is therefore not substituted for the continuous-time conclusion. Conversely, no uniform HJB residual is assumed merely because a rollout or costate loss is small.
