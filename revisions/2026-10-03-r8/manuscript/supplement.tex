@@ -1,0 +1,74 @@
+\section{Proof and Implementation of the Continuous-Action Envelope}\label{supp:r8-envelope}
+We use the notation of the main text's budget-safe envelope proposition. The nodal economy is fixed before verification. Its terminal and stopping payoffs, primitive coefficients, interpolation abscissae, and compact action box are part of the object being bounded. This is stronger than checking many action samples and weaker than verifying the continuous-state diffusion without a discretization account.
+
+\subsection{Complete-cover invariant and backward proof}
+At a given state and time, the initial action box covers the entire feasible set. Bisection replaces one closed box by two closed boxes with the same union. Their shared face is harmless. Induction on the number of subdivisions preserves coverage. A pruned box is retained logically through the inequality $u_B\leq c_i+\tau$, where $u_B$ is an outward upper enclosure on that whole box, and $c_i$ is a lower enclosure at a feasible incumbent. If the incumbent later increases, the previous pruning inequality remains true. Consequently every feasible action is either in an unresolved box or in a pruned box with payoff at most the current threshold. Taking the maximum of the threshold and all unresolved upper bounds dominates the action supremum, whether or not the supremum is attained. Termination on a numerical budget does not change this argument.
+
+At $N$, the terminal inequalities are given. If $V_{n+1}^*\leq U_{n+1}$, positivity gives $T_nV_{n+1}^*\leq T_nU_{n+1}\leq U_n$. If $L_{n+1}\leq V_{n+1}^{\pi}$, the same argument gives $L_n\leq T_n^{\pi_n}L_{n+1}\leq T_n^{\pi_n}V_{n+1}^{\pi}=V_n^{\pi}$. Feasibility implies $V_n^{\pi}\leq V_n^*$. This proves the main envelope inequality. Substochasticity further gives
+\[
+ \|T_nw-T_nz\|_\infty\leq q_n\|w-z\|_\infty.
+\]
+Applying this inequality to $U_n-T_nV_{n+1}^*$ yields the stated excess recursion and its product-sum expansion. The proof uses $q_n>0$, not a stationary contraction assumption. Outward addition is used for the pruning threshold and final subtraction. The implementation records a requested tolerance and a retained optimization bracket separately. A budget-exhausted bracket is never replaced by that tolerance.\qed
+
+\subsection{Interpolation, reflection, stopping, and arithmetic}
+For a cell with coordinates $(u_0,u_1)\times(y_0,y_1)$, the continuation is
+\[
+ \begin{gathered}
+ Iw(u,y)=(1-s)(1-t)w_{00}+s(1-t)w_{10}+(1-s)tw_{01}+st w_{11},\\
+ s=\frac{u-u_0}{u_1-u_0},\quad t=\frac{y-y_0}{y_1-y_0}.
+\end{gathered}
+\]
+For fixed $u$, this is affine in $y$, so its extremes on a subrectangle occur at the two $y$ endpoints. At either endpoint it is affine in $u$, so the extremes occur at the two $u$ endpoints. Applying this argument to every intersected cell proves the corner enclosure. Nonnegative interpolation weights also permit interval nodal inputs: evaluating the corner expressions outward encloses every admissible nodal realization. A separate valid enclosure evaluates the rectangle center and adds cell-slope bounds over every intersected cell. Slopes are computed from stored nodal differences, not estimated from random derivative samples.
+
+Preference reflection is piecewise affine. Its extrema on an interval occur at the interval endpoints or a crossed folding point. The allowed one-step movement is checked to exclude unhandled multiple folds. For log wealth, boxes fully inside the domain use interpolation, boxes fully outside use the prescribed clipped exit payoff, and boxes crossing an exit face use the union of both. On the stored grid the boundary nodes equal the exact prescribed payoff; at an off-grid exit the analytic payoff need not equal its nodal interpolant. The union construction avoids an unjustified global smoothness or Lipschitz assumption across that switch.
+
+The implementation inherits the archived outward elementary and transcendental routines. Products, quotients, powers through logarithm and exponential, and endpoint rounding are enclosed. The logarithm's input is bounded below by $.02$; the preference denominator is separated from zero because $u\in[1.2,3]$. The recorded control model treats the stored binary64 primitive coefficients and abscissae as exact real inputs. The evidence also tests agreement with the inherited training evaluator on the finite action grid. Such a regression check is useful for implementation consistency but is not the proof of global action coverage. That proof is the maintained union invariant and the interval inclusion property. The arithmetic account is conditional on the specified floating-point execution model, not a formal verification of hardware, libraries, or the Python interpreter.
+
+\subsection{A common upper envelope for multiple policies}
+The optimal upper array depends on the economy, not on which feasible incumbent produced the lower search values. Thus the completed upper array can be reused for any frozen feasible policy on the same state, time, and continuous-action domains. We separately propagate each policy's lower and upper payoff arrays and subtract its lower array from the common optimal upper array. Costs are reported both as shared verification and as the cost of an individual policy evaluation. Sharing a verifier does not make its cost vanish. It also does not justify transferring the upper array to a changed wealth box, action constraint, utility normalization, time step, or interpolation rule.
+
+\section{Separating Numerical and Continuous-Economy Error}\label{supp:r8-transfer}
+The following result specifies the transfer work needed in addition to a nodal certificate. It is not used to set an uncomputed transfer term to zero. Let $\mathcal T_n$ be the exact economic one-step optimality operator with its continuously monitored stopping and reflection rule, and let $\mathcal T_n^{\pi}$ be the operator for a declared continuous-state implementation of the numerical policy. Let $I_n$ be a positive, sup-norm-nonexpansive interpolation from grid values to the economic state domain. Suppose the exact operators are $q_n$-Lipschitz on the comparison class.
+
+\begin{proposition}[Transfer with separate optimal and policy defects]
+Suppose terminal interpolation error is at most $B$ and, along the relevant nodal continuations,
+\begin{align*}
+ \|\mathcal T_n I_{n+1}v_{n+1}^*-I_nT_nv_{n+1}^*\|_\infty&\leq d_n^*,\\
+ \|\mathcal T_n^{\pi}I_{n+1}v_{n+1}^{\pi}-I_nT_n^{\pi_n}v_{n+1}^{\pi}\|_\infty&\leq d_n^{\pi}.
+\end{align*}
+Define $D_N^*=D_N^{\pi}=B$ and $D_n^j=d_n^j+q_nD_{n+1}^j$ for $j\in\{*,\pi\}$. Then the exact economic values satisfy
+\[
+ 0\leq\mathcal V_n^*-\mathcal V_n^{\pi}
+ \leq I_n(U_n-L_n)+D_n^*+D_n^{\pi}.
+\]
+The action-domain approximation belongs in $d_n^*$, while policy implementation, boundary monitoring, state interpolation, and time/cubature errors may affect both defects.
+\end{proposition}
+\begin{proof}
+Insert $\mathcal T_n I_{n+1}v_{n+1}^*$ between the exact and interpolated nodal Bellman values. The Lipschitz property bounds the propagated value difference by $q_nD_{n+1}^*$, and the displayed defect bounds the remaining difference by $d_n^*$. Backward induction gives $\|\mathcal V_n^*-I_nv_n^*\|\leq D_n^*$. The same argument gives the fixed-policy bound. Subtract the two decompositions and use positivity of $I_n$ and $v_n^*-v_n^{\pi}\leq U_n-L_n$. Feasibility gives the lower inequality.
+\end{proof}
+The proposition can use local regularity, coupling, barrier, or weak-approximation estimates to bound its defects; it does not claim that those hypotheses hold automatically for a fitted critic near a stopped boundary. In the present two-state computations, action coverage is operationally bounded on the nodal economy. The continuous-state/time defects remain explicitly uncomputed. Nested grids and common frozen policies diagnose sensitivity but do not provide the one-sided inequalities required by this proposition.
+\input{revisions/2026-10-03-r8/manuscript/table_refinement.tex}
+
+\section{Strategic Deviations and Missing Pure Stages}\label{supp:r8-games}
+For a fixed Markov rival profile in a finite-horizon finite-state/action game, condition on any history. The own player's conditional payoff from a randomized current action is a convex combination of pure-action payoffs with the same continuation best-response values. It cannot exceed the largest such payoff. Backward induction therefore bounds every randomized and history-dependent unilateral policy by the Markov pure-action best-response recursion. Outward propagation then provides a bound over this full deviation class, not merely the particular local deviations observed during actor training.
+
+Existence of a pure equilibrium in a fitted one-step game is a different matter. If none exists, minimum-defect selection produces a feasible profile, not an exact equilibrium. The independent dynamic best response still evaluates that profile correctly. The following records give every missing pure stage in the six principal R7 neural runs, including time index, state, and minimum maximum stage defect. Indices begin at zero. The six runs have $6\times30\times225=40{,}500$ active state-time nodes; the five recorded exceptions are not excluded from their final dynamic bounds.
+\input{revisions/2026-10-03-r8/manuscript/table_missing_pure.tex}
+The profit targets are absolute units of the displayed per-firm payoff. Raw network policy, shortlist policy, and corrected finite lookup policy are different deployment objects. The principal R7 guard fraction is zero, but the full joint-action oracle was nevertheless constructed during training. A mixed-strategy \emph{profile} was not estimated; the preceding argument explains why mixed unilateral deviations against the fixed pure profile are already covered by the finite best-response bound.
+
+\section{Paired Payoffs, Costs, and Economic Scaling}\label{supp:r8-paired}
+Each row below compares the two frozen methods on the same stored Brownian paths, at the indicated dimension, seed, fitting domain, and Euler resolution. Intervals are pointwise Student intervals across 512 pathwise differences. They are not independent across step sizes, because the Brownian increments are nested; no simultaneous-coverage claim is made. The narrow and wide policies were separately fitted, so their comparison also changes the training domain and update budget.
+\input{revisions/2026-10-03-r8/manuscript/table_paired_all.tex}
+The additional representation comparisons below use the identical NDU finite model. Gated regression has more parameters and higher per-update work than the width-32 tanh critic. Tensor projection exploits low state dimension. Both facts are explicit rather than hidden by matching only nominal iteration counts.
+\input{revisions/2026-10-03-r8/manuscript/table_additional_comparisons.tex}
+The R7 NDU actor's correction map stores a small number of changed action indices, but its complete policy table occupies 68,000 bytes with the archived int64 representation. A minimal pair of int64 state-time and replacement indices requires 16 bytes per correction, excluding indexing and container overhead. A stored-table deployment avoids actor evaluation at existing nodes; a raw-network deployment requires its network weights and argmax calculation. Neither observation establishes off-grid policy or guard correctness. The continuous hybrid additionally requires local action queries using the stored continuation representation.
+
+In the continuous-action study, training-query counts exclude verification queries by construction. All-action references are created only after policies and critics have been frozen. The raw actor, direct-gradient, multi-head, and smoke failures are retained with their full configurations. The complete action verifier's tighter and looser implementations have separate records, including unresolved boxes and declared budgets. A passing regression suite means that arithmetic, scope, and accounting checks passed; it does not change a failed economic accuracy target into a success.
+\input{revisions/2026-10-03-r8/manuscript/table_failures.tex}
+
+\section{Historical Numerical Record and Source Preservation}
+The preceding manuscript and supplement are archived byte-for-byte under the R8 revision directory. Every earlier economic equation, application, numerical source, raw array, failed run, and referee report remains in the repository history and the candidate tree. The main text now presents the successful R7 finite-policy computations and the new continuous-action study at the point where the corresponding economic model is introduced. Earlier R6 policy failures and non-neural game results are not relabelled as current neural results. Their original discussions are reproduced below as dated historical material.
+\subsection{R6 preference-policy discussion (historical)}
+\input{revisions/2026-10-03-r8/manuscript/history_ndu.tex}
+\subsection{R6 dynamic-game discussion (historical)}
+\input{revisions/2026-09-29-r6/manuscript/games.tex}

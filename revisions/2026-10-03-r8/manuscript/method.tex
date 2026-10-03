@@ -1,0 +1,30 @@
+\subsection{Continuous-action proposals and a budget-safe Bellman enclosure}\label{sec:r8-operator}
+The learned map and its verifier have different computational roles. In the differential implementation, a feasible actor supplies an action and the critic evaluates that action's generator. In the positive-weight implementation, write
+\begin{equation}\label{eq:r8-positive}
+ (T_n^a w)_i=r_{n,i}(a)+q_n\{P_{n,i}(a)w+b_{n,i}(a)\},
+ \qquad (T_nw)_i=\sup_{a\in\Act_i}(T_n^aw)_i .
+\end{equation}
+Here $P_{n,i}(a)$ has nonnegative entries with sum at most one. The term $b$ contains prescribed stopping payoffs, and $q_n>0$. Continuous controls need not enter this expression concavely. Reflection, interpolation cells, and stopping decisions can change as the action changes. A supremum, rather than an attained maximizer, suffices below.
+
+Our continuous-action implementation fits the actor by differentiating its own evaluated continuation payoff. It does not construct an all-action target or receive an exact maximizing label. A bounded tanh output enforces the control box. A local improvement step can subsequently compare that proposal with finitely many continuous perturbations. Such a step is recorded as part of a \emph{hybrid} policy; it is not identified with the raw network and is not assumed globally optimal. Critic fitting uses the selected feasible action and the preceding continuation critic. Training ends before any exhaustive reference or action-cover verification begins.
+
+For independent verification, freeze the complete policy $\pi=(\pi_n)$ and cover each action box by closed subboxes. At a state and time, let $c_i$ be an outward lower bound obtained by evaluating any feasible action using a fixed continuation upper array. A box can be discarded only when its verified upper bound does not exceed $c_i+\tau$. Every box not so discarded is either subdivided or retained with its upper bound. Exhausting a time, depth, or box budget therefore enlarges the reported bound; it never converts an unresolved search into a success.
+
+\begin{proposition}[Budget-safe action and policy envelopes]\label{prop:r8-envelope}
+Suppose the terminal arrays satisfy $L_N\leq g\leq U_N$. At each time $n$, evaluate the fixed-policy map outward to obtain $L_n\leq T_n^{\pi_n}L_{n+1}$. For every state, maintain a complete action cover whose box bounds enclose $T_n^aU_{n+1}$ for all actions in that box. Set $U_{n,i}$ to the maximum of the outward-rounded pruning threshold and all unresolved box upper bounds. Then, regardless of which boxes remain unresolved,
+\begin{equation}\label{eq:r8-envelope}
+ L_n\leq V_n^\pi\leq V_n^*\leq U_n,
+ \qquad 0\leq V_n^*-V_n^\pi\leq U_n-L_n .
+\end{equation}
+All inequalities are on the stated nodal economy. No concavity, exact training labels, or convergence of neural optimization is required. If $U_n-T_nU_{n+1}\leq e_n\boldsymbol 1$, then its optimal-value excess is at most
+\[
+ \left(\prod_{j=n}^{N-1}q_j\right)\|U_N-g\|_\infty+
+ \sum_{k=n}^{N-1}\left(\prod_{j=n}^{k-1}q_j\right)e_k.
+\]
+\end{proposition}
+
+The proof, including stopping faces, is in the supplement. A stored unresolved bracket supplies an upper bound for $e_n$; it is not replaced by the requested tolerance. The policy lower envelope and the Bellman upper envelope are computed separately. The latter may be shared across several frozen policies on the same economy, while each policy requires its own evaluation. This separation prevents an expensive verification oracle from becoming undisclosed actor supervision.
+
+In the preference application, the continuous box has three coordinates and the state grid has two. Bilinear interpolation is enclosed cell by cell. On each rectangle, its extrema occur at cell corners; a second implementation uses cell-slope enclosures. If a box crosses a wealth stopping face, the verifier takes the union of the interior continuation and the prescribed exit payoff. Their numerical values need not coincide at off-grid exit locations. Treating the entire action objective as globally differentiable at this switch would invalidate a derivative-only bound. Reflection is handled by including every crossed fold. Positive consumption and a preference interval strictly above one keep the powers and denominators in their stated domains.
+
+The complete-action bound is not a continuous-state or continuous-time theorem. The verifier interprets stored primitive coefficients and nodal abscissae as exact real inputs and encloses subsequent operations outward. Training and verification agree to numerical precision on the inherited action grid, but the certificate's precise object is this declared nodal economy, not an unspecified sequence of floating-point evaluations. The supplemental transfer result states separately the state interpolation, diffusion approximation, boundary monitoring, and action errors needed to recover the continuous economy. None is inferred from a sampled residual or silently assigned zero.
