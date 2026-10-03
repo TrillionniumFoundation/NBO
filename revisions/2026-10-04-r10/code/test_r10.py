@@ -89,4 +89,16 @@ class Checks(unittest.TestCase):
             self.assertTrue(torch.equal(n.drift(y,m,B),old.drift(y,m,B)))
             self.assertTrue(torch.equal(n.terminal(y),old.terminal(y)))
 
+    def test_printed_upper_endpoints(self):
+        from decimal import Decimal
+        from report import upper_decimal
+        for value in [.0574292151442084,.0672437436158303,.070080174736732,.0805315402447]:
+            for places in [2,5,6]:
+                self.assertGreaterEqual(Decimal(upper_decimal(value,places)),Decimal.from_float(value))
+    def test_paired_aggregation_metadata(self):
+        from report import paired_average
+        result=paired_average(10,'anchor',np.array([[1.,2.,3.],[0.,1.,2.],[2.,3.,4.]]))
+        self.assertEqual(result['dimension'],10);self.assertEqual(result['mean'],2.)
+        self.assertIn('not a seed-population interval',result['interpretation'])
+
 if __name__=='__main__':unittest.main(verbosity=2)

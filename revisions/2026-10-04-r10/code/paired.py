@@ -8,12 +8,16 @@ from scipy.stats import t as student
 from tube_neural import P,OUT,Critic,Actor,action as proposal_action,flow,drift,terminal
 from tube_certificate import coupling,I,schedule_i,up,down
 
+GUARD_COUNTS={'calls':0,'nonfinite_proposals':0}
+
 def tube_guard(proposal,t,epsilon=.1):
     """Inward control endpoints from an outward schedule interval.
 
     Adjacent clock floats cover rounding of a real input clock. No neural
     exponential or tanh accuracy is used to enforce the action tube.
     """
+    GUARD_COUNTS['calls']+=1
+    GUARD_COUNTS['nonfinite_proposals']+=int((~torch.isfinite(proposal)).sum())
     clock=t.detach().numpy()
     if not np.isfinite(clock).all() or np.any((clock<0)|(clock>P['T'])):
         raise ValueError('clock outside the finite horizon')
@@ -36,6 +40,7 @@ def stats(a):
                 interpretation='pointwise Monte Carlo interval only; Euler bias is not included')
 
 def run(d,paths=512):
+    GUARD_COUNTS.update(calls=0,nonfinite_proposals=0)
     start=time.perf_counter();B=torch.tensor(coupling(d));fine=160
     gen=torch.Generator().manual_seed(20261004+d)
     dwfine=torch.randn(fine,paths,d+1,generator=gen)*math.sqrt(P['T']/fine)
@@ -52,16 +57,18 @@ def run(d,paths=512):
     onlinegen=torch.Generator().manual_seed(611+d)
     online_x=torch.cat([torch.rand(256,1,generator=onlinegen),torch.randn(256,d,generator=onlinegen)],1)
     for method,seed,critic,actor in policies:
+        before=GUARD_COUNTS.copy()
         for _ in range(3):action(critic,actor,online_x,method)
         ts=time.perf_counter()
         for _ in range(20):action(critic,actor,online_x,method)
         online.append(dict(method=method,seed=seed,batch=256,seconds=(time.perf_counter()-ts)/20,
-                      includes='full deployed policy, including inward schedule guard for tube methods'))
+                      includes='full deployed policy, including inward schedule guard for tube methods',
+                      guard_calls=GUARD_COUNTS['calls']-before['calls'],nonfinite_proposals=GUARD_COUNTS['nonfinite_proposals']-before['nonfinite_proposals']))
     for nt in [40,80,160]:
         dw=dwfine.reshape(nt,fine//nt,paths,d+1).sum(dim=1);h=P['T']/nt
         for method,seed,critic,actor in policies:
             ident='anchor' if method=='anchor' else f'{method}_d{d}_s{seed}'
-            y=torch.zeros(paths,d);pv=torch.zeros(paths,1);elapsed=time.perf_counter()
+            y=torch.zeros(paths,d);pv=torch.zeros(paths,1);elapsed=time.perf_counter();before=GUARD_COUNTS.copy()
             for n in range(nt):
                 x=torch.cat([torch.full((paths,1),n*h),y],dim=1)
                 m=action(critic,actor,x,method)
@@ -71,7 +78,8 @@ def run(d,paths=512):
             with torch.no_grad():pv+=math.exp(-P['discount']*P['T'])*terminal(y)
             a=pv.numpy().ravel();raw[f'{ident}_{nt}']=a
             if nt==160:raw[f'{ident}_terminal']=y.numpy()
-            records.append(dict(id=ident,steps=nt,seconds=time.perf_counter()-elapsed,**stats(a)))
+            records.append(dict(id=ident,steps=nt,seconds=time.perf_counter()-elapsed,
+              guard_calls=GUARD_COUNTS['calls']-before['calls'],nonfinite_proposals=GUARD_COUNTS['nonfinite_proposals']-before['nonfinite_proposals'],**stats(a)))
         for seed in [11,29,47]:
             for other in ['anchor','direct_tube','direct_full']:
                 a=raw[f'actor_d{d}_s{seed}_{nt}'];name=other if other=='anchor' else f'{other}_d{d}_s{seed}'
@@ -80,7 +88,7 @@ def run(d,paths=512):
     result=dict(dimension=d,brownian_seed=20261004+d,brownian_drivers=d+1,covariance_rank=d,
        seconds=time.perf_counter()-start,records=records,contrasts=contrasts,online=online,
        policy_source_sha256=sources,raw_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
-       continuous_euler_error=None,confidence_scope='no multiplicity correction; not used in structural proof')
+       guard_counts=GUARD_COUNTS.copy(),continuous_euler_error=None,confidence_scope='no multiplicity correction; not used in structural proof')
     (OUT/f'PAIRED_d{d}.json').write_text(json.dumps(result,indent=2,allow_nan=False)+'\n')
     print(json.dumps(dict(dimension=d,seconds=result['seconds'],contrasts=[r for r in contrasts if r['steps']==160])),flush=True)
     return result
