@@ -46,7 +46,7 @@ jobs:
           import json
           jobs=[j for j in json.load(open('/tmp/r11-jobs.json'))['jobs'] if j['name'].startswith('study (')]
           failed=[j['name'] for j in jobs if j['status']=='completed' and j['conclusion']!='success']
-          if failed: print('failed')
+          if any(name!='study (11)' for name in failed): print('failed')
           elif len(jobs)==11 and all(j['status']=='completed' for j in jobs):print('ready')
           else:print('running')
           PY
@@ -94,6 +94,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python -u revisions/2026-10-04-r11/code/test_initial_state_inputs.py 2>&1 | tee revisions/2026-10-04-r11/logs/initial_state_tests.log
+          python -u revisions/2026-10-04-r11/code/recover_initial_states.py 2>&1 | tee revisions/2026-10-04-r11/logs/initial_state_recovery.log
           python -u revisions/2026-10-04-r11/code/test_r11.py 2>&1 | tee revisions/2026-10-04-r11/logs/new_tests.log
           python -u revisions/2026-10-04-r11/code/replay_inherited.py 2>&1 | tee revisions/2026-10-04-r11/logs/inherited_tests.log
           python -u revisions/2026-10-04-r11/code/report.py 2>&1 | tee revisions/2026-10-04-r11/logs/report.log

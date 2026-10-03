@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from bellman_study import R,ROOT,train,load,Actor,Critic,initial_states,rollout,first_jet,coupling
 from policy_certificate import evaluate
+from initial_state_inputs import floating_initial_state
 
 
 def run(seed):
@@ -29,6 +30,7 @@ def run(seed):
         path=out/f'{ident}.pt'
         return path if row and path.exists() else None
     def ev(path,steps=1024,paths=8192,**kwargs):
+        kwargs=floating_initial_state(kwargs)
         return execute('evaluation',path.stem+str((steps,paths,kwargs)),lambda:evaluate(path,steps,paths,test_seed=p['final_noise_seed'],out=out,**kwargs))
     for d in p['dimensions']:
         for method in p['methods']:
