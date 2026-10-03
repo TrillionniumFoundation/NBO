@@ -2,6 +2,7 @@
 from __future__ import annotations
 import argparse,hashlib,json,re,subprocess,time
 from pathlib import Path
+from decimal import Decimal, ROUND_CEILING
 import numpy as np
 import torch
 from tube_certificate import P,I,exp_i,spectral_bound,enclosure
@@ -13,6 +14,15 @@ PREFIX='revisions/2026-10-04-r10'
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def put(path,data):path.write_text(json.dumps(data,indent=2,allow_nan=False)+'\n')
 def read(name):return json.loads((O/name).read_text())
+
+def upper_decimal(value,places=5):
+    """Print an upper endpoint without rounding the displayed bound down."""
+    x=Decimal.from_float(float(value))
+    return format(x.quantize(Decimal(1).scaleb(-places),rounding=ROUND_CEILING),f'.{places}f')
+
+def paired_average(d,other,differences):
+    return {**stats(np.mean(differences,axis=0)), 'dimension':d, 'comparator':other,
+      'interpretation':'mean payoff of three fixed fitted actors minus three matched comparators, paired by path; not a seed-population interval'}
 
 def prepare():
     a=R/'archive';a.mkdir(exist_ok=True)
@@ -62,8 +72,7 @@ def audit():
             for seed in [11,29,47]:
                 key=other if other=='anchor' else f'{other}_d{d}_s{seed}'
                 differences.append(z[f'actor_d{d}_s{seed}_160']-z[f'{key}_160'])
-            aggregates.append(dict(dimension=d,comparator=other,**stats(np.mean(differences,axis=0)),
-                interpretation='mean payoff of three fixed fitted actors minus three matched comparators, paired by path; not a seed-population interval'))
+            aggregates.append(paired_average(d,other,differences))
     put(O/'CERTIFICATE_REPLAY.json',replays);put(O/'PAIRED_AGGREGATES.json',aggregates)
     put(O/'ALL_FITS.json',fits)
     put(O/'AUDIT.json',dict(certificate_records_replayed=54,raw_payoff_rows_recomputed=raw_checks,
@@ -87,9 +96,9 @@ def tables():
     selected=[r for r in c if r['epsilon']==.1 and r['panels']==16384];rows=[]
     for r in selected:
         welfare=float(((exp_i(I(r['regret_upper'])/annuity)-1)*100).hi)
-        rows.append(f"{r['dimension']} & {r['initial_std_upper']:.2f} & {r['anchor_regret'][1]:.5f} & {r['regret_upper']:.5f} & {welfare:.2f}\\\\")
+        rows.append(f"{r['dimension']} & {r['initial_std_upper']:.2f} & {upper_decimal(r['anchor_regret'][1],5)} & {upper_decimal(r['regret_upper'],5)} & {upper_decimal(welfare,2)}\\\\")
     table('table_bounds.tex','Continuous-economy bounds for every deployed tube policy','tab:r10bounds','rrrrr',r'$d$ & $s_0$ & Anchor bound & Tube bound & Flow supplement (\%)',rows,
-      r'$\epsilon=.1$; 16,384 outward quadrature panels. Initial mean is unrestricted. The optimum allows all adapted controls in $[.02,2]^d$. Supplement is externally financed and uses an outward logarithmic-utility conversion. Bounds are conditional on the documented arithmetic contract.')
+      r'$\epsilon=.1$; 16,384 outward quadrature panels. Initial mean is unrestricted. The optimum allows all adapted controls in $[.02,2]^d$. Supplement is externally financed and uses an outward logarithmic-utility conversion. Printed upper endpoints are rounded upward. Bounds are conditional on the documented arithmetic contract.')
     names={'anchor':'Schedule','actor':'NBO actor','direct_tube':'Direct tube','direct_full':'Direct full'};rows=[]
     for d in [10,20,50]:
         cert=next(r['full_certificate_seconds'] for r in replays if r['dimension']==d)
@@ -114,9 +123,9 @@ def tables():
       r'RMS and gap are diagnostics on 128 held-out states, not uniform certificates. Peak RSS is the separate process high-water mark, including the interpreter and libraries. Every requested fit is retained. All raw optimizer histories, negative trace-product batches, saved weights, sample counts, and bisection counts are committed.',True)
     rows=[]
     for r in c:
-        rows.append(f"{r['dimension']} & {r['initial_std_upper']:.2f} & {r['epsilon']:.2f} & {r['panels']} & {r['anchor_regret'][1]:.6f} & {r['regret_upper']:.6f}\\\\")
+        rows.append(f"{r['dimension']} & {r['initial_std_upper']:.2f} & {r['epsilon']:.2f} & {r['panels']} & {upper_decimal(r['anchor_regret'][1],6)} & {upper_decimal(r['regret_upper'],6)}\\\\")
     table('table_all_bounds.tex','Complete radius, dispersion, and quadrature account','tab:r10allbounds','rrrrrr',r'$d$ & $s_0$ & $\epsilon$ & Panels & Anchor upper & Policy upper',rows,
-      r'Quadrature endpoints are outward, not an error tolerance passed to an ordinary numerical integrator. Zero radius denotes the exact feasible schedule. The same matrix majorant is used for each dimension.',True)
+      r'Quadrature endpoints are outward, not an error tolerance passed to an ordinary numerical integrator. Zero radius denotes the exact feasible schedule. Printed upper endpoints are rounded upward. The same matrix majorant is used for each dimension.',True)
     files={str(p.relative_to(ROOT)):digest(p) for p in O.glob('*.json')}
     files.update({str(p.relative_to(ROOT)):digest(p) for p in O.glob('*.npz')})
     put(R/'TABLE_MANIFEST.json',dict(inputs=files,outputs={str(p.relative_to(ROOT)):digest(p) for p in M.glob('table_*.tex')}))
