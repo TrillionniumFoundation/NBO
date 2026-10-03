@@ -1,0 +1,46 @@
+\section{Proofs for the Guarded and Signed Map}\label{app:r9proofs}
+\subsection{Proof of Proposition~\ref{prop:r9guard}}
+At a replaced node the output equals the computed target. At any other node its distance from that target is at most $\tau_h$. The triangle inequality gives the one-step conclusion. For a frozen policy sequence, let $e_n$ be the sup-norm difference between the guarded and exact policy values at date $n$. Positivity of the transition weights and their mass bound imply $e_n\leq\tau_h+\eta_h+q_he_{n+1}$, with $e_N=0$ for exact terminal data. Backward induction gives the geometric sum. As $N=T/h$ and $q_h\leq1$, the bound is at most $T(0.1h+\eta_h/h)$ under the stated schedule. No property of the optimizer was used. The assertion concerns the guarded nodal values. An off-node neural interpolant, an improved policy, and a diffusion approximation each require their separate error account. In fixed-precision arithmetic, $\eta_h=o(h)$ is a maintained refinement condition, not a fact that can be inferred as $h$ tends to zero indefinitely.\hfill$\square$
+
+\subsection{Proof of Theorem~\ref{thm:r9cover}}
+On a regular box, the payoff restricted to a line segment is continuous and piecewise continuously differentiable, with finitely many interpolation and reflection knots, or is the limit of such segments. Integration of its almost-everywhere derivative yields
+\[
+ Q_w(a)-Q_w(c)=\int_0^1 \nabla Q_w(c+s(a-c))\cdot(a-c)\,ds.
+\]
+Every partial derivative is included in its interval hull. Maximizing the resulting interval products proves \eqref{eq:r9mean}. Taking the minimum with another valid upper enclosure preserves validity. If a partial derivative is strictly positive throughout the box, integration along that coordinate shows that replacing it by its upper endpoint cannot lower the payoff; the negative case is analogous. Repeating the argument proves face domination and the dimension statement.
+
+A subdivision replaces a parent by children whose union contains it. A face reduction replaces a set by a subset with the same supremum. Removal occurs only after that supremum has a bound no larger than the incumbent plus tolerance. Feasible point evaluations can only increase the incumbent, so an earlier removed box stays bounded by the final incumbent plus tolerance. The remaining boxes keep their upper bounds without any success inference from an interrupted search. Induction over all operations proves \eqref{eq:r9coverbound}. At a stopping switch the line-segment continuity premise can fail; the implementation therefore uses the natural union enclosure and does not invoke the derivative argument there.
+
+For the local quadratic observation, a $K$-Lipschitz gradient with a zero-gradient point in the box has norm at most $Ks$ throughout a box of diameter $s$. Integration over a segment of length at most $s$ bounds the variation by $Ks^2$. This conditional observation does not extend to an arbitrary switching box, nor does it assert that all nodes possess such a box.\hfill$\square$
+
+\subsection{Derivative hulls for the preference economy}
+Write $y=\log X$, and let $F$ be the continuation interpolant evaluated at a cubature transition. On an interior leg, its action derivatives are
+\[
+ \partial_c F=-hF_y,\qquad
+ \partial_p F=F_y\{h(0.06-0.04p)+s_z\},\qquad
+ \partial_\theta F=hF_u r_u,
+\]
+where $s_z$ is the stored portfolio shock coefficient and $r_u\in\{-1,1\}$ is the reflection slope; both slopes enter the hull at a fold. The flow derivatives are
+\[
+ h\exp\{(1-u)y-u\log c\},\qquad 0,\qquad -hk\theta.
+\]
+Outside a wealth stopping face, clipped wealth is constant and $F$ is the exact stopping payoff. Its $y$ derivative with respect to the transition is zero, while
+\[
+ F_u=\frac{\exp\{(1-u)y\}\{1-(1-u)y\}}{(1-u)^2}.
+\]
+Every crossed bilinear cell contributes its one-sided derivative range, restricted by the other coordinate's interval. Interval evaluation includes these ranges and the flow terms. A leg whose wealth interval meets both sides of a stopping switch disables the signed bound for that box. Point and interval evaluations share the stated nodal primitives but are computed independently of the actor's derivative graph.
+
+\subsection{Proof of Proposition~\ref{prop:r9capital}}
+Let $\overline m=d^{-1}\sum_i m_i$. Jensen's inequality gives $d^{-1}\sum_i\log m_i\leq\log\overline m$. Moreover, $d^{-1}\sum_i\tanh((BY)_i)\leq1$. The mean-state drift is consequently no larger than $b_+-\overline m$. The dispersion penalty at the terminal date is nonnegative and can be dropped for an upper bound. Fubini's theorem applied to the integrated expected mean state and terminal mean state yields the kernel $w(t)$. The Brownian terms have zero mean; bounded controls and bounded nonlinear drift ensure the required integrability. Thus every admissible policy has expected payoff at most
+\[
+ \int_0^T e^{-\rho t}\max_{m\in[\underline m,\overline m]}
+ \{\log m-\zeta m^2/2+w(t)(b_+-m)\}\,dt.
+\]
+The integrand is strictly concave in $m$. Its derivative is $1/m-\zeta m-w(t)$, whose positive root gives $m_0(t)$ before clipping. This proves the upper bound.
+
+For the feasible common schedule, the expected mean-state drift is at least $b_--m_0(t)$. Define the normalized dispersion norm $\|Z\|_{2,d}^2=\mathbb E[d^{-1}\sum_i Z_i^2]$. Centred common controls and common noise vanish from the dispersion equation. For numbers in $[-1,1]$, their cross-sectional variance is at most one. Hence Minkowski's inequality bounds the norm of the integrated centred nonlinear drift by $\kappa T$. The centred idiosyncratic Brownian part has norm $\sigma_I\sqrt{(1-1/d)T}$. A second application of Minkowski and squaring give the upper bound $D_d$ on expected terminal dispersion. Subtracting $\chi e^{-\rho T}D_d$ from the lower mean-payoff calculation proves $J(m_0)\geq L_d$. Feasibility gives $J(m_0)\leq V^*$. The derivation never restricts the dense matrix $B$ beyond the stated bounded-$\tanh$ form.\hfill$\square$
+
+\subsection{Compensation and arithmetic scope}
+For each realized state and positive consumption, CRRA felicity is increasing in consumption, including when $u>1$ and its level is negative. The financed supplement leaves the state law and every other payoff term unchanged. Its expected payoff is therefore nondecreasing in $e$. Positivity of the nodal transition operator propagates a lower interval payoff at each date. If its lower endpoint exceeds the optimal upper envelope at every active starting node and date, the corresponding financed supplement compensates the loss throughout that nodal economy. Bisection searches for a sufficient supplement; only the final verified inequality provides the stated upper bound.
+
+All implemented interval conclusions use the inherited binary64 execution contract, with outward elementary operations and separately bounded transcendental evaluations. They concern exact real interpretations of stored primitive coefficients and grid nodes. They are not a formal verification of the interpreter, hardware, or all library internals. In the capital bound, square-root seeds are accepted only after interval squaring verifies both endpoint inequalities, and the time integral is bounded by interval rectangles rather than by an adaptive quadrature tolerance. Random stress tests are regression evidence, not substitutes for these inclusion arguments.
