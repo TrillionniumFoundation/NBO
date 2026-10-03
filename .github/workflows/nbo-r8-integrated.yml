@@ -2,7 +2,7 @@ name: NBO R8 integrated manuscript and evidence
 on:
   push:
     branches: [revision/econometrica-nbo-r8-source-2026-10-03]
-    paths: [revisions/2026-10-03-r8/SOURCE_PAYLOAD.zip]
+    paths: [revisions/2026-10-03-r8/SOURCE_PAYLOAD.json]
   workflow_dispatch:
 permissions:
   contents: write
@@ -32,19 +32,31 @@ jobs:
           set -euo pipefail
           echo "NBO_BOOTSTRAP_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
           python - <<'PY'
-          import hashlib,json,zipfile
+          import hashlib,io,json,zipfile
           from pathlib import Path
           r=Path('revisions/2026-10-03-r8')
-          payload=r/'SOURCE_PAYLOAD.zip'
-          assert hashlib.sha256(payload.read_bytes()).hexdigest()==(r/'SOURCE_PAYLOAD.sha256').read_text().strip()
-          with zipfile.ZipFile(payload) as z:
-              for item in z.infolist():
-                  p=Path(item.filename)
-                  assert not p.is_absolute() and '..' not in p.parts
-                  assert str(p).startswith(str(r)+'/') and not item.is_dir()
-                  assert not p.exists(), 'refusing to overwrite an existing input: '+str(p)
-                  p.parent.mkdir(parents=True,exist_ok=True)
-                  p.write_bytes(z.read(item))
+          meta=json.loads((r/'SOURCE_PAYLOAD.json').read_text())
+          parts=[]
+          for item in meta['parts']:
+              name=Path(item['path'])
+              assert name.name==str(name) and str(name).startswith('SOURCE_PAYLOAD.part')
+              data=(r/name).read_bytes()
+              assert len(data)==item['bytes']
+              assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()==item['git_blob']
+              parts.append(data)
+          raw=b''.join(parts)
+          assert len(raw)==meta['bytes']
+          assert hashlib.sha256(raw).hexdigest()==meta['sha256']
+          with zipfile.ZipFile(io.BytesIO(raw)) as z:
+              assert z.namelist()==['source.json']
+              files=json.loads(z.read('source.json'))
+          for name,content in files.items():
+              p=Path(name)
+              assert not p.is_absolute() and '..' not in p.parts
+              assert str(p).startswith(str(r)+'/') and isinstance(content,str)
+              assert not p.exists(), 'refusing to overwrite an existing input: '+str(p)
+              p.parent.mkdir(parents=True,exist_ok=True)
+              p.write_text(content,encoding='utf-8')
           manifest=json.loads((r/'SOURCE_MANIFEST.json').read_text())
           for name,digest in manifest['files'].items():
               assert hashlib.sha256(Path(name).read_bytes()).hexdigest()==digest,name
