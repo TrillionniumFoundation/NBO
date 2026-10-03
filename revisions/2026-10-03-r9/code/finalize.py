@@ -1,7 +1,7 @@
 """Publication-only audit after the complete pinned numerical run.
 
 Preserves every raw array. The first numerical source and run remain explicit;
-this stage changes standalone cost accounting, regenerates tables/manuscripts,
+this stage audits standalone costs and frozen raw-actor deployment, regenerates tables/manuscripts,
 and repeats all software checks and compilation. It does not retrain policies.
 """
 from __future__ import annotations
@@ -22,6 +22,7 @@ def run():
  source=subprocess.check_output(['git','rev-parse','HEAD'],text=True,cwd=ROOT).strip()
  records=[];start=time.perf_counter()
  commands=[('accounting',[sys.executable,str(R/'code/accounting.py')]),
+  ('raw_actor_deployment',[sys.executable,str(R/'code/deployment_audit.py')]),
   ('tables',[sys.executable,str(R/'code/tables.py')]),('assemble',[sys.executable,str(R/'code/assemble.py')]),
   ('inherited_tests',[sys.executable,str(R/'code/replay_inherited.py')]),
   ('r9_tests',[sys.executable,str(R/'code/test_r9.py')]),
@@ -51,9 +52,10 @@ def run():
  record={'source_commit':source,'workflow_run_id':os.environ.get('GITHUB_RUN_ID'),'workflow_attempt':os.environ.get('GITHUB_RUN_ATTEMPT'),
   'numerical_phase':old,'numerical_results_reused_by_hash':True,'numerical_retraining_in_finalization':False,
   'raw_arrays_preserved':len(arrays),'historical_files_preserved':len(history)-2,
+  'post_protocol_deployment_audit':json.loads((R/'results/FINE_RAW_DEPLOYMENT.json').read_text()),
   'finalization_commands':records,'finalization_seconds':time.perf_counter()-start,
   'tests':tests,'total_unique_tests':sum(t['tests'] for t in tests),'compilation':compile,
-  'scope':'complete R9 numerical evidence plus independently checked standalone initializer costs; no economic results or failed cases removed',
+  'scope':'complete R9 evidence plus standalone cost and frozen raw-actor deployment audits; no original economic results or failed cases removed',
   'interval_scope':'conditional outward arithmetic, not machine formal verification'}
  (R/'REMOTE_EXECUTION.json').write_text(json.dumps(record,indent=2)+'\n')
  print(json.dumps({'source':source,'unique_tests':record['total_unique_tests'],'arrays_preserved':len(arrays),'complete':True}),flush=True)
