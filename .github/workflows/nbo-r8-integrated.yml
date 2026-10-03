@@ -1,0 +1,122 @@
+name: NBO R8 integrated manuscript and evidence
+on:
+  push:
+    branches: [revision/econometrica-nbo-r8-source-2026-10-03]
+    paths: [revisions/2026-10-03-r8/SOURCE_PAYLOAD.zip]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r8-integrated
+  cancel-in-progress: false
+jobs:
+  reproduce:
+    if: github.ref == 'refs/heads/revision/econometrica-nbo-r8-source-2026-10-03'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONHASHSEED: '0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Materialize and pin the complete source without changing historical inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "NBO_BOOTSTRAP_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          python - <<'PY'
+          import hashlib,json,zipfile
+          from pathlib import Path
+          r=Path('revisions/2026-10-03-r8')
+          payload=r/'SOURCE_PAYLOAD.zip'
+          assert hashlib.sha256(payload.read_bytes()).hexdigest()==(r/'SOURCE_PAYLOAD.sha256').read_text().strip()
+          with zipfile.ZipFile(payload) as z:
+              for item in z.infolist():
+                  p=Path(item.filename)
+                  assert not p.is_absolute() and '..' not in p.parts
+                  assert str(p).startswith(str(r)+'/') and not item.is_dir()
+                  assert not p.exists(), 'refusing to overwrite an existing input: '+str(p)
+                  p.parent.mkdir(parents=True,exist_ok=True)
+                  p.write_bytes(z.read(item))
+          manifest=json.loads((r/'SOURCE_MANIFEST.json').read_text())
+          for name,digest in manifest['files'].items():
+              assert hashlib.sha256(Path(name).read_bytes()).hexdigest()==digest,name
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add revisions/2026-10-03-r8
+          git commit -m 'source(r8): materialize immutable algorithms and integrated manuscript sources [skip ci]'
+          source_branch=revision/econometrica-nbo-r8-materialized-source-2026-10-03
+          test -z "$(git ls-remote --heads origin "$source_branch")"
+          git push origin HEAD:"$source_branch"
+          echo "NBO_SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Install recorded numerical packages and journal build dependencies
+        run: |
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install numpy==2.3.5 scipy==1.17.0 mpmath==1.3.0
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended texlive-science cm-super
+      - name: Execute all declared runs, complete action covers and historical replays
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p revisions/2026-10-03-r8/logs
+          python -u revisions/2026-10-03-r8/code/replicate.py | tee revisions/2026-10-03-r8/logs/driver.log
+          bash revisions/2026-10-03-r8/code/build_pdf.sh | tee revisions/2026-10-03-r8/logs/compilation.log
+      - name: Commit the authoritative candidate on a new evidence branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$NBO_SOURCE_COMMIT"
+          python - <<'PY'
+          import hashlib,json,os,subprocess
+          from pathlib import Path
+          r=Path('revisions/2026-10-03-r8')
+          assert json.loads((r/'results/EXECUTION_COMPLETE.json').read_text())['complete']
+          compilation=json.loads((r/'results/COMPILATION.json').read_text())
+          assert all(not v['undefined'] and not v['overfull_hbox_pt'] for v in compilation.values())
+          paths=[Path('ECTA.tex'),Path('supp.tex')]
+          paths += [p for p in r.rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix not in ['.pyc','.aux','.out','.toc']]
+          hashes={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
+          report={'source_commit':os.environ['NBO_SOURCE_COMMIT'],'bootstrap_commit':os.environ['NBO_BOOTSTRAP_COMMIT'],'run_id':os.environ['GITHUB_RUN_ID'],'review_commit':'c63f6817f498e1cfe9a653139f7a25bf44a4418a','files':hashes,'compilation':compilation,'scope':'integrated manuscript, exact-source execution and tests; not referee acceptance'}
+          (r/'REMOTE_EXECUTION.json').write_text(json.dumps(report,indent=2)+'\n')
+          paths.append(r/'REMOTE_EXECUTION.json')
+          subprocess.run(['git','add','-f','--',*[str(p) for p in paths]],check=True)
+          changes=subprocess.check_output(['git','diff','--cached','--name-status','cb5382ffa64630c0399e7204753f5667660ac0df'],text=True).splitlines()
+          for line in changes:
+              status,path=line.split('\t',1)
+              assert status!='D',line
+              if status=='M':assert path in ['ECTA.tex','supp.tex'],line
+              else:assert path.startswith('revisions/2026-10-03-r8/') or path=='.github/workflows/nbo-r8-integrated.yml',line
+          PY
+          git commit -m 'revision(r8): integrated NBO article, proofs, complete-action evidence and referee response [skip ci]'
+          branch=revision/econometrica-nbo-r8-evidence-2026-10-03
+          test -z "$(git ls-remote --heads origin "$branch")"
+          git push origin HEAD:"$branch"
+          mkdir -p /tmp/nbo-r8-candidate
+          git archive --format=tar.gz --output=/tmp/nbo-r8-candidate/source.tar.gz HEAD
+          git rev-parse HEAD > /tmp/nbo-r8-candidate/EVIDENCE_COMMIT.txt
+          printf '%s\n' "$NBO_SOURCE_COMMIT" > /tmp/nbo-r8-candidate/SOURCE_COMMIT.txt
+          cp revisions/2026-10-03-r8/build/{ECTA,supp,response}.pdf /tmp/nbo-r8-candidate/
+          cp revisions/2026-10-03-r8/REMOTE_EXECUTION.json /tmp/nbo-r8-candidate/
+          (cd /tmp/nbo-r8-candidate && sha256sum source.tar.gz *.pdf > SHA256SUMS)
+          echo "Source: $NBO_SOURCE_COMMIT" >> "$GITHUB_STEP_SUMMARY"
+          echo "Candidate: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve candidate and complete logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r8-integrated-${{ github.run_id }}
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            /tmp/nbo-r8-candidate/
+            revisions/2026-10-03-r8/logs/
+            revisions/2026-10-03-r8/results/
