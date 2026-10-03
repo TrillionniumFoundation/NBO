@@ -1,0 +1,89 @@
+name: NBO R11 verified snapshot delivery pieces
+on:
+  push:
+    branches: [revision/econometrica-nbo-r11-delivery-2026-10-04]
+    paths: [revisions/2026-10-04-r11/DELIVERY_REQUEST.json]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nbo-r11-delivery
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 840565f451be6103aeb325a8fc548a57507a8fb2
+          fetch-depth: 1
+      - name: Verify the immutable evidence and package documents
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 840565f451be6103aeb325a8fc548a57507a8fb2
+          mkdir -p /tmp/nbo-r11-delivery/documents /tmp/nbo-r11-delivery/source-parts
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json,shutil,subprocess
+          r=Path('revisions/2026-10-04-r11');out=Path('/tmp/nbo-r11-delivery/documents')
+          def sha(p):
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for block in iter(lambda:f.read(1024*1024),b''):h.update(block)
+              return h.hexdigest()
+          manifest=json.loads((r/'EVIDENCE_MANIFEST.json').read_text())
+          for name,digest in manifest['files'].items():assert sha(Path(name))==digest,name
+          tracked=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          assert not [p for p in tracked if Path(p).suffix.lower() in ('.ttf','.otf','.woff','.woff2','.pfb','.pfa')]
+          execution=json.loads((r/'REMOTE_EXECUTION.json').read_text())
+          for source,dest in [('ECTA','NBO_R11_manuscript.pdf'),('supp','NBO_R11_supplement.pdf'),('response','NBO_R11_referee_response.pdf')]:
+              p=r/'build'/f'{source}.pdf'
+              assert sha(p)==execution['compilation'][source]['pdf_sha256']
+              shutil.copy2(p,out/dest)
+          for name in ['REMOTE_EXECUTION.json','EVIDENCE_MANIFEST.json','SOURCE_MANIFEST.json','TABLE_MANIFEST.json','EDITORIAL_MAP.json','PROTOCOL.json','POSTPROCESSING.json','README.md']:
+              shutil.copy2(r/name,out/name)
+          for name in ['AUDIT.json','PRIMARY.csv','INITIAL_STATE_RECOVERY.json','COMPILATION.json','INHERITED_TESTS.json','INHERITED_ORIGINAL.json']:
+              shutil.copy2(r/'results'/name,out/name)
+          (out/'VERIFIED_COMMIT.txt').write_text('840565f451be6103aeb325a8fc548a57507a8fb2\n')
+          print('Verified',len(manifest['files']),'evidence file hashes and all three PDF hashes.')
+          PY
+          git archive --format=tar.gz --output=/tmp/nbo-r11-delivery/NBO_R11_source.tar.gz HEAD
+          split -b 380M -d -a 2 /tmp/nbo-r11-delivery/NBO_R11_source.tar.gz /tmp/nbo-r11-delivery/source-parts/NBO_R11_source.tar.gz.part
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          root=Path('/tmp/nbo-r11-delivery');docs=root/'documents'
+          def item(p):
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for block in iter(lambda:f.read(1024*1024),b''):h.update(block)
+              return dict(name=p.name,bytes=p.stat().st_size,sha256=h.hexdigest())
+          parts=sorted((root/'source-parts').glob('NBO_R11_source.tar.gz.part*'))
+          assert len(parts)==2 and all(p.stat().st_size<400*1024*1024 for p in parts)
+          record=dict(evidence_commit='840565f451be6103aeb325a8fc548a57507a8fb2',verification_run_id=37157997113,archive=item(root/'NBO_R11_source.tar.gz'),parts=[item(p) for p in parts],documents=[item(p) for p in sorted(docs.glob('*.pdf'))],scope='Complete immutable Git snapshot, including all historical and R11 evidence. Packaging does not alter the published source, research protocol, policies, arrays, or manuscripts.')
+          (docs/'DELIVERY_BUNDLE.json').write_text(json.dumps(record,indent=2)+'\n')
+          (docs/'RESTORE_SOURCE.txt').write_text('Place both source pieces in one directory. Concatenate in numerical order:\n\ncat NBO_R11_source.tar.gz.part00 NBO_R11_source.tar.gz.part01 > NBO_R11_source.tar.gz\n\nVerify the SHA-256 against DELIVERY_BUNDLE.json before extraction. The archive is the complete Git snapshot of commit 840565f451be6103aeb325a8fc548a57507a8fb2. No historical evidence has been omitted.\n')
+          print(json.dumps(record,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r11-documents-840565f4
+          path: /tmp/nbo-r11-delivery/documents/
+          retention-days: 90
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r11-source-part00-840565f4
+          path: /tmp/nbo-r11-delivery/source-parts/NBO_R11_source.tar.gz.part00
+          compression-level: 0
+          retention-days: 90
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r11-source-part01-840565f4
+          path: /tmp/nbo-r11-delivery/source-parts/NBO_R11_source.tar.gz.part01
+          compression-level: 0
+          retention-days: 90
+          if-no-files-found: error
