@@ -26,6 +26,7 @@ def run():
  py('fine_complete_action','action_cover.py','revisions/2026-10-03-r9/results/grid_33_49_40_guarded/continuous_actor_s11_search.npz','--max-boxes',1500000,'--tag','fine_guarded_signed_cover')
  execute('nested_diagnostics',[sys.executable,'-c',f"import sys;sys.path.insert(0,{str(C)!r});from audit import nested_diagnostics;nested_diagnostics()"])
  py('fine_shared_accounts','validation.py','nested')
+ py('raw_actor_deployment','deployment_audit.py')
  py('matched_cover','validation.py','matched')
  py('continuous_capital_benchmark','global_benchmark.py')
  py('generate_tables','tables.py')
