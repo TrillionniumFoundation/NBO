@@ -1,0 +1,48 @@
+\section{Validated Evaluation and Action Improvement}\label{sec:r9method}
+The neural Bellman map must account for two distinct approximation decisions: which continuation values are passed to the next stage, and how tightly the admissible action supremum is bounded. This section supplies an explicit output rule for the first decision and a signed enclosure for the second. Neither construction presumes that a stationary point of the training loss is economically optimal. Both apply to the original preference economy and leave its controls, state law, and stopping convention unchanged.
+
+\subsection{An evaluation rule with a prescribed nodal error}
+Let $T_h^a$ denote a positive-weight, one-step policy operator on a finite state grid, and suppose its continuation weights have sum at most $q_h\leq1$. At a given date, let $w$ be the continuation vector, $a$ the selected feasible policy, $\widehat v$ the fitted neural critic, and $\widetilde T_h^a w$ the computed selected-policy target. We distinguish the computation of this target from maximization over actions. In particular, it uses one action at each node, not a table of optimizing labels. For a prescribed tolerance $\tau_h>0$, define
+\begin{equation}\label{eq:r9guard}
+ C_h(\widehat v,a,w)_i=
+ \begin{cases}
+  (\widetilde T_h^a w)_i,& |\widehat v_i-(\widetilde T_h^a w)_i|>\tau_h,\\
+  \widehat v_i,&\text{otherwise}.
+ \end{cases}
+\end{equation}
+The comparison in the implementation uses an outward upper bound for the difference. A selected entry is assigned the target directly; it is not reconstructed by adding two cancelling floating-point numbers. The indexed corrections, their masks, and the uncorrected neural outputs are saved. The deployed continuation is therefore a neural representation with a recorded nodal correction, not a raw network.
+
+\begin{proposition}[Evaluation guard]\label{prop:r9guard}
+Suppose $\|\widetilde T_h^a w-T_h^a w\|_\infty\leq\eta_h$. Then
+\[
+ \|C_h(\widehat v,a,w)-T_h^a w\|_\infty\leq\tau_h+\eta_h.
+\]
+For a frozen sequence of policies over $N$ stages, with exact terminal data, the guarded backward values and the exact values of those policies differ by at most $\sum_{j=0}^{N-1}q_h^j(\tau_h+\eta_h)$.
+If $N h=T$, $\tau_h=0.1h^2$, and $\eta_h=o(h)$, this evaluation perturbation vanishes as $h\downarrow0$. This statement is a property of the output rule, not a rate for the neural optimizer or an assertion of policy optimality.
+\end{proposition}
+
+The guard gives an implementable meaning to the evaluation component of a vanishing-perturbation condition. It does not supply the action-improvement error, the consistency error of a stopped diffusion approximation, or convergence of an uncorrected network away from the nodes. Its cost can be substantial: in the numerical economy it corrects a large fraction of fitted nodal values. We consequently count the correction memory and compare against an actor-free method with the identical guard. The construction is not evidence of neural compression when almost every node is retained.
+
+\subsection{Signed enclosures for continuous actions}
+Fix a state-time node and a continuation vector $w$. Write $Q_w(a)$ for its one-step payoff. The action set is the full compact box of the preference economy. Let $B=[\ell,r]$ be an action rectangle with centre $c$. A natural interval calculation supplies an upper bound $U^{\mathrm{nat}}(B)$, while independent feasible evaluations supply a lower incumbent $L$.
+
+The continuation is bilinear within state cells and continuous across their internal faces. Reflection changes its one-sided slopes. A stopped transition is different: the implementation switches between interpolated continuation and the specified stopping payoff, which need not agree away from boundary grid points. We call $B$ \emph{regular} when every cubature transition stays entirely inside, or entirely outside, each wealth stopping face. Only on such a box do we use derivative information. All intersected interpolation cells and both sides of reflection folds enter the derivative hull.
+
+Suppose $G_j(B)=[g_j^-,g_j^+]$ encloses every one-sided partial derivative with respect to action component $j$ on a regular box. The mean-value upper enclosure is
+\begin{equation}\label{eq:r9mean}
+ U^{\mathrm{mv}}(B)=\overline Q_w(c)+
+ \sum_j\max\{g_j^-(\ell_j-c_j),g_j^-(r_j-c_j),g_j^+(\ell_j-c_j),g_j^+(r_j-c_j)\},
+\end{equation}
+where $\overline Q_w(c)$ is an outward point upper bound. The algorithm uses the smaller of this bound and $U^{\mathrm{nat}}(B)$. If $g_j^->0$, it restricts the supremum to $a_j=r_j$; if $g_j^+<0$, it restricts it to $a_j=\ell_j$. These are verified reductions to a maximizing face, not decisions based on a sampled derivative. For boxes crossing a stopping switch, the natural union enclosure is retained without this reduction.
+
+\begin{theorem}[Signed action cover]\label{thm:r9cover}
+Assume that the natural enclosures contain their respective payoffs, that the derivative hulls contain all one-sided derivatives on each regular box, and that feasible point values and arithmetic bounds are outward. Start from a cover of the action box and apply subdivision, reduction to a verified maximizing face, and removal of a box only when its upper bound is at most $L+\varepsilon$. At any interruption, retain the upper bound of every unresolved box. Then
+\begin{equation}\label{eq:r9coverbound}
+ \sup_{a\in\Act}Q_w(a)\leq\max\{L+\varepsilon,\ \max_{B\ \mathrm{unresolved}}U(B)\}.
+\end{equation}
+The bound remains valid when a depth, work, or time budget is exhausted. If $r$ action coordinates have verified strict derivative signs throughout a regular parent box, maximization over that box reduces to a face of dimension at most $d_a-r$.
+\end{theorem}
+
+The last statement describes a source of computational improvement, not a dimension-free worst-case bound. Under a $K$-Lipschitz gradient, a regular stationary box of diameter $s$ has mean-value excess of order $Ks^2$ when its point evaluation error is negligible. Boxes that cross stopping switches, have ambiguous derivative signs, or contain many interpolation cells can remain expensive. Our experiment measures their actual cost and keeps unresolved bounds; it does not assume that every box has favorable structure.
+
+The operational NBO output is now explicit: the frozen policy representation, its guarded continuation vector when used, an independently propagated policy interval, and a complete-action optimal upper envelope. A nodal lookup policy is the object certified in the preference experiment. An off-grid interpolation of that policy is a different deployment rule and is evaluated separately. No online search is charged to a stored lookup table; constructing that table includes every actor, critic, and local-search query.
