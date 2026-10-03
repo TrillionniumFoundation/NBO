@@ -1,0 +1,2866 @@
+                                     Submitted to Econometrica
+
+1                  SUPPLEMENT TO NEURAL BELLMAN OPERATORS                                      1
+
+2                                                                                              2
+
+3
+                                            Q IAN QI                                           3
+                                        Peking University
+4                                                                                              4
+
+5                                                                                              5
+
+6                                                                                              6
+                                1. RELATION TO THE MAIN TEXT
+7                                                                                              7
+
+8      This supplement expands the models and algorithms of the revised main                   8
+
+9    manuscript. It does not introduce an alternative total loss or a different equilibrium    9
+
+10   definition. Policy evaluation freezes all actor outputs. Policy improvement freezes       10
+
+11   the critic’s value and derivative channels. For games, only the acting player’s objec- 11
+12   tive is differentiated. For temporal selves, both exponential components evaluate         12
+
+13   the same future policy. The earlier main and supplementary sources are preserved          13
+
+14   in the revision archive for comparison; they are not alternative implementations of       14
+
+15   the revised method.                                                                       15
+
+16     The inherited portfolio and quadratic laboratories retain their declared exact- 16
+17   structure classes. R6 trains generic multilayer policies in stopped consumption,          17
+
+18   preference adjustment, and dense nonlinear capital economies. R7 adds successful          18
+
+19   finite preference actors, neural game policies with full dynamic best responses,          19
+
+20   common-noise coverage records, and an independent arithmetic replay. R8 in- 20
+21   tegrates those results and adds continuous-action training without maximizing             21
+
+22   labels, complete-action enclosures, direct and projection comparisons, and a sepa- 22
+23   rate continuous-transfer theorem. These approximation and verification classes are        23
+
+24   distinguished throughout the supplement.                                                  24
+
+25                                                                                             25
+                 2. POLICY EVALUATION AND THE RECURSIVE POLICY GRADIENT
+26                                                                                             26
+                                                                                  aϕ
+27     Let aϕ be differentiable in a scalar parameter direction, and suppose V         is suf- 27
+28   ficiently differentiable for the following calculation. The terminal payoff is inde- 28
+29   pendent of the policy parameter. Assume differentiation under the expectation             29
+
+30   is justified, that the differentiated state and utility equations are integrable, and     30
+
+31   that the boundary conditions of the differentiated problem are zero. Denote the           31
+
+32   directional derivative of the policy value by w.                                          32
+     2
+
+1        Differentiating the fixed-policy equation gives                                                  1
+
+2                                                                                                         2
+                       0 = wt + L aϕ w + f y (t, x, aϕ , V aϕ )w + Da H aϕ [V aϕ ] Dϕ aϕ .
+3                                                                                                         3
+
+4                                                                                                         4
+     The operator derivative includes the dependence of both drift and covariance on
+5                                                                                                         5
+     the action. The derivative of the generator acting on the changing value is contained
+6
+     in L aϕ w, while the action derivative of the generator acting on the fixed value is                 6
+
+7                                                                                                         7
+     contained in Da H. No Hessian-action channel is discarded.
+8                                                                                                         8
+         Applying the linear Feynman–Kac formula to the differentiated equation gives
+9                        Z τ     Z s                                                                    9
+                     aϕ
+10       w(t, x ) = Et,x     exp      f y (v, Sv , av , V )dv Da H aϕ [V aϕ ](s, Ss ) Dϕ aϕ (s, Ss )ds.
+                                                         aϕ
+                                                                                                          10
+                          t           t
+11                                                                                                        11
+
+12
+     This formula concerns the performance derivative from the stated initial state. A                    12
+
+13
+     domain-uniform Hamiltonian objective uses a different weighting. Such an objective                   13
+
+14
+     is useful for approximate pointwise improvement, but it becomes a lifetime policy                    14
+
+15
+     gradient only with the appropriate occupation and adjoint weights. Trajectories                      15
+
+16
+     sampled by the current actor are detached in the implemented domain objective. Dif- 16
+17
+     ferentiating through their sampling law would define a different gradient estimator                  17
+
+18
+     and must be analyzed separately.                                                                     18
+
+19
+         The critic’s residual derivative is the derivative of the entire fixed-policy equation. 19
+20
+     In particular, its level is determined by the recursive evaluation equation together                 20
+
+21
+     with boundary data. A separate negative-Hamiltonian gradient in the critic is not                    21
+
+22
+     an innocuous level anchor: in the scalar stationary example it moves the minimizer                   22
+
+23
+     away from the Bellman root.                                                                          23
+
+24                                                                                                        24
+             3. REPRESENTATION, BOUNDARY CONDITIONS, AND ERROR MEASUREMENT
+25                                                                                                        25
+                              3.1. Smooth approximation and what it establishes
+26                                                                                                        26
+
+27       A derivative-approximation result concerns a smooth target on a compact domain                   27
+
+28   and a family of networks whose capacity can increase. It does not imply that a fixed                 28
+
+29   network attains zero residual, that optimization finds its best approximation, or                    29
+
+30   that a nonsmooth target has classical derivatives everywhere. In a smooth problem,                   30
+
+31   increasing the representation class can reduce approximation error in the value and                  31
+
+32   derivatives. In a nonsmooth problem, NBO instead evaluates a consistent positive- 32
+                                              NBO SUPPLEMENT                                  3
+
+1    weight Bellman equation, or solves an explicitly regularized equation before taking          1
+
+2    a justified limit.                                                                           2
+
+3      The hard-terminal architecture is v(t, x ) = G ( x ) + ( T − t) N (t, x ). It exactly en- 3
+4    forces v( T, x ) = G ( x ) independently of training. A lateral Dirichlet face needs an      4
+
+5    additional compatible lifting and vanishing factor. For a reflected state, the Neu- 5
+6    mann condition is a different constraint. A loss on only interior points leaves all of       6
+
+7    these boundary questions unanswered. The regression test evaluates the terminal              7
+
+8    architecture at randomly chosen states and checks exact equality, not merely a small         8
+
+9    mean terminal error.                                                                         9
+
+10     The recursive Epstein–Zin domain is bV > 0. An exponential output ensures                  10
+
+11   positivity, while an interval transformation can keep bV between declared positive           11
+
+12   barriers. If bG > 0, one terminal-compatible positive representation is                      12
+
+13                                                                                                13
+                          bv(t, x ) = exp [log(bG ( x )) + ( T − t) N (t, x )] .
+14                                                                                                14
+
+15   Its terminal value is exact. It does not by itself impose a lateral exit payoff or a         15
+
+16   two-sided barrier. These additional conditions must be built into the architecture or        16
+
+17   measured explicitly. Clipping an invalid utility argument inside a fractional power          17
+
+18   changes the equation and is not an acceptable hidden numerical repair.                       18
+
+19                                                                                                19
+
+20                        3.2. From residual samples to a uniform bound                           20
+
+21                                                                                                21
+       Let r be K-Lipschitz on a domain in Rd . If every point is within distance hV of
+22                                                                                                22
+     a validation point, the triangle inequality gives ∥r ∥∞ ≤ maxx∈V |r ( x )| + KhV . If K
+23                                                                                                23
+     is estimated from samples rather than bounded, the resulting expression is itself a
+24                                                                                                24
+     diagnostic, not a certified uniform bound.
+25                                                                                                25
+       An integral bound needs more assumptions. Suppose the sampling density is at
+26                                                                                                26
+     least p0 > 0, and each ball of radius r0 or less centered in the domain intersects the
+27                                                                                                27
+     domain in volume at least c D r d . Let M = ∥r ∥∞ and assume M/(2K ) ≤ r0 . Near a
+28                                                                                                28
+     point approaching the maximum, Lipschitz continuity gives |r | ≥ M/2 on a ball of
+29                                                                                                29
+     radius M/(2K ). Hence
+30                                                                                                30
+                                                                               !1/(d+2)
+                                                                d +2   d
+31                             p0 c D                       2      K Er    2
+                                                                                                  31
+                      Er2 ≥               M d +2 ,   M≤                                   .
+32                            2d +2 K   d                         p0 c D                          32
+     4
+
+1    For larger M, use the capped radius r0 and the corresponding two-case inequality. 1
+2    A concentration argument is additionally needed to replace the population mean by           2
+
+3    an empirical one. This calculation explains why a dimension-free uniform certificate        3
+
+4    cannot be read directly from an average training loss.                                      4
+
+5        The action gap is treated similarly. If an action net has covering radius h A and the   5
+
+6    Hamiltonian is K A -Lipschitz in the action, the unobserved supremum exceeds the            6
+
+7    net maximum by at most K A h A . Thus the net gap plus this term is an upper bound. 7
+8    A collection of successful deviations without a covering or duality argument is only        8
+
+9    a lower bound on exploitability.                                                            9
+
+10                                                                                               10
+
+11                                                                                               11
+                                   4. BENCHMARK DERIVATIONS
+12                                                                                               12
+
+13                          4.1. Merton consumption and transversality                           13
+
+14                                                                                               14
+
+15       Write b = 1 − γ and V = KX b /b. Then VX = KX −γ and VXX = −γKX −γ−1 . Sub- 15
+16   stituting c = mX into the stationary time-additive equation and dividing by the             16
+
+17   positive number KX b gives                                                                  17
+
+18                                                                                               18
+
+19                               mb ρ                                                            19
+                            0=     − + r + p(µ − r ) − m − 21 γp2 σ2 .
+20                               bK b                                                            20
+
+21                                                                                               21
+
+22   Consumption maximization gives m−γ = K; portfolio maximization gives p = (µ −               22
+
+23   r )/(γσ2 ) when interior. With a no-short-sale constraint and negative excess return,       23
+
+24   the maximizing share is zero. Let R∗ = r + p(µ − r ) − γp2 σ2 /2. After substitution,       24
+
+25   γm = ρ + (γ − 1) R∗ .                                                                       25
+                                                   1− γ
+26       For the optimal constant shares, e−ρt E[ Xt ] decays as e−mt . Thus m > 0 gives         26
+
+27   the candidate’s additive transversality condition. Verification against a larger policy     27
+
+28   class also requires the relevant localization and integrability conditions for the          28
+
+29   competitors, as specified in the main text. Policies with minus-infinite utility are        29
+
+30   not preferred to the finite candidate. The numerical laboratory checks the candidate        30
+
+31   formulas and does not silently apply a stationary constant to an unspecified finite- 31
+32   horizon terminal problem.                                                                   32
+                                       NBO SUPPLEMENT                                      5
+
+1                       4.2. Recursive coefficient and the utility interval                    1
+
+2                                                                                              2
+       For f (c, V ) = ρ[c a (bV )1−a/b − bV ]/a, the same homothetic substitution gives
+3                                                                                              3
+                                   ρ
+4
+                                0 = [m a K −a/b − 1] + R∗ − m.                                 4
+
+5
+                                   a                                                           5
+
+6
+     Since f c = VX implies ρm a−1 K −a/b = 1, the first term becomes (m − ρ)/a. Conse- 6
+7
+     quently, m = ψρ + (1 − ψ) R∗ and K = [ρm a−1 ]b/a . The formula assumes the station- 7
+8                                                                                              8
+     ary candidate has positive consumption. It is not an infinite-horizon utility-selection
+9                                                                                              9
+     theorem.
+10                                                                                             10
+       For the finite-horizon matching-bequest test at a > 0 > b, define Y = bV. The
+11                                                                                             11
+     consumption domain is compact and bounded away from zero. At sufficiently small
+12
+     positive Y, c a Y −a/b < 1 uniformly in consumption, so f < 0. At sufficiently large      12
+
+13                                                                                             13
+     Y, the reverse inequality holds and f > 0. Because dividing by negative b reverses
+14                                                                                             14
+     the order of the utility endpoints, the large-Y constant is a lower utility barrier and
+15                                                                                             15
+     the small-Y constant is an upper utility barrier. The matching bequest lies between
+16                                                                                             16
+     them after enlarging the interval. Lipschitz scalar comparison then keeps each
+17                                                                                             17
+     policy utility inside the interval, on which the aggregator and its utility derivative
+18                                                                                             18
+     are bounded. This verifies the finite-horizon interpretation without claiming an
+19                                                                                             19
+     unrestricted infinite-horizon result at those parameters.
+20                                                                                             20
+
+21                           5. ENDOGENOUS-PREFERENCE DETAILS                                  21
+
+22                                                                                             22
+                       5.1. State restrictions and the reference experiment
+23                                                                                             23
+
+24     In the baseline application, the risk-aversion interval lies strictly above one and     24
+
+25   the process is reflected. The reference wealth problem is stopped at positive finite      25
+
+26   bounds. Consumption shares are bounded away from zero, adjustment efforts are             26
+
+27   bounded, and the horizon is finite. These choices bound the flow utility, its relevant    27
+
+28   derivatives away from the terminal-boundary compatibility issue, and the bequest. 28
+29   They provide a well-defined finite reference calculation. The numerical reflection        29
+
+30   is a folded reflection of Brownian cubature endpoints; the wealth boundary is             30
+
+31   absorbing with the prescribed payoff. The same terminal and boundary values are           31
+
+32   imposed for both adjustment-cost parameters.                                              32
+     6
+
+1        The grid reference operates in y = log X. Its drift is                                      1
+
+2                                                                                                    2
+
+3
+                                 by = r + p(µ − r ) − m − 12 p2 σX2 ,                                3
+
+4                                                                                                    4
+     and its covariance with u is ϱσu pσX . The two Brownian-factor columns can be
+5                                                                                         5
+     written (σu , ϱpσX )⊤ and (0, 1 − ϱ2 pσX )⊤ . Four symmetric cubature directions re-
+                                  p
+6                                                                                                    6
+     produce this covariance. The correction − p2 σX2 /2 in log wealth is essential; omitting
+7                                                                                                    7
+     it would change the economic diffusion.
+8                                                                                                    8
+         For each action, the backward update is current utility times the time step plus
+9                                                                                                    9
+     the exponentially discounted positive-weight interpolation of next-period value.
+10                                                                                                   10
+     Feasible actions are enumerated on the declared 27-element grid. Because the
+11                                                                                                   11
+     terminal/exit payoff is fixed, raising k weakly lowers each action’s payoff and, by
+12                                                                                                   12
+     backward induction, lowers value at every state and time. The recorded arrays
+13                                                                                                   13
+     permit a direct check of this order. The reported grid-refinement difference is not an
+14                                                                                                   14
+     estimate of unrestricted neural approximation error.
+15                                                                                                   15
+
+16                                                                                                   16
+                           5.2. Policy conditions and comparative statics
+17                                                                                                   17
+
+18       The consumption marginal utility in reference units is Uc      = c̄−1 (c/c̄)−u . Equating   18
+
+19   it to VX yields c = c̄(c̄VX )−1/u . Adjustment maximizes θVu − kθ 2 /2 and hence                19
+
+20   uses the projection of Vu /k under a box. Portfolio choice maximizes a quadratic                20
+
+21   with coefficient X 2 σX2 VXX /2. The projected first-order solution is valid only when          21
+
+22   this coefficient is negative. These conditions clarify why numerical curvature and              22
+
+23   feasibility must be checked independently.                                                      23
+
+24       The cross derivative VuX is an endogenous object. Its sign cannot be inferred from          24
+
+25   the label “risk aversion” or from a negative shock correlation. Nor can the sign of             25
+
+26   ∂k θ k be inferred by differentiating 1/k while keeping Vuk fixed. In contrast, the value       26
+
+27   monotonicity in k holds policy by policy. At a differentiable optimum the envelope              27
+
+28   formula follows because k appears only in the quadratic running cost. Changing                  28
+
+29   the normalization function κ (u) can change both adjustment and portfolio policies              29
+
+30   even while leaving utility curvature in consumption unchanged.                                  30
+
+31       An observation model is needed for structural estimation. With latent u, uncer- 31
+32   tainty in κ, and unknown adjustment or shock parameters, a sensitivity plot for                 32
+                                        NBO SUPPLEMENT                                       7
+
+1    one policy component does not prove identification. A practical estimation exercise          1
+
+2    would compute moment derivatives jointly, inspect their rank after normalization             2
+
+3    restrictions, and propagate numerical approximation error into the implied moment            3
+
+4    map. Those are distinct tasks from solving the controlled economy.                           4
+
+5                                                                                                 5
+                                 6. TEMPORAL-SELF DEVIATIONS
+6                                                                                                 6
+
+7      For the two-exponential kernel, the component value under constant consump- 7
+8    tion share m is Wj ( X ) = mb X b /[bλ j (m)], where λ j (m) = ρ j − b(r − m). A deviation   8
+
+9    to share z for duration ϵ, followed by m, has component value at X = 1                       9
+
+10                                     "                                     #                    10
+                                     1 b 1 − e−λ j (z)ϵ                m  b
+11                       Jj (z, ϵ) =     z              + e−λ j (z)ϵ           .                  11
+                                     b      λ j (z)                  λ j (m)
+12                                                                                                12
+
+13   The continuous extension is used if λ j (z) = 0. The deviation gain is ∑ j w j Jj (z, ϵ) −   13
+
+14   ∑ j w j Wj (1), with weights ( β, 1 − β). This is the quantity independently maximized 14
+15   in the experiment, rather than a restatement of the equilibrium first-order condition. 15
+16     At an equilibrium share, the first-order gain is nonpositive for every feasible            16
+
+17   instantaneous share and equals zero at the equilibrium share. A finite-duration self         17
+
+18   can generally choose a slightly different share, so the maximized gain need not be           18
+
+19   exactly zero for positive duration. The required diagnostic is its gain divided by           19
+
+20   duration as duration tends to zero. For β = 1 the ordinary exponential solution is           20
+
+21   recovered.                                                                                   21
+
+22     As κ grows, the kernel becomes increasingly concentrated near the present before           22
+
+23   approaching its long-run component. Taking the instantaneous-deviation limit                 23
+
+24   and taking κ → ∞ are conceptually different operations. The finite-κ model in this           24
+
+25   paper explicitly specifies the order: the spike condition is derived for fixed κ, and        25
+
+26   any duration-limit comparative static is taken afterward. This avoids assigning an           26
+
+27   undefined continuous-time meaning to a discrete present-bias multiplier.                     27
+
+28                                                                                                28
+                          7. GAMES AND INDEPENDENT BEST RESPONSES
+29                                                                                                29
+
+30     A fixed rival profile turns each player’s problem into an ordinary controlled              30
+
+31   Markov problem, so the main verification results apply player by player. The                 31
+
+32   derivative graph must implement this reduction. During player i’s actor step, every          32
+     8
+
+1    rival policy and every derivative of player i’s critic is detached. During player i’s      1
+
+2    critic step, all players’ actions are detached. A sum of these reporting losses can be     2
+
+3    logged, but differentiation of a joint-profit objective is not equivalent to those block   3
+
+4    steps.                                                                                     4
+
+5        The two-firm static diagnostic has best response qi = (1 − q j )/2 when interior. At   5
+
+6    the joint-profit allocation (1/4, 1/4), the deviating firm chooses 3/8 and improves        6
+
+7    profit from 1/8 to 9/64, a gain of 1/64. The own-action derivative is 1/4 at the           7
+
+8    joint optimum. These numbers verify a graph-level distinction; they are not a              8
+
+9    computation of the dynamic capital game.                                                   9
+
+10       For the dynamic problem, a reported equilibrium should include an indepen- 10
+11   dent solution of each fixed-rival best-response problem, or an upper bound on              11
+
+12   the unilateral Hamiltonian gap over the entire verification domain. A finite list of       12
+
+13   unsuccessful deviations does not supply such an upper bound. Multiple initializa- 13
+14   tions, asymmetric profiles, boundary actions, and the market-size normalization are        14
+
+15   part of the same experiment. The specification in the main text retains the dynamic        15
+
+16   Cournot application but does not invent a dynamic Nash table from the static               16
+
+17   arithmetic.                                                                                17
+
+18                                                                                              18
+
+19                    8. STOCHASTIC HESSIAN OBJECTIVES AND COMPLEXITY                           19
+
+20
+         Let B = Σ⊤ D2 vΣ, a symmetric matrix in Brownian-factor space. For Gaussian            20
+
+21
+     probes, Isserlis’ identity gives E(z⊤ Bz) = tr B and Var(z⊤ Bz) = 2 tr( B2 ) = 2∥ B∥2F . 21
+22                                                                                              22
+     Averaging K independent probes divides the variance by K. Rademacher probes
+23
+     instead have variance 2 ∑i̸= j Bij2 /K. The variance depends on the chosen covariance      23
+
+24                                                                                              24
+     factor and probe law, both of which must be specified.
+25                                                                                              25
+         Write qbj = q + ϵ j , with conditionally mean-zero independent errors. Then
+26                                                                                              26
+
+27              E[(d − qb1 /2)(d − qb2 /2)] = (d − q/2)2 + 14 E[ϵ1 ϵ2 ] = (d − q/2)2 .          27
+
+28                                                                                              28
+
+29   Using one bank twice would retain its variance term. In the scalar Gaussian example,       29
+
+30   a single-bank squared residual has expectation 1 − h + 3h2 /4, minimized at h = 2/3,       30
+
+31   whereas the exact residual (1 − h/2)2 is minimized at h = 2. The independent               31
+
+32   product restores the latter population objective. The saved Monte Carlo diagnostic         32
+                                      NBO SUPPLEMENT                                    9
+
+1    uses 400,000 pairs and records both empirical estimates; it does not claim that the     1
+
+2    sampling error is identically zero.                                                     2
+
+3      The core implementation uses exact Hessians to make the covariance contraction        3
+
+4    independently testable. A Hessian-vector implementation can replace it without          4
+
+5    changing the conditional-independence requirement. The cost of a Hessian-vector         5
+
+6    product depends on the network graph, not just the state dimension. Total cost also     6
+
+7    includes sampling, optimization, domain coverage, action maximization, and stop- 7
+8    ping at an agreed error level. A quadratic-neural representation with a Lyapunov        8
+
+9    solve has different approximation and optimization costs from a generic multi- 9
+10   layer network. The inherited quadratic laboratory is explicitly the former; the new     10
+
+11   dense nonlinear experiments actually train generic networks and Hessian-vector          11
+
+12   estimators.                                                                             12
+
+13                                                                                           13
+
+14                                                                                           14
+                        9. REPRODUCTION AND FURTHER COMPARISONS
+15                                                                                           15
+
+16     From the repository root, execute the experiment program and then the regression      16
+
+17   suite. The dependency versions and CPU setting are recorded with the results. The       17
+
+18   experiment output distinguishes acceptance of a calibration or identity test from       18
+
+19   execution of a reference computation. A separate reviewer-check output reproduces       19
+
+20   the original twelve diagnostics against the archived original manuscript, not against   20
+
+21   the revised article.                                                                    21
+
+22     A broader method comparison should use one problem specification and evaluate         22
+
+23   value error, policy error, boundary error, and the independent action gap at matched    23
+
+24   accuracy. A direct neural-HJB comparator eliminates the actor with the same feasible    24
+
+25   maximization routine. A temporal-regression comparator uses the same recursive          25
+
+26   discretization and utility domain, without adding discount twice. A separability- 26
+27   aware classical comparator exploits all available economic structure. Network           27
+
+28   capacity, sampling, covariance treatment, random seeds, failures, wall time, and        28
+
+29   memory should all be reported. R6 executes the architecture-matched direct-HJB          29
+
+30   and finite-Bellman comparisons. The broader deep-BSDE comparison remains                30
+
+31   unexecuted and is not counted as a measured advantage. R7 neural-game evidence          31
+
+32   and the additional R8 comparisons are reported in the integrated sections below.        32
+     10
+
+1      The inherited read-only workflow is preserved. The separately scoped R6 replica- 1
+2    tion workflow commits materialized source and raw recomputation outputs only                  2
+
+3    to its designated candidate branch, without editing the review or earlier revision            3
+
+4    branches. Hashes and exact source commits distinguish these artifacts. No workflow            4
+
+5    rewrites a failed numerical accuracy target as a pass.                                        5
+
+6                                                                                                  6
+                        10. IMPLEMENTED ERROR ACCOUNTS AND ARITHMETIC
+7                                                                                                  7
+
+8
+       The implemented map returns a candidate and a verification record, rather than              8
+
+9
+     assigning authority to an optimizer’s exit code. In the differential consumption              9
+
+10
+     economy, the record identifies the binary64 weights, both stopping faces, all dyadic          10
+
+11
+     leaves, global consumption maximization, and the error bounds for the continuous              11
+
+12
+     diffusion. In NDU it instead identifies the finite state–action–time model, its positive      12
+
+13
+     transition weights, and time-indexed evaluation and improvement errors. The                   13
+
+14
+     dynamic-game record fixes the entire rival policy before an independent backward              14
+
+15
+     best-response solve. An unchecked continuous-action or time-discretization term is            15
+
+16
+     represented as unavailable in the machine-readable output, not as zero.                       16
+
+17
+       For finite time levels, let δt = ∥vt − Tta vt+1 ∥∞ and ϵt = ∥ Tt vt+1 − Tta vt+1 ∥∞ . If    17
+
+18
+     both maps are β t -Lipschitz, the triangle inequality gives                                   18
+
+19
+          ∥vt − Vta ∥ ≤ δt + β t ∥vt+1 − Vta+1 ∥,   ∥vt − Vt∗ ∥ ≤ δt + ϵt + β t ∥vt+1 − Vt∗+1 ∥.   19
+
+20                                                                                                 20
+
+21   Summing the two inequalities yields the regret account. The same recurrence with              21
+
+22   a player’s unilateral gap bounds the gain from a dynamic deviation when that                  22
+
+23   player’s policy evaluation is exact. Accounts must be checked at each time level:             23
+
+24   a time-zero bound need not dominate a later-time bound when discounting and                   24
+
+25   errors differ. The coarse-game regression exercises this distinction and verifies that        25
+
+26   a missing pure equilibrium is reported rather than silently treated as exact.                 26
+
+27                                                                                                 27
+
+28
+                               10.1. Full-domain interval implementation                           28
+
+29     An interval [l, u] encloses an exact real quantity. Each elementary operation ex- 29
+30   pands its rounded endpoints with the adjacent binary64 number. Affine layers split            30
+
+31   positive and negative weights and include a conservative dot-product forward-error            31
+
+32   allowance. The arithmetic contract requires binary64 round-to-nearest arithmetic,             32
+                                            NBO SUPPLEMENT                             11
+
+1    the stated dot-product error bound, and absence of exceptional overflow or flush- 1
+2    to-zero behavior. Stored parameters denote their exact binary64 real values; the        2
+
+3    verifier does not assert an unrecorded decimal model identity.                          3
+
+4      For an exponential argument x, range reduction gives r = x/2s with |r | ≤ 1/8. A      4
+
+5    degree-fourteen Taylor polynomial has remainder bounded by                              5
+
+6                                                                                            6
+                                |r |   15             15          −80
+7
+                               e |r | /15! < 2(1/8) /15! < 2            .                    7
+
+8                                                                                            8
+     Interval Horner evaluation and repeated squaring enclose e x . The identity tanh x =
+9                                                                                            9
+     1 − 2/(e2x + 1) then supplies tanh values and derivative channels 1 − tanh2 x and
+10                                                                                           10
+     −2 tanh x (1 − tanh2 x ). Powers of two and the range-reduction domain are checked
+11                                                                                           11
+     in the code.
+12                                                                                           12
+       For logarithms, exact binary decomposition gives x = 2k m, with 1 ≤ m < 2. Writ-
+13                                                                                           13
+     ing z = (m − 1)/(m + 1),
+14                                                                                           14
+                                24     2j+1                        51
+                                    z                           2| z |
+                     log m = 2 ∑
+15                                                                                           15
+                                           + R,      | R| ≤            2
+                                                                         < 2−72
+16                             j =0
+                                    2j + 1                    51(1 − z )                     16
+
+17                                                                                           17
+     for the outward-enclosed range |z| < .334. The same expansion encloses log 2. Nei-
+18                                                                                           18
+     ther construction presumes correctly rounded library tanh or logarithm functions.
+19                                                                                           19
+     The saved test suite checks transcendental endpoints against eighty-digit arithmetic,
+20                                                                                           20
+     differentiates the trained network independently, and checks all certificate hashes
+21                                                                                           21
+     and leaf adjacencies. These tests supplement, but do not replace, the arithmetic
+22                                                                                           22
+     contract.
+23                                                                                           23
+       The scalar action objective h(c) = log c − pc has second derivative −1/c2 . If C
+24                                                                                           24
+     encloses both the actor and its maximizing alternative, strong concavity on their
+25                                                                                           25
+     joining segment gives
+26                                                                                           26
+
+27
+                 h(c∗ ) − h(c) ≤ h′ (c)(c∗ − c) − (c∗ − c)2 /(2C2 ) ≤ C2 h′ (c)2 /2.         27
+
+28                                                                                           28
+
+29   The argument includes constrained endpoints. Taking the minimum with the natu- 29
+30   ral interval action-gap enclosure markedly reduces verification cost, without using     30
+
+31   a sampled gradient as a bound. Residual targets are decided on every leaf; reaching     31
+
+32   a maximum subdivision depth does not change a failed target into a pass.                32
+     12
+
+1                             10.2. Application-specific hypotheses                         1
+
+2                                                                                           2
+
+3                                                                                           3
+
+4                                                                                           4
+
+5      The stopped consumption diffusion is uniformly nondegenerate on its compact          5
+
+6    domain; controls and coefficients are bounded and its endpoint data are continuous. 6
+7    The smooth networks and strictly positive consumption map meet the regularity          7
+
+8    and log-domain requirements of the verification argument. Both stopping-face           8
+
+9    errors and the full action interval are checked. The upwind reference error is not a   9
+
+10   premise of its continuous certificate.                                                 10
+
+11     The NDU computation is a positive-weight, finite-action, finite-horizon economy      11
+
+12   with prescribed discrete stopping and folded preference transitions. Positivity,       12
+
+13   all terminal and wealth-face values, and every finite action are evaluated. The        13
+
+14   continuous reflected PDE’s corner compatibility, continuous-action coverage error,     14
+
+15   and diffusion approximation error are not inferred from these tests. Expanding a       15
+
+16   feasible box changes the constrained economy; densifying a fixed box does not. The     16
+
+17   sensitivity record keeps these operations separate.                                    17
+
+18     The dense capital computation uses bounded nonlinear drift in log coordinates,       18
+
+19   bounded positive consumption fractions, constant diffusion, and finite horizon. Its    19
+
+20   flow has at most linear log-state growth and its terminal payoff at most quadratic     20
+
+21   growth; these are integrable under the declared bounded-drift diffusion. The fitted    21
+
+22   box is a sampling domain, not a state constraint. Its sampled differential residuals   22
+
+23   do not check comparison barriers or uniform errors on Rd . Euler payoff estimates      23
+
+24   carry both sampling error and unbounded-state/time-discretization issues not           24
+
+25   covered by the reported Monte Carlo standard error.                                    25
+
+26     The dynamic capital game is a fully enumerated finite approximation with             26
+
+27   stopped joint boundaries. Stage equilibria and dynamic fixed-rival best responses      27
+
+28   are numerical statements about that model. The continuous-control best-response        28
+
+29   comparison assumptions in the main theorem remain logically distinct. The re- 29
+30   tained homothetic recursive-utility and temporal-self examples use their stated        30
+
+31   utility domains, bequests, and integrability conditions; R6 does not relabel them as   31
+
+32   unrestricted neural experiments.                                                       32
+                                       NBO SUPPLEMENT                                 13
+
+1                         11. DESIGN, BUDGETS, AND REPRODUCIBILITY                          1
+
+2                                                                                           2
+
+3                                                                                           3
+
+4      The stopped-consumption study uses float64 and the existing generic derivative       4
+
+5    core. Identical seed labels fix initialization and collocation construction across     5
+
+6    methods. L-BFGS iteration caps are matched, but line-search closure counts need        6
+
+7    not match. Those counts, fit times, and separate verification times are saved. The     7
+
+8    grid reference uses exact maximization within each upwind drift region, not the        8
+
+9    learned actor. Reference comparisons omit four endpoint-adjacent nodes only for        9
+
+10   finite-difference derivative comparisons; all endpoints enter the boundary check       10
+
+11   and the interval certificate.                                                          11
+
+12     The NDU actor predicts one of the finite feasible triples. Its normalized Bellman- 12
+13   loss objective gives economically costly action mistakes more weight than ordinary     13
+
+14   classification would. Absorbing boundary rows are excluded only from actor fitting,    14
+
+15   because their actions have no effect; they remain in policy evaluation and verifi- 15
+16   cation. The failed initial classification implementation is archived with its actual   16
+
+17   outputs. Principal seed 11 misses the declared policy-regret target even after the     17
+
+18   improvement; its result is not discarded. The direct finite-Bellman comparator uses    18
+
+19   the same critic class and total inner-iteration cap.                                   19
+
+20     The dense-capital primary study uses exact Hessians; the trace follow-up actu- 20
+21   ally backpropagates through Hessian-vector products. Product and single-bank           21
+
+22   implementations use four probes in total, but only the product splits them into        22
+
+23   conditionally independent banks. The Monte Carlo regression separately checks          23
+
+24   the value and gradient of the product objective with tolerances .012 and .025. An      24
+
+25   unbiased objective can have higher variance, and no claim of superior finite-sample    25
+
+26   accuracy follows merely from its expectation. The covariance in the retained experi- 26
+27   ment is modest; the reported results reflect that scale.                               27
+
+28     The initial high-dimensional state box was too narrow to certify the realized        28
+
+29   policy paths. The wider-box design is therefore identified as a follow-up, not a       29
+
+30   preregistered experiment. Forty- and eighty-step policy simulations share the same     30
+
+31   seed convention across methods at a given resolution. They are not a coupled           31
+
+32   Brownian extrapolation across resolutions. Raw per-path payoffs allow paired           32
+     14
+
+1    policy comparisons, but neither a Monte Carlo confidence interval nor a critic– 1
+2    payoff agreement proves closeness to the optimal value.                                 2
+
+3      Each executed program records all declared seeds, its budget, residual or devia- 3
+4    tion arrays, and an explicit scope. Process peak resident memory is a high-water        4
+
+5    mark of the process, potentially including earlier runs. It is not an isolated memory- 5
+6    complexity measurement for an individual method. CPU timings are execution- 6
+7    specific and do not reproduce the historical accelerator claims. The independent        7
+
+8    raw-output workflow binds its source commit and file hashes; the source archive         8
+
+9    keeps the R2 manuscript and supplement byte-for-byte for comparison.                    9
+
+10                                                                                           10
+                             12. RUN-LEVEL NUMERICAL ACCOUNTS
+11                                                                                           11
+
+12
+                            12.1. Consumption fitting and verification                       12
+
+13                                                                                           13
+
+14                 Method Seed Width/depth Fit seconds Verify seconds        Pass            14
+
+15                 nbo      11            16/2      2.1790        1.0822     True            15
+
+16                 nbo      29            16/2      2.0422        1.4045     True            16
+                   nbo      47            16/2      2.0550        1.3100     True
+17                                                                                           17
+                   direct   11            16/2      1.9767        0.4974     True
+18                                                                                           18
+                   direct   29            16/2      0.8018        0.4875     True
+19                 direct   47            16/2      2.1912        0.5481     True            19
+
+20                 joint    11            16/2      0.2578               – False             20
+
+21                 joint    29            16/2      2.5836               – False             21
+                   joint    47            16/2      2.5935               – False
+22                                                                                           22
+                   nbo      11             8/2      2.5767               –   True
+23                                                                                           23
+                   nbo      11            32/2      1.6599               –   True
+24                 nbo      11            16/1      1.6198               –   True            24
+
+25                 nbo      11            16/3      2.3456               –   True            25
+
+26                 nbo      11            16/2      2.1977               –   True            26
+                   nbo      11            16/2      1.8599               –   True
+27                                                                                           27
+
+28                                                                                           28
+
+29     Pass in this table means the prespecified sampled diagnostic. Continuous certifi- 29
+30   cation is reported separately and only for the primary NBO and direct-HJB runs. 30
+31   Every closure count, pointwise derivative array, parameter, and iteration trace is in   31
+
+32   the corresponding raw result.                                                           32
+                                               NBO SUPPLEMENT                                       15
+
+1                                12.2. Action bounds and numerical domains                               1
+
+2                                                                                                        2
+
+3           Actions                Grid/time        k Center value Upper m freq. Upper p freq.           3
+
+4                                                                                                        4
+            r2                     17x25/20    1.0000       -11.9152         0.9994        0.7885
+5           r2                     17x25/20    5.0000       -11.9570         0.9992        0.7890        5
+
+6           adjustment             17x25/20    1.0000       -10.6081         1.0000        0.8364        6
+
+7
+            adjustment             17x25/20    5.0000       -10.9202         1.0000        0.8405        7
+            expanded               17x25/20    1.0000        -4.8410         0.9898        0.5440
+8                                                                                                        8
+            expanded               17x25/20    5.0000        -4.9243         0.9855        0.5515
+9                                                                                                        9
+            refined                17x25/20    1.0000        -4.8406         0.9737        0.5301
+10          refined                17x25/20    5.0000        -4.9214         0.9688        0.5353        10
+
+11          expanded_domain 17x25/20           1.0000        -2.7504         0.9698        0.5665        11
+
+12
+            expanded_domain 17x25/20           5.0000        -2.8452         0.9499        0.6068        12
+            expanded               17x25/20* 1.0000          -5.0185         0.9997        0.3164
+13                                                                                                       13
+            expanded               17x25/20* 5.0000          -5.1095         0.9971        0.3251
+14                                                                                                       14
+            expanded               25x37/40    1.0000        -4.8395         0.9902        0.5738
+15          expanded               25x37/40    5.0000        -4.9228         0.9853        0.5787        15
+
+16          expanded               33x49/80    1.0000        -4.8302         0.9872        0.6050        16
+
+17
+            expanded               33x49/80    5.0000        -4.9143         0.9823        0.6102        17
+
+18                                                                                                       18
+
+19     An asterisk marks wealth interval [.25, 4], rather than [.5, 2]. Frequencies use all              19
+
+20   nonabsorbing state–time nodes. The raw record includes both bounds for each of                      20
+
+21   the three controls. “Expanded has 175 actions; “refined has 1,053 actions in the same               21
+
+22   box; “expanded_domain changes the box itself.                                                       22
+
+23                                                                                                       23
+
+24                     12.3. Dense neural runs, trace estimators, and coverage                           24
+
+25                                                                                                       25
+
+26                                                                                                       26
+                         Method d/seed Steps        RMS            Gap Seconds      Pass
+27                                                                                                       27
+                         exact      2/11       600 0.0125 1.44 × 10−4      2.7329   True
+28                                                                                                       28
+                         direct     2/11       600 0.0123              0   3.4870   True
+29                       exact      2/29       600 0.0161 2.28 × 10−4      2.6554   True                 29
+
+30                       direct     2/29       600 0.0161              0   3.4759   True                 30
+
+31                       exact      2/47       600 0.0132   2.42 × 10−4    2.6361   True                 31
+                         direct     2/47       600 0.0136              0   3.5572   True
+32                                                                                                       32
+     16
+
+1                                                                     1
+          Method d/seed Steps     RMS         Gap Seconds      Pass
+2                                                                     2
+          exact     5/11    600 0.0101      0.0012    4.1518   True
+3                                                                     3
+          direct    5/11    600 0.0101           0    5.0391   True
+4         exact     5/29    600 0.0131 8.38 × 10−4    4.2150   True   4
+
+5         direct    5/29    600 0.0129           0    4.9992   True   5
+
+6
+          exact     5/47    600 0.0122      0.0020    4.1258   True   6
+          direct    5/47    600 0.0118           0    5.0485   True
+7                                                                     7
+          exact     10/11   600 0.0163      0.0052    6.8652   True
+8                                                                     8
+          direct    10/11   600 0.0138           0    7.6139   True
+9         exact     10/29   600 0.0188      0.0035    6.9393   True   9
+
+10        direct    10/29   600 0.0168           0    7.7251   True   10
+
+11
+          exact     10/47   600 0.0141      0.0050    6.8241   True   11
+          direct    10/47   600 0.0139           0    7.6988   True
+12                                                                    12
+          exact     20/11   600 0.0148      0.0113   12.8180 False
+13                                                                    13
+          direct    20/11   600 0.0135           0   13.5001   True
+14        exact     20/29   600 0.0138      0.0090   12.6025   True   14
+
+15        direct    20/29   600 0.0129           0   13.4929   True   15
+
+16
+          exact     20/47   600 0.0320      0.0114   12.9103 False    16
+          direct    20/47   600 0.0170           0   13.6205   True
+17                                                                    17
+          product 10/11     600 0.0163      0.0052    3.9801   True
+18                                                                    18
+          single    10/11   600 0.0162      0.0052    3.9075   True
+19        product 10/29     600 0.0187      0.0035    3.9346   True   19
+
+20        single    10/29   600 0.0186      0.0034    3.9263   True   20
+
+21
+          product 10/47     600 0.0141      0.0050    3.9233   True   21
+          single    10/47   600 0.0140      0.0050    3.9264   True
+22                                                                    22
+          exact*    10/11   1000 0.0236     0.0019   11.1414   True
+23                                                                    23
+          direct*   10/11   1000 0.0278          0   12.4295 False
+24        exact*    10/29   1000 0.0249     0.0022   10.9333   True   24
+
+25        direct*   10/29   1000 0.0276          0   12.3312 False    25
+
+26
+          exact*    10/47   1000 0.0281     0.0026   11.0150 False    26
+          direct*   10/47   1000 0.0293          0   12.3768 False
+27                                                                    27
+          exact*    20/11   1000 0.0200     0.0040   20.8834   True
+28                                                                    28
+          direct*   20/11   1000 0.0211          0   22.9271   True
+29        exact*    20/29   1000 0.0200     0.0034   20.0811   True   29
+
+30        direct*   20/29   1000 0.0227          0   21.9897   True   30
+
+31
+          exact*    20/47   1000 0.0216     0.0071   19.9588   True   31
+
+32                                                                    32
+                                              NBO SUPPLEMENT                                   17
+
+1                                                                                                   1
+                         Method d/seed Steps          RMS         Gap Seconds     Pass
+2                                                                                                   2
+                         direct*    20/47    1000 0.0244            0   21.7639   True
+3                                                                                                   3
+
+4                                                                                                   4
+
+5      An asterisk marks the follow-up fitting domain [−1.5, .5]d and 1,000 updates.                5
+
+6    Product uses two independent two-probe banks; single squares a four-probe trace. 6
+7    Every row retains its own history and exact-trace diagnostic set. Runtime is not a             7
+
+8    hardware-independent complexity bound.                                                         8
+
+9                                                                                                   9
+
+10
+                                       12.4. Policy-payoff diagnostics                              10
+
+11                                                                                                  11
+
+12              Method d/seed Critic at zero Euler mean MC s.e. Critic minus mean                   12
+
+13              exact       10/11           -1.1925     -1.3045   0.0041             0.1120         13
+
+14              direct      10/11           -1.2054     -1.2729   0.0036             0.0675         14
+
+15              exact       10/29           -1.1781     -1.2999   0.0040             0.1218         15
+                direct      10/29           -1.1899     -1.2701   0.0036             0.0802
+16                                                                                                  16
+                exact       10/47           -1.2080     -1.2967   0.0040             0.0887
+17                                                                                                  17
+                direct      10/47           -1.2077     -1.2698   0.0036             0.0621
+18              exact       20/11           -1.1809     -1.3458   0.0041             0.1649         18
+
+19              direct      20/11           -1.1986     -1.2834   0.0035             0.0848         19
+
+20              exact       20/29           -1.1920     -1.2895   0.0035             0.0975         20
+                direct      20/29           -1.2071     -1.2754   0.0034             0.0684
+21                                                                                                  21
+                exact       20/47           -1.0343     -1.5052   0.0036             0.4709
+22                                                                                                  22
+                direct      20/47           -1.1661     -1.3051   0.0036             0.1390
+23              exact*      10/11           -1.2974     -1.2521   0.0035             -0.0453        23
+
+24              direct*     10/11           -1.2992     -1.2527   0.0035             -0.0465        24
+
+25              exact*      10/29           -1.2933     -1.2521   0.0035             -0.0412        25
+                direct*     10/29           -1.2871     -1.2521   0.0035             -0.0350
+26                                                                                                  26
+                exact*      10/47           -1.2939     -1.2527   0.0035             -0.0412
+27                                                                                                  27
+                direct*     10/47           -1.2959     -1.2527   0.0035             -0.0433
+28              exact*      20/11           -1.2788     -1.2646   0.0034             -0.0142        28
+
+29              direct*     20/11           -1.2787     -1.2656   0.0034             -0.0132        29
+
+30              exact*      20/29           -1.2712     -1.2646   0.0034             -0.0066        30
+                direct*     20/29           -1.2563     -1.2689   0.0034             0.0126
+31                                                                                                  31
+                exact*      20/47           -1.2772     -1.2645   0.0034             -0.0127
+32                                                                                                  32
+     18
+
+1                                                                                              1
+                Method d/seed Critic at zero Euler mean MC s.e. Critic minus mean
+2                                                                                              2
+                direct*    20/47       -1.2821     -1.2652   0.0034           -0.0169
+3                                                                                              3
+
+4                                                                                              4
+
+5      These estimates use 2,048 paths and 80 Euler steps from zero log capital. Forty- 5
+6    step samples are also saved. Identical random seeds pair policy comparisons at the        6
+
+7    same step size; the forty- and eighty-step simulations are not a Brownian-coupled         7
+
+8    refinement estimator. The standard error measures sampling error only. The initial        8
+
+9    critic is not an external optimal-value reference.                                        9
+
+10                                                                                             10
+          13. PROOF AND IMPLEMENTATION OF THE CONTINUOUS-ACTION ENVELOPE
+11                                                                                             11
+
+12
+       We use the notation of the main text’s budget-safe envelope proposition. The            12
+
+13
+     nodal economy is fixed before verification. Its terminal and stopping payoffs, prim- 13
+
+14
+     itive coefficients, interpolation abscissae, and compact action box are part of the       14
+
+15
+     object being bounded. This is stronger than checking many action samples and              15
+
+16
+     weaker than verifying the continuous-state diffusion without a discretization ac- 16
+
+17
+     count.                                                                                    17
+
+18                                                                                             18
+                          13.1. Complete-cover invariant and backward proof
+19                                                                                             19
+
+20     At a given state and time, the initial action box covers the entire feasible set. Bisec- 20
+21   tion replaces one closed box by two closed boxes with the same union. Their shared        21
+
+22   face is harmless. Induction on the number of subdivisions preserves coverage. A           22
+
+23   pruned box is retained logically through the inequality u B ≤ ci + τ, where u B is        23
+
+24   an outward upper enclosure on that whole box, and ci is a lower enclosure at a            24
+
+25   feasible incumbent. If the incumbent later increases, the previous pruning inequality     25
+
+26   remains true. Consequently every feasible action is either in an unresolved box or        26
+
+27   in a pruned box with payoff at most the current threshold. Taking the maximum of          27
+
+28   the threshold and all unresolved upper bounds dominates the action supremum,              28
+
+29   whether or not the supremum is attained. Termination on a numerical budget does           29
+
+30   not change this argument.                                                                 30
+
+31     At N, the terminal inequalities are given. If Vn∗+1 ≤ Un+1 , positivity gives           31
+
+32   Tn Vn∗+1 ≤ Tn Un+1 ≤ Un . If Ln+1 ≤ Vnπ+1 , the same argument gives Ln ≤ Tnπn Ln+1 ≤      32
+                                         NBO SUPPLEMENT                                   19
+
+1    Tnπn Vnπ+1 = Vnπ . Feasibility implies Vnπ ≤ Vn∗ . This proves the main envelope inequal- 1
+2    ity. Substochasticity further gives                                                       2
+
+3                                                                                              3
+                                 ∥ Tn w − Tn z∥∞ ≤ qn ∥w − z∥∞ .
+4                                                                                              4
+
+5    Applying this inequality to Un − Tn Vn∗+1 yields the stated excess recursion and its      5
+
+6    product-sum expansion. The proof uses qn > 0, not a stationary contraction assump- 6
+7    tion. Outward addition is used for the pruning threshold and final subtraction. The       7
+
+8    implementation records a requested tolerance and a retained optimization bracket          8
+
+9    separately. A budget-exhausted bracket is never replaced by that tolerance. Q.E.D.        9
+
+10                                                                                             10
+
+11                   13.2. Interpolation, reflection, stopping, and arithmetic                 11
+
+12                                                                                             12
+       For a cell with coordinates (u0 , u1 ) × (y0 , y1 ), the continuation is
+13                                                                                             13
+
+14            Iw(u, y) = (1 − s)(1 − t)w00 + s(1 − t)w10 + (1 − s)tw01 + stw11 ,               14
+
+15                                      u − u0           y − y0                                15
+                                   s=           ,   t=           .
+16
+                                        u1 − u0          y1 − y0                               16
+
+17   For fixed u, this is affine in y, so its extremes on a subrectangle occur at the two y    17
+
+18   endpoints. At either endpoint it is affine in u, so the extremes occur at the two u end- 18
+19   points. Applying this argument to every intersected cell proves the corner enclosure. 19
+20   Nonnegative interpolation weights also permit interval nodal inputs: evaluating the       20
+
+21   corner expressions outward encloses every admissible nodal realization. A separate        21
+
+22   valid enclosure evaluates the rectangle center and adds cell-slope bounds over every      22
+
+23   intersected cell. Slopes are computed from stored nodal differences, not estimated        23
+
+24   from random derivative samples.                                                           24
+
+25     Preference reflection is piecewise affine. Its extrema on an interval occur at the      25
+
+26   interval endpoints or a crossed folding point. The allowed one-step movement is           26
+
+27   checked to exclude unhandled multiple folds. For log wealth, boxes fully inside           27
+
+28   the domain use interpolation, boxes fully outside use the prescribed clipped exit         28
+
+29   payoff, and boxes crossing an exit face use the union of both. On the stored grid the     29
+
+30   boundary nodes equal the exact prescribed payoff; at an off-grid exit the analytic        30
+
+31   payoff need not equal its nodal interpolant. The union construction avoids an             31
+
+32   unjustified global smoothness or Lipschitz assumption across that switch.                 32
+     20
+
+1      The implementation inherits the archived outward elementary and transcen- 1
+2    dental routines. Products, quotients, powers through logarithm and exponential,            2
+
+3    and endpoint rounding are enclosed. The logarithm’s input is bounded below by              3
+
+4    .02; the preference denominator is separated from zero because u ∈ [1.2, 3]. The           4
+
+5    recorded control model treats the stored binary64 primitive coefficients and ab- 5
+6    scissae as exact real inputs. The evidence also tests agreement with the inherited         6
+
+7    training evaluator on the finite action grid. Such a regression check is useful for        7
+
+8    implementation consistency but is not the proof of global action coverage. That            8
+
+9    proof is the maintained union invariant and the interval inclusion property. The           9
+
+10   arithmetic account is conditional on the specified floating-point execution model,         10
+
+11   not a formal verification of hardware, libraries, or the Python interpreter.               11
+
+12                                                                                              12
+
+13                                                                                              13
+                      13.3. A common upper envelope for multiple policies
+14                                                                                              14
+       The optimal upper array depends on the economy, not on which feasible incum-
+15                                                                                              15
+     bent produced the lower search values. Thus the completed upper array can be
+16                                                                                              16
+     reused for any frozen feasible policy on the same state, time, and continuous-action
+17                                                                                              17
+     domains. We separately propagate each policy’s lower and upper payoff arrays and
+18                                                                                              18
+     subtract its lower array from the common optimal upper array. Costs are reported
+19                                                                                              19
+     both as shared verification and as the cost of an individual policy evaluation. Shar-
+20                                                                                              20
+     ing a verifier does not make its cost vanish. It also does not justify transferring the
+21                                                                                              21
+     upper array to a changed wealth box, action constraint, utility normalization, time
+22                                                                                              22
+     step, or interpolation rule.
+23                                                                                              23
+
+24                                                                                              24
+               14. SEPARATING NUMERICAL AND CONTINUOUS-ECONOMY ERROR
+25                                                                                              25
+
+26     The following result specifies the transfer work needed in addition to a nodal cer- 26
+27   tificate. It is not used to set an uncomputed transfer term to zero. Let Tn be the exact   27
+
+28   economic one-step optimality operator with its continuously monitored stopping             28
+
+29   and reflection rule, and let Tnπ be the operator for a declared continuous-state im- 29
+30   plementation of the numerical policy. Let In be a positive, sup-norm-nonexpansive          30
+
+31   interpolation from grid values to the economic state domain. Suppose the exact             31
+
+32   operators are qn -Lipschitz on the comparison class.                                       32
+                                                 NBO SUPPLEMENT                                        21
+
+1      P ROPOSITION 1—Transfer with separate optimal and policy defects: Suppose                             1
+
+2    terminal interpolation error is at most B and, along the relevant nodal continuations,                  2
+
+3                                                                                                            3
+                                    ∥Tn In+1 v∗n+1 − In Tn v∗n+1 ∥∞ ≤ d∗n ,
+4                                                                                                            4
+
+5                               ∥Tnπ In+1 vπn+1 − In Tnπn vπn+1 ∥∞ ≤ dπn .                                   5
+
+6                                                                                                            6
+                                      j          j           j
+     Define D ∗N = D π
+                     N = B and Dn = dn + qn Dn+1 for j ∈ {∗, π }. Then the exact economic
+7                                                                                                            7
+     values satisfy
+8                                                                                                            8
+
+9                            0 ≤ Vn∗ − Vnπ ≤ In (Un − Ln ) + Dn∗ + Dnπ .                                     9
+
+10                                                                                                           10
+     The action-domain approximation belongs in d∗n , while policy implementation, boundary
+11                                                                                                           11
+     monitoring, state interpolation, and time/cubature errors may affect both defects.
+12                                                                                                           12
+
+13      P ROOF : Insert Tn In+1 v∗n+1 between the exact and interpolated nodal Bellman                       13
+
+14   values. The Lipschitz property bounds the propagated value difference by qn Dn∗+1 ,                     14
+
+15   and the displayed defect bounds the remaining difference by d∗n . Backward induc-                       15
+
+16   tion gives ∥Vn∗ − In v∗n ∥ ≤ Dn∗ . The same argument gives the fixed-policy bound.                      16
+
+17   Subtract the two decompositions and use positivity of In and v∗n − vπ n ≤ Un − Ln .                     17
+
+18   Feasibility gives the lower inequality.                                                        Q.E.D.   18
+
+19                                                                                                           19
+       The proposition can use local regularity, coupling, barrier, or weak-approximation
+20                                                                                        20
+     estimates to bound its defects; it does not claim that those hypotheses hold au-
+21                                                                                        21
+     tomatically for a fitted critic near a stopped boundary. In the present two-state
+22
+     computations, action coverage is operationally bounded on the nodal economy. 22
+23   The continuous-state/time defects remain explicitly uncomputed. Nested grids 23
+24   and common frozen policies diagnose sensitivity but do not provide the one-sided 24
+25   inequalities required by this proposition.                                           25
+
+26                                                                                                           26
+
+27                    TABLE V: Frozen continuous-policy refinement, common eco-                              27
+
+28
+                      nomic domain                                                                           28
+
+29                                                                                                           29
+                 Method     Seed          Grid       Steps       Center payoff   Center reference
+30                                                                                                           30
+
+31               Actor         11    17×25             20            -4.843442         -4.841008             31
+
+32
+                 Actor         11    25×37             40            -4.848086         -4.839462             32
+     22
+
+1                                                                                               1
+                Method    Seed     Grid   Steps   Center payoff   Center reference
+2                                                                                               2
+                Actor       11   33×49       80       -4.842578         -4.830165
+3                                                                                               3
+                Actor       29   17×25       20       -4.841652         -4.841008
+4                                                                                               4
+                Actor       29   25×37       40       -4.846754         -4.839462
+5                                                                                               5
+                Actor       29   33×49       80       -4.840763         -4.830165
+6                                                                                               6
+                Actor       47   17×25       20       -4.844135         -4.841008
+7               Actor       47   25×37       40       -4.848828         -4.839462               7
+
+8               Actor       47   33×49       80       -4.843387         -4.830165               8
+
+9               Direct      11   17×25       20       -4.843773         -4.841008               9
+
+10              Direct      11   25×37       40       -4.857445         -4.839462               10
+
+11              Direct      11   33×49       80       -4.852920         -4.830165               11
+
+12
+                Direct      29   17×25       20       -4.841889         -4.841008               12
+                Direct      29   25×37       40       -4.854488         -4.839462
+13                                                                                              13
+                Direct      29   33×49       80       -4.848755         -4.830165
+14                                                                                              14
+                Direct      47   17×25       20       -4.844185         -4.841008
+15                                                                                              15
+                Direct      47   25×37       40       -4.854178         -4.839462
+16                                                                                              16
+                Direct      47   33×49       80       -4.848680         -4.830165
+17                                                                                              17
+
+18                                                                                              18
+
+19                                                                                              19
+     Notes. Policies are frozen on the original time schedule and bilinearly interpolated
+20                                                                                              20
+     in state. References still use 175 actions. Differences are sensitivity diagnostics, not
+21                                                                                              21
+     continuous-state/time upper bounds.
+22                                                                                              22
+
+23                                                                                              23
+                     15. STRATEGIC DEVIATIONS AND MISSING PURE STAGES
+24                                                                                              24
+
+25     For a fixed Markov rival profile in a finite-horizon finite-state/action game, condi- 25
+26   tion on any history. The own player’s conditional payoff from a randomized current         26
+
+27   action is a convex combination of pure-action payoffs with the same continuation           27
+
+28   best-response values. It cannot exceed the largest such payoff. Backward induction         28
+
+29   therefore bounds every randomized and history-dependent unilateral policy by the           29
+
+30   Markov pure-action best-response recursion. Outward propagation then provides              30
+
+31   a bound over this full deviation class, not merely the particular local deviations         31
+
+32   observed during actor training.                                                            32
+                                             NBO SUPPLEMENT                                               23
+
+1      Existence of a pure equilibrium in a fitted one-step game is a different matter. 1
+2    If none exists, minimum-defect selection produces a feasible profile, not an exact                        2
+
+3    equilibrium. The independent dynamic best response still evaluates that profile                           3
+
+4    correctly. The following records give every missing pure stage in the six principal                       4
+
+5    R7 neural runs, including time index, state, and minimum maximum stage defect. 5
+6    Indices begin at zero. The six runs have 6 × 30 × 225 = 40,500 active state-time                          6
+
+7    nodes; the five recorded exceptions are not excluded from their final dynamic                             7
+
+8    bounds. The profit targets are absolute units of the displayed per-firm payoff. Raw                       8
+
+9                                                                                                              9
+
+10                                                 TABLE VI                                                    10
+
+11                       E VERY MISSING PURE FITTED ONE - STEP EQUILIBRIUM IN R7                               11
+
+12              Market     Seed     Time index             K1          K2    Minimum defect                    12
+
+13                                                                                                             13
+                1             11               1    0.140625    0.865625              6.492e-06
+14              1             11               1    0.684375    0.140625              4.018e-07                14
+
+15              1             11              10    0.321875    0.140625              1.538e-05                15
+
+16              2             11              16    0.231250    1.046875              1.534e-05                16
+
+17              2             29              13    0.140625    0.956250              1.394e-06                17
+
+18    Minimum defect is the smallest maximum unilateral one-step improvement over all joint finite             18
+
+19    actions. These nodes remain in full dynamic verification; they are not called exact stage equilibria.    19
+
+20                                                                                                             20
+
+21                                                                                                             21
+     network policy, shortlist policy, and corrected finite lookup policy are different
+22                                                                                                             22
+     deployment objects. The principal R7 guard fraction is zero, but the full joint-action
+23                                                                                                             23
+     oracle was nevertheless constructed during training. A mixed-strategy profile was
+24                                                                                                             24
+     not estimated; the preceding argument explains why mixed unilateral deviations
+25
+     against the fixed pure profile are already covered by the finite best-response bound. 25
+26                                                                                                             26
+
+27                      16. PAIRED PAYOFFS, COSTS, AND ECONOMIC SCALING                                        27
+
+28
+       Each row below compares the two frozen methods on the same stored Brown- 28
+29
+     ian paths, at the indicated dimension, seed, fitting domain, and Euler resolution. 29
+30   Intervals are pointwise Student intervals across 512 pathwise differences. They are 30
+31   not independent across step sizes, because the Brownian increments are nested; 31
+32   no simultaneous-coverage claim is made. The narrow and wide policies were sep- 32
+     24
+
+1    arately fitted, so their comparison also changes the training domain and update   1
+
+2    budget.                                                                           2
+
+3                                                                                      3
+                     TABLE VII: All method-paired policy-payoff comparisons
+4                                                                                      4
+
+5                                                                                      5
+              Dim.     Seed   Domain   Steps   NBO − direct     Lower      Upper
+6                                                                                      6
+
+7             10         11   Narrow      40        -0.03043   -0.03234   -0.02852     7
+
+8             10         11   Narrow      80        -0.03237   -0.03438   -0.03036     8
+
+9
+              10         11   Narrow     160        -0.03338   -0.03544   -0.03133     9
+              10         11     Wide      40         0.00061   0.00058    0.00064
+10                                                                                     10
+              10         11     Wide      80         0.00055   0.00052    0.00057
+11                                                                                     11
+              10         11     Wide     160         0.00052   0.00049    0.00054
+12                                                                                     12
+              10         29   Narrow      40        -0.02800   -0.02946   -0.02655
+13                                                                                     13
+              10         29   Narrow      80        -0.02993   -0.03146   -0.02840
+14            10         29   Narrow     160        -0.03094   -0.03250   -0.02938     14
+
+15            10         29     Wide      40        -0.00007   -0.00008   -0.00006     15
+
+16            10         29     Wide      80        -0.00004   -0.00005   -0.00003     16
+
+17            10         29     Wide     160        -0.00003   -0.00004   -0.00002     17
+
+18            10         47   Narrow      40        -0.02522   -0.02695   -0.02349     18
+
+19            10         47   Narrow      80        -0.02675   -0.02856   -0.02493     19
+
+20
+              10         47   Narrow     160        -0.02755   -0.02941   -0.02569     20
+              10         47     Wide      40         0.00004   0.00003    0.00005
+21                                                                                     21
+              10         47     Wide      80         0.00001   0.00001    0.00002
+22                                                                                     22
+              10         47     Wide     160         0.00000   -0.00001   0.00001
+23                                                                                     23
+              20         11   Narrow      40        -0.05798   -0.06054   -0.05543
+24                                                                                     24
+              20         11   Narrow      80        -0.06131   -0.06396   -0.05866
+25            20         11   Narrow     160        -0.06302   -0.06572   -0.06033     25
+
+26            20         11     Wide      40         0.00123   0.00118    0.00128      26
+
+27            20         11     Wide      80         0.00097   0.00092    0.00101      27
+
+28            20         11     Wide     160         0.00084   0.00080    0.00088      28
+
+29            20         29   Narrow      40        -0.01308   -0.01346   -0.01269     29
+
+30            20         29   Narrow      80        -0.01401   -0.01442   -0.01361     30
+
+31
+              20         29   Narrow     160        -0.01449   -0.01490   -0.01408     31
+              20         29     Wide      40         0.00480   0.00463    0.00496
+32                                                                                     32
+                                               NBO SUPPLEMENT                                             25
+
+1                                                                                                              1
+                 Dim.    Seed     Domain       Steps   NBO − direct        Lower       Upper
+2                                                                                                              2
+                 20         29       Wide        80           0.00432     0.00417     0.00448
+3                                                                                                              3
+                 20         29       Wide       160           0.00409     0.00394     0.00424
+4                                                                                                              4
+                 20         47    Narrow         40          -0.19715    -0.19765    -0.19666
+5                                                                                                              5
+                 20         47    Narrow         80          -0.20011    -0.20061    -0.19962
+6                                                                                                              6
+                 20         47    Narrow        160          -0.20161    -0.20211    -0.20111
+7                20         47       Wide        40           0.00084     0.00078     0.00089                  7
+
+8                20         47       Wide        80           0.00066     0.00061     0.00071                  8
+
+9                20         47       Wide       160           0.00058     0.00053     0.00062                  9
+
+10                                                                                                             10
+
+11                                                                                                             11
+     Notes. Pointwise 95 percent Monte Carlo intervals, 512 paired paths per row. They
+12                                                                                                             12
+     do not bound optimality, continuous-time bias, or simultaneous coverage. The
+13                                                                                                             13
+     additional representation comparisons below use the identical NDU finite model.
+14                                                                                                             14
+     Gated regression has more parameters and higher per-update work than the width-
+15                                                                                                             15
+     32 tanh critic. Tensor projection exploits low state dimension. Both facts are explicit
+16                                                                                                             16
+     rather than hidden by matching only nominal iteration counts. The R7 NDU actor’s
+17                                                                                                             17
+
+18                                                                                                             18
+                                                 TABLE VIII
+19                                                                                                             19
+        A DDITIONAL CONTINUATION REPRESENTATIONS , IDENTICAL FINITE PREFERENCE ECONOMY
+20                                                                                                             20
+        Method          Seed     Parameters     Policy bound     Value error     Train (s)   Verify (s)
+21                                                                                                             21
+        Chebyshev         11            121            0.0121           0.0775        0.14         4.41
+22                                                                                                             22
+        Chebyshev         11            225            0.0039           0.0165        0.15         4.48
+23                                                                                                             23
+        Chebyshev         11              49           0.0373           0.2325        0.14         4.36
+24                                                                                                             24
+        Gated             11           9345            0.0079           0.0284       41.28         4.12
+25                                                                                                             25
+        Gated             29           9345            0.0098           0.0200       42.59         4.49
+26                                                                                                             26
+        Gated             47           9345            0.0088           0.0306       38.99         4.30
+27                                                                                                             27
+      Gated denotes a DGM-style architecture fitted to finite Bellman targets, not a differential DGM
+28                                                                                                             28
+      solver. Chebyshev degrees are 6, 10, and 14. All actions are enumerated; construction and reference
+29    costs are separately retained in JSON. Deterministic projections are not replicated under fictitious     29
+
+30    random seeds.                                                                                            30
+
+31                                                                                                             31
+
+32   correction map stores a small number of changed action indices, but its complete                          32
+     26
+
+1    policy table occupies 68,000 bytes with the archived int64 representation. A minimal                     1
+
+2    pair of int64 state-time and replacement indices requires 16 bytes per correction,                       2
+
+3    excluding indexing and container overhead. A stored-table deployment avoids                              3
+
+4    actor evaluation at existing nodes; a raw-network deployment requires its network                        4
+
+5    weights and argmax calculation. Neither observation establishes off-grid policy or                       5
+
+6    guard correctness. The continuous hybrid additionally requires local action queries                      6
+
+7    using the stored continuation representation.                                                            7
+
+8      In the continuous-action study, training-query counts exclude verification queries                     8
+
+9    by construction. All-action references are created only after policies and critics have                  9
+
+10   been frozen. The raw actor, direct-gradient, multi-head, and smoke failures are                          10
+
+11   retained with their full configurations. The complete action verifier’s tighter and                      11
+
+12   looser implementations have separate records, including unresolved boxes and                             12
+
+13   declared budgets. A passing regression suite means that arithmetic, scope, and                           13
+
+14   accounting checks passed; it does not change a failed economic accuracy target into                      14
+
+15   a success.                                                                                               15
+
+16                                                                                                            16
+                                                   TABLE IX
+17                       R ETAINED CONTINUOUS - ACTION DEVELOPMENT FAILURES                                   17
+
+18                                                                                                            18
+                    Configuration        Seed     Deviation gain      Train (s)   Target .1
+19                                                                                                            19
+                    Actor smoke             11             0.1872          0.53         Fail
+20                                                                                                            20
+                    Raw actor               11             0.2596        15.77          Fail
+21                                                                                                            21
+                    Four-head reset         11             1.1033        16.83          Fail
+22                                                                                                            22
+                    Direct gradient         11             0.1997        16.07          Fail
+23                                                                                                            23
+      All executed pilot sources, raw arrays, and histories remain. The smoke grid and budget differ from
+24                                                                                                            24
+      the principal grid; it is not a principal-seed replicate. Pilot selection and subsequent improvements
+25                                                                                                            25
+      are explicitly post-review development.
+26                                                                                                            26
+
+27                                                                                                            27
+
+28
+                  17. HISTORICAL NUMERICAL RECORD AND SOURCE PRESERVATION                                     28
+
+29     The preceding manuscript and supplement are archived byte-for-byte under                               29
+
+30   the R8 revision directory. Every earlier economic equation, application, numerical                       30
+
+31   source, raw array, failed run, and referee report remains in the repository history                      31
+
+32   and the candidate tree. The main text now presents the successful R7 finite-policy                       32
+                                        NBO SUPPLEMENT                                      27
+
+1    computations and the new continuous-action study at the point where the corre- 1
+2    sponding economic model is introduced. Earlier R6 policy failures and non-neural            2
+
+3    game results are not relabelled as current neural results. Their original discussions       3
+
+4    are reproduced below as dated historical material.                                          4
+
+5                                                                                                5
+
+6                        17.1. R6 preference-policy discussion (historical)                      6
+
+7                                                                                                7
+                       17.2. Neural solution and action-domain sensitivity
+8                                                                                                8
+
+9      We now apply multilayer NBO to the same two-state economy, with the original              9
+
+10   cardinal utility, correlation, reflection rule, and stopping payoff unchanged. At each      10
+
+11   backward time level a two-hidden-layer, width-thirty-two tanh critic approximates           11
+
+12   its own Bellman continuation; a multilayer categorical actor selects among feasible         12
+
+13   actions. The reference solution is computed separately and is not used as a training        13
+
+14   target. The actor is fitted before policy evaluation at that time level, with the next- 14
+15   period critic fixed. The direct comparator eliminates the actor by enumeration of           15
+
+16   the same action set. Both methods have a cap of 160 L-BFGS inner iterations per             16
+
+17   time level, divided 100/60 between critic and actor for NBO.                                17
+
+18     An initial unweighted classification implementation produced a large policy               18
+
+19   loss. Absorbing wealth-face labels, for which every action has identical value,             19
+
+20   contaminated the policy fit; classification error also ignored the economic cost of         20
+
+21   a mistaken low-consumption action. The retained implementation excludes those               21
+
+22   faces from actor training and minimizes expected normalized Bellman action loss,            22
+
+23   with a small cross-entropy term. The pilot source, weights, and failed output are           23
+
+24   preserved. This change repairs an implementation failure rather than redefining the         24
+
+25   economic objective: the deployed action is still evaluated against all finite feasible      25
+
+26   alternatives.                                                                               26
+
+27     For the principal comparison, (nu , n x , Nt ) = (17, 25, 20) and k = 1. The ex- 27
+28   panded action set contains 175 triples, with c/X ∈ {.02, .05, .10, .20, .30}, p ∈           28
+
+29   {0, .375, .75, 1.125, 1.5}, and θ ∈ {−.45, −.30, −.15, 0, .15, .30, .45}. Every time–state– 29
+30   action combination enters the error accounts in the main-text Bellman error accounts. 30
+31   Independently solving the fixed learned policy gives its actual regret relative to the      31
+
+32   finite reference. Midpoint value errors and derivative comparisons are additional           32
+     28
+
+1                                                      TABLE X                                                     1
+
+2                     N EURAL PREFERENCE ADJUSTMENT ON THE SAME FINITE ECONOMY                                     2
+
+3          Method              Seed     Value error     Policy regret     Bound R0      Midpoint RMS               3
+
+4                                                                                                                  4
+           NBO                    11          0.1679             0.1656       3.3954              0.0438
+5          NBO                    29          0.1495             0.1487       2.8503              0.0413           5
+
+6          NBO                    47          0.1572             0.1014       3.0605              0.0445           6
+
+7          Direct Bellman         11          0.1162             0.0261       1.7944              0.0477           7
+
+8          Direct Bellman         29          0.1061             0.0261       1.6930              0.0400           8
+
+9          Direct Bellman         47          0.1342             0.0269       1.8224              0.0424           9
+
+10   The first three error columns use every state and time of the 17 × 25 × 21 grid with 175 actions; R0 is the   10
+
+11   time-zero certificate, while the first two columns maximize their independently computed errors over all      11
+            times. Midpoints compare the time-zero neural critic with the finite-reference interpolant.
+12                                                                                                                 12
+     Continuous-action and controlled-diffusion discretization errors are not included. The accuracy targets
+13                                                                                                                 13
+                                       were value error .2 and policy regret .1.
+14                                                                                                                 14
+
+15                                                                                                                 15
+
+16                                                                                                                 16
+
+17   diagnostics, not continuous-domain certificates. The three-seed record contains a                             17
+
+18   failed NBO accuracy target and reports it without exclusion. The direct comparator                            18
+
+19   is more accurate at this budget. A categorical actor therefore has a measurable                               19
+
+20   approximation cost even when the critic class is identical. Neural representation                             20
+
+21   alone is not a reason to replace an inexpensive two-state grid solver; the grid here                          21
+
+22   supplies an unusually complete audit of the neural computation.                                               22
+
+23      Action bounds are part of the economy, not innocuous numerical constants. The                              23
+
+24   sensitivity study reproduces the referee’s action-set comparison and extends it to                            24
+
+25   1,053 actions in the same expanded box, a wider consumption–portfolio–adjustment                              25
+
+26   box, a wider wealth domain, and two finer space–time grids, for both k = 1 and                                26
+
+27   k = 5. The table in the supplement records lower- and upper-bound frequencies for                             27
+
+28   every control. Consumption and portfolio bounds remain frequently active after                                28
+
+29   the first expansion. Thus state-grid convergence of the old 27-action model does                              29
+
+30   not establish convergence to an unconstrained control optimum. The wider sets                                 30
+
+31   describe different constrained economies; refinement within a fixed box is a different                        31
+
+32   comparison. No continuous-action coverage or controlled-diffusion discretization                              32
+                                                  NBO SUPPLEMENT                                                    29
+
+1                                                       TABLE XI                                                          1
+
+2                       D YNAMIC C OURNOT: INDEPENDENT FIXED - RIVAL BEST RESPONSES                                       2
+
+3                        Grid     Steps     Actions      M2       I1 (0)    V1 (0)    Max. gain                           3
+
+4                        172          30           11       1          0   1.3852                 0                       4
+
+5                        172          30           11       2   0.4800     2.6737                 0                       5
+
+6                        252          60           17       1          0   1.3905                 0                       6
+
+7                        252          60           17       2   0.5500     2.6610                 0                       7
+
+8    Center state is (K1 , K2 ) = (.775, .775). Horizon is three, capital lies in [.05, 1.5]2 , and investment in [0, .8]. 8
+9     The final column maximizes independently computed dynamic unilateral gains over both firms and                      9
+
+10      every finite-model state and time. Zero denotes the displayed floating-point precision; it is not a               10
+     continuous-game error bound. Six principal cases additionally include a high-index equilibrium tie rule
+11                                                                                                                        11
+                                           and asymmetric adjustment costs.
+12                                                                                                                        12
+
+13                                                                                                                        13
+     error is set to zero in the finite certificate. This preserves the economic application
+14                                                                                                                        14
+     while making its constraint dependence observable.
+15                                                                                                                        15
+
+16                                                                                                                        16
+                                17.3. R6 dynamic-game discussion (historical)
+17                                                                                                                        17
+                                  17.4. A dynamic capital-game computation
+18                                                                                                                        18
+
+19      For two firms, we compute the finite-horizon capital game above with A = 1,                                       19
+
+20   P0 = 2, δ = .1, σK = .15, ρ = .04, T = 3, investment in [0, .8], and capital in [.05, 1.5]2 . 20
+21   Terminal or joint-domain exit pays .5Ki . The baseline quadratic adjustment co- 21
+22   efficients are b1 = b2 = 1; an asymmetric experiment uses b2 = 1.2. Independent                                      22
+
+23   diffusion cubature and positive interpolation define the finite dynamic game. In- 23
+24   vestment nets include both bounds.                                                                                   24
+
+25      Backward induction constructs the two continuation-payoff matrices at every                                       25
+
+26   state and time. The solver enumerates pure stage equilibria; alternative deterministic                               26
+
+27   tie rules are retained. If no pure equilibrium exists, the solver records this fact and                              27
+
+28   the smallest maximum stage deviation it finds, rather than declaring equilibrium. 28
+29   After fixing the entire computed rival policy, a separate backward optimization permits                              29
+
+30   every own action at every state and time. Its value minus the profile payoff is                                      30
+
+31   the unilateral exploitability map. A one-period check with a frozen continuation                                     31
+
+32   value alone would not perform this test. All six principal finite-game cases have                                    32
+     30
+
+1    pure equilibria at every stage and zero detected exploitability to the reported           1
+
+2    arithmetic precision. A deliberately coarse regression case has a missing pure stage      2
+
+3    equilibrium and is reported as approximate, with time-indexed deviation bounds. 3
+4    The table includes fixed-market M2 = 1 and growing-market M2 = 2 normalizations           4
+
+5    as distinct economies; the resulting investment differences do not prove an N → ∞         5
+
+6    limit. Binding-investment frequencies, alternative equilibrium selections, and the        6
+
+7    asymmetric case are in the raw record. This is an actual dynamic best-response            7
+
+8    computation, not the static 1/64 diagnostic. It is a finite-grid game result; a trained   8
+
+9    neural game and a continuous-state equilibrium bound are different objects and are        9
+
+10   not inferred from it.                                                                     10
+
+11                                                                                             11
+                 18. COMPLETE R9 REFINEMENT AND VERIFICATION ACCOUNTS
+12                                                                                             12
+
+13     This section retains every configuration used to assess the new signed cover and        13
+
+14   guarded neural map. The preceding R6–R8 sections are historical evidence, not             14
+
+15   overwritten runs. The new common and fine-grid envelopes must not be inter- 15
+16   changed: they concern different state-time discretizations. Continuous-state/time         16
+
+17   defects remain separately unspecified for the stopped preference diffusion.               17
+
+18                                                                                             18
+
+19                                                                                             19
+
+20                                                                                             20
+
+21                                                                                             21
+
+22                                                                                             22
+
+23                                                                                             23
+
+24                                                                                             24
+
+25                                                                                             25
+
+26                                                                                             26
+
+27                                                                                             27
+
+28                                                                                             28
+
+29                                                                                             29
+
+30                                                                                             30
+
+31                                                                                             31
+
+32                                                                                             32
+                                             NBO SUPPLEMENT                                      31
+
+1                                                                                                     1
+
+2                                                                                                     2
+
+3                                                                                                     3
+
+4                                                                                                     4
+
+5                                                                                                     5
+
+6                                                                                                     6
+                                                  TABLE XII
+7                                                                                                     7
+                          F ROZEN - POLICY ERRORS OVER EVERY REFINEMENT NODE
+8                                                                                                     8
+                       Policy Grid/dates      Max.      95th    99th       t     u        X
+9                                                                                                     9
+                       A11       17/25/20 0.0612 0.0023 0.0073 0.000 1.99 0.530
+10                                                                                                    10
+                       A11       25/37/40 0.5360 0.2255 0.3885 0.000 3.00 0.540
+11                     A11       33/49/80 0.6550 0.2647 0.5264 0.000 3.00 0.530                       11
+
+12                     A29       17/25/20 0.0143 0.0013 0.0038 0.550 1.20 1.782                       12
+
+13                     A29       25/37/40 0.4959 0.2178 0.4154 0.000 1.27 1.587                       13
+                       A29       33/49/80 0.7011 0.2552 0.5493 0.000 1.26 1.587
+14                                                                                                    14
+                       A47       17/25/20 0.0467 0.0048 0.0073 0.000 1.54 0.530
+15                                                                                                    15
+                       A47       25/37/40 0.5371 0.2040 0.3549 0.000 3.00 0.540
+16                     A47       33/49/80 0.6562 0.2484 0.4698 0.000 3.00 0.530                       16
+
+17                     D11       17/25/20 0.0230 0.0026 0.0047 0.400 1.20 1.782                       17
+
+18                     D11       25/37/40 0.9249 0.3603 0.5999 0.000 2.85 0.540                       18
+                       D11       33/49/80 1.2997 0.4389 0.7763 0.000 2.89 0.530
+19                                                                                                    19
+                       D29       17/25/20 0.0157 0.0013 0.0025 0.550 1.20 1.782
+20                                                                                                    20
+                       D29       25/37/40 1.5662 0.3699 0.5710 0.000 3.00 0.520
+21                     D29       33/49/80 2.1234 0.4423 0.7166 0.163 3.00 0.515                       21
+
+22                     D47       17/25/20 0.0231 0.0034 0.0057 0.800 1.20 0.595                       22
+
+23                     D47       25/37/40 0.7631 0.3158 0.4675 0.250 2.92 0.540                       23
+                       D47       33/49/80 0.9957 0.3882 0.6275 0.000 2.94 0.530
+24                                                                                                    24
+     A denotes actor-plus-search and D direct-plus-search. Quantiles concern the positive reference
+25                                                                                                    25
+     advantage over every state and date. Maximum locations include stopping-adjacent states. All
+26                                                                                                    26
+     eighteen historical configurations are retained; no centre-only selection is used.
+27                                                                                                    27
+
+28                                                                                                    28
+
+29                                                                                                    29
+
+30                                                                                                    30
+
+31                                                                                                    31
+
+32                                                                                                    32
+     32
+
+1                                                                                                           1
+
+2                                                                                                           2
+
+3                                                                                                           3
+
+4                                                                                                           4
+
+5                                                                                                           5
+
+6                                                TABLE XIII                                                 6
+
+7                              B OUNDARY- REGION REFINEMENT DIAGNOSTICS                                     7
+
+8             Policy Grid/dates Lower region Upper region Interior Above 0.1, %                             8
+
+9                                                                                                           9
+              A11        17/25/20            0.0612           0.0211     0.0176             0.00
+10            A11        25/37/40            0.5360           0.4306     0.4604            11.61            10
+
+11            A11        33/49/80            0.3635           0.5851     0.6550            14.27            11
+
+12            A29        17/25/20            0.0106           0.0143     0.0092             0.00            12
+
+13            A29        25/37/40            0.4473           0.4204     0.4959            10.22            13
+
+14            A29        33/49/80            0.2698           0.5630     0.7011            13.21            14
+
+15            A47        17/25/20            0.0467           0.0181     0.0141             0.00            15
+
+16
+              A47        25/37/40            0.5371           0.4080     0.4458            11.07            16
+              A47        33/49/80            0.3641           0.4891     0.6562            13.13
+17                                                                                                          17
+              D11        17/25/20            0.0147           0.0230     0.0114             0.00
+18                                                                                                          18
+              D11        25/37/40            0.9249           0.4434     0.7900            18.70
+19                                                                                                          19
+              D11        33/49/80            1.1417           0.5408     1.2997            21.20
+20                                                                                                          20
+              D29        17/25/20            0.0146           0.0157     0.0090             0.00
+21            D29        25/37/40            1.5662           0.4878     1.1079            18.60            21
+
+22            D29        33/49/80            2.1234           0.5859     1.9784            20.80            22
+
+23            D47        17/25/20            0.0149           0.0192     0.0231             0.00            23
+
+24            D47        25/37/40            0.7631           0.4937     0.6036            16.52            24
+
+25            D47        33/49/80            0.9140           0.5868     0.9957            18.73            25
+
+26    Each wealth boundary region spans two grid cells. Interior means the remaining wealth nodes. Values   26
+      are maximum finite-reference advantages, not upper certificates.
+27                                                                                                          27
+
+28                                                                                                          28
+
+29                                                                                                          29
+
+30                                                                                                          30
+
+31                                                                                                          31
+
+32                                                                                                          32
+                                           NBO SUPPLEMENT                                             33
+
+1                                                                                                          1
+
+2                                                                                                          2
+
+3                                                                                                          3
+
+4                                                                                                          4
+
+5                                                                                                          5
+
+6                                                                                                          6
+                                                TABLE XIV
+7                                                                                                          7
+                            R EFINEMENT ACTION SATURATION RATES , PERCENT
+8                                                                                                          8
+
+9
+                            Policy Grid/dates c− p−         θ−   c+    p+    θ+                            9
+
+10                          A11       17/25/20 0.0 0.4 28.4 96.8 53.3 41.0                                 10
+
+11
+                            A11       25/37/40 0.0 0.1 23.4 95.7 47.7 36.0                                 11
+                            A11       33/49/80 0.0 0.2 24.2 95.7 48.0 37.6
+12                                                                                                         12
+                            A29       17/25/20 0.0 0.1 28.1 96.9 54.3 40.7
+13                                                                                                         13
+                            A29       25/37/40 0.0 0.0 22.6 95.8 49.0 35.5
+14                          A29       33/49/80 0.0 0.0 23.4 95.8 49.0 37.2                                 14
+
+15                          A47       17/25/20 0.0 0.3 28.1 97.0 54.5 41.1                                 15
+
+16
+                            A47       25/37/40 0.0 0.1 23.2 95.7 49.1 36.3                                 16
+                            A47       33/49/80 0.0 0.1 24.0 95.9 49.2 37.7
+17                                                                                                         17
+                            D11       17/25/20 0.0 0.1 27.3 97.4 53.3 41.8
+18                                                                                                         18
+                            D11       25/37/40 0.0 0.0 21.6 91.4 46.9 34.5
+19                          D11       33/49/80 0.0 0.0 22.8 92.8 47.5 36.4                                 19
+
+20                          D29       17/25/20 0.0 0.0 27.5 97.4 54.5 41.5                                 20
+
+21
+                            D29       25/37/40 0.0 0.0 21.7 91.4 48.6 34.2                                 21
+                            D29       33/49/80 0.0 0.0 22.9 92.8 48.7 36.2
+22                                                                                                         22
+                            D47       17/25/20 0.0 0.1 27.5 97.6 54.7 41.8
+23                                                                                                         23
+                            D47       25/37/40 0.0 0.0 21.8 91.6 48.7 34.5
+24                          D47       33/49/80 0.0 0.0 23.0 93.1 48.9 36.5                                 24
+
+25   Rates cover active state-time nodes; an action is counted within 10−4 of a bound. The box is an       25
+
+26   economic primitive, and saturation is not interpreted as an unconstrained first-order optimum.        26
+
+27                                                                                                         27
+
+28                                                                                                         28
+
+29                                                                                                         29
+
+30                                                                                                         30
+
+31                                                                                                         31
+
+32                                                                                                         32
+     34
+
+1                  19. FRESH TRAINING, CORRECTION STORAGE, AND TOTAL COST                                    1
+
+2                                                                                                            2
+       The new spatial refinement is genuinely nested: every coarse spatial node is a
+3                                                                                                            3
+     fine spatial node, and every coarse date is a fine date. A trained fine-grid policy is
+4                                                                                                            4
+     not substituted into the frozen-policy historical experiment. The guard acts only on
+5                                                                                                            5
+     the chosen policy’s evaluation target. Its storage and query cost are explicit, and the
+6                                                                                                            6
+     actor-free comparison receives the same correction.
+7                                                                                                            7
+
+8                                                 TABLE XV                                                   8
+
+9                                 E VERY FRESH NESTED - GRID TRAINING RUN                                    9
+
+10               Policy Nodes u/dates Ref. max. Value fit Seconds Corrected %                                10
+
+11               A11G               17/20        0.0372     0.0002      26.35            90.5                11
+
+12               A29G               17/20        0.0085     0.0003      27.12            90.1                12
+
+13               A47G               17/20        0.0372     0.0003      25.72            90.4                13
+
+14               S11G               17/20        0.0372     0.0003      13.02            90.6                14
+
+15               S29G               17/20        0.0372     0.0003      13.26            89.9                15
+
+16               S47G               17/20        0.0371     0.0003      12.81            90.0                16
+                 A11                33/40        0.0932     0.2043      89.58               –
+17                                                                                                           17
+                 A29                33/40        0.0625     0.1650      89.60               –
+18                                                                                                           18
+                 A47                33/40        0.0872     0.1649      85.80               –
+19                                                                                                           19
+                 S11                33/40        0.0932     0.1605      56.66               –
+20                                                                                                           20
+                 S29                33/40        0.0626     0.1910      50.84               –
+21                                                                                                           21
+                 S47                33/40        0.0932     0.1545      45.71               –
+22               A11G               33/40        0.0041     0.0001      88.85            95.0                22
+
+23               A29G               33/40        0.0093     0.0001      85.55            95.1                23
+
+24               A47G               33/40        0.0155     0.0001      88.86            95.0                24
+
+25               S11G               33/40        0.0138     0.0001      47.69            95.0                25
+
+26               S29G               33/40        0.0156     0.0001      49.15            95.1                26
+
+27               S47G               33/40        0.0156     0.0001      45.36            95.2                27
+
+28    G denotes the indexed guard. All eighteen fresh runs appear. Value fit is a policy-value diagnostic,   28
+      distinct from the one-step target residual. Unguarded failures are not excluded.
+29                                                                                                           29
+
+30                                                                                                           30
+
+31                                                                                                           31
+
+32                                                                                                           32
+                                          NBO SUPPLEMENT                                          35
+
+1                                                                                                      1
+
+2                                                                                                      2
+
+3                                                                                                      3
+
+4                                                                                                      4
+
+5                                                                                                      5
+
+6                                                                                                      6
+
+7                                                                                                      7
+
+8                                                                                                      8
+                                              TABLE XVI
+9                                                                                                      9
+                        I NDEPENDENT VERIFICATION AND CORRECTION STORAGE
+10                                                                                                     10
+              Policy Uniform bound Policy residual Correction KiB Evaluation s.
+11                                                                                                     11
+              A11               0.0963         0.1100527                0.0           4.22
+12                                                                                                     12
+              A29               0.0654         0.0962556                0.0           4.20
+13                                                                                                     13
+              A47               0.0903         0.1126844                0.0           4.48
+14                                                                                                     14
+              S11               0.0963         0.1103166                0.0           5.01
+15                                                                                                     15
+              S29               0.0655         0.0967997                0.0           4.99
+16            S47               0.0963         0.1130800                0.0           5.00             16
+
+17            A11G              0.0140         0.0000623             568.5            4.20             17
+
+18            A29G              0.0311         0.0000625             568.5            4.24             18
+
+19            A47G              0.0356         0.0000624             568.5            4.28             19
+
+20            S11G              0.0354         0.0000624             568.5            5.01             20
+
+21            S29G              0.0357         0.0000622             568.5            5.01             21
+
+22
+              S47G              0.0349         0.0000624             568.5            5.01             22
+     Same fine-grid upper envelope for every row. Correction memory counts saved indexed corrections
+23                                                                                                     23
+     and masks over all dates, not only one network. Policy residuals use independent outward point-
+24                                                                                                     24
+     action evaluation. The complete source contains raw arrays and nodewise masks.
+25                                                                                                     25
+
+26                                                                                                     26
+
+27                                                                                                     27
+
+28                                                                                                     28
+
+29                                                                                                     29
+
+30                                                                                                     30
+
+31                                                                                                     31
+
+32                                                                                                     32
+     36
+
+1                                                                                                         1
+
+2                                                                                                         2
+
+3                                                                                                         3
+
+4                                                                                                         4
+
+5                                                                                                         5
+
+6                                                                                                         6
+
+7                                                                                                         7
+
+8                                                                                                         8
+
+9                                               TABLE XVII                                                9
+
+10                              E XPLICIT SHARED - COST ACCOUNTING , SECONDS                              10
+
+11                                                                                                        11
+                Policy Train One policy Nine policies 100 policies Nine + welfare
+12                                                                                                        12
+                A11     15.01         389.04           57.91         20.24             85.32
+13                                                                                                        13
+                A29     28.49         402.57           71.44         33.77             98.30
+14                                                                                                        14
+                A47     26.46         400.53           69.40         31.73             96.34
+15                                                                                                        15
+                D11     32.02         406.18           75.05         37.38            102.10
+16                                                                                                        16
+                D29     32.80         406.98           75.84         38.17            104.18
+17              D47     30.52         404.74           73.60         35.93            101.10              17
+
+18              S11     13.97         388.27           57.14         19.47             88.45              18
+
+19              S29     13.72         388.06           56.92         19.25             88.26              19
+
+20              S47     12.87         387.20           56.06         18.39             87.43              20
+
+21    Training/reference/policy-evaluation times are archived R8 measurements; the new certificate and    21
+
+22    welfare measurements are current. This is an auditable mixed-provenance cost account, not a same-   22
+      machine speed comparison. Each policy receives its own independent payoff interval. Shared-cover
+23                                                                                                        23
+      cost is amortized only within the identical economy.
+24                                                                                                        24
+
+25                                                                                                        25
+
+26                                                                                                        26
+
+27                                                                                                        27
+
+28                                                                                                        28
+
+29                                                                                                        29
+
+30                                                                                                        30
+
+31                                                                                                        31
+
+32                                                                                                        32
+                                             NBO SUPPLEMENT                                             37
+
+1                  20. AN ABSOLUTE BENCHMARK AND PAIRED CAPITAL PAYOFFS                                      1
+
+2
+       The continuous analytical bound in the article applies to the original unbounded- 2
+3                                                                                                            3
+     state capital economy from the specified initial state. The simulations below assess
+4                                                                                                            4
+     an explicit feasible schedule on the same discretized Brownian paths as the historical
+5                                                                                                            5
+     learned policies. A narrow Monte Carlo interval cannot remove unknown Euler
+6                                                                                                            6
+     bias. The analytical bound and the simulation comparison have different, stated
+7                                                                                                            7
+     roles.
+8                                                                                                            8
+
+9
+                                                 TABLE XVIII                                                 9
+
+10
+                          F EASIBLE SCHEDULE ON THE MATCHED B ROWNIAN PATHS                                  10
+
+11                  Dimension Euler steps Mean payoff 95% lower 95% upper                                    11
+
+12                  10                      40         -1.2555       -1.2694       -1.2416                   12
+
+13                  10                      80         -1.2583       -1.2723       -1.2444                   13
+
+14                  10                     160         -1.2598       -1.2738       -1.2458                   14
+
+15                  20                      40         -1.2565       -1.2697       -1.2433                   15
+
+16                  20                      80         -1.2595       -1.2728       -1.2463                   16
+
+17
+                    20                     160         -1.2611       -1.2744       -1.2478                   17
+
+18
+      512 paths per dimension. Pointwise Student intervals describe Monte Carlo error only; no continuous-   18
+      time bias correction is assumed.
+19                                                                                                           19
+
+20                                                                                                           20
+
+21                                                                                                           21
+                           21. CONTINUOUS-CAPITAL REPLICATION DETAILS
+22                                                                                                           22
+       The new study uses the identical capital flow, terminal payoff, diffusion covari-
+23                                                                                                           23
+     ance, primitive action interval, and dense coupling rule as the historical experiment.
+24                                                                                                           24
+     A regression test compares the numerical functions and matrices directly. Ten and
+25                                                                                                           25
+     twenty dimensions reuse the existing economies; fifty dimensions extends their
+26                                                                                                           26
+     declared generator. There are d + 1 independent Brownian drivers and a full-rank
+27                                                                                                           27
+     d-dimensional state covariance. These are different counts.
+28                                                                                                           28
+
+29                                                                                                           29
+                                   21.1. Complete fitted-policy record
+30                                                                                                           30
+
+31     Table XX lists every requested fit. All methods receive the same 600 critic updates,                  31
+
+32   two independent two-probe trace banks, batch size, initialization seeds, and sample                     32
+     38
+
+1                                               TABLE XIX                                                  1
+
+2                          L EARNED - POLICY MINUS FEASIBLE - SCHEDULE PAYOFFS                             2
+
+3              Dimension Policy Training domain             Mean 95% lower 95% upper                       3
+
+4              10               N11             Narrow -0.0544          -0.0572       -0.0517              4
+
+5              10               N11                Wide    0.0008        0.0008        0.0008              5
+
+6              10               N29             Narrow -0.0490          -0.0510       -0.0470              6
+
+7              10               N29                Wide    0.0008        0.0008        0.0009              7
+
+8              10               N47             Narrow -0.0452          -0.0476       -0.0429              8
+
+9              10               N47                Wide    0.0003        0.0002        0.0003              9
+               10               D11             Narrow -0.0211          -0.0218       -0.0203
+10                                                                                                         10
+               10               D11                Wide    0.0003        0.0002        0.0003
+11                                                                                                         11
+               10               D29             Narrow -0.0181          -0.0185       -0.0176
+12                                                                                                         12
+               10               D29                Wide    0.0009        0.0008        0.0009
+13                                                                                                         13
+               10               D47             Narrow -0.0177          -0.0182       -0.0171
+14                                                                                                         14
+               10               D47                Wide    0.0003        0.0002        0.0003
+15             20               N11             Narrow -0.0822          -0.0854       -0.0791              15
+
+16             20               N11                Wide    0.0003        0.0002        0.0003              16
+
+17             20               N29             Narrow -0.0256          -0.0263       -0.0249              17
+
+18             20               N29                Wide    0.0003        0.0003        0.0003              18
+
+19             20               N47             Narrow -0.2429          -0.2441       -0.2417              19
+
+20             20               N47                Wide    0.0004        0.0004        0.0004              20
+               20               D11             Narrow -0.0192          -0.0197       -0.0187
+21                                                                                                         21
+               20               D11                Wide -0.0006         -0.0006       -0.0005
+22                                                                                                         22
+               20               D29             Narrow -0.0111          -0.0114       -0.0108
+23                                                                                                         23
+               20               D29                Wide -0.0038         -0.0039       -0.0036
+24                                                                                                         24
+               20               D47             Narrow -0.0413          -0.0423       -0.0403
+25                                                                                                         25
+               20               D47                Wide -0.0002         -0.0002       -0.0001
+26                                                                                                         26
+      Every stored configuration is retained. Differences are paired on the same 160-step Euler paths;
+27    confidence intervals do not cover Euler discretization bias. They are not continuous neural-policy   27
+
+28    regret bounds.                                                                                       28
+
+29                                                                                                         29
+
+30                                                                                                         30
+
+31   stream. Direct methods additionally invoke the global Hamiltonian maximizer. 31
+32   Actor training has no maximizing labels. The exact-Hessian held-out diagnostics are                   32
+                                        NBO SUPPLEMENT                              39
+
+1    collected only after the fit. Process memory includes library overhead and should   1
+
+2    not be read as the size of the deployed network.                                    2
+
+3                                                                                        3
+
+4                  TABLE XX: All fitted policies, without seed exclusion                 4
+
+5                                                                                        5
+
+6              d   Method        Seed    Seconds    RMS      Gap     MiB     Fail        6
+
+7                                                                                        7
+              10   NBO actor       11       5.29   0.0253   0.0019   303.2     0
+8                                                                                        8
+              10   NBO actor       29       5.31   0.0223   0.0014   302.6     0
+9                                                                                        9
+              10   NBO actor       47       5.25   0.0236   0.0040   303.0     0
+10                                                                                       10
+              10   Direct tube     11       6.42   0.0253   0.0012   302.7     0
+11                                                                                       11
+              10   Direct tube     29       6.40   0.0229   0.0002   302.4     0
+12                                                                                       12
+              10   Direct tube     47       6.46   0.0235   0.0006   302.4     0
+13                                                                                       13
+              10   Direct full     11       6.32   0.0257   0.0000   302.9     0
+14                                                                                       14
+              10   Direct full     29       6.40   0.0230   0.0000   302.9     0
+15                                                                                       15
+              10   Direct full     47       6.38   0.0235   0.0000   302.8     0
+16                                                                                       16
+              20   NBO actor       11       5.61   0.0241   0.0037   302.8     0
+17                                                                                       17
+              20   NBO actor       29       5.63   0.0219   0.0016   302.8     0
+18                                                                                       18
+              20   NBO actor       47       5.57   0.0187   0.0017   302.7     0
+19                                                                                       19
+              20   Direct tube     11       6.76   0.0238   0.0004   302.6     0
+20                                                                                       20
+              20   Direct tube     29       6.76   0.0225   0.0002   302.4     0
+21                                                                                       21
+              20   Direct tube     47       6.74   0.0210   0.0000   302.2     0
+22                                                                                       22
+              20   Direct full     11       6.63   0.0221   0.0000   302.6     0
+23                                                                                       23
+              20   Direct full     29       6.65   0.0232   0.0000   302.6     0
+24                                                                                       24
+              20   Direct full     47       6.69   0.0232   0.0000   302.4     0
+25                                                                                       25
+              50   NBO actor       11       6.31   0.0194   0.0016   306.5     0
+26                                                                                       26
+              50   NBO actor       29       6.25   0.0206   0.0023   306.8     0
+27                                                                                       27
+              50   NBO actor       47       6.21   0.0177   0.0023   306.9     0
+28                                                                                       28
+              50   Direct tube     11       7.84   0.0204   0.0002   306.7     0
+29                                                                                       29
+              50   Direct tube     29       7.79   0.0215   0.0005   306.4     0
+30                                                                                       30
+              50   Direct tube     47       7.88   0.0196   0.0007   306.6     0
+31                                                                                       31
+              50   Direct full     11       7.87   0.0207   0.0000   306.6     0
+32                                                                                       32
+     40
+
+1                     TABLE XX: All fitted policies, without seed exclusion                                   1
+
+2                                                                                                             2
+
+3                                                                                                             3
+                 d    Method          Seed       Seconds       RMS       Gap      MiB      Fail
+4                                                                                                             4
+                50    Direct full          29          7.94   0.0217   0.0000    306.7        0
+5                                                                                                             5
+                50    Direct full          47          7.98   0.0192   0.0000    306.4        0
+6                                                                                                             6
+
+7                                                                                                             7
+
+8    RMS and gap are diagnostics on 128 held-out states, not uniform certificates. Peak RSS is the separate   8
+
+9    process high-water mark, including the interpreter and libraries. Every requested fit is retained. All   9
+
+10   raw optimizer histories, negative trace-product batches, saved weights, sample counts, and bisection     10
+
+11   counts are committed.   The output JSON records negative trace-product batches, all                      11
+
+12   checkpoint losses and elapsed times, state-query and bisection counts, raw and                           12
+
+13   guarded deployment costs, weight hashes, and failures. The initial output layer is                       13
+
+14   zero, so the actor initially equals the common feasible schedule. Its guarantee is                       14
+
+15   structural even before training. The protocol was developed after local pilots and is                    15
+
+16   a pinned reproduction design, not a preregistered confirmatory experiment.                               16
+
+17                                                                                                            17
+
+18                                      21.2. All certificate settings                                        18
+
+19
+       Table XXI includes both quadrature levels, all three radii, and all three initial- 19
+20                                                                                                            20
+     dispersion bounds. For the same d, a fixed matrix majorant is reused. Saved pivot
+21                                                                                                            21
+     intervals permit inspection of the spectral check. Independent replay rebuilds the
+22
+     majorant from the saved matrix and recomputes all 54 integral records. High- 22
+23                                                                                                            23
+     precision exponential and logarithmic checks test the interval implementation
+24                                                                                                            24
+     separately; these checks supplement rather than replace its inclusion argument.
+25                                                                                                            25
+
+26                   TABLE XXI: Complete radius, dispersion, and quadra-                                      26
+
+27                    ture account                                                                            27
+
+28                                                                                                            28
+
+29                     d      s0      ϵ    Panels      Anchor upper       Policy upper                        29
+
+30                                                                                                            30
+                     10    0.00     0.00        4096          0.018945          0.018945
+31                                                                                                            31
+                     10    0.00     0.00    16384             0.018747          0.018747
+32                                                                                                            32
+                          NBO SUPPLEMENT                       41
+
+1    TABLE XXI: Complete radius, dispersion, and quadra-            1
+
+2    ture account                                                   2
+
+3                                                                   3
+
+4    d      s0      ϵ   Panels   Anchor upper   Policy upper        4
+
+5                                                                   5
+     10   0.00   0.05    4096        0.018945       0.032498
+6                                                                   6
+     10   0.00   0.05   16384        0.018747       0.032240
+7                                                                   7
+     10   0.00   0.10    4096        0.018945       0.057748
+8                                                                   8
+     10   0.00   0.10   16384        0.018747       0.057430
+9                                                                   9
+     10   0.25   0.00    4096        0.021736       0.021736
+10                                                                  10
+     10   0.25   0.00   16384        0.021519       0.021519
+11                                                                  11
+     10   0.25   0.05    4096        0.021736       0.036103
+12                                                                  12
+     10   0.25   0.05   16384        0.021519       0.035827
+13                                                                  13
+     10   0.25   0.10    4096        0.021736       0.062168
+14                                                                  14
+     10   0.25   0.10   16384        0.021519       0.061831
+15                                                                  15
+     10   0.50   0.00    4096        0.024777       0.024777
+16                                                                  16
+     10   0.50   0.00   16384        0.024541       0.024541
+17                                                                  17
+     10   0.50   0.05    4096        0.024777       0.039959
+18                                                                  18
+     10   0.50   0.05   16384        0.024541       0.039664
+19                                                                  19
+     10   0.50   0.10    4096        0.024777       0.066838
+20                                                                  20
+     10   0.50   0.10   16384        0.024541       0.066482
+21                                                                  21
+     20   0.00   0.00    4096        0.025799       0.025799
+22                                                                  22
+     20   0.00   0.00   16384        0.025526       0.025526
+23                                                                  23
+     20   0.00   0.05    4096        0.025799       0.040877
+24                                                                  24
+     20   0.00   0.05   16384        0.025526       0.040533
+25                                                                  25
+     20   0.00   0.10    4096        0.025799       0.067660
+26                                                                  26
+     20   0.00   0.10   16384        0.025526       0.067244
+27                                                                  27
+     20   0.25   0.00    4096        0.029103       0.029103
+28                                                                  28
+     20   0.25   0.00   16384        0.028807       0.028807
+29                                                                  29
+     20   0.25   0.05    4096        0.029103       0.045012
+30                                                                  30
+     20   0.25   0.05   16384        0.028807       0.044646
+31                                                                  31
+     20   0.25   0.10    4096        0.029103       0.072627
+32                                                                  32
+     42
+
+1         TABLE XXI: Complete radius, dispersion, and quadra-       1
+
+2         ture account                                              2
+
+3                                                                   3
+
+4         d      s0      ϵ   Panels   Anchor upper   Policy upper   4
+
+5                                                                   5
+          20   0.25   0.10   16384        0.028807       0.072188
+6                                                                   6
+          20   0.50   0.00    4096        0.032667       0.032667
+7                                                                   7
+          20   0.50   0.00   16384        0.032348       0.032348
+8                                                                   8
+          20   0.50   0.05    4096        0.032667       0.049408
+9                                                                   9
+          20   0.50   0.05   16384        0.032348       0.049018
+10                                                                  10
+          20   0.50   0.10    4096        0.032667       0.077853
+11                                                                  11
+          20   0.50   0.10   16384        0.032348       0.077392
+12                                                                  12
+          50   0.00   0.00    4096        0.027836       0.027836
+13                                                                  13
+          50   0.00   0.00   16384        0.027540       0.027540
+14                                                                  14
+          50   0.00   0.05    4096        0.027836       0.043327
+15                                                                  15
+          50   0.00   0.05   16384        0.027540       0.042958
+16                                                                  16
+          50   0.00   0.10    4096        0.027836       0.070525
+17                                                                  17
+          50   0.00   0.10   16384        0.027540       0.070081
+18                                                                  18
+          50   0.25   0.00    4096        0.031283       0.031283
+19                                                                  19
+          50   0.25   0.00   16384        0.030963       0.030963
+20                                                                  20
+          50   0.25   0.05    4096        0.031283       0.047610
+21                                                                  21
+          50   0.25   0.05   16384        0.030963       0.047216
+22                                                                  22
+          50   0.25   0.10    4096        0.031283       0.075644
+23                                                                  23
+          50   0.25   0.10   16384        0.030963       0.075175
+24                                                                  24
+          50   0.50   0.00    4096        0.034992       0.034992
+25                                                                  25
+          50   0.50   0.00   16384        0.034649       0.034649
+26                                                                  26
+          50   0.50   0.05    4096        0.034992       0.052155
+27                                                                  27
+          50   0.50   0.05   16384        0.034649       0.051737
+28                                                                  28
+          50   0.50   0.10    4096        0.034992       0.081025
+29                                                                  29
+          50   0.50   0.10   16384        0.034649       0.080532
+30                                                                  30
+
+31                                                                  31
+
+32                                                                  32
+                                            NBO SUPPLEMENT                                          43
+
+1    Quadrature endpoints are outward, not an error tolerance passed to an ordinary numerical integrator. 1
+2    Zero radius denotes the exact feasible schedule. Printed upper endpoints are rounded upward. The    2
+
+3    same matrix majorant is used for each dimension.                                                    3
+
+4                                                                                                        4
+
+5                                                                                                        5
+                              21.3. Deployment and arithmetic contract
+6                                                                                                        6
+
+7      The interval schedule guard uses the inherited binary64 arithmetic implementa- 7
+8    tion with outward elementary operations and polynomial transcendental bounds. 8
+9    The additional square-root routine verifies squared endpoints and handles a zero                    9
+
+10   lower endpoint explicitly. An SVD proposes the spectral majorant, but the interval                  10
+
+11   factorization must verify it. A bad matrix shape, nonfinite matrix, nonpositive pivot,              11
+
+12   mismatched matrix hash, empty inward tube, or out-of-horizon clock produces                         12
+
+13   an error. There is no fall-through from a failed arithmetic check to an empirical                   13
+
+14   maximum.                                                                                            14
+
+15     The actor’s neural proposal need not be evaluated by validated transcendental                     15
+
+16   routines to maintain its action constraint: its finite output is projected onto the                 16
+
+17   inward interval. The theoretical result concerns the resulting continuous-time feed- 17
+18   back rule. Euler paths approximate its payoff, and their bias remains uncomputed. A                 18
+
+19   sampled Euler path is not claimed to be an exact draw of the continuous controlled                  19
+
+20   diffusion. A finite proposal failure is recorded separately from the mathematical                   20
+
+21   fact that the specified fallback remains in the tube.                                               21
+
+22                                                                                                       22
+
+23                                                                                                       23
+                             21.4. Paired path archive and interpretation
+24                                                                                                       24
+
+25     For each dimension, a fixed generator with seed 20261004 + d produces the 160- 25
+26   step Brownian increments. Summing consecutive increments produces the coarser                       26
+
+27   40- and 80-step paths. The same increments are used for the schedule, all three actors,             27
+
+28   and all six direct fits. The archive contains the increments themselves, every payoff               28
+
+29   vector, and all finest-level terminal states. All reported mean and interval endpoints              29
+
+30   are recomputed from these arrays by the audit. Seed-averaged comparisons first                      30
+
+31   average the three fixed seed payoffs within a path; the confidence interval then                    31
+
+32   concerns independent paths, not independent training seeds. No sampling interval                    32
+     44
+
+1    is subtracted from a continuous upper bound to obtain an unsupported policy   1
+
+2    certificate.                                                                  2
+
+3                                                                                  3
+
+4                                                                                  4
+
+5                                                                                  5
+
+6                                                                                  6
+
+7                                                                                  7
+
+8                                                                                  8
+
+9                                                                                  9
+
+10                                                                                 10
+
+11                                                                                 11
+
+12                                                                                 12
+
+13                                                                                 13
+
+14                                                                                 14
+
+15                                                                                 15
+
+16                                                                                 16
+
+17                                                                                 17
+
+18                                                                                 18
+
+19                                                                                 19
+
+20                                                                                 20
+
+21                                                                                 21
+
+22                                                                                 22
+
+23                                                                                 23
+
+24                                                                                 24
+
+25                                                                                 25
+
+26                                                                                 26
+
+27                                                                                 27
+
+28                                                                                 28
+
+29                                                                                 29
+
+30                                                                                 30
+
+31                                                                                 31
+
+32                                                                                 32
+

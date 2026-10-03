@@ -1,0 +1,605 @@
+\documentclass[ecta,draft]{econsocart}
+\RequirePackage[colorlinks,citecolor=blue,linkcolor=blue,urlcolor=blue]{hyperref}
+\usepackage{amsmath,amsfonts,amssymb,amsthm,graphicx,booktabs,array,longtable}
+\usepackage{algorithm,algpseudocode,bm,enumitem}
+\usepackage[T1]{fontenc}
+\usepackage{mathpazo}
+\usepackage{microtype}
+\startlocaldefs
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{assumption}{Assumption}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+\newcommand{\E}{\mathbb E}
+\newcommand{\R}{\mathbb R}
+\newcommand{\HH}{\mathcal H}
+\newcommand{\LL}{\mathcal L}
+\newcommand{\Act}{\mathcal A}
+\newcommand{\sg}{\operatorname{sg}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\Lip}{\operatorname{Lip}}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\endlocaldefs
+\begin{document}
+\begin{frontmatter}
+\title{Neural Bellman Operators}
+\runtitle{Neural Bellman Operators}
+\begin{aug}
+\author[id=au1,addressref={add1}]{\fnms{Qian}~\snm{QI}\ead[label=e1]{qiqian@pku.edu.cn}}
+\address[id=add1]{Peking University}
+\end{aug}
+\begin{abstract}
+We develop Neural Bellman Operators for economic control with recursive utility, endogenous preferences, and strategic interaction. Policy evaluation, feasible improvement, and independent verification are separate maps. An indexed critic guard supplies a prescribed nodal evaluation error without optimizing action labels. Signed interval derivatives reduce action boxes to verified maximizing faces while retaining valid upper bounds at stopping switches and interrupted searches. On the same two-state preference economy, the tighter cover recertifies frozen continuous-action policies; fresh nested-grid training separates continuation error from the documented failure of off-grid frozen policies. An externally financed consumption supplement gives the utility bounds a model-specific welfare interpretation. In a dense nonlinear capital economy, a feasible common-control schedule and a global relaxation bound benchmark the original continuous-time optimum. Direct, search-only, classical, and projection comparisons remain explicit: the low-dimensional evidence does not establish an actor speed advantage. The results connect neural proposals to verified value and deviation accounts without conflating nodal certificates, continuous-economy bounds, and simulation diagnostics.
+\end{abstract}
+\begin{keyword}
+\kwd{Dynamic programming}\kwd{Neural approximation}\kwd{Recursive utility}
+\kwd{Endogenous preferences}\kwd{Viscosity solutions}\kwd{Dynamic games}
+\end{keyword}
+\end{frontmatter}
+
+\section{Introduction}\label{sec:introduction}
+Quantitative economic models increasingly place several margins of adjustment inside the same dynamic decision problem. An investor chooses consumption and risk exposure while managing a preference state. A sophisticated consumer chooses today knowing that tomorrow's self will reconsider. A firm invests while anticipating the investment policies of its rivals. These problems share a computational structure: a continuation value must correctly evaluate a policy, and that policy must satisfy the appropriate optimality or equilibrium condition. The two requirements are distinct. A perfectly evaluated policy need not be optimal, and an attractive policy evaluated by an inaccurate continuation value need not improve welfare.
+
+This paper develops Neural Bellman Operators (NBO) around this distinction. A critic represents continuation utility. A feasible actor represents the controls that enter the economic generator. The critic is fitted to a policy-evaluation equation, including its terminal and boundary data. Holding the critic and its derivative channels fixed, the actor improves its own Hamiltonian. An independent maximization step measures the remaining feasible-action gap. The resulting error decomposition concerns economic values and deviations, rather than only parameter gradients or the scalar quantity minimized by an optimizer.
+
+The motivation remains continuous-time economic control, including recursive utility and costly preference formation in the motivating model of \citet{qi2025}. We do not replace these problems by a prediction task. Instead, we make explicit how a neural approximation is connected to the original decision problem. In the smooth case, the connection follows from a verification bound. In the nonsmooth case, it follows from a monotone Bellman approximation and a comparison principle. The actor and critic may be trained by different numerical procedures in either case. Their economic interpretation is determined by the equations they satisfy and by the errors that are verified after training.
+
+The paper makes three connected contributions. First, it specifies a neural policy-evaluation and improvement map with explicit derivative routing, boundary conditions, and an indexed evaluation guard. The guard bounds a selected-policy target residual by construction; it does not claim convergence of Adam or an uncorrected network. Second, it makes the complete-action error account operational through signed interval derivatives and verified face domination, with natural union bounds at stopping switches. A matched enclosure experiment isolates this calculation from policy training. Third, it carries the accounts through the original preference, capital, and strategic applications: nested-grid retraining, a model-specific compensating transfer, an absolute continuous-time capital benchmark, and finite dynamic best responses. Comparison, monotonicity, interval inclusion, and approximate policy iteration remain inherited principles. The new results concern the specified guarded map, its verified output, and its measured economic accuracy, not an unqualified claim that a neural actor dominates classical or actor-free alternatives.
+
+The numerical program uses generic multilayer critics and actors as well as clearly separated analytical laboratories. The finite preference and game studies train actors using exhaustively constructed continuation-payoff labels; their results establish neural policy representation, not avoided maximization. The continuous-action preference study instead differentiates the actor's own payoff, records local improvement as a hybrid policy, and reserves global action covering for independent verification after training. Direct optimization and an actor-free search ablation expose which parts of the computation produce the measured policy quality. Additional gated and projection comparisons exploit the same economic problem rather than weakening the baseline. Dense nonlinear capital experiments use paired pathwise payoffs to diagnose state coverage. Homothetic portfolios, temporal-self formulas, the nonsmooth exit problem, and the exact quadratic family remain distinct economic and algebraic checks. No matrix calculation is counted as neural training, and no grid refinement difference is silently converted into a continuous-time bound.
+
+\subsection{Relation to the literature}
+Neural residual methods build on numerical dynamic programming and function approximation, not on a new principle of optimality. Projection and related methods exploit economic structure to approximate a Bellman equation; see \citet{judd1998}. Derivative approximation by smooth neural networks provides useful representation results \citep{hornik1990}, but does not establish that a particular finite architecture or optimizer solves a nonlinear boundary-value problem.
+
+The differential critic is closely related to the neural PDE approach in \citet{sirignano2018}. Their DGM formulation includes differential and boundary conditions and treats HJB equations. The deep BSDE method of \citet{han2018} also includes an HJB application. The distinguishing object here is the combination of an explicit feasible actor, block-specific evaluation, and economic error accounting across control and equilibrium problems. An analytical formula for the maximizing action is helpful when available, but is not a universal dividing line between neural PDE methods. Likewise, recursive dependence on the value is a nonlinear zeroth-order term; full nonlinearity in the PDE sense concerns the highest derivatives.
+
+Recursive utility separates intertemporal substitution from risk aversion \citep{epsteinzin1989,duffieepstein1992}. Its infinite-horizon formulation requires particular care about utility-process selection and transversality; \citet{herdegen2021} explains why a stationary algebraic solution alone is insufficient. The time-inconsistency extension is an equilibrium problem in the sense of \citet{bjork2016}, not an ordinary control problem with a relabelled flow payoff. Finally, stochastic approximation results require their own step-size, stability, and limiting-dynamics conditions \citep{borkar2024}. They do not convert constant-step Adam into a convergence theorem for economic optimality.
+
+Section~\ref{sec:model} specifies the economy. Section~\ref{sec:method} defines the implemented map and Section~\ref{sec:theory} establishes its error accounts. Section~\ref{sec:nonquadratic} completes the differential theorem--algorithm--experiment chain. The subsequent sections retain and extend the portfolio, recursive-utility, preference-adjustment, temporal-self, dynamic-game, and scaling applications. The appendix proves the principal results. The supplement gives arithmetic details, application-specific assumptions, every seed-level comparison, and sensitivity results.
+
+\section{The Controlled Economy}\label{sec:model}
+Let $W$ be an $m$-dimensional Brownian motion on a filtered probability space satisfying the usual conditions. The state $S=(u,X)$ contains internal and external state variables. An action $a=(\theta,c,\pi,\ldots)$ combines internal adjustment and external choices. The controlled state evolves as
+\begin{equation}\label{eq:state}
+ dS_s=b(s,S_s,a_s)\,ds+\sigma(s,S_s,a_s)\,dW_s,
+ \qquad a_s\in\Act(s,S_s).
+\end{equation}
+The compact feasible correspondence $\Act$ is part of the model. Actions are progressively measurable and must generate a well-defined state process satisfying the declared state restrictions. State viability does not follow from bounded actor outputs alone.
+
+We work initially on a finite horizon $T$. A computational domain $D$ is either invariant, equipped with a specified reflection mechanism, or stopped on exit. In the stopped case let $\tau=T\wedge\inf\{s\geq t:S_s\notin D\}$. The payoff $g(\tau,S_\tau)$ is specified on the entire parabolic stopping boundary, including the terminal face. For a fixed admissible policy $a$, utility is the policy-specific solution
+\begin{equation}\label{eq:bsde}
+ Y_s^a=g(\tau,S_\tau)+\int_s^\tau f(v,S_v,a_v,Y_v^a)\,dv
+                    -\int_s^\tau Z_v^a\,dW_v.
+\end{equation}
+Adjustment costs are included in $f$. For example, time-additive utility has $f(s,S,a,y)=r_0(s,S,a)-\rho y$, where $r_0$ includes all current resource and adjustment costs. Define $V^a(t,x)=Y_t^{a,t,x}$ and $V^*(t,x)=\sup_a V^a(t,x)$. The value inside a candidate policy's recursive objective is its own utility process, not the unknown optimum inserted into every candidate objective.
+
+\begin{assumption}[Finite-horizon comparison class]\label{ass:model}
+The controlled state problem is well posed for the admissible policies used below. The coefficients are continuous, locally Lipschitz in the state uniformly over actions, and bounded on the compact stopped domain. The payoff is continuous and bounded. On an invariant utility interval containing all policy values, $f$ is continuous in its arguments and uniformly Lipschitz in utility with constant $L\geq0$. The admissible class is stable under concatenation and has the measurable-selection properties needed for dynamic programming. The resulting HJB problem and the fixed-policy problems obey comparison in the bounded continuous class with the specified boundary conditions.
+\end{assumption}
+
+The comparison requirement identifies both a function class and a boundary problem. It is not asserted merely because the primitive coefficients are continuous. On a bounded, regular Dirichlet domain, a boundary barrier is one way to verify attainment of the stopping payoff. Reflection requires the corresponding Neumann or oblique derivative condition and a well-posed reflected state process. Unbounded-state applications require growth bounds and localization. These conditions are checked separately from a neural residual.
+
+For a smooth function $v$, write
+\begin{align}
+ \LL^a v&=b(t,x,a)^\top Dv+\tfrac12\tr\{\sigma(t,x,a)\sigma(t,x,a)^\top D^2v\},\label{eq:generator}\\
+ \HH^a[v]&=f(t,x,a,v)+\LL^a v,\qquad
+ F[v]=-v_t-\sup_{a\in\Act(t,x)}\HH^a[v].\label{eq:hjb}
+\end{align}
+The value solves $F[V^*]=0$ with the specified boundary data, in the viscosity sense where classical derivatives do not exist. The diffusion covariance is the positive semidefinite matrix $\sigma\sigma^\top$. No claim that the product of two arbitrary positive semidefinite matrices is symmetric positive semidefinite is needed.
+
+A continuous martingale representation can also be used when its quadratic variation is Markov in an augmented state. If $d\langle M\rangle_s=Q(s,S_s,a_s)ds$, the covariance in \eqref{eq:generator} becomes $\sigma Q\sigma^\top$. A merely predictable process $Q_s$ is not, without further state augmentation, a deterministic coefficient of a Markov HJB equation. Quadratic variation by itself also does not imply conditionally Gaussian increments. The implementation in this revision uses the Brownian model \eqref{eq:state}.
+
+\subsection{Infinite horizon and economic normalization}
+For a stationary problem, the boundary-value equation is $\sup_a\{f(x,a,V)+\LL^aV\}=0$. We use an infinite-horizon result only after specifying admissibility, integrability, and the selected utility process. In the time-additive case, a sufficient verification requirement is that the localized It\^o identities are uniformly integrable and $\E[e^{-\rho T}|V(S_T)|]\to0$ for the policies being compared. Recursive problems require an appropriate utility comparison and transversality condition instead of simply borrowing the additive one.
+
+Cardinal transformations also require care. Multiplying a fixed utility function by a positive constant does not change its maximizer. Adding a function of an \emph{endogenously controlled preference state} generally does. Consumption units, preference normalization, and terminal utility are therefore primitive economic choices in Section~\ref{sec:ndu}.
+
+\section{Neural Bellman Operators}\label{sec:method}
+The actor $a_\phi(t,x)$ and critic $v_\xi(t,x)$ represent policies and continuation values. An internal actor and an external actor can be separate parameter blocks; their joint action remains the input to the same economic generator. A smooth activation is useful for exact differentiation, while a nonsmooth neural representation can be used with the positive-weight Bellman formulation below.
+
+\subsection{Feasibility and boundary data}
+For a box $[\underline a,\bar a]$, a sigmoid map produces interior feasible actions but does not attain its endpoints at finite weights. Binding constraints can instead be represented by a projection onto the closed interval, by an explicit boundary candidate, or by a finite action set including the endpoints. The constrained portfolio calculation uses a projection and can attain a zero risky share exactly. On a simplex, a probability map supplies a feasible interior point and boundary faces must again be considered when certifying the optimum. General constraints require a feasible parameterization, a certified projection, or a constrained action solver. A finite penalty is not an exact feasibility certificate.
+
+On a finite horizon, an elementary hard-terminal architecture is
+\begin{equation}\label{eq:terminal}
+ v_\xi(t,x)=G(x)+(T-t)N_\xi(t,x).
+\end{equation}
+This enforces the terminal face, but not automatically a lateral boundary. A compatible lifting $G_B$ and a factor $d_B$ vanishing on all Dirichlet faces give $v_\xi=G_B+d_BN_\xi$. Alternatively, boundary residuals are trained separately and retained explicitly in the error bound. A reflected preference state requires its own derivative condition; a terminal architecture does not enforce it. For recursive utility, a domain-preserving transformation must additionally keep the continuation value in the domain of the aggregator.
+
+\subsection{The block-specific computational graph}
+Let $\nu$ be a specified distribution of state--time points and let $\sg$ denote stop-gradient. A critic step minimizes
+\begin{equation}\label{eq:criticloss}
+ L_C(\xi;\bar\phi)=\E_\nu\left[-\partial_t v_\xi-
+                 \HH^{\sg(a_{\bar\phi})}[v_\xi]\right]^2+L_B(\xi),
+\end{equation}
+where $L_B$ is absent only for boundary conditions enforced exactly. The policy, sampling locations, and any rival actions are detached. The value, time derivative, state gradient, and Hessian remain differentiable with respect to the critic parameters.
+
+An actor step minimizes
+\begin{equation}\label{eq:actorloss}
+ L_A(\phi;\bar\xi)=-\E_\nu\HH^{a_\phi}
+ [\sg(v_{\bar\xi}),\sg(Dv_{\bar\xi}),\sg(D^2v_{\bar\xi})].
+\end{equation}
+All critic derivative channels are fixed in this step. There is no critic gradient from $L_A$ and no actor gradient from $L_C$. A printed sum $L_A+\omega L_C$ may be a reporting device, but it is not jointly differentiated. The implementation exposes separate functions and regression tests for these derivative paths.
+
+The distinction changes the population problem. With one action, $f(v)=-v$, $T=1$, and terminal utility one, the correct solution is $v^*(t)=e^{t-1}$. The perturbation $v_\epsilon=v^*-\epsilon(1-t)$ preserves the terminal condition. The joint objective used in the reviewed draft satisfies
+\begin{equation}\label{eq:counterexample}
+ \Delta(L_A+L_C)=-\frac\epsilon2+\frac{7\epsilon^2}{3},
+ \qquad \Delta L_C=\frac{7\epsilon^2}{3}.
+\end{equation}
+Thus the revised critic objective has the correct root as its minimizer along this perturbation, whereas the joint objective does not. The same problem is visible in a stationary equation: $-H+\omega H^2$ prefers $H=1/(2\omega)$, not $H=0$. No choice of finite positive weight resolves this identification error.
+
+The actor objective is a local policy-improvement surrogate. Under differentiability of the policy value, the derivative of lifetime recursive utility from $(t,x)$ instead involves the adjoint weight
+\begin{equation}\label{eq:gradient}
+ D_\phi V^{a_\phi}(t,x)=\E_{t,x}\int_t^\tau
+ e^{\int_t^s f_y(v,S_v,a_v,V^{a_\phi})dv}
+ D_a\HH^{a_\phi}[V^{a_\phi}](s,S_s)D_\phi a_\phi(s,S_s)\,ds,
+\end{equation}
+subject to the differentiability and integrability conditions given in the supplement. Arbitrary domain sampling does not reproduce this occupation and recursive-utility weighting. NBO uses \eqref{eq:actorloss} for approximate pointwise improvement and verifies the remaining action gap; it does not identify that loss with an exact lifetime policy gradient.
+
+\begin{algorithm}[t]
+\caption{NBO evaluation, improvement, and acceptance}\label{alg:nbo}
+\begin{algorithmic}[1]
+\Require Model, admissible actions, utility domain, boundary data, training and validation domains.
+\State Initialize a feasible actor and a boundary-compatible critic.
+\For{each outer iteration}
+ \State Freeze actor outputs. Update only the critic using \eqref{eq:criticloss} or a positive-weight Bellman evaluation residual.
+ \State Freeze the critic and every derivative channel. Improve only the actor using \eqref{eq:actorloss} or a feasible action solver.
+ \State Evaluate boundary error, policy-evaluation error, and the independent feasible-action gap.
+ \State Record the initialization, updates, conditioning, unsuccessful attempts, and stopping rule.
+ \If{the declared economic error criterion is met}
+  \State Return the policy, value, verification domain, and error report.
+ \EndIf
+\EndFor
+\State Return the computed approximation and its measured errors; do not infer optimality from optimizer stationarity.
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Conditioning and stopping}
+A positive, parameter-independent state weighting can precondition the critic equation without changing its zero set. If that weight depends on learned quantities, its derivative must be included in the stated critic objective. The homothetic laboratory divides the Hamiltonian by its positive coefficient and differentiates that entire normalized critic residual. In the actor step the same coefficient is detached. Error conversion to the original economic equation includes the scale factor.
+
+A zero residual target does not make learning dynamics stationary. For the scalar loss $\ell(z)=a^2z^2/2$, gradient descent is stable only when $0<\eta a^2<2$. Likewise, full differentiation of $\delta^2/2$ gives $\delta\nabla\delta$, while a semi-gradient TD update differentiates only the current-value term. The two computations must not be compared using inconsistent signs or discount conventions. If $f$ already includes $-\rho v$, a time discretization must not add a second independent discount to the same continuation equation.
+
+Constant-step Adam is a numerical choice in the calibration laboratory, not an application of a two-timescale theorem. A genuine two-timescale analysis would require nonsummable and square-summable step sizes, an actor-to-critic ratio tending to zero, controlled noise, bounded iterates, and suitable attracting limiting dynamics \citep{borkar2024}. A stationary critic gradient need not imply a zero residual, and a stationary multi-agent gradient need not imply Nash optimality. The results below therefore concern verified approximation errors rather than an assumed universal optimizer convergence property.
+
+\input{revisions/2026-09-29-r6/manuscript/operator.tex}
+\input{revisions/2026-10-03-r8/manuscript/method.tex}
+
+\section{Verification, Approximation, and Viscosity Selection}\label{sec:theory}
+For a feasible policy $a$ and a smooth candidate $v$, define
+\begin{equation}\label{eq:errors}
+ r^a[v]=-v_t-\HH^a[v],\qquad
+ g^a[v]=\sup_{b\in\Act}\HH^b[v]-\HH^a[v]\geq0.
+\end{equation}
+The first error concerns evaluation; the second concerns improvement. Their difference is the maximized HJB residual: $F[v]=r^a[v]-g^a[v]$. We keep the two quantities separate because the policy value and its regret depend differently on them.
+
+\begin{theorem}[Finite-horizon economic error bound]\label{thm:verification}
+Under Assumption~\ref{ass:model}, suppose a bounded smooth candidate $v$ in the declared utility interval and an admissible Markov policy $a$ satisfy $|r^a[v]|\leq e$, $0\leq g^a[v]\leq\eta$ throughout the verification domain. Suppose the boundary payoff error is at most $B$. Any reflected boundary condition is imposed exactly. Set $A_L(s)=(e^{Ls}-1)/L$ for $L>0$ and $A_0(s)=s$. Then, for $s=T-t$,
+\begin{align}
+ |v(t,x)-V^a(t,x)|&\leq e^{Ls}B+A_L(s)e,\label{eq:policybound}\\
+ |v(t,x)-V^*(t,x)|&\leq e^{Ls}B+A_L(s)(e+\eta),\label{eq:valuebound}\\
+ 0\leq V^*(t,x)-V^a(t,x)&\leq2e^{Ls}B+A_L(s)(2e+\eta).\label{eq:regret}
+\end{align}
+Consequently, exact evaluation, exact boundary data, and a zero feasible-action gap identify the optimal value and an optimal policy.
+\end{theorem}
+
+The theorem replaces an assertion about a global minimizer of a composite loss with a statement about the exact computational objects NBO estimates. It allows errors, does not require that a finite network class contain $V^*$, and bounds performance against all admissible policies covered by comparison. A small sampled residual is not yet the uniform hypothesis of the theorem. Section~\ref{sec:coverage} addresses that distinction.
+
+\subsection{A positive-weight recursive Bellman approximation}
+Let $P_h^a$ be a nonnegative transition/interpolation operator on a finite state set, with row sums one after adjoining absorbing states. Boundary values are fixed. For a continuation array $w$, define $\Psi_h^a w$ pointwise as the scalar solution
+\begin{equation}\label{eq:implicit}
+ z=P_h^a w+h f(x,a,z),\qquad
+ T_h w=\max_{a\in\Act_h(x)}\Psi_h^a w.
+\end{equation}
+For stationary calculations assume $f_y\leq-\lambda<0$ on an invariant value domain, and require that all scalar roots remain in that domain. The map $z\mapsto z-hf(x,a,z)$ is strictly increasing with slope at least $1+\lambda h$. Hence the root is unique and $\Psi_h^a$ is order preserving and a sup-norm contraction with factor $q_h=(1+\lambda h)^{-1}$. The maximum over feasible actions preserves these properties. A root bracket must contain the root; arbitrary clipping of utility values is not part of the definition.
+
+For a finite horizon, the same implicit construction is used backward from the prescribed terminal array. Under the Lipschitz condition in Assumption~\ref{ass:model}, $hL<1$ gives a one-step Lipschitz constant at most $(1-hL)^{-1}$. Discount contraction is not assumed for a recursive parameter regime where it has not been verified. For a time-additive problem, the positive-weight backup $hr_0+e^{-\rho h}P_h^a w$ is also consistent and monotone. It is the backup used by the NDU reference laboratory.
+
+\begin{theorem}[Discrete NBO certificate]\label{thm:discrete}
+Suppose \eqref{eq:implicit} is well defined on an invariant domain, with contraction factor $q_h<1$. Let $v_h^*$ and $v_h^a$ denote the fixed points of $T_h$ and $T_h^a$, respectively. For any neural value array $v$ and deterministic feasible policy $a$, set
+\[
+ \delta=\|v-T_h^av\|_\infty,\qquad
+ \epsilon=\|T_hv-T_h^av\|_\infty.
+\]
+Then
+\begin{equation}\label{eq:discretebound}
+ \|v-v_h^a\|_\infty\leq\frac\delta{1-q_h},\quad
+ \|v-v_h^*\|_\infty\leq\frac{\delta+\epsilon}{1-q_h},\quad
+ \|v_h^*-v_h^a\|_\infty\leq\frac{2\delta+\epsilon}{1-q_h}.
+\end{equation}
+The certificate covers the stated finite state and action model. Continuous actions require an additional certified maximization or action-coverage error.
+\end{theorem}
+
+This result applies regardless of how the neural array was obtained. Neural projection need not itself be monotone. What matters is that the output satisfies the monotone Bellman equation to the displayed tolerance. The distinction makes it possible to use flexible representations while retaining a comparison-based acceptance test.
+
+\begin{theorem}[Viscosity-consistent neural Bellman approximation]\label{thm:viscosity}
+Consider stationary problems satisfying comparison in a bounded continuous class and the strict utility monotonicity used in Theorem~\ref{thm:discrete}. Suppose the positive-weight schemes are stable, locally consistent with the HJB operator, and attain the prescribed boundary data in the limit. The feasible action approximations become dense with vanishing maximization error. If neural arrays and feasible actors satisfy
+\begin{equation}\label{eq:scalederror}
+ \delta_h+\epsilon_h=o(h),
+\end{equation}
+then their interpolated values converge locally uniformly to the unique viscosity solution. Uniform convergence up to the boundary follows when boundary barriers give uniform boundary attainment. Their discrete policy-value arrays converge to the same limit. No assertion of convergence of the policy functions themselves is required.
+\end{theorem}
+
+Here stability, local consistency, comparison, and boundary attainment are numerical-analysis hypotheses, not consequences of calling a representation neural. The proof is given in the appendix. A finite-horizon version uses backward error accumulation: terminal error tends to zero and the sum of one-step errors tends to zero after multiplication by the one-step Lipschitz factors. This covers finite-horizon recursive problems without imposing stationary discount contraction.
+
+For a diffusion with $m$ Brownian factors, an interior semi-Lagrangian construction uses the $2m$ locations $x+h b\pm\sqrt{mh}\,\sigma e_j$, each with weight $1/(2m)$. Positive multilinear interpolation preserves monotonicity. For smooth test functions its interpolation contribution is $O(\Delta x^2/h)$; thus $\Delta x^2/h\to0$ is a sufficient interior coupling condition. The mean and covariance of the cubature increments match those of the specified Brownian diffusion to first order. Stopping and reflection require consistent boundary transitions. Negative interpolation weights are not permitted in this construction.
+
+\subsection{Why an integrated differential residual does not select the value}
+Consider the exit problem $F(v')=1-|v'|=0$ on $(-1,1)$ with zero boundary payoff. Its value is $v^*(x)=|x|-1$. The smooth functions
+\[
+ w_\epsilon(x)=\sqrt{1+\epsilon^2}-\sqrt{x^2+\epsilon^2}
+\]
+satisfy the same boundary values and have vanishing integrated squared residual, but converge uniformly to $1-|x|$. At zero the test function one touches the wrong limit from above and gives $F(0)=1>0$, violating the viscosity subsolution inequality. The defect is not removed by exact Hamiltonian maximization.
+
+On a grid with spacing $h$, the positive-weight exit backup is
+\begin{equation}\label{eq:exit}
+ (Tv)_i=-h+\max(v_{i-1},v_{i+1}),\qquad v_0=v_N=0.
+\end{equation}
+It is an undiscounted shortest-exit problem, not an instance of the stationary contraction theorem. Backward propagation of the boundary values gives $v_i=|x_i|-1$ exactly. At the peak of the wrong candidate, the \emph{scaled} residual $|w_i-(Tw)_i|/h$ is close to two, rather than close to zero. The laboratory therefore distinguishes correct selection from small integrated differential error.
+
+An explicit positive viscosity term is another possible regularization, provided comparison, boundary convergence, and approximation errors for the regularized equations are controlled before taking the viscosity to zero. Network width or spectral bias is not itself a positive viscosity parameter. Moreover, approximation of a $C^2$ function and its derivatives does not establish approximation of nonexistent classical derivatives at a kink.
+
+\subsection{Coverage and independent maximization}\label{sec:coverage}
+A verification distribution is declared independently of the actor's occupation measure. It includes economically relevant counterfactual states and boundary regions, not only states visited by a current policy. If a residual $r$ has a known Lipschitz bound $K$ on a compact domain and a validation set has fill distance $d_\mathrm{fill}$, then
+\begin{equation}\label{eq:cover}
+ \|r\|_\infty\leq\max_{x\in\mathcal V}|r(x)|+K d_\mathrm{fill}.
+\end{equation}
+The same bound can be applied to an action gap if its modulus is controlled. An empirical mean alone does not give this guarantee. If the sampling density is bounded below and the domain has a uniform interior-volume condition, a Lipschitz residual also admits an $L^2$-to-sup estimate with exponent $1/(d+2)$, as derived in the supplement. Its dimension dependence is material.
+
+An independent action solver must provide an \emph{upper bound} on the unobserved maximization error. Trying a few alternative actions supplies only a lower bound on the true gap. Concavity with a duality gap, interval bounds, exhaustive enumeration of a finite action set, or an action net with a known Lipschitz modulus can provide the needed upper bound. An unverified local actor optimizer cannot certify itself.
+
+\input{revisions/2026-09-29-r6/manuscript/bridge.tex}
+
+\input{revisions/2026-09-29-r6/manuscript/consumption.tex}
+
+\section{Analytical and Nonsmooth Benchmarks}\label{sec:benchmarks}
+The time-additive Merton model has wealth dynamics
+\[
+ dX=[(r+p(\mu-r))X-c]dt+p\sigma X\,dW,
+ \qquad U(c)=\frac{c^{1-\gamma}}{1-\gamma}.
+\]
+For the stationary infinite-horizon benchmark, set $c=mX$, $V=KX^{1-\gamma}/(1-\gamma)$, and impose the usual admissibility and transversality requirements. Writing
+\[
+ p^*=\frac{\mu-r}{\gamma\sigma^2},\qquad
+ R_*=r+p^*(\mu-r)-\tfrac12\gamma(p^*)^2\sigma^2,
+\]
+substitution and maximization give
+\begin{equation}\label{eq:merton}
+ m^*=\frac{\rho+(\gamma-1)R_*}{\gamma},\qquad K=(m^*)^{-\gamma}.
+\end{equation}
+With $\rho=.04$, $\gamma=2$, $\mu=.08$, $r=.02$, and $\sigma=.2$, these numbers are $p^*=.75$ and $m^*=.04125$. These are stationary constants; an arbitrary finite-horizon problem with an unspecified bequest does not have the same constant consumption rule. A finite-horizon verification test can use the matching bequest $KX^{1-\gamma}/(1-\gamma)$, explicitly declared rather than silently omitted.
+
+For $\mu=.01$ with no short sales, the unconstrained share is $-.125$ and the constrained optimum is zero at every positive wealth. Its effective return is $r$ and $m^*=.03$. The maximized HJB remains an equality. The action KKT condition is an inequality at the boundary, but it does not turn this regular-control problem into an obstacle problem or create a wealth-dependent kink. The exit experiment in Section~\ref{sec:theory}, rather than this homothetic corner solution, supplies the nonsmooth selection test.
+
+\subsection{Executed calibration and interpretation}
+The replication program trains a homothetic neural subfamily: a positive value coefficient, a sigmoid consumption-share output, and a projected portfolio-share output. These are neural output parameters in a known invariant representation, not an unrestricted multilayer approximation. The two Adam optimizers have learning rates $.025$ and $.008$; each outer iteration contains three critic updates and one actor update. There are 1,600 outer iterations and seeds $0,1,2$. All attempted runs, including their coefficient and policy traces, are saved. These calibrations optimize the stationary coefficient equation and then check the resulting coefficient against the matching bequest; the coefficient error is a boundary error in that finite-horizon interpretation, not a boundary condition hard-imposed during these particular updates.
+
+\begin{table}[t]
+\centering
+\caption{Corrected portfolio calibration: analytical targets and executed block updates}\label{tab:portfolio}
+\begin{tabular}{lrrrr}
+\toprule
+Model & Target $m$ & Target $p$ & Runs & Maximum policy error\\
+\midrule
+Time-additive Merton & .04125 & .75000 & 3 & $5.6\times10^{-16}$\\
+No-short-sale corner & .03000 & .00000 & 3 & $2.3\times10^{-16}$\\
+Recursive matching-bequest test & .04550 & .30000 & 3 & $7.0\times10^{-17}$\\
+\bottomrule
+\end{tabular}
+\par\smallskip\footnotesize Policy error is the maximum absolute error in the two constant policy outputs, maximized over all three seeds. Calculations use CPU float64 in the declared homothetic subfamily. Machine-level calibration accuracy is not evidence about an unrestricted network, a GPU runtime, or a general recursive infinite-horizon problem.
+\end{table}
+
+Table~\ref{tab:portfolio} reports quantities generated by the new code. The normalized policy-evaluation residual is below $4\times10^{-16}$ in these runs. These results establish that the revised graph and formulas agree in the exactly representable laboratory. They do not establish a broad advantage over a direct analytical calculation. In the exit laboratory, grids with 40, 80, 160, and 320 intervals recover the grid value to within $3\times10^{-15}$; the wrong smooth sequence has scaled residual between 1.984 and 1.999. All grid nodes, not a selected interior sample, enter that diagnostic.
+
+\section{Recursive Utility}\label{sec:recursive}
+Let $a=1-1/\psi$, $b=1-\gamma$, and $Y=bV>0$, with $\psi\ne1$ and $\gamma\ne1$. We use the difference-form aggregator
+\begin{equation}\label{eq:ez}
+ f(c,V)=\frac\rho a\left[c^a(bV)^{1-a/b}-bV\right].
+\end{equation}
+Its consumption derivative is
+\begin{equation}\label{eq:ezderivative}
+ f_c=\rho c^{a-1}(bV)^{1-a/b}>0.
+\end{equation}
+When $\gamma=1/\psi$, one has $a=b$ and $f=\rho(c^b/b-V)$, a positively normalized time-additive CRRA aggregator. The factor $b$ must not multiply the consumption term outside its power. Doing so reverses consumption monotonicity when $\gamma>1$. This distinction follows the difference-form convention discussed by \citet{herdegen2021}.
+
+For a homothetic candidate $V=KX^b/b$, the maximization equation becomes
+\begin{equation}\label{eq:eznormalized}
+ 0=\sup_{m,p}\left\{\frac\rho a[m^aK^{-a/b}-1]
+       +r+p(\mu-r)-m-\tfrac12\gamma p^2\sigma^2\right\}.
+\end{equation}
+The consumption first-order condition is $\rho m^{a-1}K^{-a/b}=1$. Substitution yields
+\begin{equation}\label{eq:ezcandidate}
+ p^*=\frac{\mu-r}{\gamma\sigma^2},\quad
+ m^*=\psi\rho+(1-\psi)\left[r+\frac{(\mu-r)^2}{2\gamma\sigma^2}\right],\quad
+ K=[\rho(m^*)^{a-1}]^{b/a}.
+\end{equation}
+For the retained parameters $\gamma=5$, $\psi=1.5$, $\rho=.04$, $\mu=.08$, $r=.02$, $\sigma=.2$, this gives $(m^*,p^*)=(.0455,.3)$.
+
+\subsection{A well-defined validation problem at the retained parameters}
+The numerical calibration uses \eqref{eq:ezcandidate} as a finite-horizon matching-bequest test, not as an unqualified infinite-horizon theorem. Choose $T>0$, stop wealth on leaving $[\underline x,\bar x]$ with $0<\underline x<\bar x<\infty$, and impose the candidate $Kx^b/b$ on the stopping boundary and at $T$. Consumption shares are in a compact positive interval containing $.0455$, and portfolio shares are in a compact interval containing $.3$.
+
+For these retained parameters, $a>0$ and $b<0$. Since $c$ ranges over a compact positive interval, there exist $0<\underline Y<\overline Y<\infty$ such that $f(c,\underline Y/b)\leq0$ and $f(c,\overline Y/b)\geq0$ for every feasible $c$. Indeed, $c^aY^{-a/b}$ tends to zero as $Y\downarrow0$ and to infinity as $Y\uparrow\infty$. Enlarge the interval so that it contains the boundary candidate. The constants $\overline Y/b$ and $\underline Y/b$ are respectively lower and upper barriers for the backward utility equation. Scalar BSDE comparison therefore keeps every policy utility in this interval. The aggregator is Lipschitz there. The smooth homothetic candidate maximizes the Hamiltonian and matches all stopping payoffs; Theorem~\ref{thm:verification} identifies it as the value of this specified finite-horizon problem.
+
+The choice of a matching bequest is an analytical validation device. It does not establish that the same candidate is selected by every infinite-horizon recursive formulation. A separate infinite-horizon application must check its utility-process class and transversality, particularly when risk aversion and intertemporal-complementarity parameters straddle one \citep{herdegen2021}. The paper retains that economic application, but does not use a scalar root to bypass its selection issue.
+
+A critic can enforce $bV>0$ through $b v_\xi=\exp(N_\xi)$. With a positive terminal target, logarithmic interpolation between $bG$ and the neural output enforces both the terminal condition and the power domain. Additional barriers or bounded transformations enforce a declared invariant interval. Such transformations are stated in the architecture, not imposed retrospectively after a failed evaluation.
+
+\subsection{Stability and baseline design}
+The recursive experiment in Table~\ref{tab:portfolio} tests the corrected sign, coefficient, and block graph. It does not compare independent DDPG training trajectories. The reviewed manuscript's constructed oscillating curve and manually entered coordinates remain in the archival source, but have no evidentiary role in this revision. A matched neural comparison must use the same utility process, domain, bequest, action restrictions, training budget, and held-out evaluation quantities. It must report all failed seeds and value-domain violations. Neither a zero-centered target nor three successful homothetic calibrations establishes general relative stability.
+
+\section{Endogenous Preferences and Portfolio Choice}\label{sec:ndu}
+The endogenous-preference application retains its internal adjustment margin. Let $u$ be risk aversion, $X$ wealth, and $\theta$ adjustment effort. On a declared interval $[\underline u,\bar u]\subset(1,\infty)$, specify the reflected process
+\begin{align}
+ du&=\theta\,dt+\sigma_u\,dW^u+dL^{\underline u}-dL^{\bar u},\label{eq:ndustate}\\
+ dX&=[(r+p(\mu-r))X-c]dt+p\sigma_X X\,dW^X,
+ \qquad d\langle W^u,W^X\rangle_t=\varrho\,dt.
+\end{align}
+The nondecreasing local-time regulators act only at their respective boundaries. This supplies the state mechanism that a bounded adjustment actor does not supply. The numerical reference uses $[1.2,3]$, so the utility singularity at $u=1$ is never reached. In an alternative positive-state model one could specify a multiplicative or transformed diffusion, but that would be a different primitive and must be identified as such.
+
+\subsection{Cardinal utility and the objective}
+Fix a reference consumption unit $\bar c>0$. The baseline flow utility is
+\begin{equation}\label{eq:nduutility}
+ U(c,u)=\frac{(c/\bar c)^{1-u}}{1-u},\qquad
+ r_0(c,u,\theta)=U(c,u)-\tfrac12 k\theta^2.
+\end{equation}
+The reference calculation takes $\bar c=1$, preserving the unnormalized CRRA family of the original application. The agent maximizes
+\begin{equation}\label{eq:nduobjective}
+ \E_{t,u,X}\left[\int_t^\tau e^{-\rho(s-t)}r_0(c_s,u_s,\theta_s)ds
+        +e^{-\rho(\tau-t)}G(u_\tau,X_\tau)\right].
+\end{equation}
+Both the payoff and the adjustment cost have the same time-relative discount convention. The terminal/exit payoff and the state domain are stated for each calculation.
+
+A useful family for normalization sensitivity is
+\[
+ U_\kappa(c,u)=\frac{(c/\bar c)^{1-u}-1}{1-u}+\kappa(u).
+\]
+The baseline corresponds to $\kappa(u)=1/(1-u)$. The log-continuous normalization corresponds to $\kappa=0$ and is an economically different preference-formation model. A calibration of $\kappa$ fixes the cardinal value of a reference consumption stream at each preference state. The choice is not identified by risk-aversion curvature alone.
+
+In particular,
+\begin{equation}\label{eq:uderivative}
+ U_u(c,u)=\frac{(c/\bar c)^{1-u}\{1-(1-u)\log(c/\bar c)\}}{(1-u)^2}.
+\end{equation}
+For $c/\bar c>1$ and $u>1$ this derivative is positive. At $c=2$, $u=2$, $\bar c=1$, it is approximately $.84657$. This is a derivative of flow utility, not a sign theorem for the endogenous value derivative $V_u$. The agent's full incentives also depend on future consumption, boundary behavior, and the adjustment technology.
+
+\subsection{Hamiltonian, constrained policies, and economic implications}
+The HJB equation is
+\begin{align}\label{eq:nduhjb}
+ -V_t=\sup_{c,p,\theta}\big\{&U(c,u)-\tfrac12 k\theta^2-\rho V
+ +\theta V_u+[(r+p(\mu-r))X-c]V_X\nonumber\\
+ &+\tfrac12\sigma_u^2V_{uu}+\tfrac12p^2\sigma_X^2X^2V_{XX}
+ +\varrho\sigma_u\sigma_X pX V_{uX}\big\}.
+\end{align}
+Reflection gives $V_u=0$ at the two preference boundaries, in the appropriate boundary-value sense. The correlation term is retained with its correct coefficient.
+
+For an interior optimum with $V_X>0$ and $V_{XX}<0$, the first-order conditions are
+\begin{align}
+ c^*&=\bar c\,[\bar c V_X]^{-1/u},\label{eq:nduc}\\
+ \theta^*&=V_u/k,\label{eq:ndutheta}\\
+ p^*&=-\frac{V_X(\mu-r)}{XV_{XX}\sigma_X^2}
+       -\frac{\varrho\sigma_u V_{uX}}{XV_{XX}\sigma_X}.\label{eq:ndupi}
+\end{align}
+For independent box constraints, strict concavity in the corresponding action permits projection of these unconstrained maximizers onto their intervals. If $V_{XX}$ has the wrong sign or constraints couple the actions, a joint feasible maximization is required instead. The formula for $p$ must not be used where its denominator vanishes.
+
+Equation~\eqref{eq:ndutheta} gives a conditional shadow-price interpretation of internal adjustment. Holding $V_u$ fixed, a larger $k$ reduces its magnitude. Across economies, however, $V_u$ itself depends on $k$, so this is not a global policy comparative static. A valid unconditional implication is that the optimized value is weakly decreasing in $k$: every fixed admissible policy loses $\tfrac12(k_2-k_1)\E\int e^{-\rho s}\theta_s^2ds$ when the cost rises. When an envelope derivative exists,
+\begin{equation}\label{eq:envelope}
+ \partial_k V^k=-\tfrac12\E^{a^k}\int_t^\tau e^{-\rho(s-t)}\theta_s^2ds\leq0.
+\end{equation}
+The sign of the hedging component in \eqref{eq:ndupi} remains conditional on $V_{uX}$ and the curvature of wealth value. A negative correlation alone does not determine it.
+
+\subsection{Independent two-state reference and identification}
+The executable reference solves the finite-horizon problem with $T=1$, $u\in[1.2,3]$, wealth stopped at $[.5,2]$, and $G(u,X)=X^{1-u}/(1-u)$ at exit and terminal time. Parameters are $(r,\mu,\sigma_X,\sigma_u,\varrho,\rho)=(.02,.08,.2,.08,-.3,.04)$. The finite action set is the product of $c/X\in\{.02,.05,.1\}$, $p\in\{0,.375,.75\}$, and $\theta\in\{-.15,0,.15\}$. A four-point Brownian cubature with positive interpolation weights performs backward induction. The wealth boundary is imposed at every time step; preference overshoots are reflected. This reference defines a finite-action numerical approximation, not continuous-action optimality.
+
+At $(u,X)=(2.1,1)$, the original $17\times25$ state grid and 20 time steps give values $-11.915211$ and $-11.956983$ for $k=1$ and $k=5$. The $25\times37$ grid and 40 time steps give $-11.866768$ and $-11.908738$. Both select $(c/X,p,\theta)=(.1,.75,-.15)$ at that point. The approximately $.048$ refinement change is reported separately from training error. The higher-cost value is weakly lower at every recorded node and time. These original references remain useful consistency checks; Section~\ref{sec:ndu-neural} supplies actual neural fits and shows how strongly the finite action domain affects their economic comparison.
+
+The model also specifies what a structural estimation exercise would require. For observations $Y_j=\mathcal M(S_{t_j},a_{t_j};\vartheta)+\varepsilon_j$, let $m(\vartheta)$ denote selected population moments of the induced observation process. Local identification requires a rank condition on $D_\vartheta m$, after accounting for latent preference states, normalization parameters, and observation noise. Variation of a simulated policy with $k$ alone is insufficient. Numerical value and policy errors must additionally be propagated into moment errors. The endogenous-preference application is therefore retained as an economic model with an explicit internal margin, not used as evidence that its structural parameters have already been identified from data.
+
+The next comparison is the retained R8 evidence under its original enclosure. The new signed envelope and fresh nested-grid policies are reported separately in Section~\ref{sec:r9results}; historical failure counts are not overwritten.
+\input{revisions/2026-10-03-r8/manuscript/ndu.tex}
+
+\section{Sophisticated Temporal Selves}\label{sec:temporal}
+To define present bias in continuous time, fix the discount kernel
+\begin{equation}\label{eq:kernel}
+ h(s)=\beta e^{-\rho s}+(1-\beta)e^{-(\rho+\kappa)s},
+ \qquad 0<\beta\leq1,\quad\kappa>0.
+\end{equation}
+It satisfies $h(0)=1$ and discounts the immediate future more heavily than the distant future when $\beta<1$. It is a finite-duration continuous-time specification; it is not the assertion that multiplying current utility by $\beta$ creates present bias.
+
+For a candidate Markov policy $a^*$, define the two continuation functions
+\begin{equation}\label{eq:components}
+ W_j(t,x)=\E_{t,x}^{a^*}\left[\int_t^T e^{-\rho_j(s-t)}u(a_s^*)ds
+             +e^{-\rho_j(T-t)}G(S_T)\right],\quad
+ (\rho_1,\rho_2)=(\rho,\rho+\kappa).
+\end{equation}
+Write $V=\beta W_1+(1-\beta)W_2$. Each component evaluates the \emph{same} future policy:
+\begin{equation}\label{eq:extended}
+ 0=(W_j)_t+\LL^{a^*}W_j+u(a^*)-\rho_jW_j,\qquad W_j(T)=G.
+\end{equation}
+The current self's spike-deviation condition is
+\begin{equation}\label{eq:spike}
+ a^*(t,x)\in\argmax_{a\in\Act(t,x)}\{u(a)+\LL^aV(t,x)\}.
+\end{equation}
+The deviations change both current flow utility and the transition of the continuation state. They do not hold all dynamic effects at the equilibrium action. The appendix derives \eqref{eq:spike} from a deviation on $[t,t+\epsilon]$ followed by $a^*$, thereby fixing the equilibrium concept.
+
+A temporal-self NBO uses two policy-evaluation critics for \eqref{eq:extended} and one actor for \eqref{eq:spike}. The current actor does not optimize the sum of future selves' parameter objectives. A target actor can stabilize a numerical iteration, but its agreement with the current actor is not an equilibrium certificate. The relevant diagnostics are component evaluation errors and one-shot deviation gains. The benchmark $\beta=1$ collapses to the usual exponentially discounted problem.
+
+\subsection{An equilibrium calculation with endogenous continuation values}
+For deterministic wealth $dX=(rX-c)dt$, CRRA utility with $\gamma>1$, and an infinite horizon, consider $c=mX$. Set $b=1-\gamma$ and $\lambda_j(m)=\rho_j-b(r-m)>0$. Then
+\begin{equation}\label{eq:temporalroot}
+ W_j(X)=\frac{m^b}{\lambda_j(m)}\frac{X^b}{b},\qquad
+ 1=m\left[\frac\beta{\lambda_1(m)}+\frac{1-\beta}{\lambda_2(m)}\right].
+\end{equation}
+The expression on the right is strictly increasing in $m$ on its admissible interval, starts at zero, and diverges at the first pole for $\beta>0$. The equilibrium root is unique in this homothetic class. Its derivative with respect to $\beta$ is negative because $1/\lambda_1>1/\lambda_2$. Thus stronger present bias raises consumption in this specified equilibrium, not merely at a fixed shadow price.
+
+With $r=.02$, $\rho=.04$, $\gamma=2$, and $\kappa=.2$, the roots for $\beta=1,.9,.7,.5$ are respectively $.030000$, $.031372$, $.034606$, and $.038760$. The code independently optimizes finite-duration deviations and records the gain divided by duration as the duration shrinks. For $\beta=.7$, this quantity declines from approximately $4.60\times10^{-5}$ at duration $.1$ to $4.66\times10^{-9}$ at duration $.001$. This is a diagnostic of the derived spike equilibrium. It does not assert that every finite-duration commitment deviation is unprofitable, which would be a different solution concept.
+
+\section{Dynamic Games}\label{sec:games}
+The dynamic Cournot application retains firm-specific capital and investment. Firm $i$ has
+\[
+ dK^i=(I^i-\delta K^i)dt+\sigma_K K^i dW^i,\qquad q_i=AK^i,
+\]
+and payoff rate
+\[
+ r_i=P_N(K)q_i-I^i-\tfrac12 b_i(I^i)^2,\qquad
+ P_N(K)=\max\left\{0,P_0-\frac1{M_N}\sum_jq_j\right\}.
+\]
+For each experiment, the market-size normalization $M_N$, capital domain, investment constraints, covariance, terminal/liquidation values, and horizon are part of the primitives. Keeping $M_N=1$ is a fixed-market comparison. Taking $M_N=N$ is a growing-market comparison. They do not have the same competitive-limit interpretation.
+
+Given rivals' Markov policies $a^{-i}$, a player's best-response equation maximizes only its own action. In the stationary additive case,
+\begin{equation}\label{eq:game}
+ \rho_i V_i=\sup_{a_i\in\Act_i}\{r_i(x,a_i,a^{-i}(x))+\LL^{a_i,a^{-i}}V_i\}.
+\end{equation}
+A Markov-perfect equilibrium is a feasible profile satisfying these simultaneous unilateral conditions, with the same boundary and admissibility conventions. A zero policy-evaluation residual can hold for any consistently valued profile and therefore does not identify this equilibrium.
+
+\subsection{Player-specific differentiation and deviation bounds}
+Player $i$'s critic is trained with every policy frozen. Player $i$'s actor then differentiates only
+\begin{equation}\label{eq:gameactor}
+ -\E_\nu\HH_i^{a_i(\phi_i),\sg(a^{-i})}
+       [\sg(V_i),\sg(DV_i),\sg(D^2V_i)].
+\end{equation}
+The updated parameter is $\phi_i$, not the full vector of all players' parameters. Rival actions are detached, and player $j$'s loss never contributes to player $i$'s actor gradient. An explicit regression test exercises this graph.
+
+For each player, define the unilateral Hamiltonian gap by maximizing $\HH_i$ over $a_i$ while keeping rivals fixed. Applying Theorem~\ref{thm:verification} to that best-response problem bounds its finite-horizon exploitability by $2e^{L_iT}B_i+A_{L_i}(T)(2e_i+\eta_i)$. In a discounted finite-state game, Theorem~\ref{thm:discrete} gives $(2\delta_i+\epsilon_i)/(1-q_i)$. These are player-specific bounds; a sum of critic losses is not a substitute. They remain valid without uniqueness or convergence of the simultaneous policy-update dynamics, provided the reported profile satisfies the stated errors and best-response comparison hypotheses.
+
+The static Cournot diagnostic makes the distinction visible. With payoffs $q_i(1-q_i-q_j)$, symmetric Nash output is $1/3$ per firm. Joint-profit maximization gives a symmetric allocation $1/4$. At the latter profile, a firm optimally deviates to $3/8$, earning a gain of $1/64$. A joint objective can therefore be perfectly optimized and still fail a unilateral equilibrium test. This arithmetic is included as a mandatory regression check.
+
+\subsection{Symmetry and market scaling}
+Identical initial weights do not prove equilibrium uniqueness or permutation equivariance. An equivariant actor can be specified using own capital and a permutation-invariant aggregation of rival states. Even then, one must check unilateral deviations rather than infer equilibrium from architectural symmetry. Multiple starting profiles and unsuccessful best-response searches belong in a numerical report.
+
+Under fixed market size, positive constant capital per firm cannot be called the competitive limit while total output tends to infinity and the truncated price tends to zero. Maintaining that capital entails investment and adjustment costs. Under $M_N=N$, positive capital per firm may instead be compatible with a growing market, but it describes a different sequence of economies. The original unsupported capital table remains in the archive. Section~\ref{sec:dynamic-computation} replaces its evidentiary role with a fully specified finite dynamic game and independent best-response calculations, without asserting convergence of unrestricted neural game training.
+
+\input{revisions/2026-10-03-r8/manuscript/games.tex}
+
+\section{Scalability and the Diffusion Trace}\label{sec:scaling}
+The original multi-stock consumption-savings specification has additive utility, independent transitions, and no common resource constraint. It decomposes as $V(k)=\sum_jv_j(k_j)$. A separability-aware comparator solves the one-dimensional components, and identical components can be reused. An unreduced sparse grid is not an appropriate sole comparator for that economy.
+
+To test a coupled generator, the new laboratory instead uses
+\begin{equation}\label{eq:lq}
+ dX=(AX+a)dt+\Sigma dW,\qquad
+ \sup_a\E\int_0^\infty e^{-\rho t}[-X^\top QX-a^\top a]dt.
+\end{equation}
+The drift is a nonnormal dense matrix $A=-.7I+.06Z/\sqrt d$, where $Z$ is generated by the fixed model seed $991+d$. The payoff matrix is $Q=\operatorname{diag}(1,\ldots,2)+.3\bm1\bm1^\top/d$. The code verifies that $AQ\ne QA$, so the common independent-coordinate reduction of the original benchmark is unavailable. All methods still exploit the declared quadratic structure. A Riccati solver is therefore the appropriate strong reference, rather than a deliberately unreduced general grid.
+
+For $V=-x^\top Px-c_0$ and $a=-Kx$, policy evaluation solves
+\begin{equation}\label{eq:lyapunov}
+ (A-K-\rho I/2)^\top P+P(A-K-\rho I/2)=-(Q+K^\top K),
+ \quad c_0=\tr(\Sigma\Sigma^\top P)/\rho.
+\end{equation}
+Hamiltonian improvement gives $K=P$. A positive semidefinite $P$ is representable by a signed sum of squared linear neural units; the actor is linear. The exact block laboratory uses a Lyapunov solve for this critic and exact actor improvement. It is an exactly representable NBO subfamily and a matrix-identity test, not evidence that generic stochastic neural optimization has the same convergence rate.
+
+Across dimensions $2,5,10,20,50$ and three stabilizing actor initializations, the block iteration takes six steps. The maximum error in $P$, in operator norm, is below $10^{-13}$ relative to an independent algebraic Riccati solver. The policy-evaluation coefficient residual is below $10^{-12}$. On the unit Euclidean ball, the actor gap is bounded by $\|K-P\|_2^2$, and the residual bound follows from the operator norm of the quadratic coefficient error. The program saves matrices, iteration traces, and CPU wall times for both methods. These very short, single-process timings are diagnostics and do not establish a fixed-accuracy runtime ranking.
+
+\input{revisions/2026-09-29-r6/manuscript/coupled.tex}
+\input{revisions/2026-10-03-r8/manuscript/coverage.tex}
+
+\subsection{Exact and stochastic trace computation}
+Let $\Sigma$ include any covariance factor and set $B=\Sigma^\top D^2v\Sigma$. For independent probes with identity covariance,
+\begin{equation}\label{eq:trace}
+ q=\tr(B),\qquad \widehat q=\frac1K\sum_{k=1}^Kz_k^\top Bz_k.
+\end{equation}
+Gaussian probes have variance $2\|B\|_F^2/K$. If $r=d-q/2$, then
+\begin{equation}\label{eq:tracebias}
+ \E(d-\widehat q/2)^2=r^2+\tfrac14\operatorname{Var}(\widehat q).
+\end{equation}
+The extra term depends on the critic. Unbiased trace estimation therefore does not give an unbiased squared-residual objective.
+
+Two conditionally independent probe banks repair this particular bias:
+\begin{equation}\label{eq:crossprobe}
+ \widehat L=(d-\widehat q^{(1)}/2)(d-\widehat q^{(2)}/2),
+ \qquad\E[\widehat L\mid t,x,\xi]=r^2.
+\end{equation}
+With dominated differentiation, its gradient is also unbiased. The sample product need not be nonnegative and can have substantial variance, so this is an objective identity rather than a guarantee of stable optimization. Exact low-dimensional derivatives remain the independent check. If the actor or deterministic term depends on the same probes, conditional independence must be re-established; the simple identity cannot be reused automatically.
+
+The relevant computational cost depends on the network evaluation and differentiation cost, Brownian rank, covariance factorization, sample count, optimization iterations, and requested accuracy. Forming a dense Hessian involves quadratic storage; Hessian-vector products can avoid it. Neither operation count by itself is a total-complexity theorem. Active control bounds do not universally create gradient discontinuities, and a noisy trace cannot make a correctly projected box action leave its box. Feasibility and value-derivative accuracy are separate diagnostics.
+
+\input{revisions/2026-09-29-r6/manuscript/trace.tex}
+
+\input{revisions/2026-10-03-r9/manuscript/method.tex}
+\input{revisions/2026-10-03-r9/manuscript/results.tex}
+\section{Conclusion}\label{sec:conclusion}
+Neural Bellman Operators organize computation around policy evaluation, feasible improvement, and independent economic verification. Recursive utility, endogenous preferences, sophisticated temporal selves, and dynamic strategic interaction remain part of that economic formulation. The representation is neural, but an economic claim concerns the policy actually deployed and the error that has been bounded.
+
+The guarded map specifies how a nodal evaluation tolerance is enforced and records the indexed corrections it requires. Signed derivative enclosures reduce complete-action verification work without dropping unresolved boxes or differentiating across a stopping discontinuity. Their numerical contribution is identified using identical frozen policies and matched one-step comparisons. Fresh training and recertification on genuinely nested grids are kept distinct from the full-domain failure of interpolated coarse policies. The compensation account translates utility accuracy into a stated financed-transfer experiment rather than a misleading common percentage.
+
+The dense capital experiment now has a feasible-policy lower benchmark and a continuous-time optimal upper benchmark on the original state space. These bounds are materially wider than a tight neural-policy certificate. Paired simulations remain discretized policy comparisons. Likewise, the complete-action preference certificates do not yet bound all continuous-state, continuous-time, and stopping-monitoring defects. The evidence does not establish that actors outperform the strongest low-dimensional search and projection alternatives; those comparisons remain in the record. The contribution is a specified neural Bellman computation with verified evaluation and improvement outputs, measured costs, and separate economic domains for each conclusion.
+
+\begin{appendix}
+\section{Proofs}\label{app:proofs}
+\subsection{Proof of Theorem~\ref{thm:verification}}
+Extend the aggregator Lipschitz-continuously outside its invariant interval for this comparison argument. The extension leaves all policy utilities and the candidate residual unchanged. For a nonnegative number $c$, define $d_c(t)=Be^{L(T-t)}+cA_L(T-t)$. Then $d_c(T)=B$, $d_c(t)\geq B$, and $-d_c'=Ld_c+c$. Since a spatially constant shift leaves the generator unchanged and $f$ is $L$-Lipschitz in utility,
+\[
+ F[v+d_c]\geq F[v]-d_c'-Ld_c=F[v]+c,
+ \qquad F[v-d_c]\leq F[v]+d_c'+Ld_c=F[v]-c.
+\]
+Because $F[v]=r^a[v]-g^a[v]\in[-e-\eta,e]$, $v+d_{e+\eta}$ is a supersolution and $v-d_{e+\eta}$ a subsolution. They dominate the required stopping data on every boundary face. A spatially constant shift also preserves an exactly satisfied homogeneous reflected boundary condition. Comparison proves \eqref{eq:valuebound}.
+
+Apply the same argument to the fixed-policy operator $F^a[v]=-v_t-\HH^a[v]$, with $c=e$, to obtain \eqref{eq:policybound}. The triangle inequality gives \eqref{eq:regret}, and policy admissibility gives its nonnegative lower bound. The construction uses $L\geq0$ and $d_c(t)\geq B$ specifically to cover lateral stopping boundaries; it does not incorrectly discount their errors as if every path stopped only at $T$. For nonsmooth candidates the same argument applies when their residual inequalities are verified in the viscosity sense. The theorem's differential implementation, however, requires the stated smooth candidate.\qed
+
+\subsection{Exact policy improvement}
+Suppose $v=V^a$ solves the fixed-policy problem and a feasible $\tilde a$ satisfies $\HH^{\tilde a}[v]\geq\HH^a[v]$ pointwise. Then $F^{\tilde a}[v]\leq0$ with the same boundary payoff. Policy comparison gives $V^{\tilde a}\geq V^a$. This is a policy-space statement. A single gradient step on a domain-averaged actor loss does not automatically meet its pointwise premise. The measured action gap and policy-evaluation errors are retained precisely because approximate neural improvement can violate that premise.
+
+\subsection{Proof of Theorem~\ref{thm:discrete}}
+For a fixed state and action, let $z$ and $\tilde z$ solve \eqref{eq:implicit} for $w$ and $\tilde w$. Strict monotonicity of $z-hf(z)$ gives
+\[
+ |z-\tilde z|\leq\frac{|P_h^a(w-\tilde w)|}{1+\lambda h}
+ \leq q_h\|w-\tilde w\|_\infty.
+\]
+The same monotonicity implies order preservation. Taking the maximum over actions preserves both order and the Lipschitz constant. Banach's fixed-point argument supplies the two fixed points on the invariant complete value domain.
+
+Now $\|v-v_h^a\|\leq\|v-T_h^av\|+q_h\|v-v_h^a\|$, which gives the first bound. Also $\|v-T_hv\|\leq\delta+\epsilon$, giving the second. The triangle inequality gives the third. All norms are over every state of the specified finite model. An omitted action changes $T_h$ and must be accounted for as a separate error, not hidden in $\delta$.\qed
+
+\subsection{Proof of Theorem~\ref{thm:viscosity}}
+First, \eqref{eq:discretebound} gives
+\[
+ \|v_h-v_h^*\|_\infty\leq\frac{\delta_h+\epsilon_h}{1-q_h}
+ =\frac{1+\lambda h}{\lambda}\frac{\delta_h+\epsilon_h}{h}\longrightarrow0.
+\]
+It remains to identify the limit of the exact monotone scheme. Stability makes the upper and lower half-relaxed limits finite. At a strict local maximum of the upper limit minus a smooth test function, select nearby maximizing grid points. Monotonicity compares the neighboring scheme values to that test function plus the vanishing contact offset. Local consistency then gives the viscosity subsolution inequality. The corresponding minima give the supersolution inequality for the lower limit. Consistent boundary data and the assumed barriers give the required boundary inequalities. Comparison orders the upper limit below the lower limit. The reverse order follows by definition, so the two limits coincide with the unique continuous viscosity solution. The vanishing distance between $v_h$ and $v_h^*$ transfers that convergence to the neural arrays. The discrete policy-value conclusion follows from the third bound. Interpreting a discrete policy as a continuous-time implementation additionally requires convergence of its controlled interpolation and payoff; the theorem does not infer this merely from convergence of its state arrays. This is the usual monotone-scheme selection argument, with the neural approximation error made explicit; see \citet{barles1991,crandall1992}.\qed
+
+\subsection{Finite-horizon Bellman error accumulation}
+Let $T_n$ and $T_n^a$ be the time-$n$ Bellman and fixed-policy maps, with Lipschitz constants $q_n$ (which may exceed one). For arrays $v_n$, define $\delta_n=\|v_n-T_n^av_{n+1}\|$ and $\epsilon_n=\|T_nv_{n+1}-T_n^av_{n+1}\|$. If the terminal error is $B_N$, backward induction gives
+\[
+ \|v_n-v_n^*\|\leq\left(\prod_{j=n}^{N-1}q_j\right)B_N
+ +\sum_{k=n}^{N-1}\left(\prod_{j=n}^{k-1}q_j\right)(\delta_k+\epsilon_k).
+\]
+The policy-evaluation bound replaces $\delta_k+\epsilon_k$ by $\delta_k$. Their sum bounds regret. Empty products equal one. For the implicit Lipschitz recursive step, $q_n\leq(1-hL)^{-1}$; for additive exponential discount, $q_n=e^{-\rho h}$. Thus a per-step error $o(h)$ and consistent terminal data suffice on a fixed finite horizon, without asserting a stationary contraction in an inapplicable utility regime.
+
+\subsection{Derivation of the temporal-self condition}
+A self at $(t,x)$ replaces $a^*$ by a fixed feasible local action $a$ for duration $\epsilon$ and then returns to $a^*$. For each exponential component, the deviation value is
+\[
+ \E\left[\int_t^{t+\epsilon}e^{-\rho_j(s-t)}u(a)ds
+     +e^{-\rho_j\epsilon}W_j(t+\epsilon,S_{t+\epsilon}^{a})\right].
+\]
+It\^o expansion gives its first-order increment relative to $W_j(t,x)$ as $\epsilon[u(a)+(W_j)_t+\LL^aW_j-\rho_jW_j]+o(\epsilon)$. Weighting the two components and subtracting their evaluation equations under $a^*$ leaves
+\[
+ \epsilon\{u(a)-u(a^*)+(\LL^a-\LL^{a^*})V\}+o(\epsilon).
+\]
+Nonpositive first-order gain for every feasible action is exactly \eqref{eq:spike}. This derivation assumes the smoothness and local integrability needed for the expansion; it is an equilibrium deviation condition, not an assertion of optimal commitment over a finite interval. The homothetic derivation follows by integrating $e^{-[\rho_j-b(r-m)]s}$ and applying the consumption first-order condition.\qed
+
+\input{revisions/2026-10-03-r9/manuscript/proofs.tex}
+\section{Replication and Scope of Numerical Evidence}\label{app:replication}
+\paragraph*{Integrated R8 candidate.}
+The present article incorporates the following immutable repository inputs.
+\begin{quote}\small
+R7 source: \texttt{5bab4649\allowbreak 728860fb\allowbreak 655c5371\allowbreak f3705787\allowbreak f10b4a78}\\
+R7 evidence: \texttt{b1409008\allowbreak 625f5501\allowbreak 95ce9ead\allowbreak 468391ad\allowbreak 2449a240}\\
+R7 advisory report: \texttt{c63f6817\allowbreak f498e1cf\allowbreak e9a65313\allowbreak 9f7a25bf\allowbreak 44a4418a}
+\end{quote}
+The preceding main manuscript and supplement are preserved by exact Git blob identity in the R8 archive. R8 source, all executed development configurations, raw arrays, independent certificates, method-paired comparisons, generated tables, and compilation logs belong to the candidate itself. The response answers every B1--B7 and M1--M9 comment of the latest report. The later unexecuted R7 development protocol is not imported as evidence. A table manifest checks each printed number against its input file; the execution manifest identifies the exact R8 source and candidate workflow. Earlier review and revision branches remain unchanged.
+
+The revision directory contains the executable block core, the experiment program, the regression tests, raw numerical outputs, and a response-to-referee document. The reviewed manuscript, supplement, and historical comments are preserved byte-for-byte in the archive, and the review branch remains unchanged. The new main manuscript is authoritative for the revised equations. The archive is not compiled into the revised article and its unsupported numerical statements are not reused as evidence.
+
+The inherited R2 execution contains 29 recorded experiments and eight regression tests, all retained and rerun. The R6 record adds nine primary stopped-consumption runs, six architecture/update sensitivities, six full-domain certificates, six principal NDU neural runs, sixteen NDU reference sensitivities, twenty-four dense-capital primary fits, six stochastic-trace fits, twelve coverage follow-ups, and six principal dynamic-game solves. Pilot failures and coarse-game counterchecks are retained separately rather than counted as successful primary runs. The original referee diagnostics continue to concern their pinned original sources.
+
+The initial development summary and the corresponding script are preserved separately. Inspection found a sign error in the \emph{reported} quadratic residual formula even though the Lyapunov solutions agreed with Riccati values. The formula was corrected, its acceptance test strengthened to include that residual, and the complete experiment suite rerun. The wealth stopping boundary was also imposed explicitly at all NDU time levels before the final run. The earlier results are marked superseded diagnostics rather than silently relabelled as final evidence.
+
+The R6 directory contains complete source, generated tables, model and numerical arrays, optimizer histories, certificate covers, tests, and a provenance manifest. The replication workflow materializes the revision source, independently reruns its computations, and commits the resulting evidence only to the designated R6 candidate branch; an exact-source snapshot and raw-result hashes identify each execution. Local execution, remote replication, and independent referee acceptance remain different facts. No historical GPU benchmark, unexecuted deep-BSDE comparison, unrestricted neural Cournot equilibrium, or empirical identification result is inferred from the computations reported here.
+\end{appendix}
+\paragraph{Current revision.} The authoritative R9 source descends from the review of the R8 candidate, dated 3 October 2026. Its new material, all raw runs, complete-action arrays, full-domain refinement summaries, proofs, response, and execution identities are stored under \texttt{revisions/2026-10-03-r9}. The archived R8 main text and supplement preserve the pre-revision scholarly record. Every inherited section and label is retained. The new response addresses the R8 report's B1--B7 and M1--M10 comments. Earlier replication and response descriptions in this historical record refer to their respective R6--R8 rounds; historical workflow success is not substituted for a run of the current source.
+
+\bibliographystyle{ecta-fullname}
+\bibliography{revision_reference}
+\end{document}
