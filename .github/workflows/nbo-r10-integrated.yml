@@ -1,17 +1,17 @@
-name: NBO R10 continuous-capital revision
+name: NBO R10 verified continuous-capital revision
 on:
   push:
-    branches: [revision/econometrica-nbo-r10-source-2026-10-04]
+    branches: [revision/econometrica-nbo-r10-verified-source-2026-10-04]
     paths: [revisions/2026-10-04-r10/RUN.json]
   workflow_dispatch:
 permissions:
   contents: write
 concurrency:
-  group: nbo-r10-integrated
+  group: nbo-r10-verified-integrated
   cancel-in-progress: false
 jobs:
   reproduce:
-    if: github.ref == 'refs/heads/revision/econometrica-nbo-r10-source-2026-10-04'
+    if: github.ref == 'refs/heads/revision/econometrica-nbo-r10-verified-source-2026-10-04'
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:
@@ -32,6 +32,8 @@ jobs:
           set -euo pipefail
           git fetch --depth=1 origin f8215d6df9026afa108a03c2823cbd6e054a9de8
           echo "NBO_SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          mkdir -p /tmp/nbo-r10-candidate
+          git archive --format=tar.gz --output=/tmp/nbo-r10-candidate/pinned-r10-source.tar.gz HEAD revisions/2026-10-04-r10 .github/workflows/nbo-r10-integrated.yml
           python - <<'PY'
           import hashlib,json,subprocess
           from pathlib import Path
@@ -55,8 +57,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p revisions/2026-10-04-r10/logs
-          python -u revisions/2026-10-04-r10/code/replicate.py | tee revisions/2026-10-04-r10/logs/driver.log
-          python -u revisions/2026-10-04-r10/code/build.py | tee revisions/2026-10-04-r10/logs/compilation.log
+          python -u revisions/2026-10-04-r10/code/replicate.py 2>&1 | tee revisions/2026-10-04-r10/logs/driver.log
+          python -u revisions/2026-10-04-r10/code/build.py 2>&1 | tee revisions/2026-10-04-r10/logs/compilation.log
       - name: Verify preservation and publish complete referee branches
         shell: bash
         run: |
@@ -79,8 +81,6 @@ jobs:
           for name,h in json.loads((r/'SOURCE_MANIFEST.json').read_text())['files'].items():
               assert hashlib.sha256(Path(name).read_bytes()).hexdigest()==h,name
           table=json.loads((r/'TABLE_MANIFEST.json').read_text())
-          # The command journal is not a numerical table input and grows after
-          # table generation. Keep only the immutable data provenance here.
           table['inputs'].pop(str(r/'results/EXECUTION.json'),None)
           (r/'TABLE_MANIFEST.json').write_text(json.dumps(table,indent=2)+'\n')
           for group in ['inputs','outputs']:
@@ -92,6 +92,7 @@ jobs:
           newtests=int(re.findall(r'Ran (\d+) tests?',testlog)[-1])
           record={'source_commit':os.environ['NBO_SOURCE_COMMIT'],
            'base_commit':'f8215d6df9026afa108a03c2823cbd6e054a9de8',
+           'previous_r10_source_commit':'9ece553c0f086195f12b93ee6a8e4976339c5def',
            'report_commit':'3fb6d5bd5cac245a7f693f0b8db76a5075b1c732',
            'workflow_run_id':os.environ['GITHUB_RUN_ID'],'workflow_attempt':os.environ['GITHUB_RUN_ATTEMPT'],
            'historical_files_preserved':len(old)-2,'prior_roots_archived_exactly':True,
@@ -99,28 +100,35 @@ jobs:
            'execution':execution,'audit':json.loads((r/'results/AUDIT.json').read_text()),
            'scope':'continuous capital theorem; conditional arithmetic; no universal actor superiority or preference diffusion-transfer claim'}
           (r/'REMOTE_EXECUTION.json').write_text(json.dumps(record,indent=2)+'\n')
-          paths=[Path('ECTA.tex'),Path('supp.tex')]+[p for p in r.rglob('*') if p.is_file() and '__pycache__' not in p.parts]
+          paths=[Path('ECTA.tex'),Path('supp.tex')]+[p for p in r.rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.name!='EVIDENCE_MANIFEST.json']
           manifest={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
           (r/'EVIDENCE_MANIFEST.json').write_text(json.dumps({'files':manifest},indent=2)+'\n')
           PY
           find revisions/2026-10-04-r10 -type d -name __pycache__ -prune -exec rm -rf '{}' +
           git add ECTA.tex supp.tex revisions/2026-10-04-r10
-          git commit -m 'revision(r10): continuous-capital regret theorem, neural deployment and complete evidence [skip ci]'
+          git commit -m 'revision(r10): verified continuous-capital theorem, integrated manuscript and complete evidence [skip ci]'
           evidence=revision/econometrica-nbo-r10-evidence-2026-10-04
           referee=revision/econometrica-nbo-r10-referee-2026-10-04
           test -z "$(git ls-remote --heads origin "$evidence")"
           test -z "$(git ls-remote --heads origin "$referee")"
           git push --atomic origin HEAD:"$evidence" HEAD:"$referee"
+          git rev-parse HEAD > /tmp/nbo-r10-candidate/EVIDENCE_COMMIT.txt
+          printf '%s\n' "$NBO_SOURCE_COMMIT" > /tmp/nbo-r10-candidate/SOURCE_COMMIT.txt
+          git archive --format=tar.gz --output=/tmp/nbo-r10-candidate/source.tar.gz HEAD
+          cp revisions/2026-10-04-r10/build/{ECTA,supp,response}.pdf /tmp/nbo-r10-candidate/
+          cp revisions/2026-10-04-r10/REMOTE_EXECUTION.json /tmp/nbo-r10-candidate/
+          (cd /tmp/nbo-r10-candidate && sha256sum source.tar.gz ECTA.pdf supp.pdf response.pdf > SHA256SUMS)
           echo "Source: $NBO_SOURCE_COMMIT" >> "$GITHUB_STEP_SUMMARY"
           echo "Evidence and referee: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
       - name: Retain outputs and failure logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nbo-r10-${{ github.run_id }}-${{ github.run_attempt }}
+          name: nbo-r10-verified-${{ github.run_id }}-${{ github.run_attempt }}
           retention-days: 90
           if-no-files-found: error
           path: |
+            /tmp/nbo-r10-candidate/
             revisions/2026-10-04-r10/logs/
             revisions/2026-10-04-r10/results/
             revisions/2026-10-04-r10/build/
