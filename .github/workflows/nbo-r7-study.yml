@@ -1,0 +1,85 @@
+name: NBO R7 immutable-source study
+on:
+  push:
+    branches: [revision/econometrica-nbo-r7-source-2026-10-03]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r7-study
+  cancel-in-progress: false
+jobs:
+  reproduce:
+    if: github.ref == 'refs/heads/revision/econometrica-nbo-r7-source-2026-10-03'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONHASHSEED: '0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Check complete source and preserve reviewed history
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+          base='998dc1bb9b2049080dcd2e21d543dcbee55cb4dc'
+          changed=subprocess.check_output(['git','diff','--name-only',base,'HEAD'],text=True).splitlines()
+          assert all(p.startswith('revisions/2026-10-03-r7/') or p=='.github/workflows/nbo-r7-study.yml' for p in changed)
+          PY
+          echo "NBO_SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Install exact recorded numerical versions
+        run: |
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install numpy==2.3.5 scipy==1.17.0 mpmath==1.3.0
+      - name: Execute the fixed study from immutable source
+        shell: bash
+        run: |
+          set -euo pipefail
+          r=revisions/2026-10-03-r7
+          mkdir -p "$r/results" "$r/logs"
+          python "$r/code/environment.py" | tee "$r/logs/environment.log"
+          python "$r/code/finite_study.py" ndu --smoke > "$r/logs/ndu_smoke.log" 2>&1
+          python "$r/code/finite_study.py" game --smoke > "$r/logs/game_smoke.log" 2>&1
+          python "$r/code/run_finite.py" --workers 2 | tee "$r/logs/finite_driver.log"
+          python "$r/code/paired_coverage.py" > "$r/logs/coverage_driver.log" 2>&1
+          python "$r/code/independent_interval.py" > "$r/logs/independent_interval.log" 2>&1
+          python "$r/code/test_r7.py" > "$r/logs/test_r7.log" 2>&1
+          python revisions/2026-09-29-r6/code/test_r6.py > "$r/logs/inherited_r6_tests.log" 2>&1
+      - name: Commit evidence on a separate branch without moving the source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$NBO_SOURCE_COMMIT"
+          python - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          p=Path('revisions/2026-10-03-r7')
+          manifest={str(f):hashlib.sha256(f.read_bytes()).hexdigest() for folder in ['code','results','logs'] for f in sorted((p/folder).glob('*')) if f.is_file()}
+          (p/'REMOTE_EXECUTION.json').write_text(json.dumps({'source_commit':os.environ['NBO_SOURCE_COMMIT'],'run_id':os.environ['GITHUB_RUN_ID'],'source_branch_unchanged':True,'files':manifest},indent=2)+'\n')
+          PY
+          branch=revision/econometrica-nbo-r7-evidence-2026-10-03
+          test -z "$(git ls-remote --heads origin "$branch")"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f revisions/2026-10-03-r7/results revisions/2026-10-03-r7/logs revisions/2026-10-03-r7/REMOTE_EXECUTION.json
+          git commit -m 'evidence(r7): complete fixed-source neural study and independent verification [skip ci]'
+          git push origin HEAD:"$branch"
+          echo "Source: $NBO_SOURCE_COMMIT" >> "$GITHUB_STEP_SUMMARY"
+          echo "Evidence: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve a second evidence copy
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r7-evidence-${{ github.run_id }}
+          retention-days: 90
+          path: revisions/2026-10-03-r7
+          if-no-files-found: error
