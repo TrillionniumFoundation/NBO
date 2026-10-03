@@ -1,0 +1,98 @@
+name: NBO R9 publication and accounting audit
+on:
+  push:
+    branches: [revision/econometrica-nbo-r9-finalize-source-2026-10-03]
+    paths: [revisions/2026-10-03-r9/RUN_FINAL.json]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r9-publication
+  cancel-in-progress: false
+jobs:
+  finalize:
+    if: github.ref == 'refs/heads/revision/econometrica-nbo-r9-finalize-source-2026-10-03'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      PYTHONHASHSEED: '0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Check numerical provenance and install the same dependencies
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,subprocess
+          from pathlib import Path
+          r=Path('revisions/2026-10-03-r9')
+          trigger=json.loads((r/'RUN_FINAL.json').read_text())
+          old=json.loads((r/'REMOTE_EXECUTION.json').read_text())
+          assert old['source_commit']==trigger['numerical_source_commit']
+          assert old['execution']['complete'] and old['execution']['all_returncodes_zero']
+          subprocess.run(['git','merge-base','--is-ancestor',trigger['numerical_evidence_commit'],'HEAD'],check=True)
+          PY
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install numpy==2.3.5 scipy==1.17.0 mpmath==1.3.0
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended texlive-science cm-super
+      - name: Correct accounting, preserve all numerical inputs and rerun publication checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -u revisions/2026-10-03-r9/code/finalize.py > revisions/2026-10-03-r9/logs/finalization_driver.log 2>&1
+          cat revisions/2026-10-03-r9/logs/finalization_driver.log
+      - name: Verify final manifest and publish a new referee branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,subprocess
+          from pathlib import Path
+          r=Path('revisions/2026-10-03-r9')
+          for name,h in json.loads((r/'EVIDENCE_MANIFEST.json').read_text())['files'].items():
+              assert hashlib.sha256(Path(name).read_bytes()).hexdigest()==h,name
+          for name,h in json.loads((r/'SOURCE_MANIFEST.json').read_text())['files'].items():
+              assert hashlib.sha256(Path(name).read_bytes()).hexdigest()==h,name
+          changed=subprocess.check_output(['git','diff','--name-only'],text=True).splitlines()
+          assert all(n in ['ECTA.tex','supp.tex'] or n.startswith(str(r)+'/') for n in changed),changed
+          final=json.loads((r/'REMOTE_EXECUTION.json').read_text())
+          assert final['total_unique_tests']==60
+          assert all(t['success'] for t in final['tests'])
+          assert final['numerical_results_reused_by_hash'] and not final['numerical_retraining_in_finalization']
+          PY
+          find revisions/2026-10-03-r9 -type d -name __pycache__ -prune -exec rm -rf '{}' +
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ECTA.tex supp.tex revisions/2026-10-03-r9
+          git commit -m 'revision(r9): complete cost accounts, preserve numerical evidence and publish referee manuscript [skip ci]'
+          branch=revision/econometrica-nbo-r9-referee-2026-10-03
+          test -z "$(git ls-remote --heads origin "$branch")"
+          git push origin HEAD:"$branch"
+          mkdir -p /tmp/nbo-r9-final
+          git archive --format=tar.gz --output=/tmp/nbo-r9-final/source.tar.gz HEAD
+          git rev-parse HEAD > /tmp/nbo-r9-final/EVIDENCE_COMMIT.txt
+          cp revisions/2026-10-03-r9/build/{ECTA,supp,response}.pdf /tmp/nbo-r9-final/
+          cp revisions/2026-10-03-r9/REMOTE_EXECUTION.json /tmp/nbo-r9-final/
+          (cd /tmp/nbo-r9-final && sha256sum source.tar.gz *.pdf > SHA256SUMS)
+          echo "Referee candidate: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          echo "All raw policy arrays preserved; 60 unique regression/accounting checks passed." >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve the final candidate and any failure logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r9-final-${{ github.run_id }}
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            /tmp/nbo-r9-final/
+            revisions/2026-10-03-r9/logs/
+            revisions/2026-10-03-r9/results/FINALIZATION_COMMANDS.json
+            revisions/2026-10-03-r9/results/COST_ACCOUNTING_AUDIT.json
