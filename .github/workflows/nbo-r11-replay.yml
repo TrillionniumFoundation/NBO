@@ -34,9 +34,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p revisions/2026-10-04-r11/logs /tmp/nbo-r11-candidate
           ready=0
           for attempt in $(seq 1 125); do
-            gh api 'repos/TrillionniumFoundation/NBO/actions/runs/37156523704/jobs?per_page=100' > /tmp/r11-jobs.json
+            if ! gh api 'repos/TrillionniumFoundation/NBO/actions/runs/37156523704/jobs?per_page=100' > /tmp/r11-jobs.json 2>> revisions/2026-10-04-r11/logs/status_query.log; then
+              echo 'Transient status query failure; retaining diagnostics and retrying the read.' | tee -a revisions/2026-10-04-r11/logs/status_query.log
+              sleep 15
+              continue
+            fi
             state=$(python - <<'PY'
           import json
           jobs=[j for j in json.load(open('/tmp/r11-jobs.json'))['jobs'] if j['name'].startswith('study (')]
