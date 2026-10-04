@@ -2,14 +2,25 @@ name: NBO R18 publication
 on:
   push:
     branches: [revision/econometrica-nbo-r18-2026-10-05]
-    paths: [.github/workflows/nbo-r18-publication.yml, 'revisions/2026-10-05-r18/**']
+    paths:
+      - .github/workflows/nbo-r18-publication.yml
+      - 'revisions/2026-10-05-r18/code/**'
+      - 'revisions/2026-10-05-r18/manuscript/**'
+      - revisions/2026-10-05-r18/README.current.md
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
+concurrency:
+  group: nbo-r18-publication
+  cancel-in-progress: false
 jobs:
-  source:
+  publication:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 40
+    env:
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,27 +40,36 @@ jobs:
             *.yml
             !**/raw/**
             !**/contrast_risk/**
-            revisions/2026-10-04-r16/build/*.pdf
-      - name: Package available source and aggregate evidence
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import hashlib,json,subprocess,zipfile
-          files=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
-          manifest={}
-          with zipfile.ZipFile('r18-inherited-source.zip','w',zipfile.ZIP_DEFLATED) as z:
-              for name in files:
-                  p=Path(name)
-                  if not name or not p.is_file() or p.stat().st_size>20000000: continue
-                  if '.git/' in name: continue
-                  data=p.read_bytes();z.writestr(name,data)
-                  manifest[name]=hashlib.sha256(data).hexdigest()
-              z.writestr('R18_SNAPSHOT.json',json.dumps({'commit':subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),'files':manifest},indent=2))
-          print('Packaged',len(manifest),'files')
-          PY
-      - uses: actions/upload-artifact@v4
+            revisions/2026-10-05-r17/results/contrast_risk/**
+      - name: Fetch immutable evidence parent
+        run: git fetch --no-tags --depth=1 --filter=blob:none origin 3a5bae12938077002d1619a0dd32be6071e9adab
+      - uses: actions/setup-python@v5
         with:
-          name: nbo-r18-inherited-source
-          path: r18-inherited-source.zip
-          retention-days: 14
+          python-version: '3.12'
+      - name: Install numerical replay and native publisher build dependencies
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
+      - name: Integrate the preserved paper and complete point-by-point response
+        run: python revisions/2026-10-05-r18/code/assemble.py
+      - name: Independently replay risk evidence and audit every mathematical and numerical object
+        run: python revisions/2026-10-05-r18/code/audit.py | tee revisions/2026-10-05-r18/results/AUDIT.log
+      - name: Compile article, supplement, applications and response
+        run: python revisions/2026-10-05-r18/code/build.py | tee revisions/2026-10-05-r18/results/BUILD.log
+      - name: Preserve history and publish the tested revision without force
+        run: python revisions/2026-10-05-r18/code/publish.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r18-publication
+          path: |
+            revisions/2026-10-05-r18/build/*.pdf
+            revisions/2026-10-05-r18/build/*.log
+            revisions/2026-10-05-r18/results/
+            revisions/2026-10-05-r18/manuscript/
+            revisions/2026-10-05-r18/RESPONSE_MAP.json
+            R18_REMOTE_RECEIPT.json
+          retention-days: 30
           if-no-files-found: error
