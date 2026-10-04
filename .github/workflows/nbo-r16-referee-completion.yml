@@ -25,17 +25,20 @@ jobs:
       NUMBA_NUM_THREADS: '1'
       NBO_R16_PUBLICATION_SOURCE: ${{ github.sha }}
       P: revisions/2026-10-04-r16/publication
+      READING_BRANCH: revision/econometrica-nbo-r16-active-face-referee-2026-10-04-a9e0a55
+      EVIDENCE_BRANCH: revision/econometrica-nbo-r16-active-face-evidence-2026-10-04-a9e0a55
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           filter: blob:none
       - name: Assemble immutable history and all registered evidence trees
+        id: prepare
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          for b in revision/econometrica-nbo-r16-referee-ready-2026-10-04 revision/econometrica-nbo-r16-referee-evidence-2026-10-04; do
+          for b in "$READING_BRANCH" "$EVIDENCE_BRANCH"; do
             test -z "$(git ls-remote --heads origin "refs/heads/$b")" || { echo "Refusing existing branch $b"; exit 1; }
           done
           git config user.name 'NBO Revision Builder'
@@ -51,6 +54,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install pinned mathematical and publication dependencies
+        id: dependencies
         shell: bash
         run: |
           set -euo pipefail
@@ -81,14 +85,20 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$P/checks/remote"
+          failed=0
           for suite in signed_tests.py menu_tests.py menu_verification_tests.py menu_pipeline_tests.py menu_transport_tests.py robustness_tests.py; do
-            python -m unittest discover -s revisions/2026-10-04-r16/code -p "$suite" -v > "$P/checks/remote/$suite.stdout" 2>&1 || { cat "$P/checks/remote/$suite.stdout"; exit 1; }
+            python -m unittest discover -s revisions/2026-10-04-r16/code -p "$suite" -v > "$P/checks/remote/$suite.stdout" 2>&1 || failed=1
             cat "$P/checks/remote/$suite.stdout"
           done
-          python -m unittest discover -s "$P/code" -p test_decision_value.py -v > "$P/checks/remote/test_decision_value.py.stdout" 2>&1 || { cat "$P/checks/remote/test_decision_value.py.stdout"; exit 1; }
-          python -m unittest discover -s "$P/completion" -p test_active_face_value.py -v > "$P/checks/remote/test_active_face_value.py.stdout" 2>&1 || { cat "$P/checks/remote/test_active_face_value.py.stdout"; exit 1; }
-          python revisions/2026-10-04-r16/code/strong_hjb_tests.py --out "$P/checks/remote/STRONG_HJB.json" > "$P/checks/remote/strong_hjb.stdout" 2>&1 || { cat "$P/checks/remote/strong_hjb.stdout"; exit 1; }
+          python -m unittest discover -s "$P/code" -p test_decision_value.py -v > "$P/checks/remote/test_decision_value.py.stdout" 2>&1 || failed=1
+          cat "$P/checks/remote/test_decision_value.py.stdout"
+          python -m unittest discover -s "$P/completion" -p test_active_face_value.py -v > "$P/checks/remote/test_active_face_value.py.stdout" 2>&1 || failed=1
+          cat "$P/checks/remote/test_active_face_value.py.stdout"
+          python revisions/2026-10-04-r16/code/strong_hjb_tests.py --out "$P/checks/remote/STRONG_HJB.json" > "$P/checks/remote/strong_hjb.stdout" 2>&1 || failed=1
+          cat "$P/checks/remote/strong_hjb.stdout"
+          exit "$failed"
       - name: Recompute interval arithmetic, integrate manuscript, compile and audit
+        if: ${{ always() && steps.prepare.outcome == 'success' && steps.dependencies.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -107,7 +117,7 @@ jobs:
           test "$(git ls-remote --heads origin "$GITHUB_REF" | cut -f1)" = "$GITHUB_SHA"
           git commit -m 'revision(r16): complete NBO referee revision with active-face theorem, full evidence, article, supplement and response'
           leases=(); destinations=()
-          for b in revision/econometrica-nbo-r16-referee-ready-2026-10-04 revision/econometrica-nbo-r16-referee-evidence-2026-10-04; do
+          for b in "$READING_BRANCH" "$EVIDENCE_BRANCH"; do
             test -z "$(git ls-remote --heads origin "refs/heads/$b")"
             leases+=("--force-with-lease=refs/heads/$b:")
             destinations+=("HEAD:refs/heads/$b")
