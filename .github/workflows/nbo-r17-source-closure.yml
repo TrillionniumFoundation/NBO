@@ -1,0 +1,50 @@
+name: NBO R17 pinned source closure
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r17-2026-10-05']
+    paths: ['.github/workflows/nbo-r17-source-closure.yml']
+permissions:
+  contents: read
+jobs:
+  closure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-04-r16/CURRENT_SOURCE_CLOSURE.json
+      - name: Materialize immutable reading closure and scientific sources
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib,subprocess,tarfile
+          base='0b15260752b8e988236f82cc0ee7752b44f326f1'
+          out=pathlib.Path('r17-source-export');out.mkdir()
+          closure=json.loads(subprocess.check_output(['git','show',base+':revisions/2026-10-04-r16/CURRENT_SOURCE_CLOSURE.json']))
+          files=set(closure['files'])
+          listing=subprocess.check_output(['git','ls-tree','-r','--name-only',base],text=True).splitlines()
+          for p in listing:
+              if p.startswith('reviews/') and p.endswith(('.md','.json','.py')): files.add(p)
+              if p.startswith('revisions/') and '/code/' in p and p.endswith('.py'): files.add(p)
+              if p.startswith('revisions/2026-10-04-r16/') and (p.endswith('.md') or '/protocols/' in p or '_summary/' in p or ('/build/' not in p and p.count('/')==2 and p.endswith('.json'))): files.add(p)
+          subprocess.run(['git','sparse-checkout','set','--no-cone','--stdin'],input='\n'.join('/'+p for p in sorted(files))+'\n',text=True,check=True)
+          records={}
+          with tarfile.open(out/'source.tar.gz','w:gz') as tar:
+              for p in sorted(files):
+                  f=pathlib.Path(p)
+                  if not f.is_file(): raise RuntimeError('Missing '+p)
+                  data=f.read_bytes(); digest=hashlib.sha256(data).hexdigest()
+                  if p in closure['files'] and digest!=closure['files'][p]['sha256']: raise RuntimeError('Digest mismatch '+p)
+                  records[p]={'bytes':len(data),'sha256':digest}
+                  tar.add(f,arcname=p)
+          (out/'EXPORT_MANIFEST.json').write_text(json.dumps({'baseline':base,'files':records},indent=2)+'\n')
+          print('Exported',len(records),'files;',sum(v['bytes'] for v in records.values()),'bytes')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r17-pinned-source-closure
+          path: r17-source-export/
+          retention-days: 14
