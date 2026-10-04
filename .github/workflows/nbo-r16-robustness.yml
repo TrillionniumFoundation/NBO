@@ -1,0 +1,198 @@
+name: NBO R16 prospective economic robustness
+
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r16-robustness-source-2026-10-04
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: nbo-r16-robustness-${{ github.sha }}
+  cancel-in-progress: false
+
+env:
+  NBO_R16_SOURCE_COMMIT: ${{ github.sha }}
+  OMP_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  NUMBA_NUM_THREADS: '1'
+  PYTHONHASHSEED: '0'
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    outputs:
+      matrix: ${{ steps.pack.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Require the first execution and a new evidence branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$(git rev-parse HEAD)" = "$NBO_R16_SOURCE_COMMIT"
+          test -z "$(git ls-remote --heads origin refs/heads/revision/econometrica-nbo-r16-robustness-evidence-2026-10-04)"
+      - name: Install the fixed CPU numerical environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Audit source, strict worker isolation and complete work accounting
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s revisions/2026-10-04-r16/code -p robustness_tests.py -v
+          python revisions/2026-10-04-r16/code/strong_hjb_tests.py --out "$RUNNER_TEMP/r16-strong-hjb-checks.json"
+      - name: Reconstruct and independently audit all eight fixed mathematical accounts
+        shell: bash
+        run: |
+          set -euo pipefail
+          for calibration in high low long stress; do
+            for dimension in 10 50; do
+              account="revisions/2026-10-04-r16/protocols/robustness_constants/${calibration}_d${dimension}.json"
+              fresh="$RUNNER_TEMP/r16-${calibration}-d${dimension}-fresh.json"
+              python revisions/2026-10-04-r16/code/paired_capital.py \
+                --protocol revisions/2026-10-04-r16/protocols/robustness.json \
+                --calibration "$calibration" --dimension "$dimension" --coefficient-proposals "$account" --out "$fresh"
+              python -c 'import json,sys; assert json.load(open(sys.argv[1])) == json.load(open(sys.argv[2]))' "$account" "$fresh"
+              python revisions/2026-10-04-r16/code/independent_capital_pair_audit.py \
+                --protocol revisions/2026-10-04-r16/protocols/robustness.json --account "$account" \
+                --out "$RUNNER_TEMP/r16-${calibration}-d${dimension}-independent.json"
+            done
+          done
+      - name: Freeze the complete four-calibration, five-output numerical source
+        id: pack
+        run: |
+          python revisions/2026-10-04-r16/code/robustness_pipeline.py pack \
+            --repo . --out "$RUNNER_TEMP/r16-robustness-source" --source "$NBO_R16_SOURCE_COMMIT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-robustness-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/r16-robustness-source/
+          if-no-files-found: error
+          retention-days: 90
+
+  trial:
+    needs: source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix: ${{ fromJSON(needs.source.outputs.matrix) }}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r16-robustness-source-${{ github.run_id }}
+          path: source
+      - name: Install the exact CPU environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Fit all four independent groups and confirm all five outputs once
+        run: |
+          python source/robustness_pipeline.py run-trial --bundle source \
+            --workspace "$RUNNER_TEMP/r16-robustness-worker" \
+            --out "trial-${{ matrix.trial_id }}" --trial-id '${{ matrix.trial_id }}'
+      - name: Preserve every fixed fit, failure, raw bank and complete process record
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-robustness-trial-${{ matrix.trial_id }}-${{ github.run_id }}
+          path: trial-${{ matrix.trial_id }}/
+          if-no-files-found: warn
+          retention-days: 90
+
+  evidence:
+    needs: [source, trial]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install the exact independent reporting environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r16-robustness-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/robustness-source
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nbo-r16-robustness-trial-*-${{ github.run_id }}
+          path: ${{ runner.temp }}/robustness-trials
+      - name: Require every economic trial and reconstruct all 648 protected endpoints
+        run: |
+          python revisions/2026-10-04-r16/code/robustness_pipeline.py collect --repo . \
+            --bundle "$RUNNER_TEMP/robustness-source" --input-dir "$RUNNER_TEMP/robustness-trials"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-robustness-summary-${{ github.run_id }}
+          path: revisions/2026-10-04-r16/results/robustness_summary/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Atomically create the complete evidence branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$(git rev-parse HEAD)" = "$NBO_R16_SOURCE_COMMIT"
+          source_branch=revision/econometrica-nbo-r16-robustness-source-2026-10-04
+          evidence_branch=revision/econometrica-nbo-r16-robustness-evidence-2026-10-04
+          frozen_source=$(git ls-remote --heads origin "refs/heads/$source_branch" | cut -f1)
+          test "$frozen_source" = "$NBO_R16_SOURCE_COMMIT"
+          test -z "$(git ls-remote --heads origin "refs/heads/$evidence_branch")"
+          git diff --exit-code "$NBO_R16_SOURCE_COMMIT" --
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- revisions/2026-10-04-r16/results/robustness revisions/2026-10-04-r16/results/robustness_summary
+          python - <<'PY'
+          import json,pathlib,subprocess,os
+          root=pathlib.Path('revisions/2026-10-04-r16/results/robustness')
+          audit=json.loads((root/'FINAL_AUDIT.json').read_text())
+          assert audit['complete'] and audit['numerical_source_commit']==os.environ['NBO_R16_SOURCE_COMMIT']
+          assert audit['trials']==64 and audit['policy_outputs']==320 and audit['confidence_events']==648
+          names=subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines()
+          assert names and all(n.startswith('revisions/2026-10-04-r16/results/robustness/') or n.startswith('revisions/2026-10-04-r16/results/robustness_summary/') for n in names)
+          PY
+          body_file="$RUNNER_TEMP/robustness-evidence-message.txt"
+          cat > "$body_file" <<'MESSAGE'
+          revision(r16): preserve the complete prospective economic robustness family
+
+          Retain all four economic calibrations, all eight fixed streams, five policy outputs per trial, 648 protected endpoints, complete HJB diagnostics and every process clock. No favorable economic sign or final target attainment is a publication gate.
+          MESSAGE
+          evidence_tree=$(git write-tree)
+          evidence_commit=$(git commit-tree "$evidence_tree" -p "$NBO_R16_SOURCE_COMMIT" -F "$body_file")
+          git push --atomic --force-with-lease="refs/heads/$evidence_branch:" origin "$evidence_commit:refs/heads/$evidence_branch"
+          echo "Robustness numerical source: $NBO_R16_SOURCE_COMMIT" >> "$GITHUB_STEP_SUMMARY"
+          echo "Complete robustness evidence: $evidence_commit" >> "$GITHUB_STEP_SUMMARY"
