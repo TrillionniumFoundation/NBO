@@ -14,7 +14,7 @@ def fixed(x,side=None,digits=6):
     return f'{x:.{digits}f}'
 def esc(x):return str(x).replace('_',r'\_').replace('%',r'\%').replace('&',r'\&')
 def table(name,title,label,columns,head,rows,note):
-    text=r'\begingroup\small\setlength{\tabcolsep}{4pt}'+'\n'+r'\begin{longtable}{'+columns+'}\n'+r'\caption{'+title+'}'+r'\label{'+label+'}'+r'\\'+'\n'+r'\toprule'+'\n'+' & '.join(head)+r'\\\midrule'+'\n'+r'\endfirsthead'+'\n'+r'\toprule'+'\n'+' & '.join(head)+r'\\\midrule'+'\n'+r'\endhead'+'\n'
+    text=r'\begingroup\small\setlength{\tabcolsep}{3pt}'+'\n'+r'\begin{longtable}{'+columns+'}\n'+r'\caption{'+title+'}'+r'\label{'+label+'}'+r'\\'+'\n'+r'\toprule'+'\n'+' & '.join(head)+r'\\\midrule'+'\n'+r'\endfirsthead'+'\n'+r'\toprule'+'\n'+' & '.join(head)+r'\\\midrule'+'\n'+r'\endhead'+'\n'
     if rows:text+='\n'.join(' & '.join(map(str,row))+r'\\' for row in rows)+'\n'
     else:text+=r'\multicolumn{'+str(len(head))+r'}{l}{Development smoke: no observations in this table.}\\'+'\n'
     text+=r'\bottomrule\end{longtable}'+'\n'+r'\noindent '+note+'\n'+r'\endgroup'+'\n'
@@ -97,7 +97,7 @@ def run(development=False):
                 if not rows:continue
                 g=dict(dimension=d,method=method,design=design,n=len(rows),mean_paired_statistic=float(np.mean([r['bound']['mean'] for r in rows])),seed_sd=float(np.std([r['bound']['mean'] for r in rows],ddof=1)) if len(rows)>1 else None,min_lower=min(r['bound']['lower'] for r in rows),max_upper=max(r['bound']['upper'] for r in rows),max_regret=max(r['policy_regret_upper'] for r in rows),positive=sum(r['bound']['lower']>0 for r in rows),negative=sum(r['bound']['upper']<0 for r in rows));groups.append(g)
                 trows.append([d,method.upper()+' / '+('P' if design=='population' else '0'),fixed(g['mean_paired_statistic']),fixed(g['min_lower'],'lo'),fixed(g['max_regret'],'hi'),f"{g['positive']}/{len(rows)}"])
-    table('table_primary.tex','Budgeted primary policy verification','tab:r13primary','rlrrrr',['$d$','Method / state','Mean statistic','Min. lower','Max. regret','Positive'],trows,'P denotes the fixed nine-profile population; 0 denotes the origin. Lower endpoints are rounded downward and regret bounds upward. Counts refer to fixed fitted policies, not unseen training seeds. All quantities except counts are in discounted utility units.')
+    table('table_primary.tex','Budgeted primary policy verification','tab:r13primary','rlrrrr',['$d$','Method / state','Mean','Lower','Regret ub.','Positive'],trows,'P denotes the fixed nine-profile population; 0 denotes the origin. Lower endpoints are rounded downward and regret bounds upward. Counts refer to fixed fitted policies, not unseen training seeds. All quantities except counts are in discounted utility units.')
     pairgroups=[];trows=[]
     for design in PROTOCOL['designs']:
         for d in PROTOCOL['dimensions']:
@@ -106,7 +106,7 @@ def run(development=False):
                 if not rows:continue
                 g=dict(dimension=d,comparison='nbo-'+other,design=design,n=len(rows),mean_paired_statistic=float(np.mean([r['bound']['mean'] for r in rows])),min_lower=min(r['bound']['lower'] for r in rows),max_upper=max(r['bound']['upper'] for r in rows),positive=sum(r['bound']['lower']>0 for r in rows),negative=sum(r['bound']['upper']<0 for r in rows));pairgroups.append(g)
                 trows.append([d,'P' if design=='population' else '0',other.upper(),fixed(g['mean_paired_statistic']),fixed(g['min_lower'],'lo'),fixed(g['max_upper'],'hi'),f"{g['positive']}/{g['negative']}"])
-    table('table_paired.tex','Direct NBO-minus-comparator endpoints','tab:r13paired','rllrrrr',['$d$','State','Comparator','Mean statistic','Min. lower','Max. upper','$+/-$'],trows,'Each row summarizes the recorded seed-matched pairs. The last column counts strictly positive lower endpoints and strictly negative upper endpoints. The other pairs are inconclusive. Bounds are computed from pathwise differences; the common schedule transfer cancels.')
+    table('table_paired.tex','Direct NBO-minus-comparator endpoints','tab:r13paired','rllrrrr',['$d$','State','Comparator','Mean','Lower','Upper','$+/-$'],trows,'Each row summarizes the recorded seed-matched pairs. The last column counts strictly positive lower endpoints and strictly negative upper endpoints. The other pairs are inconclusive. Bounds are computed from pathwise differences; the common schedule transfer cancels.')
     trows=[]
     for d in PROTOCOL['dimensions']:
         for method in PROTOCOL['methods']:
@@ -126,7 +126,7 @@ def run(development=False):
             if rows:
                 counts=[sum(r['consumption_fee'][j]['lower']>0 for r in rows) for j in [1,2,3]]
                 trows.append([d,method.upper(),*counts,fixed(min(r['fee_lower_break_even'] for r in rows)*10000,'lo',2)])
-    table('table_fee.tex','Self-financed management-fee support in the population','tab:r13fee','rlrrrr',['$d$','Method','5 bp','10 bp','20 bp','Min. ceiling, bp'],trows,'The three central columns count fitted policies with a positive simultaneous lower improvement endpoint after the stated fee. One basis point is 0.01 percent of gross withdrawals. The ceiling is the smallest certified fee ceiling across the recorded seeds; zero does not prove that every positive fee is unprofitable.')
+    table('table_fee.tex','Self-financed management-fee support in the population','tab:r13fee','rlrrrr',['$d$','Method','5 bp','10 bp','20 bp','Floor, bp'],trows,'The three central columns count fitted policies with a positive simultaneous lower improvement endpoint after the stated fee. One basis point is 0.01 percent of gross withdrawals. The ceiling is the smallest certified fee ceiling across the recorded seeds; zero does not prove that every positive fee is unprofitable.')
     trows=[]
     for r in refs:
         p=base/'reference'/(r['id']+'.npz')

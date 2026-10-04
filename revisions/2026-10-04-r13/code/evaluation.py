@@ -32,12 +32,12 @@ def fee_account(bound):
     threshold=I(1.)-pc.exp_i(-I(max(0.,bound['lower']))/A)
     return rows,float(max(0.,threshold.lo))
 
-def evaluate(path,out,design='population',steps=None,paths=None,test_seed=None,shift=0.,spread=0.):
+def evaluate(path,out,design='population',steps=None,paths=None,test_seed=None,shift=0.,spread=0.,policy_loader=None):
     path=Path(path);out=Path(out);out.mkdir(parents=True,exist_ok=True)
     steps=PROTOCOL['final_steps'] if steps is None else int(steps);paths=PROTOCOL['final_paths'] if paths is None else int(paths)
     test_seed=PROTOCOL['final_noise_seed'] if test_seed is None else int(test_seed)
     if paths<2:raise ValueError('at least two independent paths required')
-    a,c,state=old.load(path);d=state['dimension'];eps=float(state['epsilon']);wt,con=account(d,steps,eps,design,float(shift),float(spread));h=wt['h'];support=np.asarray(con['initial_profiles'])
+    a,c,state=(policy_loader or old.load)(path);d=state['dimension'];eps=float(state['epsilon']);wt,con=account(d,steps,eps,design,float(shift),float(spread));h=wt['h'];support=np.asarray(con['initial_profiles'])
     initial_rng=np.random.default_rng(test_seed+100003+d);ids=initial_rng.integers(0,len(support),size=paths);za=support[ids].copy();z0=za.copy()
     B=old.coupling(d);Am,Bm,Cm,Mm=[pc.midpoint(wt[k]) for k in ['A','B','C','M']];lo=pc.up(wt['center'].hi-eps);hi=pc.down(wt['center'].lo+eps)
     prod=np.zeros(paths);loss=np.zeros(paths);rng=np.random.default_rng(test_seed+d);noise_hash=hashlib.sha256();sat=0;outside=0;nonfinite=0;max_state=0.;noise_clipped=0;start=time.perf_counter()
@@ -60,7 +60,7 @@ def evaluate(path,out,design='population',steps=None,paths=None,test_seed=None,s
     for _ in range(12):
         with torch.no_grad():_=a(torch.from_numpy(bench))
     online=(time.perf_counter()-ts)/12;fees,ceiling=fee_account(bound)
-    row=dict(id=ident,weights=str(path.relative_to(ROOT)),weights_sha256=digest(path),source_commit=source(),method=state['method'],dimension=d,iteration=state['iteration'],epsilon=eps,design=design,shift=float(shift),spread=float(spread),steps=steps,paths=paths,initial_state_hash=hashlib.sha256(support[ids].tobytes()).hexdigest(),initial_index_hash=hashlib.sha256(ids.tobytes()).hexdigest(),noise_seed=test_seed+d,noise_sha256=noise_hash.hexdigest(),raw_sha256=digest(rawpath),bound=bound,constants=con,policy_regret_upper=float(pc.up(con['anchor_upper']-bound['lower'])),seconds=time.perf_counter()-start,decision_batch256_seconds=online,nonfinite_proposals=nonfinite,noise_clipped=noise_clipped,action_saturation_frequency=sat/(steps*paths*d),outside_R11_training_box_frequency=outside/(steps*paths),max_internal_state=max_state,consumption_fee=fees,fee_lower_break_even=ceiling,interpretation='mean is the pre-adjustment paired numerical statistic; endpoints include sampling, diffusion transfer, clipping and arithmetic; not a calibrated welfare estimate')
+    row=dict(policy_implementation=state.get('policy_implementation','original fitted actor'),id=ident,weights=str(path.relative_to(ROOT)),weights_sha256=digest(path),source_commit=source(),method=state['method'],dimension=d,iteration=state['iteration'],epsilon=eps,design=design,shift=float(shift),spread=float(spread),steps=steps,paths=paths,initial_state_hash=hashlib.sha256(support[ids].tobytes()).hexdigest(),initial_index_hash=hashlib.sha256(ids.tobytes()).hexdigest(),noise_seed=test_seed+d,noise_sha256=noise_hash.hexdigest(),raw_sha256=digest(rawpath),bound=bound,constants=con,policy_regret_upper=float(pc.up(con['anchor_upper']-bound['lower'])),seconds=time.perf_counter()-start,decision_batch256_seconds=online,nonfinite_proposals=nonfinite,noise_clipped=noise_clipped,action_saturation_frequency=sat/(steps*paths*d),outside_R11_training_box_frequency=outside/(steps*paths),max_internal_state=max_state,consumption_fee=fees,fee_lower_break_even=ceiling,interpretation='mean is the pre-adjustment paired numerical statistic; endpoints include sampling, diffusion transfer, clipping and arithmetic; not a calibrated welfare estimate')
     if max_state>con['state_cap']:raise AssertionError('arithmetic state cap violated')
     write(out/f'{ident}.json',row);print(ident,bound['lower'],bound['upper'],flush=True);return row
 

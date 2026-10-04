@@ -62,6 +62,23 @@ def verify(development=False):
             np.testing.assert_allclose(g,z['action_loss'],atol=1e-12,rtol=1e-11)
             if np.any(g>z['mechanism_upper']+2e-10):raise AssertionError('mechanism bound violation')
             close(g.mean(),r['mean_actor_hamiltonian_loss'])
+    sensors=[r for r in rows if r.get('record_type')=='sensor']
+    from sensor import allowance
+    for r in sensors:
+        if digest(ROOT/r['raw_file'])!=r['raw_sha256'] or digest(ROOT/r['weights'])!=r['weights_sha256']:raise AssertionError('sensor source identity')
+        with np.load(ROOT/r['raw_file']) as raw:
+            for s in r['rows']:
+                cc=allowance(ROOT/r['weights'],s['cells'],s['sensor_noise_rms'])
+                for key in ['node_error_upper','action_error_upper','physical_error_upper','payoff_difference_upper']:close(cc[key],s['allowance'][key])
+                close(raw[s['id']].mean(),s['mean_sensor_minus_ideal'])
+                parent=bypath[s['protected_parent']]
+                if parent['steps']!=s['cells'] or not parent.get('policy_implementation','').startswith('protected'):raise AssertionError('sensor parent is a different implementation')
+                close((pc.I(parent['bound']['lower'])-pc.I(cc['payoff_difference_upper'])).lo,s['transferred_improvement_lower'])
+    if not development:
+        for folder,seeds in [('extra_results',PROTOCOL['seeds']),('secondary_results',[PROTOCOL['auxiliary_seed']])]:
+            found={p.parent.name for p in (R/folder).glob('*/EXECUTION.json')}
+            if found!=set(map(str,seeds)):raise AssertionError('missing fixed-work execution ledger')
+        if len(sensors)!=2:raise AssertionError('missing finite-observation audit')
     primary=[r for r in selections if '/extra_results/' in r['_path']]
     secondary=[r for r in selections if '/secondary_results/' in r['_path']]
     if not development:
@@ -158,6 +175,20 @@ def run(development=False):
                 e=byweights[s['weights']];vc+=e['seconds']
                 if e['policy_regret_upper']<=target:count+=1;costs.append(s['fit_seconds']+vc);break
         regret_hitting.append(dict(dimension=d,method=m,target_regret=target,reached=count,median_total_seconds=float(np.median(costs)) if costs else None))
+    direct_work=[];workseed=[];workgroups=[]
+    for d in PROTOCOL['dimensions']:
+      for n in ([4,8] if development else PROTOCOL['fixed_work_budgets']):
+       for other in ['dpo','linear']:
+        pp=[r for r in pairrows if '/secondary_results/' not in r['_path'] and r['dimension']==d and evbypath[r['right']]['method']==other and f'_work{n}_' in r['id']]
+        if not pp:continue
+        g=dict(dimension=d,budget=n,comparator=other,pairs=len(pp),positive=sum(r['bound']['lower']>0 for r in pp),negative=sum(r['bound']['upper']<0 for r in pp),min_lower=min(r['bound']['lower'] for r in pp),max_upper=max(r['bound']['upper'] for r in pp),mean=float(np.mean([r['bound']['mean'] for r in pp])));workgroups.append(g)
+        direct_work.append([d,n,other.upper(),fixed(g['mean']),fixed(g['min_lower'],'lo'),fixed(g['max_upper'],'hi'),f"{g['positive']}/{g['negative']}"])
+        for rr in pp:
+            seed=int(re.search(r'_s(\d+)',rr['id']).group(1));b=rr['bound']
+            workseed.append([d,n,other.upper(),seed,fixed(b['mean']),fixed(b['lower'],'lo'),fixed(b['upper'],'hi')])
+    table('table_fixed_pairs.tex','Direct paired comparisons at fixed work','tab:r13workpairs','rrlrrrr',['$d$','Iter.','Other','Mean','Lower','Upper','$+/-$'],direct_work,'NBO minus the indicated method. Endpoints summarize all fixed streams; the final column counts positive lower and negative upper endpoints. Remaining pairs are inconclusive. All pairs share initial profiles and innovations, but no independence across policies is assumed.')
+    table('table_fixed_seed_pairs.tex','Every fixed-work paired endpoint','tab:r13workseed','rrlrrrr',['$d$','Iter.','Other','Seed','Mean','Lower','Upper'],workseed,'No stream is selected or replaced on the final bank. These are direct pathwise differences, not differences of separate lower endpoints.')
+    table('table_absolute_work.tex','Work to a common absolute regret bound','tab:r13absolutework','rlrrr',['$d$','Method','Target','Reached','Total s.'],[[r['dimension'],r['method'].upper(),fixed(r['target_regret'],digits=2),f"{r['reached']}/{len(PROTOCOL['seeds'])}",fixed(r['median_total_seconds'],digits=2) if r['median_total_seconds'] is not None else '---'] for r in regret_hitting],'Each target concerns the actual continuous-time regret upper endpoint, not safe improvement alone. Work includes earlier certificates; medians condition on attainment. Counts show nonattainment at the tested budgets.')
     # Seed-specific primary method contrasts are presented before aggregate comparisons.
     primary_pairs=[];primary_evals={}
     for p in sorted(base.rglob('*.json')):
@@ -198,17 +229,19 @@ def run(development=False):
             diff=max(float((w1['actor'][k]-w2['actor'][k]).abs().max()) for k in w1['actor'])
             secondary.append(dict(dimension=s['dimension'],method=s['method'],budget=s['budget'],selected_iterations=[a['selected_iteration'],s['selected_iteration']],max_actor_weight_difference=diff,first_fit_seconds=a['fit_seconds'],second_fit_seconds=s['fit_seconds'],endpoint_difference=byweights[s['weights']]['bound']['lower']-byweights[a['weights']]['bound']['lower']))
     full='\\section{Fixed Work, Independent Costate Checks, and Sensing}\n'
-    for f in ['table_fixed_work.tex','table_accuracy_work.tex','table_mechanism.tex','table_reference_audit.tex','table_sensor.tex']:
+    for f in ['table_direct_seeds.tex','table_fixed_seed_pairs.tex','table_absolute_work.tex','table_mechanism.tex','table_reference_audit.tex','table_sensor.tex']:
         full+='\\input{revisions/2026-10-04-r13/manuscript/'+f+'}\n'
     (R/'manuscript/extra_full_results.tex').write_text(full)
-    summary=dict(**audit,work_groups=groups,improvement_hitting_costs=hitting,absolute_regret_hitting_costs=regret_hitting,secondary_environment=secondary)
+    summary=dict(**audit,direct_work_groups=workgroups,work_groups=groups,improvement_hitting_costs=hitting,absolute_regret_hitting_costs=regret_hitting,secondary_environment=secondary)
     write(R/'EXTRA_AUDIT.json',summary)
     narrative=(f'The fixed-work record contains {len(selections)} budget-specific selected policies and retains every prefix checkpoint. '
         f'The combined primary and additional verification uses {audit["total_one_sided_used"]} of the {audit["allocated"]} allocated one-sided statements. '
         'Work-to-target results include unsuccessful earlier verification attempts; unachieved targets are not assigned zero cost. '
         'The independent costate diagnostics and finite-Euler sensing checks are not substituted for the continuous-time policy endpoints.\n')
-    (R/'manuscript/extra_summary.tex').write_text(narrative)
-    outputs={str(p.relative_to(ROOT)):digest(p) for p in (R/'manuscript').glob('table_*.tex') if p.name in ['table_fixed_work.tex','table_accuracy_work.tex','table_direct_seeds.tex','table_mechanism.tex','table_reference_audit.tex','table_sensor.tex']}
+    for g in workgroups:
+        if g['comparator']=='dpo':narrative+=f"At dimension {g['dimension']} and {g['budget']} iterations, the direct NBO-minus-policy comparison has {g['positive']} positive and {g['negative']} negative endpoints among {g['pairs']} fitted pairs. "
+    (R/'manuscript/extra_summary.tex').write_text(narrative+'\n')
+    outputs={str(p.relative_to(ROOT)):digest(p) for p in (R/'manuscript').glob('table_*.tex') if p.name in ['table_fixed_work.tex','table_accuracy_work.tex','table_fixed_pairs.tex','table_fixed_seed_pairs.tex','table_absolute_work.tex','table_direct_seeds.tex','table_mechanism.tex','table_reference_audit.tex','table_sensor.tex']}
     for name in ['extra_full_results.tex','extra_summary.tex']:outputs[str((R/'manuscript'/name).relative_to(ROOT))]=digest(R/'manuscript'/name)
     # Bind primary direct-seed and independent reference sources as well as extras.
     for p in base.rglob('*'):

@@ -1,11 +1,11 @@
 """Run new and inherited tests without changing historical evidence files."""
 import argparse,math,re,subprocess,sys,unittest
 from common import *
-import test_r13,test_extra
+import test_r13,test_extra,test_extensions
 
 def run(inherited=False):
     test_r13.math=math
-    suite=unittest.TestSuite([unittest.defaultTestLoader.loadTestsFromModule(test_r13),unittest.defaultTestLoader.loadTestsFromModule(test_extra)])
+    suite=unittest.TestSuite([unittest.defaultTestLoader.loadTestsFromModule(test_r13),unittest.defaultTestLoader.loadTestsFromModule(test_extra),unittest.defaultTestLoader.loadTestsFromModule(test_extensions)])
     result=unittest.TextTestRunner(verbosity=2).run(suite);records=dict(tests=result.testsRun,failures=len(result.failures),errors=len(result.errors),success=result.wasSuccessful(),source_commit=source())
     write(R/'results/TESTS.json',records)
     if not result.wasSuccessful():raise SystemExit(1)
