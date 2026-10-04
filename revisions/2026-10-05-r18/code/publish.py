@@ -1,4 +1,4 @@
-"""Publish only this revision after source, mathematical, replay and build audits."""
+"""Publish the tested revision; compare the complete historical index in one read."""
 from pathlib import Path
 import subprocess,json,hashlib,os
 ROOT=Path(__file__).resolve().parents[3];R=Path(__file__).resolve().parents[1]
@@ -13,34 +13,46 @@ def main():
   if not (R/'results'/name).is_file():raise RuntimeError('Missing audit '+name)
  scientific=json.loads((R/'results/SCIENTIFIC_AUDIT.json').read_text())
  if not scientific['complete']:raise RuntimeError('Incomplete scientific audit')
- # Record the complete prior Git tree before checking unchanged historical blobs.
+ # NUL-delimited whole-tree/index reads preserve unusual filenames and avoid
+ # a subprocess and index reload for every historical file. No check is removed.
  base={}
- for line in git('ls-tree','-r',BASE).splitlines():
-  mode_type_sha,path=line.split('\t',1)
-  if mode_type_sha.split()[1]=='blob':base[path]=mode_type_sha.split()[2]
+ for record in git('ls-tree','-r','-z',BASE).split('\0'):
+  if not record:continue
+  header,path=record.split('\t',1);mode,kind,sha=header.split()
+  if kind=='blob':base[path]=(mode,sha)
+ index={}
+ for record in git('ls-files','--stage','-z').split('\0'):
+  if not record:continue
+  header,path=record.split('\t',1);mode,sha,stage=header.split()
+  if stage!='0':raise RuntimeError('Unmerged index: '+path)
+  index[path]=(mode,sha)
  protected=[]
- for path,sha in base.items():
+ for path,identity in base.items():
   if path in ('ECTA.tex','supp.tex','README.md'):continue
-  if git('rev-parse',':'+path)!=sha:raise RuntimeError('Historical index blob changed: '+path)
+  if index.get(path)!=identity:raise RuntimeError('Historical index identity changed: '+path)
   protected.append(path)
+ print('Verified complete historical index:',len(protected),'unchanged blobs and modes.',flush=True)
  for path in ('ECTA.tex','supp.tex','README.md'):
   data=(R/'archive'/path).read_bytes()
   sha=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
-  if sha!=base[path]:raise RuntimeError('Original root not archived exactly: '+path)
+  if sha!=base[path][1]:raise RuntimeError('Original root not archived exactly: '+path)
  selected=[ROOT/'ECTA.tex',ROOT/'supp.tex',ROOT/'README.md']
+ manifest_path=R/'results/PUBLICATION_MANIFEST.json'
  for p in R.rglob('*'):
-  if not p.is_file() or '__pycache__' in p.parts:continue
+  if not p.is_file() or '__pycache__' in p.parts or p==manifest_path:continue
   if p.suffix not in ('.py','.tex','.json','.md','.log','.pdf'):continue
   selected.append(p)
- manifest={'source_commit':source,'base':BASE,'historical_blobs_unchanged':len(protected),'exact_original_roots_archived':3,'new_observations':0,'files':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in selected}}
- (R/'results/PUBLICATION_MANIFEST.json').write_text(json.dumps(manifest,indent=2)+'\n')
- selected.append(R/'results/PUBLICATION_MANIFEST.json')
- # Stage explicit scoped paths, including ignored PDFs; never stage other archives.
+ # The manifest is intentionally not an entry in its own digest map.
+ manifest={'source_commit':source,'base':BASE,'historical_blobs_unchanged':len(protected),'historical_modes_unchanged':True,'exact_original_roots_archived':3,'new_observations':0,'files':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in selected}}
+ manifest_path.write_text(json.dumps(manifest,indent=2)+'\n');selected.append(manifest_path)
  for i in range(0,len(selected),80):git('add','--sparse','-f','--',*[str(p.relative_to(ROOT)) for p in selected[i:i+80]])
- for line in git('diff','--cached','--name-status',BASE).splitlines():
-  status,path=line.split('\t',1)
+ changes=git('diff','--cached','--no-renames','--name-status','-z',BASE).split('\0')
+ if changes and changes[-1]=='':changes.pop()
+ if len(changes)%2:raise RuntimeError('Malformed staged change list')
+ for i in range(0,len(changes),2):
+  status,path=changes[i:i+2]
   allowed=path in ('ECTA.tex','supp.tex','README.md','.github/workflows/nbo-r18-publication.yml') or path.startswith('revisions/2026-10-05-r18/')
-  if status.startswith('D') or not allowed:raise RuntimeError('Out-of-scope staged change: '+line)
+  if status not in ('A','M') or not allowed:raise RuntimeError('Out-of-scope staged change: '+status+' '+path)
  remote=git('ls-remote','origin','refs/heads/'+BRANCH).split()[0]
  if remote!=source:raise RuntimeError('Remote advanced; publication requires reconciliation')
  git('config','user.name','github-actions[bot]')
@@ -51,5 +63,5 @@ def main():
  if git('ls-remote','origin','refs/heads/'+BRANCH).split()[0]!=head:raise RuntimeError('Remote receipt mismatch')
  receipt={'remote_branch':BRANCH,'publication_commit':head,'source_commit':source,'base':BASE,'history_unchanged':len(protected)}
  (ROOT/'R18_REMOTE_RECEIPT.json').write_text(json.dumps(receipt,indent=2)+'\n')
- print(json.dumps(receipt,indent=2))
+ print(json.dumps(receipt,indent=2),flush=True)
 if __name__=='__main__':main()
