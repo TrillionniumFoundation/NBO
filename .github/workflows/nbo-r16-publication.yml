@@ -1,0 +1,130 @@
+name: NBO R16 referee reading edition
+on:
+  push:
+    branches: [revision/econometrica-nbo-r16-integration-2026-10-04]
+    paths: [.github/workflows/nbo-r16-publication.yml]
+permissions:
+  contents: read
+concurrency:
+  group: nbo-r16-paper-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    env:
+      PYTHONHASHSEED: '0'
+      PYTHONDONTWRITEBYTECODE: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      NUMBA_NUM_THREADS: '1'
+      NBO_R16_PUBLICATION_SOURCE: ${{ github.sha }}
+      P: revisions/2026-10-04-r16/publication
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Preserve immutable scientific and referee parents
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          for b in revision/econometrica-nbo-r16-paper-2026-10-04 revision/econometrica-nbo-r16-paper-evidence-2026-10-04 revision/econometrica-nbo-r16-paper-referee-2026-10-04; do
+            test -z "$(git ls-remote --heads origin "refs/heads/$b")" || { echo "Refusing existing branch $b"; exit 1; }
+          done
+          git config user.name 'NBO Revision Builder'
+          git config user.email 'nbo-revision-builder@users.noreply.github.com'
+          for s in 503a724817899105a78f8c2fd516f417efb6b483 2f17d8163a1d1d6b72a32b6ea6d6b683dc62031e cb4595bbcc7147e47e44ba40cb2f5034510ae19f; do
+            git fetch --no-tags origin "$s"
+            git merge --no-ff --no-edit "$s"
+          done
+      - name: Materialize hash-verified editable sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64,hashlib,json,pathlib,zlib
+          p=pathlib.Path('revisions/2026-10-04-r16/publication')
+          names=[f'payload.part{i:02}.b64' if i!=2 else 'payload.correct02.b64' for i in range(7)]
+          packed=''.join(''.join((p/'transport'/n).read_text().split()) for n in names)
+          raw=zlib.decompress(base64.b64decode(packed,validate=True))
+          digest=hashlib.sha256(raw).hexdigest()
+          assert digest=='0b5d8dd37644bb232d84c0996d699445d272416f33bf6e68568262eb4544f8c4',digest
+          files=json.loads(raw);assert len(files)==27
+          for name,text in files.items():
+              rel=pathlib.PurePosixPath(name)
+              assert not rel.is_absolute() and '..' not in rel.parts
+              dest=p/rel;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_text(text,encoding='utf-8')
+          (p/'transport/RECEIPT.json').write_text(json.dumps({'sha256':digest,'files':len(files),'segments':names,'rejected_segment':'payload.part02.b64','scope':'Text transport only; final editable source files are materialized outside transport.'},indent=2)+'\n')
+          print('Verified editable files:',len(files),digest)
+          PY
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned numerical and publication dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-science texlive-fonts-recommended cm-super latexmk poppler-utils
+      - name: Run mathematical and infrastructure checks without registered bank draws
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$P/checks/remote"
+          for suite in signed_tests.py menu_tests.py menu_verification_tests.py menu_pipeline_tests.py menu_transport_tests.py robustness_tests.py; do
+            python -m unittest discover -s revisions/2026-10-04-r16/code -p "$suite" -v > "$P/checks/remote/$suite.stdout" 2>&1 || { cat "$P/checks/remote/$suite.stdout"; exit 1; }
+            cat "$P/checks/remote/$suite.stdout"
+          done
+          python -m unittest discover -s "$P/code" -p test_decision_value.py -v > "$P/checks/remote/test_decision_value.py.stdout" 2>&1
+          cat "$P/checks/remote/test_decision_value.py.stdout"
+          python revisions/2026-10-04-r16/code/strong_hjb_tests.py --out "$P/checks/remote/STRONG_HJB.json" > "$P/checks/remote/strong_hjb.stdout" 2>&1
+          cat "$P/checks/remote/strong_hjb.stdout"
+      - name: Assemble current article, complete supplement and point-by-point response
+        shell: bash
+        run: |
+          set -euo pipefail
+          python "$P/code/assemble_publication.py"
+          cp "$P/ROOT_README.md" README.md
+          python "$P/code/build.py"
+          git add -- ECTA.tex supp.tex README.md
+          git add -f -- "$P"
+          python "$P/code/publication_audit.py"
+          git add -f -- "$P"
+      - name: Publish only new revision branches after all gates pass
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote --heads origin "$GITHUB_REF" | cut -f1)" = "$GITHUB_SHA"
+          git commit -m 'revision(r16): publish NBO article, signed Bellman mechanism, prospective replication and full referee response'
+          leases=(); destinations=()
+          for b in revision/econometrica-nbo-r16-paper-2026-10-04 revision/econometrica-nbo-r16-paper-evidence-2026-10-04 revision/econometrica-nbo-r16-paper-referee-2026-10-04; do
+            test -z "$(git ls-remote --heads origin "refs/heads/$b")"
+            leases+=("--force-with-lease=refs/heads/$b:")
+            destinations+=("HEAD:refs/heads/$b")
+          done
+          git push --atomic "${leases[@]}" origin "${destinations[@]}"
+          printf '{"publication_commit":"%s","source_commit":"%s","all_empirical_referee_concerns_closed":false}\n' "$(git rev-parse HEAD)" "$GITHUB_SHA" > PUBLICATION_COMMIT.json
+          cat PUBLICATION_COMMIT.json >> "$GITHUB_STEP_SUMMARY"
+      - name: Package the exact reading edition and validation receipts
+        if: always()
+        shell: bash
+        run: |
+          tar -czf nbo-r16-reading-edition.tar.gz ECTA.tex supp.tex README.md "$P"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r16-reading-edition-${{ github.run_id }}
+          path: |
+            nbo-r16-reading-edition.tar.gz
+            PUBLICATION_COMMIT.json
+            revisions/2026-10-04-r16/publication/build/*.pdf
+            revisions/2026-10-04-r16/publication/FINAL_AUDIT.json
+            revisions/2026-10-04-r16/publication/results/COMPILATION.json
+          if-no-files-found: error
+          retention-days: 90
