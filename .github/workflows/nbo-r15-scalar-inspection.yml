@@ -1,0 +1,54 @@
+name: NBO R15 retrieve completed scalar evidence for manuscript review
+
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r15-scalar-inspection-2026-10-04
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  retrieve-completed-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r15-experiment-scalar-37188544814
+          run-id: 37188544814
+          github-token: ${{ github.token }}
+          path: scalar
+      - name: Verify the complete original work inventory and extract review-sized files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json,shutil
+          root=Path('scalar');out=Path('scalar-review');out.mkdir()
+          work=json.loads((root/'WORK.json').read_text())
+          assert work['complete'] and work['numerical_source_commit']=='9142f404bb9c5163aa94d3a4ded4d0fa48a49c50'
+          actual={str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in root.rglob('*') if p.is_file() and p.name!='WORK.json'}
+          assert actual==work['files']
+          included={};omitted={};total=0
+          files=sorted((p for p in root.rglob('*') if p.is_file()),key=lambda p:(p.suffix not in ['.json','.txt','.log'],p.stat().st_size,str(p)))
+          for p in files:
+              name=str(p.relative_to(root));size=p.stat().st_size;digest=hashlib.sha256(p.read_bytes()).hexdigest()
+              if total+size<=24*1024*1024 and size<=2*1024*1024:
+                  q=out/name;q.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(p,q)
+                  included[name]={'bytes':size,'sha256':digest};total+=size
+              else:
+                  omitted[name]={'bytes':size,'sha256':digest}
+          receipt={'record_type':'Read-only extraction of completed scalar evidence; no new numerical experiment','numerical_source_commit':'9142f404bb9c5163aa94d3a4ded4d0fa48a49c50','original_run_id':37188544814,'original_artifact_id':11297614492,'original_work_sha256':hashlib.sha256((root/'WORK.json').read_bytes()).hexdigest(),'all_original_output_hashes_verified':True,'included':included,'omitted_large_original_files':omitted,'scope':'Full original arrays remain in the immutable complete artifact and will be retained in the complete experiment evidence branch.'}
+          (out/'RETRIEVAL_MANIFEST.json').write_text(json.dumps(receipt,indent=2)+'\n')
+          assert (out/'SCALAR_BASELINE.json').is_file()
+          print(json.dumps({'original_files':len(actual)+1,'included':len(included),'omitted':len(omitted),'bytes':total}))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r15-scalar-review-${{ github.run_id }}
+          path: scalar-review/
+          if-no-files-found: error
+          retention-days: 90
