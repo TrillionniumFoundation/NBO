@@ -56,8 +56,26 @@ jobs:
           set -euo pipefail
           python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
           python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-science texlive-fonts-recommended cm-super latexmk poppler-utils
+          sudo python - <<'PY'
+          from pathlib import Path
+          sources = [Path('/etc/apt/sources.list')]
+          sources += list(Path('/etc/apt/sources.list.d').glob('*.sources'))
+          sources += list(Path('/etc/apt/sources.list.d').glob('*.list'))
+          for path in sources:
+              if not path.is_file():
+                  continue
+              old = path.read_text()
+              new = old.replace('http://azure.archive.ubuntu.com/ubuntu', 'https://archive.ubuntu.com/ubuntu')
+              new = new.replace('https://azure.archive.ubuntu.com/ubuntu', 'https://archive.ubuntu.com/ubuntu')
+              new = new.replace('http://archive.ubuntu.com/ubuntu', 'https://archive.ubuntu.com/ubuntu')
+              new = new.replace('http://security.ubuntu.com/ubuntu', 'https://security.ubuntu.com/ubuntu')
+              if new != old:
+                  path.write_text(new)
+                  print('Updated Ubuntu mirror:', path)
+          PY
+          apt_options=(-o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30)
+          sudo apt-get "${apt_options[@]}" update -qq
+          sudo apt-get "${apt_options[@]}" install -y --no-install-recommends texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-science texlive-fonts-recommended cm-super latexmk poppler-utils
       - name: Run every inherited mathematical test and the new active-face checks
         shell: bash
         run: |
