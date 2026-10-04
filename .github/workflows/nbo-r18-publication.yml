@@ -1,0 +1,55 @@
+name: NBO R18 publication
+on:
+  push:
+    branches: [revision/econometrica-nbo-r18-2026-10-05]
+    paths: [.github/workflows/nbo-r18-publication.yml, 'revisions/2026-10-05-r18/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            *.tex
+            *.bib
+            *.cls
+            *.cfg
+            *.bst
+            *.sty
+            *.py
+            *.md
+            *.json
+            *.csv
+            *.yml
+            !**/raw/**
+            !**/contrast_risk/**
+            revisions/2026-10-04-r16/build/*.pdf
+      - name: Package available source and aggregate evidence
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json,subprocess,zipfile
+          files=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          manifest={}
+          with zipfile.ZipFile('r18-inherited-source.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for name in files:
+                  p=Path(name)
+                  if not name or not p.is_file() or p.stat().st_size>20000000: continue
+                  if '.git/' in name: continue
+                  data=p.read_bytes();z.writestr(name,data)
+                  manifest[name]=hashlib.sha256(data).hexdigest()
+              z.writestr('R18_SNAPSHOT.json',json.dumps({'commit':subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),'files':manifest},indent=2))
+          print('Packaged',len(manifest),'files')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r18-inherited-source
+          path: r18-inherited-source.zip
+          retention-days: 14
+          if-no-files-found: error
