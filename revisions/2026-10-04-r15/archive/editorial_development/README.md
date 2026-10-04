@@ -1,0 +1,1 @@
+These files record the initial editorial response preparation before the new primary and mechanism outcomes were available. They are not publication inputs. The generator is preserved as text and is not an executable code path. The authoritative current response is manuscript/response_body.tex, with its sixteen-item evidence map in RESPONSE_MAP.json.

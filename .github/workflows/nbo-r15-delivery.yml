@@ -1,0 +1,211 @@
+name: NBO R15 complete manuscript and referee delivery
+
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r15-source-2026-10-04
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: nbo-r15-publication-${{ github.sha }}
+  cancel-in-progress: false
+
+env:
+  OMP_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  NUMBA_NUM_THREADS: '1'
+  PYTHONHASHSEED: '0'
+  PYTHONDONTWRITEBYTECODE: '1'
+  NBO_R15_PUBLICATION_SOURCE_COMMIT: ${{ github.sha }}
+
+jobs:
+  manuscript-and-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Require three new review branches
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$NBO_R15_PUBLICATION_SOURCE_COMMIT"
+          for branch in \
+            revision/econometrica-nbo-r15-2026-10-04 \
+            revision/econometrica-nbo-r15-evidence-2026-10-04 \
+            revision/econometrica-nbo-r15-referee-2026-10-04
+          do
+            existing=$(git ls-remote --heads origin "refs/heads/$branch")
+            if test -n "$existing"; then
+              echo "Publication branch already exists; refusing to change it: $branch"
+              exit 1
+            fi
+          done
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Require every immutable generating, evidence and reviewed commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, pathlib, re, subprocess
+          cfg = json.loads(pathlib.Path('revisions/2026-10-04-r15/PUBLICATION_SOURCES.json').read_text())
+          roles = cfg['roles']
+          assert set(roles) == {'observation','main','mechanism'}
+          commits = {
+              os.environ['NBO_R15_PUBLICATION_SOURCE_COMMIT'],
+              'f5021cefa71492babfcbfa580e0c984f59a9de26',
+              '7aff61a41a3d28e5eaff73c9fe21e9856110f422',
+          }
+          for role in roles.values():
+              for field in ['source_commit','evidence_commit','candidate_source_commit','candidate_evidence_commit']:
+                  if field in role:
+                      commits.add(role[field])
+          for commit in sorted(commits):
+              assert re.fullmatch('[0-9a-f]{40}', commit), 'An immutable full commit identity is required.'
+              command = ['git','cat-file','-e',commit+'^{commit}']
+              if subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode:
+                  subprocess.run(['git','fetch','--no-tags','origin',commit], check=True)
+              subprocess.run(command, check=True)
+          print('Verified immutable commit objects:', len(commits))
+          PY
+      - name: Install exact numerical environment and journal build packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-base texlive-latex-extra texlive-science \
+            texlive-fonts-recommended cm-super latexmk poppler-utils
+      - name: Recheck numerical identities and execution controls in isolated calibrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test_file in revisions/2026-10-04-r15/code/test_*.py; do
+            python -m unittest discover -s revisions/2026-10-04-r15/code \
+              -p "$(basename "$test_file")" -v
+          done
+          python -m unittest discover -s revisions/2026-10-04-r15/code \
+            -p publication_audit_tests.py -v
+          python -m unittest discover -s revisions/2026-10-04-r15/code \
+            -p publication_tables_checks.py -v
+          python revisions/2026-10-04-r15/code/paired_transfer_checks.py \
+            --out "revisions/2026-10-04-r15/build/paired_transfer_checks_${GITHUB_RUN_ID}.json"
+      - name: Materialize one current article, supplement and point-by-point response
+        shell: bash
+        run: |
+          set -euo pipefail
+          python revisions/2026-10-04-r15/code/integrate.py --write-roots
+          python revisions/2026-10-04-r15/code/build.py
+      - name: Verify every generating source, complete raw record and preserved historical blob
+        shell: bash
+        run: |
+          set -euo pipefail
+          python revisions/2026-10-04-r15/code/publication_audit.py \
+            --repo . --publication-source "$NBO_R15_PUBLICATION_SOURCE_COMMIT" \
+            --sources revisions/2026-10-04-r15/PUBLICATION_SOURCES.json --strict
+      - name: Retain the complete review documents and audit receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r15-publication-${{ github.run_id }}
+          path: |
+            ECTA.tex
+            supp.tex
+            README.md
+            revisions/2026-10-04-r15/build/*.pdf
+            revisions/2026-10-04-r15/build/*.txt
+            revisions/2026-10-04-r15/build/*.log
+            revisions/2026-10-04-r15/build/*.stdout
+            revisions/2026-10-04-r15/build/*.json
+            revisions/2026-10-04-r15/*.json
+            revisions/2026-10-04-r15/*.md
+            revisions/2026-10-04-r15/response.tex
+            revisions/2026-10-04-r15/manuscript/
+            revisions/2026-10-04-r15/results/COMPILATION.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Atomically publish the complete revision to all three new branches
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$NBO_R15_PUBLICATION_SOURCE_COMMIT"
+          source_branch=revision/econometrica-nbo-r15-source-2026-10-04
+          remote_source=$(git ls-remote --heads origin "refs/heads/$source_branch" | cut -f1)
+          test "$remote_source" = "$NBO_R15_PUBLICATION_SOURCE_COMMIT"
+          python - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          root = pathlib.Path('.').resolve()
+          revision = root/'revisions/2026-10-04-r15'
+          source = os.environ['NBO_R15_PUBLICATION_SOURCE_COMMIT']
+          def digest(path):
+              h = hashlib.sha256()
+              with path.open('rb') as stream:
+                  for chunk in iter(lambda: stream.read(1024*1024), b''):
+                      h.update(chunk)
+              return h.hexdigest()
+          audit = json.loads((revision/'FINAL_AUDIT.json').read_text())
+          ledger_path = revision/'SOURCE_LEDGER.json'
+          manifest_path = revision/'EVIDENCE_MANIFEST.json'
+          ledger = json.loads(ledger_path.read_text())
+          manifest = json.loads(manifest_path.read_text())
+          assert audit['complete'] is True and ledger['complete'] is True
+          assert not audit['issues'] and not ledger['issues']
+          assert audit['publication_source_commit'] == ledger['publication_source_commit'] == manifest['publication_source_commit'] == source
+          assert digest(ledger_path) == audit['source_ledger_sha256']
+          assert digest(manifest_path) == audit['evidence_manifest_sha256']
+          assert digest(revision/'PUBLICATION_SOURCES.json') == ledger['configuration_sha256']
+          assert set(ledger['checks']) == {'publication_inputs','history','review','observation','main','mechanism','editorial','pdfs'}
+          assert audit['payload_files'] == len(manifest['files'])
+          for name, expected in manifest['files'].items():
+              relative = pathlib.PurePosixPath(name)
+              assert not relative.is_absolute() and '..' not in relative.parts, name
+              path = root/name
+              assert path.is_file() and not path.is_symlink() and path.resolve().is_relative_to(root), name
+              assert path.stat().st_size == expected['bytes'], name
+              assert digest(path) == expected['sha256'], name
+          workflow = '.github/workflows/nbo-r15-delivery.yml'
+          assert (root/workflow).read_bytes() == subprocess.check_output(['git','show',source+':'+workflow])
+          PY
+          for branch in \
+            revision/econometrica-nbo-r15-2026-10-04 \
+            revision/econometrica-nbo-r15-evidence-2026-10-04 \
+            revision/econometrica-nbo-r15-referee-2026-10-04
+          do
+            existing=$(git ls-remote --heads origin "refs/heads/$branch")
+            if test -n "$existing"; then
+              echo "Publication branch appeared during verification: $branch"
+              exit 1
+            fi
+          done
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- ECTA.tex supp.tex README.md revisions/2026-10-04-r15
+          git commit --quiet -m 'revision(r15): publish complete Neural Bellman Operators revision, preserved evidence and referee response'
+          publication_commit=$(git rev-parse HEAD)
+          # An empty expected value makes each lease creation-only.  The server
+          # rejects the entire transaction if any destination already exists.
+          git push --atomic \
+            --force-with-lease=refs/heads/revision/econometrica-nbo-r15-2026-10-04: \
+            --force-with-lease=refs/heads/revision/econometrica-nbo-r15-evidence-2026-10-04: \
+            --force-with-lease=refs/heads/revision/econometrica-nbo-r15-referee-2026-10-04: \
+            origin \
+            HEAD:refs/heads/revision/econometrica-nbo-r15-2026-10-04 \
+            HEAD:refs/heads/revision/econometrica-nbo-r15-evidence-2026-10-04 \
+            HEAD:refs/heads/revision/econometrica-nbo-r15-referee-2026-10-04
+          echo "R15 publication commit: $publication_commit" >> "$GITHUB_STEP_SUMMARY"
+          echo "R15 manuscript source: $NBO_R15_PUBLICATION_SOURCE_COMMIT" >> "$GITHUB_STEP_SUMMARY"
+          echo 'All three branches contain the same complete paper, supplement, response, raw evidence and source-aware audit.' >> "$GITHUB_STEP_SUMMARY"

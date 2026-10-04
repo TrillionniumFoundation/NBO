@@ -1,0 +1,21 @@
+\subsection{Independent scalar training and numerical accuracy}
+
+\label{sec:r15scalarresults}
+
+The separate scalar study uses the original volatility calibration, $(\sigma_I,\sigma_C)=(0.15,0.10)$, and the same one-state capital economy. Eight independent Howard solves generate full-box and matched-tube policies on all four prespecified grids. The policies are then evaluated by actual interpolation-based deployment on 8,192 fresh paths at both 1,024 and 2,048 time steps. The analytical schedule and both frozen scalar neural policies use the same initial states and Brownian paths.
+
+\input{revisions/2026-10-04-r15/results/scalar_report/table_scalar_training.tex}
+
+All 8 classical solves reached the stated stopping criterion, using at most 3 Howard updates at each date. Their finite-grid algebraic bounds range from $1.072\times10^{-12}$ to $8.938\times10^{-12}$. The last joint state--time refinement changes the three initial-state values by amounts between $1.724\times10^{-4}$ and $3.250\times10^{-4}$. The subsequent enlargement of the domain changes these values by at most $4.441\times10^{-16}$. Thus the algebraic solve, the training-grid approximation, and the finite-domain approximation have separate, observable numerical accounts. The small domain change does not bound the remaining time or spatial discretization error.
+
+\input{revisions/2026-10-04-r15/results/scalar_report/table_scalar_deployment.tex}
+
+At 2,048 deployment steps, the largest-domain classical policy has a mean schedule gain of $7.819\times10^{-4}$, compared with $7.412\times10^{-4}$ for NBO and $7.065\times10^{-4}$ for DPO. The paired classical advantages are $4.069\times10^{-5}$ (Monte Carlo standard error $6.841\times10^{-7}$) against NBO and $7.541\times10^{-5}$ ($4.063\times10^{-7}$) against DPO. Both advantages are positive at each of the three reported initial states. The numerical comparison therefore identifies an independently computed feasible classical competitor with higher observed payoffs than both frozen neural policies in this scalar economy.
+
+The neural ordering varies across initial states. NBO minus DPO has population mean $3.472\times10^{-5}$, but its conditional mean at $y=1$ is $-6.206\times10^{-5}$. The same reversal occurs on the 1,024-step deployment mesh. This state-specific outcome is retained alongside the population comparison. Corresponding full-box and tube policies have identical payoffs path by path on both reported deployment meshes. The maximum recorded nodal deviation from the schedule is 0.046600, below the tube radius. This observation concerns the computed scalar policies and does not establish that the tube restriction is harmless in every dimension.
+
+The complete full-box and matched-tube value arrays coincide bit for bit on each of the four grids. Because the action sets are nested and the terminal and boundary data are identical, Corollary~\ref{cor:r15scalartube} converts the two algebraic enclosures into a bound on the loss from the tube restriction in the exact finite-grid problem. Across the four grids, this loss at every initial-date node is at most $1.788\times10^{-11}$. This deterministic conclusion concerns the stated finite-grid problem; the domain and diffusion approximation accounts retain their separate scope.
+
+The complete scalar process consumed 195.90 seconds, including fresh-process setup, all eight solves, interval audits, serialization, both common-path deployments, and output. The individual new classical solves consumed 3.76--30.50 seconds. Within the fine-mesh deployment, the measured action-evaluation totals were 1.26--1.36 seconds for the classical tables and 9.38--9.60 seconds for the frozen neural maps. These are operation-specific measurements on the recorded worker. The historical neural fitting clocks are not included in a new end-to-end training comparison.
+
+The algebraic error bound concerns the exact equations with their declared boundary data. The independent domain enlargement and paired deployment-mesh comparisons quantify distinct numerical sensitivities. The complete tables retain all trained policies, both meshes, all initial-state strata, and all 110 pairwise numerical comparisons. They supply a scalar accuracy and classical-work benchmark without identifying an exact value for the high-dimensional diffusion.

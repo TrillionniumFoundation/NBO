@@ -1,0 +1,167 @@
+name: NBO R15 transfer complete original scalar evidence in bounded packets
+
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r15-scalar-transfer-2026-10-04
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  verified-original-byte-transfer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r15-experiment-scalar-37188544814
+          run-id: 37188544814
+          github-token: ${{ github.token }}
+          path: scalar
+      - name: Verify every original file and partition an exact deterministic transfer container
+        id: partition
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json,os,tarfile,tempfile
+          root=Path('scalar');out=Path('scalar-transfer');out.mkdir()
+          def sha(path):
+              h=hashlib.sha256()
+              with path.open('rb') as stream:
+                  for block in iter(lambda:stream.read(1024*1024),b''):h.update(block)
+              return h.hexdigest()
+          work=json.loads((root/'WORK.json').read_text())
+          assert work['complete'] and work['numerical_source_commit']=='9142f404bb9c5163aa94d3a4ded4d0fa48a49c50'
+          assert work['protocol_sha256']=='b9285a80bdb832676eecd2af9cef36483e895fed704fe207037215af7c63c198'
+          files=sorted(p for p in root.rglob('*') if p.is_file())
+          assert not any(p.is_symlink() for p in files)
+          actual={str(p.relative_to(root)):sha(p) for p in files if p.name!='WORK.json'}
+          assert actual==work['files']
+          originals={str(p.relative_to(root)):{'sha256':sha(p),'bytes':p.stat().st_size} for p in files}
+          assert len(originals)==24 and 'SCALAR_BASELINE.json' in originals
+          maximum_packet_bytes=24*1024*1024
+          with tempfile.TemporaryFile() as container:
+              with tarfile.open(fileobj=container,mode='w',format=tarfile.PAX_FORMAT) as tar:
+                  for p in files:
+                      name=str(p.relative_to(root))
+                      info=tarfile.TarInfo(name);info.size=p.stat().st_size;info.mode=0o644;info.mtime=0
+                      info.uid=info.gid=0;info.uname=info.gname=''
+                      with p.open('rb') as stream:tar.addfile(info,stream)
+              container_bytes=container.tell();container.seek(0)
+              container_hash=hashlib.sha256();packets=[]
+              while True:
+                  data=container.read(maximum_packet_bytes)
+                  if not data:break
+                  name='packet-'+str(len(packets)).zfill(2)+'.bin'
+                  (out/name).write_bytes(data);container_hash.update(data)
+                  packets.append({'name':name,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()})
+          assert 1<=len(packets)<=8
+          index={'record_type':'Read-only exact transfer of the complete original scalar artifact; no numerical execution',
+                 'numerical_source_commit':work['numerical_source_commit'],
+                 'scalar_protocol_sha256':work['protocol_sha256'],
+                 'original_run_id':37188544814,'original_artifact_id':11297614492,
+                 'original_artifact_zip_sha256':'b3771e111c54dc84feb66ce6c5ecb19b20623273adb1591f012cc643d0d511e7',
+                 'original_work_sha256':originals['WORK.json']['sha256'],
+                 'original_files':originals,'original_file_count':len(originals),
+                 'container_format':'deterministic POSIX tar, original content bytes unchanged',
+                 'container_bytes':container_bytes,'container_sha256':container_hash.hexdigest(),
+                 'maximum_packet_bytes':maximum_packet_bytes,'packets':packets,
+                 'transfer_source_commit':os.environ['GITHUB_SHA'],'transfer_run_id':int(os.environ['GITHUB_RUN_ID']),
+                 'scientific_scope':'The original WORK and numerical source remain authoritative; this job only repackages their unchanged bytes.'}
+          (out/'TRANSFER_INDEX.json').write_text(json.dumps(index,indent=2,sort_keys=True)+'\n')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as stream:stream.write('packet_count='+str(len(packets))+'\n')
+          print(json.dumps({'complete':True,'original_files':len(originals),'container_bytes':container_bytes,'packet_count':len(packets)}))
+          PY
+      - name: Retain complete scalar transfer packet 00
+        if: fromJSON(steps.partition.outputs.packet_count) > 0
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r15-scalar-original-part-00-${{ github.run_id }}
+          path: |
+            scalar-transfer/packet-00.bin
+            scalar-transfer/TRANSFER_INDEX.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain complete scalar transfer packet 01
+        if: fromJSON(steps.partition.outputs.packet_count) > 1
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r15-scalar-original-part-01-${{ github.run_id }}
+          path: |
+            scalar-transfer/packet-01.bin
+            scalar-transfer/TRANSFER_INDEX.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain complete scalar transfer packet 02
+        if: fromJSON(steps.partition.outputs.packet_count) > 2
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r15-scalar-original-part-02-${{ github.run_id }}
+          path: |
+            scalar-transfer/packet-02.bin
+            scalar-transfer/TRANSFER_INDEX.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain complete scalar transfer packet 03
+        if: fromJSON(steps.partition.outputs.packet_count) > 3
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r15-scalar-original-part-03-${{ github.run_id }}
+          path: |
+            scalar-transfer/packet-03.bin
+            scalar-transfer/TRANSFER_INDEX.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain complete scalar transfer packet 04
+        if: fromJSON(steps.partition.outputs.packet_count) > 4
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r15-scalar-original-part-04-${{ github.run_id }}
+          path: |
+            scalar-transfer/packet-04.bin
+            scalar-transfer/TRANSFER_INDEX.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain complete scalar transfer packet 05
+        if: fromJSON(steps.partition.outputs.packet_count) > 5
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r15-scalar-original-part-05-${{ github.run_id }}
+          path: |
+            scalar-transfer/packet-05.bin
+            scalar-transfer/TRANSFER_INDEX.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain complete scalar transfer packet 06
+        if: fromJSON(steps.partition.outputs.packet_count) > 6
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r15-scalar-original-part-06-${{ github.run_id }}
+          path: |
+            scalar-transfer/packet-06.bin
+            scalar-transfer/TRANSFER_INDEX.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain complete scalar transfer packet 07
+        if: fromJSON(steps.partition.outputs.packet_count) > 7
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r15-scalar-original-part-07-${{ github.run_id }}
+          path: |
+            scalar-transfer/packet-07.bin
+            scalar-transfer/TRANSFER_INDEX.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+

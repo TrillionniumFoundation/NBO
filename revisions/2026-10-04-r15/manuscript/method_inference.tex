@@ -1,0 +1,119 @@
+\subsection{The distribution of a computational method}
+\label{sec:r15methoddistribution}
+
+A computational method includes its initialization, training draws, validation
+rule, stopping rule, and response to failure. We specify these objects jointly.
+Let $\mathcal S$ be the sixteen complete execution streams listed in the
+protocol, fixed before the confirmation experiment, and let $\pi_{m,s}$ denote
+the policy returned by method $m$ under stream $s$. The randomized implementation
+draws $s$ uniformly from $\mathcal S$; the experiment executes every member of
+this distribution. A failed fit returns the feasible analytical schedule and
+remains in the denominator. Conditional on the stated software environment,
+the stream specifies the complete training and checking computation. The
+distribution does not include arbitrary unrecorded initializations or a new
+draw of the stopping bank on re-execution.
+
+Write $J(\pi)$ for the payoff in the original continuous-time economy,
+averaged over the specified nine initial-state profiles. The method-level
+objects are
+\begin{align}
+ G_m&=\frac{1}{|\mathcal S|}\sum_{s\in\mathcal S}
+       \{J(\pi_{m,s})-J(\bar\pi)\},\label{eq:r15methodgain}\\
+ \Delta_{m,b}&=\frac{1}{|\mathcal S|}\sum_{s\in\mathcal S}
+       \{J(\pi_{m,s})-J(\pi_{b,s})\}.
+       \label{eq:r15methodcontrast}
+\end{align}
+The first object is improvement on the schedule. The second is the direct
+comparison of two randomized computational procedures with the same declared
+stream distribution. Enumeration accounts for the entire training distribution;
+there is no sampling error from an unobserved subset of these sixteen streams.
+The remaining uncertainty concerns their independent payoff simulations and
+the numerical transfer to continuous time. An assertion about this finite
+distribution is not an assertion about all possible training initializations.
+
+The stopping target is a gain of $0.0005$. At each of three declared work
+checkpoints, fitting pauses for a new, independent certification calculation.
+Training stops when its lower endpoint attains the target. Failed checks,
+initialization, action search, checkpoint input and output, and the independent
+final verification are included in the measured work. The gain $0.001$ is a
+secondary final-attainment threshold; it is not a second measured stopping
+experiment. A failure to attain either target is retained.
+
+\subsection{Simultaneous inference for the finite method distribution}
+\label{sec:r15methodinference}
+
+Each returned policy receives $N$ fresh confirmation paths. The confirmation
+bank is independent of fitting, validation, and every stopping decision.
+Methods share initial profiles and innovations within a stream, whereas the
+confirmation banks of distinct streams are independent. A direct contrast is
+formed on each common path. Its common analytical schedule cancels, and its
+transfer account contains the two policy allowances rather than two copies of
+the schedule allowance, when both entries are simulated candidate gains.
+An analytical fallback has the exact gain zero. A comparison with that
+fallback retains the other candidate's full schedule-relative transfer
+account; two analytical fallbacks have the exact difference zero.
+
+For one registered endpoint, let $X_{sj}$ be the numerical path statistic,
+$Y_{sj}=\max\{-C_s,\min(C_s,X_{sj})\}$, and let $\beta_s$ enclose the
+difference between the continuous-time endpoint $\theta_s$ and
+$\mathbb E Y_{sj}$. Thus $\beta_s$ includes the appropriate diffusion,
+implementation, clipping-tail, and arithmetic accounts. Put
+$C=\max_s C_s$, $n=|\mathcal S|N$, $\bar\beta=|\mathcal S|^{-1}\sum_s\beta_s$,
+and denote the pooled mean and unbiased sample variance by $\bar Y$ and
+$\widehat v$.
+
+\begin{proposition}[Finite-distribution comparison]
+\label{prop:r15methodinterval}
+Conditional on the complete executed policy ensemble, suppose the
+confirmation observations are independent across pairs $(s,j)$ and the stated
+range and transfer accounts hold. For $0<\delta<1$, the interval
+\begin{equation}
+ \bar Y\ \pm\left\{
+ \sqrt{\frac{2\widehat v\log(4/\delta)}{n}}
+ +\frac{14C\log(4/\delta)}{3(n-1)}+\bar\beta\right\}
+ \label{eq:r15methodinterval}
+\end{equation}
+covers $|\mathcal S|^{-1}\sum_s\theta_s$ with probability at least
+$1-\delta$. The observations need not be identically distributed across
+streams.
+\end{proposition}
+
+The confirmation family assigns $0.02$ across 238 two-sided events: in each
+dimension, four schedule comparisons and three direct NBO comparisons, each
+reported for sixteen streams and their uniform method mean. Online stopping
+receives a separate $0.01$ across its 384 possible checks. The mechanism and
+protected-observation families each receive $0.01$. Their union therefore has
+error probability at most $0.05$ for the new experiment. The historical
+experiment retains its separately stated confidence event. Unused checks do
+not release probability for additional comparisons.
+
+The practical-equivalence margin is fixed at $10^{-4}$ payoff units. For a
+direct interval $[L,U]$, material superiority requires $L>10^{-4}$, and
+practical equivalence requires $-10^{-4}<L\le U<10^{-4}$. Statistical
+superiority, $L>0$, is reported separately. An interval containing zero does
+not establish equivalence. Under log flow utility, the fixed margin corresponds
+to a proportional consumption fee
+$1-\exp\{-10^{-4}/A\}$, where
+$A=(1-e^{-\rho T})/\rho$; for the stated primitives this is approximately
+$1.0201$ basis points.
+
+Simultaneous stream intervals also enclose the probability that the
+randomized implementation attains a target $g$. If they are $[L_s,U_s]$,
+the corresponding bounds are
+\begin{equation}
+ \frac{\#\{s:L_s\ge g\}}{|\mathcal S|}
+ \ \le\ \frac{\#\{s:\theta_s\ge g\}}{|\mathcal S|}
+ \ \le\ \frac{\#\{s:U_s\ge g\}}{|\mathcal S|}.
+ \label{eq:r15attainment}
+\end{equation}
+No binomial sampling interval is attached to a population that has been
+enumerated in full. Work is likewise reported over all streams, with
+unattained runs retained in the distribution of work to target. A median over
+successful runs alone is not the method's median.
+
+The economic decomposition records production, consumption, and terminal
+dispersion contributions on the same numerical confirmation paths. These
+components add to the observed numerical payoff gain and help describe the
+policy's behavior. They have no separate continuous-time confidence statement:
+the transfer allowance is attached to the total payoff and is not divided
+among components without additional bounds.
