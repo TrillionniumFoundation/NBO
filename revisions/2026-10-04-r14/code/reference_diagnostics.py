@@ -375,7 +375,7 @@ def tables(result, output):
     rows = result["records"]
     labels = {"optimal": "Howard", "nbo": "NBO", "dpo": "DPO",
               "linear": "Affine", "anchor": "Anchor"}
-    lines = [r"\begin{table}[p]", r"\centering\small\setlength{\tabcolsep}{3pt}",
+    lines = [r"\begin{table}[!htbp]", r"\centering\small\setlength{\tabcolsep}{3pt}",
              r"\caption{Scalar reference: equation residuals and Howard convergence}",
              r"\label{tab:r14-reference-residuals}",
              r"\begin{tabular}{rrrrrrr}", r"\toprule",
@@ -392,7 +392,7 @@ def tables(result, output):
                   r"\begin{minipage}{0.97\textwidth}\footnotesize",
                   r"Residuals are maxima over every interior state and every time step. The linear column also includes every Howard linear solve. All time steps satisfy the original $10^{-11}$ value-iterate stopping rule. Replay error is the largest absolute discrepancy across all original arrays; it is a floating-point reproducibility check, not an economic approximation error.",
                   r"\end{minipage}", r"\end{table}", "",
-                  r"\begin{table}[p]", r"\centering\small\setlength{\tabcolsep}{3pt}",
+                  r"\begin{table}[!htbp]", r"\centering\small\setlength{\tabcolsep}{3pt}",
                   r"\caption{Scalar fixed-policy residuals and action-bound frequencies}",
                   r"\label{tab:r14-reference-policies}",
                   r"\begin{tabular}{lrrrrr}", r"\toprule",
@@ -409,7 +409,7 @@ def tables(result, output):
                   r"Method columns give maximum fixed-policy equation residuals. The last column is the largest bound frequency among the five policies, counting either endpoint of the unchanged economic action interval at all interior state--time nodes, with absolute tolerance $10^{-12}$. These are unweighted node frequencies, not visitation probabilities. Every imposed Dirichlet boundary value is satisfied by construction; its error relative to the unbounded economy is not enclosed. Method-specific counts, denominators, action ranges, time-zero actions and residual traces are retained in the diagnostic files.",
                   r"\end{minipage}", r"\end{table}"])
     (output / "table_reference_diagnostics.tex").write_text("\n".join(lines)+"\n")
-    lines = [r"\begin{table}[p]", r"\centering\small\setlength{\tabcolsep}{3pt}",
+    lines = [r"\begin{table}[!htbp]", r"\centering\small\setlength{\tabcolsep}{3pt}",
              r"\caption{Scalar finite-grid policy losses at five initial states}",
              r"\label{tab:r14-reference-five-states}",
              r"\begin{tabular}{lrrrrr}", r"\toprule",
@@ -426,7 +426,7 @@ def tables(result, output):
                   r"Entries are the Howard grid value minus the value of the unchanged stored feedback policy, with common asymptotic Dirichlet data. Values at the five stated initial log-capital levels use linear interpolation of time-zero nodal values when necessary. No policy is refitted or chosen using this table. These are scalar finite-grid losses; they do not estimate the optimum in dimensions 10, 20 or 50.",
                   r"\end{minipage}", r"\end{table}"])
     (output / "table_reference_losses.tex").write_text("\n".join(lines)+"\n")
-    lines = [r"\begin{table}[p]", r"\centering\small\setlength{\tabcolsep}{3pt}",
+    lines = [r"\begin{table}[!htbp]", r"\centering\small\setlength{\tabcolsep}{3pt}",
              r"\caption{Scalar value and policy changes under refinement}",
              r"\label{tab:r14-reference-refinement}",
              r"\begin{tabular}{llrrrr}", r"\toprule",

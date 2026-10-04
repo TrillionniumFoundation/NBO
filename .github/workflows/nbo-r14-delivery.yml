@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: nbo-r14-delivery-2026-10-04
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   OMP_NUM_THREADS: '1'
@@ -93,6 +93,8 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$NBO_R14_SOURCE_COMMIT"
+          remote_source=$(git ls-remote --heads origin refs/heads/revision/econometrica-nbo-r14-source-2026-10-04 | cut -f1)
+          test "$remote_source" = "$NBO_R14_SOURCE_COMMIT"
           python - <<'PY'
           import hashlib,json,pathlib
           root=pathlib.Path('.')
