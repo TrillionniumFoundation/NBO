@@ -28,41 +28,29 @@ jobs:
         with:
           fetch-depth: 0
           filter: blob:none
-      - name: Preserve immutable scientific and referee parents
+      - name: Install exact proof-reviewed completed reading sources
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python "$P/complete_source/install.py"
+      - name: Preserve all four immutable evidence families and the referee parent
+        shell: bash
+        run: |
+          set -euo pipefail
           for b in revision/econometrica-nbo-r16-paper-2026-10-04 revision/econometrica-nbo-r16-paper-evidence-2026-10-04 revision/econometrica-nbo-r16-paper-referee-2026-10-04; do
             test -z "$(git ls-remote --heads origin "refs/heads/$b")" || { echo "Refusing existing branch $b"; exit 1; }
           done
           git config user.name 'NBO Revision Builder'
           git config user.email 'nbo-revision-builder@users.noreply.github.com'
-          for s in 503a724817899105a78f8c2fd516f417efb6b483 2f17d8163a1d1d6b72a32b6ea6d6b683dc62031e cb4595bbcc7147e47e44ba40cb2f5034510ae19f; do
-            git fetch --no-tags origin "$s"
+          printf '/*\n!*.npz\n!*.npy\n!*.pt\n' | git sparse-checkout set --no-cone --stdin
+          for s in 503a724817899105a78f8c2fd516f417efb6b483 2f17d8163a1d1d6b72a32b6ea6d6b683dc62031e 103b6717dac939cb9cd18876f56d889c9e2a751d 0b0b113b8c249d916daf0da22808180ce15caa2f cb4595bbcc7147e47e44ba40cb2f5034510ae19f; do
+            git fetch --filter=blob:none --no-tags origin "$s"
             git merge --no-ff --no-edit "$s"
           done
-      - name: Materialize hash-verified editable sources and bind the corrected abstract
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import base64,hashlib,json,pathlib,zlib
-          p=pathlib.Path('revisions/2026-10-04-r16/publication')
-          names=[f'payload.part{i:02}.b64' if i!=2 else 'payload.correct02.b64' for i in range(7)]
-          packed=''.join(''.join((p/'transport'/n).read_text().split()) for n in names)
-          raw=zlib.decompress(base64.b64decode(packed,validate=True))
-          digest=hashlib.sha256(raw).hexdigest()
-          assert digest=='0b5d8dd37644bb232d84c0996d699445d272416f33bf6e68568262eb4544f8c4',digest
-          files=json.loads(raw);assert len(files)==27
-          for name,text in files.items():
-              rel=pathlib.PurePosixPath(name)
-              assert not rel.is_absolute() and '..' not in rel.parts
-              dest=p/rel;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_text(text,encoding='utf-8')
-          (p/'transport/RECEIPT.json').write_text(json.dumps({'sha256':digest,'files':len(files),'segments':names,'rejected_segment':'payload.part02.b64','scope':'Text transport only; final editable source files are materialized outside transport.'},indent=2)+'\n')
-          print('Verified editable files:',len(files),digest)
-          PY
-          python "$P/transport/bind_current_abstract.py"
+          echo 'Binary trial objects remain in the full Git tree; only their working-directory materialization is omitted.'
+          git ls-tree HEAD revisions/2026-10-04-r16/results/continuation_menu revisions/2026-10-04-r16/results/robustness
+          df -h .
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -87,24 +75,14 @@ jobs:
           cat "$P/checks/remote/test_decision_value.py.stdout"
           python revisions/2026-10-04-r16/code/strong_hjb_tests.py --out "$P/checks/remote/STRONG_HJB.json" > "$P/checks/remote/strong_hjb.stdout" 2>&1
           cat "$P/checks/remote/strong_hjb.stdout"
-      - name: Assemble current article, complete supplement and point-by-point response
+      - name: Independently check complete comparison arithmetic and assemble all three documents
         shell: bash
         run: |
           set -euo pipefail
+          python "$P/code/completed_evidence_audit.py"
           python "$P/code/assemble_publication.py"
           cp "$P/ROOT_README.md" README.md
           python "$P/code/build.py"
-          python - <<'PY'
-          import json,pathlib
-          p=pathlib.Path('revisions/2026-10-04-r16/publication')
-          pages=json.loads((p/'results/COMPILATION.json').read_text())['ECTA']['pages']
-          readme=p/'README.md'
-          readme.write_text(readme.read_text().replace('49 pages in the verified local build',f'{pages} pages in the verified publication build'))
-          status=p/'COMMENT_STATUS.json'
-          content=json.loads(status.read_text())
-          content['M9']['completed']=content['M9']['completed'].replace('49-page',f'{pages}-page')
-          status.write_text(json.dumps(content,indent=2)+'\n')
-          PY
           git add -- ECTA.tex supp.tex README.md
           git add -f -- "$P"
           python "$P/code/publication_audit.py"
@@ -114,7 +92,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git ls-remote --heads origin "$GITHUB_REF" | cut -f1)" = "$GITHUB_SHA"
-          git commit -m 'revision(r16): publish NBO article, signed Bellman mechanism, prospective replication and full referee response'
+          git commit -m 'revision(r16): publish complete NBO article, four evidence families, full supplement and referee response'
           leases=(); destinations=()
           for b in revision/econometrica-nbo-r16-paper-2026-10-04 revision/econometrica-nbo-r16-paper-evidence-2026-10-04 revision/econometrica-nbo-r16-paper-referee-2026-10-04; do
             test -z "$(git ls-remote --heads origin "refs/heads/$b")"
@@ -122,7 +100,7 @@ jobs:
             destinations+=("HEAD:refs/heads/$b")
           done
           git push --atomic "${leases[@]}" origin "${destinations[@]}"
-          printf '{"publication_commit":"%s","source_commit":"%s","all_empirical_referee_concerns_closed":false}\n' "$(git rev-parse HEAD)" "$GITHUB_SHA" > PUBLICATION_COMMIT.json
+          printf '{"publication_commit":"%s","source_commit":"%s","all_four_registered_evidence_families_complete":true,"all_empirical_referee_concerns_closed":false}\n' "$(git rev-parse HEAD)" "$GITHUB_SHA" > PUBLICATION_COMMIT.json
           cat PUBLICATION_COMMIT.json >> "$GITHUB_STEP_SUMMARY"
       - name: Package the exact reading edition and validation receipts
         if: always()
@@ -139,5 +117,6 @@ jobs:
             revisions/2026-10-04-r16/publication/build/*.pdf
             revisions/2026-10-04-r16/publication/FINAL_AUDIT.json
             revisions/2026-10-04-r16/publication/results/COMPILATION.json
+            revisions/2026-10-04-r16/publication/results/COMPLETED_EVIDENCE_READING_AUDIT.json
           if-no-files-found: error
           retention-days: 90
