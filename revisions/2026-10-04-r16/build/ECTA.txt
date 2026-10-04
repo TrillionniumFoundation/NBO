@@ -1,0 +1,2882 @@
+                                         Submitted to Econometrica
+
+1                               NEURAL BELLMAN OPERATORS                                          1
+
+2                                                                                                 2
+
+3
+                                                 Q IAN QI                                         3
+                                             Peking University
+4                                                                                                 4
+
+5                                                                                                 5
+                    Neural Bellman Operators learn and reuse a policy’s continuation value
+6                                                                                                 6
+                 to improve economic decisions. We characterize the common continuation
+7                                                                                                 7
+                 and the approximation–variance tradeoff of fixed gradient dictionaries in a
+8                nonlinear capital economy. In two previously unpiloted fifty-dimensional         8
+
+9                finite decision menus, NBO yields material payoff gains over material-           9
+
+10               ized simulation and direct-policy actors, using less observed construction       10
+                 and query work than direct policy. At the final prescribed budget, NBO is
+11                                                                                                11
+                 economically equivalent to cached sample-average optimization in six of
+12                                                                                                12
+                 eight design cells with lower construction and query work; the latter yields
+13               higher payoffs in both longest-horizon cells. Independent confirmation           13
+
+14               supports the original-policy paired comparison and positive signed Bell-         14
+
+15               man gains. An exact-trace neural-HJB study extends the comparison across         15
+                 four diffusion calibrations, while separate diffusion and scalar accounts
+16                                                                                                16
+                 retain their respective accuracy targets. Complete economic applications
+17                                                                                                17
+                 preserve the distinct continuation objects of recursive utility, endogenous
+18               preferences, temporal selves, and strategic interaction.                         18
+
+19                                                                                                19
+
+20                  K EYWORDS : Dynamic programming, Neural approximation, Recursive              20
+
+21               utility, Endogenous preferences, Viscosity solutions, Dynamic games.             21
+
+22                                                                                                22
+
+23
+                                           1. INTRODUCTION                                        23
+
+24     An economic decision often requires a continuation value that must itself be               24
+
+25   computed. A household changes consumption and portfolio risk while investing                 25
+
+26   in its preferences. A sophisticated consumer anticipates future selves, and a firm           26
+
+27   invests against the policies of its rivals. These problems differ in their utility domains   27
+
+28   and deviation criteria, but each requires an evaluation of the consequences that             28
+
+29   follow a proposed action. The preference-formation problem of Qi (2025) provides             29
+
+30   a motivating example in which internal and external choices interact.                        30
+
+31                                                                                                31
+
+32     Qian QI: qiqian@pku.edu.cn                                                                 32
+     2
+
+1        This paper develops Neural Bellman Operators (NBO), an evaluation and im- 1
+2    provement map for these economic problems. A critic estimates the continuation             2
+
+3    value of a specified policy. A feasible actor uses its derivative channels to change       3
+
+4    current decisions, keeping the evaluated continuation fixed. The resulting policy is       4
+
+5    assessed against an explicit economic criterion. Boundary conditions, information,         5
+
+6    numerical approximation, and the deployed decision rule are part of that criterion. 6
+7        The central question is when learning a continuation value makes economic              7
+
+8    computation more effective. A fitted continuation can be reused across states and          8
+
+9    action queries, but fitting is costly and its approximation error can alter the selected   9
+
+10   action. A credible comparison must allow a simulation-based method to cache the            10
+
+11   information that the same decision problem permits. It must also include the cost          11
+
+12   of training and choosing the continuation representation. We therefore study the           12
+
+13   accuracy and complete work of the learned evaluation block when several economic           13
+
+14   decisions use a common continuation. The nonlinear capital economy provides the            14
+
+15   common primitives for this comparison and for the policy-specific error analysis.          15
+
+16       The theory follows the evaluation–decision–payoff chain. A fixed-policy equation       16
+
+17   identifies the continuation being approximated. The improvement map specifies              17
+
+18   the actor’s feasible action and the derivatives it can use. General verification results   18
+
+19   distinguish an evaluation defect from unfinished action maximization. For the              19
+
+20   capital economy, an exact finite Bellman identity places the relevant continuation         20
+
+21   error on the action change under the candidate’s own occupation law. A signed              21
+
+22   continuation calculation can assess the same identity using common future paths,           22
+
+23   retaining the cancellation between predicted improvement and prediction error. 23
+24   Its payoff range depends on the economy and action tube. The continuous-time               24
+
+25   account separately charges the implementation, diffusion, clipping, and numerical          25
+
+26   errors of the held controller. These are error bounds for computed objects; they do        26
+
+27   not assert a convergence rate for a neural optimizer.                                      27
+
+28       The computational design uses two complementary forms of comparison. A                 28
+
+29   repeated-decision study examines the incremental value of reusing a learned contin- 29
+30   uation, including feasible Raw caching and the complete cost of fitting and selection. 30
+31   Independent confirmation on the original capital policies examines the previously          31
+
+32   reported paired payoff comparisons using a proof, constants, reporting code, and           32
+                                NEURAL BELLMAN OPERATORS                                3
+
+1    confidence allocation fixed before the new simulation bank. A strengthened neural- 1
+2    HJB implementation uses an exact diffusion trace, independent residual selection,       2
+
+3    and a documented action implementation. A separate signed Bellman experiment            3
+
+4    assesses the precision of the occupation account. The design and reporting preserve     4
+
+5    the distinction between new decision problems, new payoff observations on existing      5
+
+6    policies, and changes in the analytical treatment of existing observations.             6
+
+7      The continuation menu gives a direct economic result. In the two previously           7
+
+8    unpiloted fifty-dimensional Long and Intermediate designs, NBO’s protected payoff       8
+
+9    gains over both the materialized Raw actor and direct policy exceed the prespecified    9
+
+10   margin 10−4 . Its complete construction and query time is also lower than direct        10
+
+11   policy’s in those cells. At the final prescribed budget, six of eight cells have NBO– 11
+12   cached-SAA intervals wholly within ±10−4 , with lower construction and query            12
+
+13   work for NBO. Cached SAA delivers materially higher payoffs in the other two            13
+
+14   cells, and the cheaper earlier SAA budgets remain in the comparison. These results      14
+
+15   concern the complete sixteen-stream populations and 384 fixed task-state queries in     15
+
+16   each finite economy. They identify useful fitted-continuation decisions and their       16
+
+17   observed costs; they do not identify a unique variance-reduction mechanism or a         17
+
+18   minimum-work frontier over every simulation budget.                                     18
+
+19     The independent original-policy confirmation also makes the paired comparison         19
+
+20   prospective: NBO exceeds the original neural-HJB implementation by 10−4 in both         20
+
+21   dimensions. A newly trained, strengthened HJB procedure gives a more demanding          21
+
+22   comparison across four continuous-diffusion economies. Only the low-volatility,         22
+
+23   fifty-dimensional cell establishes that margin against both its greedy and distilled    23
+
+24   deployments; the other direct comparisons remain unresolved. The signed Bellman         24
+
+25   assessment gives continuous-economy gain lower bounds above 0.0005 in both              25
+
+26   dimensions while its signed continuation-correction intervals still contain zero. The   26
+
+27   full adapted-class regret bounds remain distinct from these gains and from the finite   27
+
+28   menu’s scalar accuracy certificates.                                                    28
+
+29     The previous complete sixteen-stream experiment remains part of the current           29
+
+30   evidence. Its direct NBO–Raw and NBO–DPO payoff intervals were unresolved,              30
+
+31   and cached Raw was cheaper at the fifty-dimensional online target. A common- 31
+32   innovation transfer refinement made the NBO–HJB comparison positive in both             32
+     4
+
+1    ten and fifty dimensions, but the refinement was developed after the original         1
+
+2    analytical freeze and inspection of interval widths. The original dimension-ten       2
+
+3    interval included zero. We retain both intervals and their chronology. The original   3
+
+4    mechanism lower bound was nonpositive in each dimension. Those observations           4
+
+5    motivate the current experiments and remain visible alongside them; improving a       5
+
+6    verifier does not by itself identify a benefit of learning the continuation.          6
+
+7        The economic applications remain part of the paper’s substantive scope. Re- 7
+8    cursive utility evaluates each policy through its own utility process. Endogenous     8
+
+9    preference adjustment connects an internal shadow value with consumption and          9
+
+10   portfolio demand. Temporal selves require a local spike-deviation equilibrium,        10
+
+11   whereas strategic firms require a complete unilateral best response against fixed     11
+
+12   rivals. The main article states these economic distinctions and their principal im- 12
+13   plications. The current Economic Applications companion contains their full models,   13
+
+14   derivations, proof arguments, and numerical comparisons. The technical supple- 14
+15   ment contains the general theory, detailed capital accounts, and complete compu- 15
+16   tational records. This organization places the common numerical question in the       16
+
+17   foreground while preserving the distinct economic problems that give the operator     17
+
+18   its content.                                                                          18
+
+19                                                                                         19
+
+20                                                                                         20
+                                  1.1. Relation to the literature
+21                                                                                         21
+
+22       Neural Bellman Operators build on numerical dynamic programming and func- 22
+23   tion approximation. Projection and related methods exploit economic structure to      23
+
+24   approximate a Bellman equation; see Judd (1998). Smooth neural networks can           24
+
+25   approximate derivatives under representation hypotheses (Hornik et al., 1990). 25
+26   These results distinguish representational capacity from the accuracy achieved by a   26
+
+27   finite architecture and a particular optimizer.                                       27
+
+28       The differential critic is related to the neural PDE approach in Sirignano and    28
+
+29   Spiliopoulos (2018). Their DGM formulation includes differential and boundary         29
+
+30   conditions and treats HJB equations. The deep BSDE method of Han et al. (2018) also   30
+
+31   includes an HJB application. Our object combines a specified policy continuation,     31
+
+32   a feasible actor, and an economic error account, and asks when the continuation       32
+                                    NEURAL BELLMAN OPERATORS                                5
+
+1    representation is useful across decision queries. An analytical maximizing action is        1
+
+2    useful when available; it is not a universal distinction between neural PDE methods. 2
+3    Recursive dependence on the value is a nonlinear zeroth-order term, whereas full            3
+
+4    nonlinearity of a PDE concerns its highest derivatives.                                     4
+
+5      Recursive utility separates intertemporal substitution from risk aversion (Epstein        5
+
+6    and Zin, 1989, Duffie and Epstein, 1992). Utility-process selection and transver- 6
+7    sality matter in its infinite-horizon formulation (Herdegen et al., 2021). Temporal         7
+
+8    selves instead require an equilibrium formulation (Björk et al., 2016). The stochastic      8
+
+9    approximation literature provides convergence results under explicit step-size, sta- 9
+10   bility, and limiting-dynamics conditions (Borkar, 2024). We retain those distinctions       10
+
+11   when describing a finite neural computation.                                                11
+
+12     Section 2 defines the economic object and Section 4 specializes it to the capital         12
+
+13   economy. Section 4.3 connects continuation error with economic gain. The compu- 13
+14   tational design in Section 5 distinguishes continuation reuse, conditional payoff           14
+
+15   replication, and mechanism assessment. Section 7 states the other economic appli- 15
+16   cations. General verification results and their full proofs remain in the technical         16
+
+17   supplement, beginning with Section S.1; the application companion is a current              17
+
+18   part of the paper.                                                                          18
+
+19                                                                                               19
+                                   2. THE CONTROLLED ECONOMY
+20                                                                                               20
+
+21     Let W be an m-dimensional Brownian motion on a filtered probability space                 21
+
+22   satisfying the usual conditions. The state S = (u, X ) contains internal and external       22
+
+23   state variables. An action a = (θ, c, π, . . .) combines internal adjustment and external   23
+
+24   choices. The controlled state evolves as                                                    24
+
+25                                                                                               25
+                    dSs = b(s, Ss , as ) ds + σ(s, Ss , as ) dWs ,   as ∈ A(s, Ss ).       (1)
+26                                                                                               26
+
+27   The compact feasible correspondence A is part of the model. Actions are pro- 27
+28   gressively measurable and must generate a well-defined state process satisfying             28
+
+29   the declared state restrictions. State viability does not follow from bounded actor         29
+
+30   outputs alone.                                                                              30
+
+31     We work initially on a finite horizon T. A computational domain D is either               31
+
+32   invariant, equipped with a specified reflection mechanism, or stopped on exit. In           32
+     6
+
+1    the stopped case let τ = T ∧ inf{s ≥ t : Ss ∈
+                                                 / D }. The payoff g(τ, Sτ ) is specified on            1
+
+2    the entire parabolic stopping boundary, including the terminal face. For a fixed                   2
+
+3    admissible policy a, utility is the policy-specific solution                                       3
+
+4                                            Z τ                                Z τ                     4
+                       Ysa = g(τ, Sτ ) +           f (v, Sv , av , Yva ) dv −         Zva dWv .   (2)
+5                                              s                                 s                      5
+
+6    Adjustment costs are included in f . For example, time-additive utility has                        6
+
+7    f (s, S, a, y) = r0 (s, S, a) − ρy, where r0 includes all current resource and adjust- 7
+8    ment costs. Define V a (t, x ) = Yta,t,x and V ∗ (t, x ) = supa V a (t, x ). The value inside a    8
+
+9    candidate policy’s recursive objective is its own utility process, not the unknown                 9
+
+10   optimum inserted into every candidate objective.                                                   10
+
+11                                                                                                      11
+
+12
+         A SSUMPTION 1—Finite-horizon comparison class: The controlled state problem is                 12
+
+13
+     well posed for the admissible policies used below. The coefficients are continuous, locally        13
+
+14
+     Lipschitz in the state uniformly over actions, and bounded on the compact stopped domain.          14
+
+15
+     The payoff is continuous and bounded. On an invariant utility interval containing all policy       15
+
+16
+     values, f is continuous in its arguments and uniformly Lipschitz in utility with constant          16
+
+17
+     L ≥ 0. The admissible class is stable under concatenation and has the measurable-selection         17
+
+18
+     properties needed for dynamic programming. The resulting HJB problem and the fixed-policy          18
+
+19
+     problems obey comparison in the bounded continuous class with the specified boundary               19
+
+20
+     conditions.                                                                                        20
+
+21                                                                                                      21
+         The comparison requirement identifies both a function class and a boundary
+22
+     problem. It is not asserted merely because the primitive coefficients are continuous. 22
+23
+     On a bounded, regular Dirichlet domain, a boundary barrier is one way to verify at- 23
+24                                                                                                      24
+     tainment of the stopping payoff. Reflection requires the corresponding Neumann or
+25
+     oblique derivative condition and a well-posed reflected state process. Unbounded- 25
+26                                                                                                      26
+     state applications require growth bounds and localization. These conditions are
+27                                                                                                      27
+     checked separately from a neural residual.
+28                                                                                                      28
+         For a smooth function v, write
+29                                                                                                      29
+                                        ⊤
+30
+                       a
+                     L v = b(t, x, a)       Dv + 21 tr{σ (t, x, a)σ(t, x, a)⊤ D2 v},              (3)   30
+
+31                 H a [v] = f (t, x, a, v) + L a v,         F [v] = −vt − sup H a [v].           (4)   31
+
+32                                                                               a∈A(t,x )              32
+                                 NEURAL BELLMAN OPERATORS                                  7
+
+1    The value solves F [V ∗ ] = 0 with the specified boundary data, in the viscosity           1
+
+2    sense where classical derivatives do not exist. The diffusion covariance is the posi- 2
+3    tive semidefinite matrix σσ⊤ . No claim that the product of two arbitrary positive         3
+
+4    semidefinite matrices is symmetric positive semidefinite is needed.                        4
+
+5      A continuous martingale representation can also be used when its quadratic               5
+
+6    variation is Markov in an augmented state. If d⟨ M ⟩s = Q(s, Ss , as )ds, the covariance   6
+
+7    in (3) becomes σQσ⊤ . A merely predictable process Qs is not, without further state        7
+
+8    augmentation, a deterministic coefficient of a Markov HJB equation. Quadratic              8
+
+9    variation by itself also does not imply conditionally Gaussian increments. The             9
+
+10   implementation in this paper uses the Brownian model (1).                                  10
+
+11                                                                                              11
+
+12                                                                                              12
+                        2.1. Infinite horizon and economic normalization
+13                                                                                              13
+       For a stationary problem, the boundary-value equation is supa { f ( x, a, V ) +
+14                                                                                              14
+     L a V } = 0. We use an infinite-horizon result only after specifying admissibility,
+15                                                                                              15
+     integrability, and the selected utility process. In the time-additive case, a sufficient
+16                                                                                              16
+     verification requirement is that the localized Itô identities are uniformly integrable
+17                                                                                              17
+     and E[e−ρT |V (ST )|] → 0 for the policies being compared. Recursive problems re-
+18                                                                                              18
+     quire an appropriate utility comparison and transversality condition instead of
+19                                                                                              19
+     simply borrowing the additive one.
+20                                                                                              20
+       Cardinal transformations also require care. Multiplying a fixed utility function
+21                                                                                              21
+     by a positive constant does not change its maximizer. Adding a function of an
+22                                                                                              22
+     endogenously controlled preference state generally does. Consumption units, preference
+23                                                                                              23
+     normalization, and terminal utility are therefore primitive economic choices in
+24                                                                                              24
+     Section A.1.3.
+25                                                                                              25
+
+26                                                                                              26
+                                3. NEURAL BELLMAN OPERATORS
+27                                                                                              27
+
+28     The actor aϕ (t, x ) and critic vξ (t, x ) represent policies and continuation values. 28
+29   An internal actor and an external actor can be separate parameter blocks; their joint      29
+
+30   action remains the input to the same economic generator. A smooth activation is            30
+
+31   useful for exact differentiation, while a nonsmooth neural representation can be           31
+
+32   used with the positive-weight Bellman formulation below.                                   32
+     8
+
+1                                   3.1. Feasibility and boundary data                                    1
+
+2                                                                                                         2
+         For a box [ a, ā], a sigmoid map produces interior feasible actions but does not
+3                                                                                                         3
+     attain its endpoints at finite weights. Binding constraints can instead be represented
+4                                                                                                         4
+     by a projection onto the closed interval, by an explicit boundary candidate, or by a
+5                                                                                                         5
+     finite action set including the endpoints. The constrained portfolio calculation uses a
+6                                                                                                         6
+     projection and can attain a zero risky share exactly. On a simplex, a probability map
+7                                                                                                         7
+     supplies a feasible interior point and boundary faces must again be considered when
+8                                                                                                         8
+     certifying the optimum. General constraints require a feasible parameterization, a
+9                                                                                                         9
+     certified projection, or a constrained action solver. A finite penalty is not an exact
+10                                                                                                        10
+     feasibility certificate.
+11                                                                                                        11
+         On a finite horizon, an elementary hard-terminal architecture is
+12                                                                                                        12
+
+13                                                                                                        13
+                                   vξ (t, x ) = G ( x ) + ( T − t) Nξ (t, x ).                      (5)
+14                                                                                                        14
+
+15
+     This enforces the terminal face, but not automatically a lateral boundary. A compat- 15
+16
+     ible lifting GB and a factor d B vanishing on all Dirichlet faces give vξ = GB + d B Nξ . 16
+17                                                                                                        17
+     Alternatively, boundary residuals are trained separately and retained explicitly in
+18                                                                                                        18
+     the error bound. A reflected preference state requires its own derivative condition; a
+19                                                                                                        19
+     terminal architecture does not enforce it. For recursive utility, a domain-preserving
+20                                                                                                        20
+     transformation must additionally keep the continuation value in the domain of the
+21                                                                                                        21
+     aggregator.
+22                                                                                                        22
+
+23                                                                                                        23
+                                3.2. The block-specific computational graph
+24                                                                                                        24
+
+25       Let ν be a specified distribution of state–time points and let sg denote stop- 25
+26   gradient. A critic step minimizes                                                                    26
+
+27                                                                                                        27
+                                            h                                   i2
+                                                            sg( aϕ̄ )
+28                        LC (ξ; ϕ̄) = Eν −∂t vξ − H                    [vξ ]        + L B ( ξ ),   (6)   28
+
+29                                                                                                        29
+
+30   where L B is absent only for boundary conditions enforced exactly. The policy, sam- 30
+31   pling locations, and any rival actions are detached. The value, time derivative, state               31
+
+32   gradient, and Hessian remain differentiable with respect to the critic parameters.                   32
+                                   NEURAL BELLMAN OPERATORS                                    9
+
+1      An actor step minimizes                                                                      1
+
+2                                                                                                   2
+                                             aϕ
+3                       L A (ϕ; ξ̄ ) = −Eν H [sg(vξ̄ ), sg( Dvξ̄ ), sg( D vξ̄ )].
+                                                                          2
+                                                                                              (7)   3
+
+4                                                                                                   4
+     All critic derivative channels are fixed in this step. There is no critic gradient from
+5                                                                                                   5
+     L A and no actor gradient from LC . A printed sum L A + ωLC may be a reporting
+6                                                                                                   6
+     device, but it is not jointly differentiated. The implementation exposes separate
+7                                                                                                   7
+     functions and regression tests for these derivative paths.
+8                                                                                                   8
+       The distinction is substantive: joint differentiation can move the critic away from
+9                                                                                                   9
+     the policy-evaluation root. Appendix S.3 gives a counterexample, the recursive
+10                                                                                                  10
+     lifetime policy derivative, and the conditioning requirements. The local Hamil-
+11                                                                                                  11
+     tonian objective is not identified with a lifetime policy gradient under arbitrary
+12                                                                                                  12
+     state sampling. The evaluated reference policy may remain fixed while a separate
+13                                                                                                  13
+     candidate actor is improved at successive work levels. Updating that reference
+14                                                                                                  14
+     defines a new evaluation target and is recorded explicitly.
+15                                                                                                  15
+
+16                                                                                                  16
+
+17                               3.3. Rollout and costate evaluation                                17
+
+18
+       For a frozen policy a( j) , a positive-time Euler rollout from (t, y) supplies a sample      18
+
+19          b ( j) (t, y) and its pathwise derivative pb( j) (t, y). Differentiation includes the
+     return V                                                                                       19
+
+20                                                                                                  20
+     state dependence of subsequent policy actions. Freezing the policy means freezing
+21                                                                                                  21
+     its parameters, not deleting that derivative. The targets evaluate the current policy,
+22                                                                                                  22
+     not the optimal policy, and contain no maximizing action labels. For fixed finite
+23
+     weights, bounded actions and smooth bounded production justify pathwise dif- 23
+24                                                                                                  24
+     ferentiation of this finite rollout away from the harmless clipping kinks. These are
+25                                                                                                  25
+     derivatives of the discretized evaluation problem, not asserted unbiased derivatives
+26                                                                                                  26
+     of its continuous-time limit.
+27                                                                                                  27
+       The critic minimizes
+28                                                                                                  28
+                             h                                             i
+29                         E           b ( j) }2 + ∥d( Dy vθ − pb( j) )∥2 .
+                           b 0.05{vθ − V                                                      (8)   29
+                                                                        d
+30                                                                                                  30
+
+31   The factor d puts normalized marginal values on an order-one scale. The rollout                31
+
+32   implementation uses two hidden tanh layers and a hard terminal component. 32
+     10
+
+1    Holding its new derivative fixed, the actor then maximizes                                  1
+
+2                                h                                i                              2
+
+3                              E log aϕ − 2 āϕ − aϕ · sg( Dy vθ ) .
+                               b          ζ 2
+                                                                                          (9)    3
+
+4                                                                                                4
+     Terms independent of actions have been omitted. Consumption is represented di-
+5                                                                                                5
+     rectly by m0 (t) + ϵ tanh Nϕ (t, y); there is no online Hamiltonian search in its deploy-
+6                                                                                                6
+     ment. Value evaluation, costate evaluation, and feasible improvement are distinct
+7                                                                                                7
+     operations, with their own stored losses and work counts. The number of critic
+8                                                                                                8
+     and actor steps per rollout batch is a declared design parameter. Failure of either
+9                                                                                                9
+     numerical block is recorded, not interpreted as successful policy improvement.
+10                                                                                               10
+       The stochastic gradient targets make the economically relevant marginal continu-
+11                                                                                               11
+     ation values visible to the evaluation loss. This is not a new Bellman principle, nor
+12                                                                                               12
+     an assumption that derivative regression invariably dominates differential residual
+13                                                                                               13
+     fitting. It is a concrete implementation of the NBO evaluation map. The preserved
+14                                                                                               14
+     differential implementation and its two independent trace banks continue to test a
+15                                                                                               15
+     different evaluation procedure. Both feed the same economic distinction between
+16                                                                                               16
+     policy evaluation and feasible improvement.
+17                                                                                               17
+
+18                                                                                               18
+
+19                    3.4. The implemented map and its verification output                       19
+
+20                                                                                               20
+       Fix the economy, boundary realization, network classes, optimization budget,
+21                                                                                               21
+     and verification procedure, denoted collectively by ϑ. Let P be the admissible
+22
+     feedback policies, Ξ the critic parameter space, and Ω the sampling streams. The            22
+
+23                                                                                               23
+     implemented NBO is the numerical map
+24                                                                                               24
+
+25              Nϑ : P × Ξ × Ω −→ Vϑ × Pϑ × Cϑ ,           ( a, ξ, ω ) 7−→ (v, e
+                                                                               a, C ).   (10)    25
+
+26                                                                                               26
+
+27   The first component is approximate policy evaluation; the second is feasible im- 27
+28   provement; the third records verification of the resulting pair. A record identifies        28
+
+29   the model, parameters, domain, boundary faces, evaluation error, maximization               29
+
+30   error, coverage, discretization errors, and unchecked assumptions. An unavailable           30
+
+31   bound is not zero. Failure to obtain a useful certificate is a possible output of the       31
+
+32   map. With its sampling stream fixed, the implementation is deterministic. We do             32
+                                 NEURAL BELLMAN OPERATORS                             11
+
+1    not assert that a network learns an unrestricted Bellman operator on a function        1
+
+2    space.                                                                                 2
+
+3      The evaluation–improvement structure is an instance of approximate policy            3
+
+4    iteration, including its partial-evaluation variants (Scherrer et al., 2015). Neural   4
+
+5    representation does not introduce a new principle of optimality, and monotonic- 5
+6    ity belongs to the underlying positive-weight scheme, not to gradient descent. 6
+7    The NBO specification joins the block-specific derivative graph to boundary and        7
+
+8    utility-domain restrictions and to a common economic error account. Sections S.11.1    8
+
+9    and A.1.3.4 implement the differential and positive-weight versions of this map,       9
+
+10   respectively, with independent verification of their outputs.                          10
+
+11                                                                                          11
+
+12                  3.5. Evaluation, feasible improvement, and approximation                12
+
+13     The algorithm produces a continuation approximation and a feasible policy. Its       13
+
+14   economic interpretation requires an error account for each. The general results in     14
+
+15   technical Section S.1 bound the consequence of a fixed-policy evaluation error and     15
+
+16   an incomplete feasible maximization under the stated comparison and boundary           16
+
+17   conditions. The positive-weight Bellman formulation also provides a monotone           17
+
+18   approximation route when classical derivatives are unavailable. The complete           18
+
+19   statements and proofs remain current in the supplement.                                19
+
+20     The following capital economy permits a more operational account. Its payoff         20
+
+21   identity follows the implemented action through the original diffusion. Its finite     21
+
+22   Bellman identity measures continuation error along the candidate’s actual action       22
+
+23   change. This specialization makes it possible to compare a learned continuation        23
+
+24   with a cached simulation continuation using the same economic decision and a           24
+
+25   common assessment design.                                                              25
+
+26                                                                                          26
+
+27
+              4. CONTINUOUS-ECONOMY GUARANTEES FOR NEURAL CAPITAL POLICIES                  27
+
+28     The distinction between a nodal certificate and an economic diffusion bound          28
+
+29   is substantive. This section obtains the latter for the original dense, nonlinear      29
+
+30   capital economy, without replacing its primitives, restricting the comparison policy   30
+
+31   class, or extrapolating a sampled residual. The construction uses the curvature        31
+
+32   of consumption utility to control the gain from an arbitrary adapted deviation. A      32
+     12
+
+1    Algorithm 1 Neural Bellman evaluation, feasible improvement, and economic                    1
+
+2    assessment                                                                                   2
+
+3
+     Require: Economic primitives and information; feasible actions and utility domain;           3
+
+4
+           boundary data; evaluation variant; training, validation and stopping rules;            4
+
+5
+           independent final assessment.                                                          5
+
+6
+      1: Declare the feasible reference policy to be evaluated. Initialize a feasible candi- 6
+
+7
+           date and a boundary-compatible continuation representation.                            7
+
+8
+      2: for each permitted evaluation–improvement iteration do                                   8
+
+9
+      3:      Freeze the declared reference policy, rivals and evaluation target. Fit only the    9
+
+10
+           critic by the declared differential, positive-weight, or rollout rule. The reference   10
+
+11
+           may remain fixed across work levels.                                                   11
+
+12
+      4:      Freeze the critic and its value/derivative channels. Update only the feasible       12
+
+13
+           actor, or apply the declared feasible action solver.                                   13
+
+14
+      5:      Record all evaluation and improvement work, corrections, unsuccessful               14
+
+15
+           checks, and the resulting deployment rule.                                             15
+
+16
+      6:      Apply the predetermined validation and stopping rule, using no final-test           16
+
+17
+           outcomes.                                                                              17
+
+18
+      7: end for                                                                                  18
+
+19
+      8: Freeze the selected policy and continuation object before independent final              19
+
+20
+           evaluation.                                                                            20
+
+21
+      9: Compute the specified economic endpoints and direct contrasts, with their                21
+
+22
+           approximation, implementation and statistical accounts.                                22
+
+23
+     10: Return the fitted objects, their implementation and domain, and the complete             23
+
+24
+           accuracy and work record.                                                              24
+
+25                                                                                                25
+
+26   neural actor is then confined to a known neighbourhood of a feasible schedule. 26
+27   Its approximation class is restricted; the economic optimum against which it is              27
+
+28   assessed is not.                                                                             28
+
+29     Write z̄ = d−1 ∑i zi , ∥z∥2d = d−1 ∑i z2i , and Πz = z − z̄1. In the capital model al- 29
+30   ready specified, the state and payoff are                                                    30
+
+31                                                                                                31
+
+32            dYi = { a + κ tanh(( BY )i ) − mi − ν2 /2} dt + σI dWi + σC dW0 ,            (11)   32
+                                             NEURAL BELLMAN OPERATORS                                      13
+                        Z T                                                                      
+1                                  −ρt                                                                           1
+          Jy (m) = Ey          e         {log mt + Ȳt − 2ζ m̄2t } dt + e−ρT {ȲT − χ∥ΠYT ∥2d }       ,   (12)
+2                         0                                                                                      2
+
+3
+     where ν2 = σI2 + σC2 and each control lies in [m, M]. Controls are progressively                            3
+
+4
+     measurable and the state equation is interpreted on Rd . Bounded control and the                            4
+
+5                                                                                                                5
+     globally Lipschitz bounded production term yield the required state moments
+6                                                                                                                6
+     and finite payoffs. The historical parameters are T = 1, ρ = 0.04, a = 0.10, κ = 0.15,
+7                                                                                                                7
+     σI = 0.15, σC = 0.10, ζ = 0.2, χ = 0.03, and [m, M] = [0.02, 2]. The stored coupling
+8                                                                                                                8
+     matrices are unchanged in dimensions ten and twenty. Dimension fifty uses the
+9                                                                                                                9
+     same stated matrix-generation rule.
+10                                                                                                               10
+       Define
+11                                                                                                               11
+                   1 − e−ρ( T −t)                                                 2
+12          w(t) =                + e−ρ( T −t) ,                m0 ( t ) =       q           .            (13)   12
+                        ρ
+13                                                                         w(t) + w(t)2 + 4ζ                     13
+
+14                                                                                                               14
+     This schedule is strictly interior for the parameters above. It is a feasible benchmark,
+15                                                                                                               15
+     not an asserted solution of the coupled economy. For the analytical comparison, keep
+16                                                                                                               16
+     m0 interior and assume ρ > 0, ζ, χ, κ ≥ 0, and let β ≥ κ ∥ B∥2 and s0 ≥ ∥Πy∥d . Choose
+17                                                                                                               17
+     ϵ ≥ 0 so that [m0 (t) − ϵ, m0 (t) + ϵ] ⊂ [m, M ] at every date. With V ∗ (y) = supm Jy (m)
+18                                                                                                               18
+     over the full adapted admissible class, the schedule gap obeys 0 ≤ V ∗ (y) − Jy (m0 ) ≤
+19                                                                                                               19
+     Gd . The exact scalar integral defining Gd is (S.23); Appendix S.5 gives its curvature
+20                                                                                                               20
+     and dispersion constants, Theorem S.9, and the complete proof. This analytical
+21                                                                                                               21
+     bound supplies a common economic reference. The policy-specific endpoint below
+22                                                                                                               22
+     measures what the fitted actor adds to that reference.
+23                                                                                                               23
+
+24                                                                                                               24
+                        4.1. The deployed neural map and its numerical guard
+25                                                                                                               25
+       The actor is a two-hidden-layer network with the closed-form output map
+26                                                                                                               26
+
+27                                       ϕ                                                                       27
+                                    mi (t, Y ) = m0 (t) + ϵ tanh Nϕ,i (t, Y ).                            (14)
+28                                                                                                               28
+
+29   The weights are trained by the same block-specific NBO losses as before. No maxi- 29
+30   mizing policy labels, nodal action table, or online local search enter this actor. Input                    30
+
+31   clipping at very large log-capital values protects numerical evaluation; it does not                        31
+
+32   stop or truncate the economic state. The theorem remains valid for any bounded                              32
+     14
+
+1    proposal followed by the stated output constraint, including this clipped-input            1
+
+2    network.                                                                                   2
+
+3      Numerical implementation must not replace the exact schedule by an unverified            3
+
+4    floating-point centre. The deployment routine therefore encloses m0 (t) by [ℓ(t), u(t)]    4
+
+5    using the inherited outward arithmetic kernel and projects the proposal onto               5
+
+6                                                                                               6
+                                   [ up(u(t) − ϵ), down(ℓ(t) + ϵ) ].                     (15)
+7                                                                                               7
+
+8                                                                                               8
+     This interval lies inside the exact tube. Adjacent clock floats enclose rounding of the
+9                                                                                               9
+     input time. An empty interval causes an error; a nonfinite proposal is replaced by its
+10                                                                                              10
+     interval midpoint and is not evidence of successful training. This scalar feasibility
+11
+     guard is neither an action-maximization oracle nor a stored policy correction table. 11
+12                                                                                              12
+     Its cost is included in the deployment measurements.
+13                                                                                              13
+
+14                                                                                              14
+                     4.2. Policy-Specific Verification after Bellman Improvement
+15                                                                                              15
+       The bound in Theorem S.9 is a useful starting point, but not a measure of what
+16                                                                                              16
+     training accomplishes. Every policy in the same tube receives the same allowance,
+17                                                                                              17
+     including a poorly trained policy. We now replace that allowance by an indepen-
+18                                                                                              18
+     dently verified, policy-specific payoff difference. The economic primitives, initial
+19                                                                                              19
+     state, and full adapted comparison class in (11)–(12) are unchanged. The imple-
+20                                                                                              20
+     mentation to which the new bound applies is specified explicitly below. It is not
+21                                                                                              21
+     identified with continuously observed-state feedback.
+22                                                                                              22
+
+23                                                                                              23
+     4.2.1. The deployed controller
+24                                                                                              24
+       Fix a deterministic grid tk = kh, Nh = T. The controller has an internal state Zk ,
+25                                                                                              25
+     initially y, and observes the Brownian innovations at the grid dates. At date tk it
+26                                                                                              26
+     selects
+27                                                                                              27
+
+28
+               ak = Pk {mϕ (tk , Zk )},    Zk+1 = Zk + h{c1 + f ( Zk ) − ak } + Σ∆W
+                                                                                  e k,   (16)   28
+
+29                                                                                              29
+
+30   where c = a − ν2 /2, f (z) = κ tanh( Bz), and Pk projects inward onto the declared         30
+
+31   action interval around m0 (tk ). The vector ∆W
+                                                  e k clips each standardized innovation        31
+                                 √
+32   at ten before rescaling by h. The numerical implementation and its rounding                32
+                                  NEURAL BELLMAN OPERATORS                                                   15
+
+1    convention form part of the controller. Between dates it holds ak fixed. Its economic                         1
+
+2    state, denoted Y ϕ , nevertheless satisfies                                                                   2
+
+3                                                                                                                  3
+                    dYt = {c1 + f (Yt ) − ak } dt + Σ dWt ,
+                      ϕ             ϕ
+4                                                                       t k ≤ t < t k +1 .                         4
+
+5                                                                                                                  5
+     In particular, the economic Brownian motion and state are not clipped, stopped,
+6                                                                                                                  6
+     or replaced by Z. The controller is adapted to the original innovation filtration
+7                                                                                                                  7
+     and remains feasible. Observing innovations is an implementation assumption,
+8                                                                                                                  8
+     not a conclusion inferred from a state-only observation model. The continuously
+9                                                                                                                  9
+     evaluated absolute-bound study policies remain separate objects in the supplement.
+10                                                                                                                 10
+       This specification has an important analytical consequence. When the numerical
+11                                                                                                                 11
+     state and the economic state are compared, they use exactly the same chosen actions.
+12                                                                                                                 12
+     Their state discrepancy therefore depends on the smoothness of the economic drift,
+13                                                                                                                 13
+     not on a global Lipschitz bound for the learned network. The following construction
+14                                                                                                                 14
+     uses this fact rather than inserting sampled residuals into a uniform verification
+15                                                                                                                 15
+     theorem.
+16                                                                                                                 16
+
+17                                                                                                                 17
+     4.2.2. An exact improvement identity
+18                                                                                                                 18
+
+19     Write W (t) = e−ρt w(t) and define the nonnegative consumption deficit                                      19
+
+20                                                                                                                 20
+                                                               ζ
+              Rt (m) = log m0 (t) − log m + w(t){m̄ − m0 (t)} + {m̄2 − m0 (t)2 }.                           (17)
+21                                                             2                                                   21
+
+22                                                                                                                 22
+     The first-order identity m0−1 = w + ζm0 and concavity of the logarithm imply
+23                                                                                                                 23
+     Rt (m) ≥ 0. The exact mean-state identity in the proof of Theorem S.9 gives
+24                                                                                                                 24
+
+25                                        Z T                                     Z T                              25
+         ∆ϕ := Jy ( aϕ ) − Jy (m0 ) = E         W (t) f (Yt ) − f (Yt0 ) dt − E         e−ρt Rt ( at ) dt
+                                                          ϕ                                        ϕ
+26                                         0                                       0                               26
+
+                                     − χe−ρT E{∥ΠYT ∥2d − ∥ΠYT0 ∥2d }.
+27                                                            ϕ                                                    27
+                                                                                                            (18)
+28                                                                                                                 28
+
+29   Thus state-dependent consumption has to earn its utility-curvature cost through pro- 29
+30   duction or terminal dispersion. The identity is also an effective variance reduction:                         30
+
+31   the common mean-state martingale cancels before simulation statistics are formed. 31
+32   Positive neural output is not itself evidence of positive economic improvement.                               32
+     16
+
+1      For each cell, calculate the scalar integrals                                                                1
+
+2                                                                                                                   2
+                 Z t                                                                        Z t
+                       k +1                                                                       k +1
+                                  −ρt
+3         Ak =                e         dt,                                          Bk =                W (t)dt,   3
+                  tk                                                                         tk
+4                Z t                                                                                                4
+                       k +1
+                                  −ρt                                    2
+5         Ck =                e         {log m0 (t) − w(t)m0 (t) − ζm0 (t) /2} dt.                                  5
+                  tk
+6                                                                                                                   6
+
+7    The consumption-deficit integral for a held action is exactly Ck − Ak log ak + Bk āk + 7
+8    ζ Ak ā2k /2. Consequently, consumption need not be approximated by a left-point                               8
+
+9    utility sum. Let Xϕ,h be the paired statistic obtained from (18) by using the internal                         9
+
+10   Euler states in the production and terminal terms and these integrated consumption 10
+                                                                            Rt
+11   terms. The reference internal state uses the integrated common action t k+1 m0 (t)dt. 11
+                                                                                                     k
+12   All scalar integral enclosures and their midpoint errors are saved.                                            12
+
+13                                                                                                                  13
+
+14   4.2.3. Transferring the computed payoff to the economy                                                         14
+
+15                                                                                                                  15
+       The statistic Xϕ,h is evaluated for the held controller in (16), using the same
+16                                                                                                                  16
+     actions when comparing its internal state with its economic diffusion. Proposi-
+17                                                                                                                  17
+     tion S.10 in Appendix S.5 bounds |∆ϕ − EXϕ,h | by the saved allowance Eϕ,h
+                                                                            all . The
+18                                                                                                                  18
+     exact-arithmetic diffusion allowance is Eϵ (h) + E0 (h), with Eϵ defined in (S.32).
+19                                                                                                                  19
+     The appendix gives the additional clipped-innovation, forward-arithmetic, and
+20                                                                                                                  20
+     enclosed-integration terms. The O(h) diffusion bound uses bounded actions, the
+21                                                                                                                  21
+     global drift and derivative bounds of the specified hyperbolic-tangent production
+22                                                                                                                  22
+     function, and additive diffusion; it requires no derivative bound for the trained
+23                                                                                                                  23
+     network.
+24                                                                                                                  24
+
+25                                                                                                                  25
+     4.2.4. A post-training certificate
+26                                                                                                                  26
+
+27     Use the deterministic clipping threshold bϕ and expectation-tail allowance τϕ                                27
+
+28   constructed in Appendix S.5.4. They account for the unbounded Gaussian terminal- 28
+                                                                             c be X
+     dispersion term and are not estimated from the final sample range. Let Xϕ,h
+29                                                                                  ϕ,h                             29
+
+30   clipped to [−bϕ , bϕ ], so that |EXϕ,h − EXϕ,h
+                                                c |≤τ .
+                                                     ϕ                                                              30
+
+31     For n fresh independent paths, let X̄ϕc and s2ϕ be the clipped empirical mean and                            31
+
+32   unbiased variance. Fix a family of at most F one-sided statements before inspecting                            32
+                                     NEURAL BELLMAN OPERATORS                                     17
+
+1    this noise bank, and set ℓ = log(2F/α). Define                                                     1
+
+2                                                                                                       2
+                                         q                 14bϕ ℓ
+3                          Lϕ = X̄ϕc −       2s2ϕ ℓ/n −                all
+                                                                    − Eϕ,h − τϕ .               (19)    3
+                                                          3( n − 1)
+4                                                                                                       4
+
+5
+     In the implementation the empirical mean is enclosed downward and the variance                     5
+
+6
+     and every subtracted quantity upward. The upper payoff endpoint uses the same                      6
+
+7
+     terms with reversed signs. The factor F counts both tails when both are reported.                  7
+
+8                                                                                                       8
+       T HEOREM 1—Policy-specific continuous-time certificate: Condition on the training
+9                                                                                                       9
+     and validation data, and suppose the specified final simulation paths are independent draws
+10                                                                                                      10
+     from the declared innovation law. Under the arithmetic contract and transfer assumptions
+11                                                                                                      11
+     above, with probability at least 1 − α, simultaneously for all declared policies and initial
+12                                                                                                      12
+     states,
+13                                                                                                      13
+
+14                  Jy ( aϕ ) − Jy (m0 ) ≥ Lϕ ,     0 ≤ V ∗ (y) − Jy ( aϕ ) ≤ Gd − Lϕ .         (20)    14
+
+15                                                                                                      15
+     The optimum V ∗ still ranges over all adapted feasible controls in the original continuous
+16                                                                                                      16
+     economy, not merely the networks, schedules, or sampled controllers used in the experiment.
+17                                                                                                      17
+     Common shocks may be reused across policies; independence across those policies is not
+18                                                                                                      18
+     required. The guarantee is pointwise in each declared initial state and conditional on training,
+19                                                                                                      19
+     rather than uniform on an uncountable state domain.
+20                                                                                                      20
+
+21                                                                                                      21
+       P ROOF : Apply the empirical Bernstein inequality of Maurer and Pontil (2009,
+22                    c + b ) / (2b ) and use a union bound over the declared one-sided
+     Theorem 4) to ( Xϕ,h                                                                               22
+                           ϕ       ϕ
+23                                                                                                      23
+     statements. Rescaling gives the first two error terms in (19). The clipping expectation
+24                                                                                                      24
+     bound and Proposition S.10 then give the first inequality in (20). Subtract it from
+25                                                                                                      25
+     the deterministic anchor bound (S.23). Feasibility yields nonnegative regret. An
+26                                                                                                      26
+     observed negative upper regret endpoint would indicate failure of the confidence
+27                                                                                                      27
+     event or of an implementation assumption, not a negative optimality gap. Q.E.D.
+28                                                                                                      28
+
+29     Unlike Gd + Dd,ϵ , the new endpoint depends on the deployed policy through its                   29
+
+30   paired outcomes and sample variance. It can distinguish seeds and unsuccessful                     30
+
+31   policies in the same architectural tube. When Lϕ > 0, the post-training guarantee                  31
+
+32   is tighter than the analytical schedule’s guarantee. This is a statement about the                 32
+     18
+
+1    verified policy, not a deterministic promise that every training run improves wel- 1
+2    fare. The concentration inequality, the identity that transfers a lower improvement               2
+
+3    bound into a regret bound, and conservative policy improvement are established                    3
+
+4    ideas (Kakade and Langford, 2002, Pirotta et al., 2013, Scherrer et al., 2015). The               4
+
+5    contribution here is their operational connection to the continuous capital economy               5
+
+6    through (18) and the transfer bound (S.32), without a state-covering certificate or a             6
+
+7    global bound on the trained network’s derivatives.                                                7
+
+8                                                                                                      8
+
+9                                                                                                      9
+                         4.3. An operational evaluation–improvement account
+10                                                                                                     10
+
+11
+       The costate in a rollout is the derivative of a specified continuation problem. Its             11
+
+12
+     approximation error has to be measured where the new policy uses that continua- 12
+
+13
+     tion. We now make both objects explicit. The construction uses the capital economy,               13
+
+14
+     including its dense production interaction, common and idiosyncratic shocks, con- 14
+
+15
+     sumption curvature, and terminal dispersion preference. It also accommodates a                    15
+
+16
+     critic fitted on a coarser grid than the one used for assessment.                                 16
+
+17
+       Fix the assessment grid tk = kh, Nh = T. Write πk = M̄k /h, where M̄k is the 17
+                                          Rt
+18
+     disclosed numerical representative of t k+1 m0 (t)dt. In the following finite prob- 18
+                                                         k
+
+19
+     lem, these representatives are fixed real numbers. They specify a feasible, state- 19
+
+20
+     independent reference. The internal transition and transformed reward are                         20
+
+21                                                √                                                    21
+            Zk+1 = Zk + h{c1 + f ( Zk ) − ak } + Σ h clipz ( Gk ),         Gk ∼ N (0, Id+1 ),   (21)
+22                                                                                                     22
+                                                      ζ Ak 2
+23        ℓk (z, a) = Bk f (z) + Ak log a − Bk ā −       ā ,   g N (z) = −χe−ρT ∥Πz∥2d .      (22)   23
+                                                        2
+24                                                                                                     24
+
+25   Here Ak , Bk are the integrated weights defined above; all discounting is included                25
+
+26   in them. Let Rh ( a) be the expected sum of these rewards and g N . The candidate                 26
+
+27   may depend on its entire observed innovation history. Its actions and the reference               27
+
+28   belong to the same declared convex action box Ak at each date.                                    28
+
+29     Let Vkπ be the value of this finite problem under π, and define its continuation                29
+
+30   after choosing the deterministic drift by                                                         30
+
+31                                                                                                     31
+                                                √
+                      Skπ ( x ) = E Vkπ+1 { x + Σ h clipz ( Gk )} ,
+                                                                
+32                                                                     qπ        π
+                                                                        k = dDx Sk .            (23)   32
+                                    NEURAL BELLMAN OPERATORS                                         19
+
+1    The argument x is the conditional mean before the current innovation. The current                    1
+
+2    reward ℓk is excluded from Skπ ; subsequent rewards start at k + 1 on the same global                2
+
+3    grid. In particular, qπN −1 ( x ) = −2χe−ρT Πx. Smoothness of f , bounded actions, finite            3
+
+4    moments, and the quadratic terminal reward justify the derivatives and expectations                  4
+
+5    in this finite problem.                                                                              5
+
+6      After fitting, freeze an arbitrary continuously differentiable scalar predictor Sbk                6
+
+7    and its costate qbk = dD Sbk . Set                                                                   7
+
+8                                                                                                         8
+
+9
+               xb (z) = z + h{c1 + f (z) − b},          b k (z, b) = ℓk (z, b) + Sbk { xb (z)}.
+                                                        Q                                                 9
+
+10                                                                                                        10
+     For U uniform on [0, 1], independent of the candidate’s past, the action bridge is
+11                                                                                                        11
+     Xk,U = xπk ( Zk ) + U { x ak ( Zk ) − xπk ( Zk )}. Define the following quantities under the
+12                                                                                                        12
+     candidate’s internal-state law:
+13                                                                                                        13
+               N −1
+14
+        Mh = ∑ E Q                                                                                        14
+                                                  
+                  b k ( Zk , ak ) − Q
+                                    b k ( Zk , πk ) ,
+15              k =0                                                                                      15
+
+16             N −1                                            N −1                                       16
+         Ah = ∑ hE∥ ak − πk 1∥2d ,                      Eh = ∑ hE∥qbk ( Xk,U ) − qπk ( Xk,U )∥2d .
+17              k =0                                           k =0                                       17
+
+18                                                                                                (24)    18
+
+19                                                                                                        19
+     Mh records the improvement predicted by the fitted scalar continuation, Ah records
+20                                                                                                        20
+     the size of the implemented change, and Eh measures the error that can affect this
+21                                                                                                        21
+     particular change. Training-state accuracy alone does not identify Eh .
+22                                                                                                        22
+
+23                                                                                                        23
+       P ROPOSITION 2—Finite Bellman bridge: If the displayed quantities are integrable,
+24                                                                                                        24
+     then
+25                                                              p                                         25
+
+26                               Rh ( a) − Rh (π ) ≥ Mh −           Ah Eh .                       (25)    26
+
+27                                                                                                        27
+     The assertion holds for every feasible candidate. It requires neither exact maximization of Q
+                                                                                                 b
+28                                                                                                        28
+     nor a continuous-time costate approximation. A predictor fitted on another mesh enters Eh
+29                                                                                                        29
+     with its full discrepancy from the assessment-grid continuation.
+30                                                                                                        30
+
+31     The proposition follows from the finite-horizon performance-difference identity                    31
+
+32   and a line integral of the costate error along each action bridge. It is useful even                 32
+     20
+
+1    when action optimization is incomplete. The next result additionally quantifies that                        1
+
+2    incompleteness with a finite, checkable calculation.                                                        2
+
+3                                                                                                                3
+        P ROPOSITION 3—A feasible-actor account: Suppose Sbk is twice continuously dif-
+4                                                                                                 4
+     ferentiable and dD2 Sbk ( x ) ⪯ Λk Id everywhere. Let m+,k be the upper endpoint of Ak , and
+5                                                                                                                5
+     put
+6                                                                                                                6
+
+7               Γk = h2 Λk − Ak /m2+,k ,        gk,i = Ak { a− 1
+                                                             k,i − ζ āk } − Bk − hb
+                                                                                   qk,i { x ak ( Zk )}.          7
+
+8                                                                                                                8
+     An upper bound on the actor’s Q
+                                   b k maximization gap is
+9                                                                                                                9
+                                                      Γk
+                                                                
+10                                                             2                                                 10
+                          δk = max ⟨ gk , b − ak ⟩d + ∥b − ak ∥d .                                        (26)
+11
+                               b∈Ak                   2                                                          11
+
+12   This is a separable scalar calculation. If Γk < 0, its maximizer is the coordinate projection               12
+
+13   of ak − gk /Γk . If Γk ≥ 0, one compares the two endpoints in each coordinate. Thus (26)                    13
+
+14   remains valid when global strong concavity of the learned continuation problem cannot be                    14
+
+15   verified.                                                                                                   15
+
+16      If µ0 = mink (−Γk /h) > 0 is verified and Dh = ∑k Eδk , then                                             16
+
+17                                                                                                               17
+                                  Rh ( a) − Rh (π ) ≥ 21 Mh − Dh − 2Eh /µ0 .                              (27)
+18                                                                                                               18
+
+19             b maximizers, Dh = 0 and the coefficient of Eh /µ0 improves from two to one.
+     For exact Q                                                                                                 19
+
+20   These conclusions apply to the actual feasible action; a small training loss is not substituted             20
+
+21   for δk .                                                                                                    21
+
+22                                                                                                               22
+        Independent occupation and continuation samples. Draw an independent candidate
+23                                                                                                               23
+     trajectory, K uniformly from {0, . . . , N − 1}, and U uniformly from [0, 1]. At its
+24                                                                                                               24
+     bridge state, draw two independent continuation banks Z1 , Z2 with conditional
+25                                                                                                               25
+     mean qπ
+           K ( XK,U ). A bank may contain antithetic pairs; independence is required
+26                                                                                                               26
+     between the two banks, not between the members of an antithetic pair. The statistics
+27                                                                                                               27
+
+28               M = N {Q
+                        b K ( ZK , aK ) − Q
+                                          b K ( ZK , πK )},                 A = T ∥ aK − πK 1∥2d ,               28
+
+29                                                                                                               29
+                  E = T ⟨qbK ( XK,U ) − Z1 , qbK ( XK,U ) − Z2 ⟩d ,         D = NδK                       (28)
+30                                                                                                               30
+
+31   have expectations Mh , Ah , Eh , Dh . Individual values of E may be negative. Re- 31
+32   placing them by their positive parts would change the estimand. Moreover,                                   32
+                                    NEURAL BELLMAN OPERATORS                                    21
+
+1    Eraw = T ∥ Z1 − Z2 ∥2d /2 estimates the integrated mean-square error of one raw bank             1
+
+2    on this same occupation law. A confidence bound for E − Eraw therefore assesses the              2
+
+3    critic’s reusable costate prediction against a direct bank with the declared number              3
+
+4    of rollouts. It concerns this evaluation subproblem; the direct method comparison                4
+
+5    continues to use the returned policies’ independently assessed payoffs.                          5
+
+6      The supplement gives explicit clipping ranges and expectation allowances for                   6
+
+7    these statistics. They exploit the common quadratic terminal component and anti- 7
+8    thetic cancellation. They do not use an empirical maximum as a population bound. 8
+9    Independent, equally sized samples for every member of a declared finite stream                  9
+
+10   distribution may be pooled using the maximum proved range and the mean numer- 10
+11   ical and tail allowances. The resulting target is the uniform mean over all declared             11
+
+12   streams.                                                                                         12
+
+13                                                                                                    13
+
+14
+       T HEOREM 4—From fitted continuation to continuous economic gain: Condition                     14
+
+15
+     on the fitted objects and their selection. Suppose a fresh, simultaneous assessment gives        15
+
+16
+     L M ≤ Mh , Ah ≤ U A , Eh ≤ UE , and, when used, Dh ≤ UD . Include the disclosed arith- 16
+
+17
+     metic and state-representation errors in these endpoints. Define the deterministic holding       17
+
+18
+     deficit                                                                                          18
+                                    n                                      o
+19                    Dhold = ∑ Ck − Ak log πk + Bk πk + ζ Ak πk2 /2 ≥ 0.                             19
+
+20                              k                                                                     20
+                                                                                 all be its
+     For the sampled continuous-economy implementation of Proposition S.10, let Ea,h
+21                                                                                                    21
+
+22   saved paired payoff-transfer allowance. Then, on that same event,                                22
+
+23                                      q                                                             23
+                                                                             all
+                J ( a) − J (m0 ) ≥ L M − max(0, U A ) max(0, UE ) − Dhold − Ea,h .            (29)
+24                                                                                                    24
+
+25                                                                                                    25
+     When the positive curvature modulus in Proposition 3 is verified, one may also use L M /2 −
+26                                                                                                    26
+     UD − 2 max(0, UE )/µ0 before subtracting the same two allowances. Taking the larger of
+27                                                                                                    27
+     these two bounds spends no additional probability. Subtracting a valid lower gain bound
+28                                                                                                    28
+     from the analytical reference regret bound gives a bound against all adapted feasible controls
+29                                                                                                    29
+     in the original economy.
+30                                                                                                    30
+
+31     This account separates three observable economic requirements: a continuation                  31
+
+32   that predicts a useful feasible change, an error small enough under the candidate’s              32
+     22
+
+1    occupation law, and a sufficiently accurate implementation. The finite Bellman                1
+
+2    identity is exact; the transfer of payoffs to the diffusion is quantitative. Neither          2
+
+3    equality of discrete and continuous costates nor global concavity of the full adapted- 3
+4    control problem is assumed.                                                                   4
+
+5                                                                                                  5
+
+6                 4.4. A common continuation for different economic decisions                      6
+
+7                                                                                                  7
+       The capital economy permits a direct study of continuation reuse. Consider a
+8                                                                                                  8
+     finite-period decision in which a temporary consumption weight, consumption
+9
+     externality, or consumption cap changes at the current date. Subsequent prefer- 9
+10                                                                                                 10
+     ences, technology, Gaussian innovations, terminal dispersion cost, and reference
+11                                                                                                 11
+     consumption remain fixed. For task θ = (w, η, u), the action-dependent payoff is
+12                                                                                                 12
+                                       2
+13        Qθ (y, a) = A0 {wlog a − η ā /2} − W0 ā + S{ x a (y)},                                 13
+
+14
+             x a (y) = y + h{c1 + f (y) − a},      S( x ) = EF ( x; ξ ),   a ∈ [ a, u]d .   (30)   14
+
+15                                                                                                 15
+
+16   Here a known current term independent of a is suppressed. The random variable                 16
+
+17   F ( x; ξ ) includes the first Gaussian innovation at postdecision mean x, all subsequent      17
+
+18   reference rewards, and the terminal payoff. The stored period weights and inno- 18
+19   vation amplitudes define this finite capital problem. Its decision values have their          19
+
+20   own interpretation, separate from the continuous-diffusion value in the preceding             20
+
+21   payoff theorem.                                                                               21
+
+22     Proposition S.14 establishes that S is identical across these tasks. NBO therefore          22
+
+23   fits one scalar continuation and queries its gradient when the current economic               23
+
+24   problem changes. This reuse has a precise information boundary. A stored payoff or            24
+
+25   costate remains an exact rollout observation at the argument where it was computed. 25
+26   Reusing the same innovation array at another argument requires reevaluating its               26
+
+27   state recursion and payoff. The Raw comparators may cache valid observations                  27
+
+28   and innovations under the same rule. The comparison concerns the accuracy and                 28
+
+29   complete cost of these representations of the common continuation.                            29
+
+30     The scalar representation also imposes structure on costate fitting. Fix postdeci- 30
+31   sion arguments and positive weights before drawing rollout labels. Stack the true             31
+
+32   gradients, multiplied by the square roots of the weights, in q. Let the corresponding         32
+                                 NEURAL BELLMAN OPERATORS                                23
+
+1    labels be z = q + ε, with Eε = 0 and finite covariance Σ. For differentiable scalar       1
+
+2    features fixed independently of these labels, let P be the Euclidean orthogonal           2
+
+3    projection onto their stacked weighted gradient columns. A least-squares scalar           3
+
+4    critic has fitted gradients Pz, and                                                       4
+
+5                                                                                              5
+
+6
+                   E∥ Pz − q∥2 − E∥z − q∥2 = ∥( I − P)q∥2 − tr{( I − P)Σ}.              (31)   6
+
+7                                                                                              7
+     Proposition S.15 proves the identity without requiring independent coordinates or
+8                                                                                              8
+     Gaussian label noise. The variance removed outside the gradient dictionary is the
+9                                                                                              9
+     statistical benefit; approximation error is its cost. When the true gradient belongs to
+10                                                                                             10
+     the dictionary and the removed variance is positive, the scalar critic strictly reduces
+11                                                                                             11
+     this risk. The same fitted object can then serve every task in (30).
+12                                                                                             12
+       This calculation gives a conditional statistical account of the scalar critic. A
+13                                                                                             13
+     fully trained nonlinear network generally chooses its features using its labels and
+14                                                                                             14
+     need not coincide with this fixed projection. A Raw procedure using the same
+15                                                                                             15
+     projection has the same identity. The economic comparisons consequently evaluate
+16                                                                                             16
+     all five complete procedures on independent payoff observations, including their
+17                                                                                             17
+     approximation errors, action choices, and computational work. Technical Section S.8
+18                                                                                             18
+     gives the full proofs, direct conditional payoff range, and separate accuracy account
+19                                                                                             19
+     over an entire scalar intervention interval.
+20                                                                                             20
+
+21                                                                                             21
+                              4.5. Signed continuation assessment
+22                                                                                             22
+
+23     The occupation account can retain the sign of the continuation prediction error. 23
+24   At a sampled candidate state and date, evaluate the reference continuation from           24
+
+25   the candidate and reference postdecision states using the same future innovations. 25
+26   Add the current reward difference before forming the interval. The conditional            26
+
+27   expectation is the reference Bellman advantage; averaging over the candidate’s            27
+
+28   occupation distribution gives the finite policy gain.                                     28
+
+29     Proposition S.12 makes this statement precise. The predicted improvement and            29
+
+30   its signed continuation error cancel sample by sample. A lower endpoint for their         30
+
+31   combined statistic therefore need not pay separately for the full range of the fit- 31
+32   ted predictor. Proposition S.13 supplies an economic range using the action tube,         32
+     24
+
+1    bounded production derivatives, and antithetic future paths. It retains the original    1
+
+2    clipping and arithmetic account and the separate transfer to the continuous-time        2
+
+3    payoff. The complete derivation is in technical Section S.7.7.                          3
+
+4      This calculation addresses the precision of an economic identity for the selected     4
+
+5    policy. The comparison of a learned critic with a Raw continuation remains a distinct   5
+
+6    empirical question. The repeated-decision design makes that comparison directly,        6
+
+7    including the cost and benefit of reusing each continuation representation.             7
+
+8                                                                                            8
+                                 5. COMPUTATIONAL DESIGN
+9                                                                                            9
+
+10     The experiments distinguish a decision problem, a complete algorithm, a selected      10
+
+11   policy, and an independent payoff bank. Each confidence statement conditions on         11
+
+12   the objects fixed before its bank. The earlier complete method distribution contains    12
+
+13   sixteen equally weighted algorithm streams at each dimension. Generating new            13
+
+14   payoff paths for those policies does not create new training configurations. A finite   14
+
+15   repeated-decision economy likewise has its own value target and is not silently         15
+
+16   identified with the continuous diffusion.                                               16
+
+17                                                                                           17
+
+18
+                         5.1. Reusable continuation and new decisions                        18
+
+19     The central comparison studies the common continuation in (30) across twelve          19
+
+20   temporary preference, externality, and consumption-cap tasks. Each task is eval- 20
+21   uated at thirty-two fixed states, giving 384 equally weighted queries in each di- 21
+22   mension. Four capital calibrations retain the original low-volatility primitives, a     22
+
+23   two-year quarterly horizon, a four-year half-year horizon, and an intermediate          23
+
+24   three-year quarterly horizon. The two- and four-year calibrations each have eight       24
+
+25   decision periods. The new model and its stored period coefficients define a finite      25
+
+26   repeated-decision economy; no continuous-time transfer is asserted for these menu       26
+
+27   values.                                                                                 27
+
+28     Five complete procedures share the permitted continuation information: the            28
+
+29   NBO scalar critic, an unrestricted vector costate predictor, a materialized Raw         29
+
+30   actor, a direct-policy actor, and query-level Raw sample-average optimization. The      30
+
+31   vector predictor uses the same postdecision labels as NBO. The Raw actor retains        31
+
+32   labels at reference actions, whereas direct policy and query-level Raw may retain       32
+                                   NEURAL BELLMAN OPERATORS                              25
+
+1    innovations and reevaluate the continuation when their actions change. Thus the           1
+
+2    comparisons assess complete representation and optimization procedures, with all          2
+
+3    approximation and action-selection errors included.                                       3
+
+4      Each calibration and dimension has sixteen streams fixed before confirmation. 4
+5    All methods retain three work stages, using 128, 512, and 2,048 replay states for the     5
+
+6    fitted procedures and 4, 16, and 64 antithetic paths for query-level Raw. No stage is     6
+
+7    selected on the final payoff bank. The 216 primary statements cover every method’s        7
+
+8    reference gain and every direct NBO contrast at all stages and cells. Independent         8
+
+9    confirmation uses 512 antithetic pairs per query and family error 0.018. The fixed        9
+
+10   materiality and equivalence margins are both 10−4 ; a positive interval can also lie      10
+
+11   inside the equivalence band. A separate family with error 0.002 assesses 128 scalar- 11
+12   intervention accuracy bounds. Technical Section S.19 gives the complete calibration,      12
+
+13   fitting, inference, and work contracts.                                                   13
+
+14                                                                                             14
+
+15                   5.2. Prospective confirmation of previously selected policies             15
+
+16                                                                                             16
+       The confirmation retains all 128 frozen policies from the previous experiment:
+17                                                                                             17
+     four methods, sixteen declared streams, and two dimensions. Before generating its
+18                                                                                             18
+     new bank, it fixes the original paired-transfer theorem, outward constants, clipping
+19                                                                                             19
+     account, reporting code, and an independent family error allocation of 0.01. The
+20                                                                                             20
+     new bank has 8,192 paths on 2,048 decision cells. It is independent of the original
+21                                                                                             21
+     assessment bank and of the completed training. Its target is the mean payoff of the
+22                                                                                             22
+     original finite policy distribution and its specified direct comparisons.
+23                                                                                             23
+       The deterministic transfer is audited separately in technical Section S.7.6. The
+24                                                                                             24
+     confirmation retains the original protected constants. It does not substitute a smaller
+25                                                                                             25
+     high-precision diagnostic for an interval enclosure. Earlier online stopping deci-
+26                                                                                             26
+     sions remain those made on their original checkpoint banks, irrespective of later
+27                                                                                             27
+     confirmation.
+28                                                                                             28
+
+29                                                                                             29
+                          5.3. A strengthened neural-HJB implementation
+30                                                                                             30
+
+31     This separate continuous-economy family trains new policies at four capital             31
+
+32   calibrations—high volatility, the original low volatility, a longer horizon, and joint    32
+     26
+
+1    economic stress—in dimensions ten and fifty. Each cell has eight new streams, giving       1
+
+2    64 trials, 256 method-group processes, and 320 policy outputs. A new 8,192-path,           2
+
+3    2,048-cell bank assesses each trial. All 648 conditional stream and finite-stream-mean     3
+
+4    events share error allocation 0.01. The stress design changes coupling, terminal           4
+
+5    dispersion preferences, initial heterogeneity, and the feasible actor radius together;     5
+
+6    its comparison does not isolate the effect of any one primitive. This family is distinct   6
+
+7    from both the fixed-policy replication and the sixteen-stream finite menu.                 7
+
+8      The stronger comparator evaluates the diffusion trace exactly at dimensions ten          8
+
+9    and fifty. Four learning-rate and collocation configurations are fixed in advance. 9
+10   Each uses Adam followed by L-BFGS; independent residual diagnostics select                 10
+
+11   the configuration and its checkpoint. The final payoff bank does not select the            11
+
+12   fitted network. The implemented policy records both an optimized action root               12
+
+13   and a distilled actor, with separately reported payoff and work for each output. 13
+14   Complete work includes every fitted configuration, selection, distillation, action         14
+
+15   deployment, and verification. This is a fixed-envelope comparison: a stop based            15
+
+16   on independent residual checks is not an online economic-target stopping rule. 16
+17   The previous stochastic-trace implementation and its complete outcomes remain in           17
+
+18   technical Section S.14.                                                                    18
+
+19                                                                                              19
+
+20                       5.4. Precision of the signed occupation account                        20
+
+21                                                                                              21
+       The signed Bellman experiment uses independent candidate-occupation and
+22                                                                                              22
+     continuation banks. Its protected statistic combines the current reward and paired
+23                                                                                              23
+     future-return difference before clipping and inference. Its allocation is fixed using
+24                                                                                              24
+     the proved economic range and a power calculation. It reports the numerical trans-
+25                                                                                              25
+     fer and every remaining allowance alongside the stochastic radius. The result is
+26                                                                                              26
+     interpreted as an assessment of the selected policy’s Bellman account; direct critic–
+27                                                                                              27
+     Raw comparisons retain their own payoff, continuation-risk, and work estimands.
+28                                                                                              28
+
+29                                                                                              29
+                               5.5. Economic and inferential scope
+30                                                                                              30
+
+31     The confidence family is stated separately for each new experiment. A union of           31
+
+32   results from different families is asserted only with its explicit allocation. Previous    32
+                                 NEURAL BELLMAN OPERATORS                                27
+
+1    publication evidence retains its original probability account. All results retain their   1
+
+2    economic parameters, state population, implemented controller, and complete cost          2
+
+3    boundary. A direct comparison interval that spans the declared margin remains             3
+
+4    unresolved. A protected lower gain over the schedule, a bound on full-class regret,       4
+
+5    a finite-grid residual, and an empirical refinement discrepancy answer different          5
+
+6    economic questions.                                                                       6
+
+7                                                                                              7
+
+8                      6. ECONOMIC VALUE AND COMPUTATIONAL WORK                                8
+
+9                                                                                              9
+                            6.1. The value of a reusable continuation
+10                                                                                             10
+
+11     The complete menu experiment gives a positive economic role for the learned             11
+
+12   continuation at a stated computational budget. All 640 method fits and 1,920 stage        12
+
+13   candidates are retained; no fit failed and no stage used the fallback. Table I reports    13
+
+14   every final-stage direct comparison, pooling the sixteen declared streams and all         14
+
+15   384 task-state queries within each of the eight cells. Its units are 10−4 , the fixed     15
+
+16   materiality and equivalence margin. The intervals belong to the same 216-event            16
+
+17   family as the complete earlier-stage record.                                              17
+
+18     In both previously unpiloted fifty-dimensional designs, NBO yields materially           18
+
+19   higher mean payoff than the materialized Raw and direct-policy actors. Its lower          19
+
+20   gain over the Raw actor is 0.001802 in Long and 0.000147 in Intermediate; the             20
+
+21   corresponding lower gains over direct policy are 0.000327 and 0.000130, all rounded       21
+
+22   downward. Each exceeds 10−4 . In Long at dimension fifty, NBO also exceeds the            22
+
+23   fitted vector costate by at least 0.001638. These comparisons measure the economic        23
+
+24   consequences of using the complete scalar continuation procedure. They do not             24
+
+25   estimate an independent critic-risk difference or isolate variance removal from           25
+
+26   nonlinear approximation and optimization.                                                 26
+
+27     The payoff improvements over direct policy in those two fifty-dimensional cells         27
+
+28   accompany lower measured construction and query work. NBO’s mean complete                 28
+
+29   three-stage clocks are 14.59 seconds against 38.03 for direct policy in Long, and         29
+
+30   12.70 against 45.58 in Intermediate. The materialized Raw actor and vector predictor      30
+
+31   have lower construction and query clocks than NBO in every final cell. Thus the           31
+
+32   economic increment over these two representations has a computational cost. The           32
+     28
+
+1                                                      TABLE I                                                     1
+
+2                       I NCREMENTAL VALUE OF THE R EUSABLE NBO C ONTINUATION                                      2
+
+3           Economy          d    NBO − Vector        NBO − Raw actor          NBO − DPO         NBO − SAA         3
+
+4           Original        10        [0.00, 0.01]              [0.06, 0.07]     [0.06, 0.07]     [-0.01, 0.01]    4
+
+5           Original        50        [0.03, 0.05]              [0.25, 0.26]     [0.24, 0.25]     [-0.03, -0.02]   5
+            Quarterly       10       [-0.02, 0.02]              [0.20, 0.26]     [0.12, 0.17]     [-0.06, -0.01]
+6                                                                                                                  6
+            Quarterly       50        [0.22, 0.27]              [0.82, 0.90]     [0.76, 0.83]     [-0.41, -0.36]
+7                                                                                                                  7
+            Long            10        [0.14, 0.92]              [5.67, 6.70]    [-1.03, -0.19]    [-1.99, -1.22]
+8                                                                                                                  8
+            Long            50      [16.38, 18.13]            [18.02, 19.72]     [3.27, 4.25]     [-2.68, -1.89]
+9           Intermediate    10       [-0.01, 0.03]              [0.25, 0.33]     [0.15, 0.21]     [-0.03, 0.02]    9
+
+10          Intermediate    50        [0.66, 0.79]              [1.47, 1.63]     [1.30, 1.44]     [-0.49, -0.39]   10
+
+11    Notes: Intervals are in units of 10−4 and use the final, third work stage. Every cell averages all sixteen   11
+      declared streams and all 384 fixed current-period queries. Each query has 512 independent antithetic
+12                                                                                                                 12
+      future pairs; opposite signs form one observation. Five methods share each pair. All three stages and
+13                                                                                                                 13
+      all eight economic-dimension cells contribute to one 216-event family with error probability 0.018.
+14    Current reward and a known terminal quadratic are removed before the random residual is bounded.             14
+
+15    The point estimator underlying each interval is the clipped residual estimator plus this known offset.       15
+
+16    Numerical arithmetic, clipping and the unclipped Gaussian law are included. The materiality margin           16
+      is 10−4 .
+17                                                                                                                 17
+
+18                                                    TABLE II                                                     18
+
+19                               C OMPLETE C ONSTRUCTION AND Q UERY W ORK                                          19
+
+20                  Economy          d     NBO       Vector     Raw actor      DPO     Cached SAA                  20
+
+21                  Original         10    12.52       8.73            6.86    16.21             15.60             21
+
+22                  Original         50    12.67       9.85            7.07    20.24             27.68             22
+
+23                  Quarterly        10    10.36       7.69            6.09    21.85             25.23             23
+                    Quarterly        50    14.34      11.15            8.28    38.93             62.90
+24                                                                                                                 24
+                    Long             10    12.05       8.87            6.96    26.53             30.42
+25                                                                                                                 25
+                    Long             50    14.59      11.06            8.16    38.03             67.04
+26                  Intermediate     10    11.96       9.16            7.01    36.55             44.71             26
+
+27                  Intermediate     50    12.70       9.62            7.18    45.58             79.46             27
+
+28    Notes: Seconds per stream, averaged over all sixteen streams, including unsuccessful fits. Each entry        28
+      is the actual outer-process clock for all three stages, imports, source checks, reusable training data,
+29                                                                                                                 29
+      optimizer and derivative work, all saved queries and durable output. Fixed dependency installation
+30                                                                                                                 30
+      and source extraction precede the clock. Independent confirmation is a shared measured bundle,
+31    reported separately in the complete account; the table does not allocate one-fifth of that bundle as an      31
+
+32    observed standalone verification cost.                                                                       32
+                                 NEURAL BELLMAN OPERATORS                                 29
+
+1    comparison with direct policy instead improves both the protected payoff and the           1
+
+2    observed work at the stated final budget in the two specified cells.                       2
+
+3      Cached sample-average optimization supplies a further comparison with direct             3
+
+4    simulation. In the six final cells outside Long, the complete NBO–SAA interval             4
+
+5    lies within [−10−4 , 10−4 ]. NBO uses less measured construction and query work            5
+
+6    than the final sixty-four-path SAA in every one of these cells. The reductions range       6
+
+7    from 19.73 to 84.02 percent of the SAA mean clock. This is a comparison of the             7
+
+8    prespecified final-stage procedures. It does not identify the minimum work required        8
+
+9    for a given accuracy: the complete record also retains the cheaper four- and sixteen- 9
+10   path SAA stages.                                                                           10
+
+11     The Long calibration displays the corresponding accuracy tradeoff. SAA has a             11
+
+12   protected advantage exceeding 10−4 over NBO in both dimensions, at higher final            12
+
+13   construction and query work. In Long at dimension ten, direct policy also has a            13
+
+14   positive protected advantage over NBO, although its material superiority at 10−4 is        14
+
+15   unresolved. Across all three stages, NBO has nine material lower endpoints against         15
+
+16   Vector, seven against the Raw actor, four against direct policy, and none against          16
+
+17   SAA, out of twenty-four comparisons with each. The respective numbers of strictly          17
+
+18   negative NBO upper endpoints are zero, three, seven, and nineteen. The complete            18
+
+19   intervals in technical Section S.19.5 retain every reversal and every unresolved           19
+
+20   result. Positive differences and practical equivalence are reported as overlapping         20
+
+21   conclusions when both inequalities hold.                                                   21
+
+22     Independent confirmation is a shared computation. Its complete mean bill ranges          22
+
+23   from 10.73 to 82.20 seconds per stream across the eight cells; Table S.34 gives every      23
+
+24   cell and the full clock range. Adding that same bill to each method preserves the          24
+
+25   final-cell work ordering, but the resulting total is an explicit conservative allocation   25
+
+26   of the complete five-method, three-stage audit. It is not the time of an independently     26
+
+27   run single-method verifier. The timing comparisons describe the measured finite            27
+
+28   collection of runs and carry no unobserved-runtime confidence claim.                       28
+
+29     The scalar exercise provides a separate absolute-accuracy result. Eighty of the          29
+
+30   128 fixed candidates have a protected gap below 10−4 over their entire continuous          30
+
+31   scalar intervention interval. All sixteen streams attain this criterion in Original        31
+
+32   and Quarterly at both dimensions and in Intermediate at dimension ten. Long                32
+     30
+
+1                                                    TABLE III                                               1
+
+2                 C ONDITIONAL A CCURACY ON THE P RESCRIBED S CALAR I NTERVENTION                            2
+
+3                Economy         d      Gap ≤ 10−4    Smallest gap bound     Largest gap bound               3
+
+4                Original        10          16/16               0.0000002           0.0000002               4
+
+5                Original        50          16/16               0.0000002           0.0000004               5
+                 Quarterly       10          16/16               0.0000016           0.0000024
+6                                                                                                            6
+                 Quarterly       50          16/16               0.0000138           0.0000141
+7                                                                                                            7
+                 Long            10           0/16               0.0440599           0.0454588
+8                                                                                                            8
+                 Long            50           0/16               0.1962975           0.1963168
+9                Intermediate    10          16/16               0.0000023           0.0000024               9
+
+10               Intermediate    50           0/16               0.0002819           0.0002846               10
+      Notes: All 128 conditional statements are retained under a separate error probability of 0.002, with
+11                                                                                                           11
+      65,536 independent antithetic pairs for each fixed scalar candidate. Each upper bound covers the
+12                                                                                                           12
+      whole continuous scalar action segment at the predeclared fixed high-dimensional state. It is not a
+13                                                                                                           13
+      bound on the complete vector action problem or continuous-time adapted policies. Endpoints are
+14    rounded upward.                                                                                        14
+
+15                                                                                                           15
+
+16
+     at both dimensions and Intermediate at dimension fifty retain larger gap upper                          16
+
+17
+     bounds. Nonattainment of an upper certificate does not establish a corresponding                        17
+
+18
+     lower bound on actual suboptimality. These statements concern the fixed current                         18
+
+19
+     scalar intervention with the common future reference policy; they do not assert                         19
+
+20
+     near-optimality over all vector actions or adapted continuous-time controls.                            20
+
+21                                                                                                           21
+                                     6.2. Independent payoff confirmation
+22                                                                                                           22
+
+23     The independent confirmation evaluates all 128 previously selected policies,                          23
+
+24   without retraining or further selection. Table IV reports the schedule-relative method                  24
+
+25   gains and the associated full-adapted-class regret bounds. Table V reports every                        25
+
+26   direct NBO comparison under both the original and the prospectively fixed paired                        26
+
+27   transfer. All eight method endpoints and six direct contrasts belong to the declared                    27
+
+28   238-event family, with total error allocation 0.01.                                                     28
+
+29     The lower endpoints for NBO minus the original neural-HJB implementation                              29
+
+30   are 0.000176 in dimension ten and 0.001342 in dimension fifty, rounded downward. 30
+31   Both exceed the prespecified materiality margin 10−4 . In dimension ten the original                    31
+
+32   transfer still gives an interval containing zero on these new observations. Thus the                    32
+                                         NEURAL BELLMAN OPERATORS                                       31
+
+1                                                      TABLE IV                                               1
+
+2                         I NDEPENDENT R16 CONFIRMATION OF THE FIXED R15 POLICIES                             2
+
+3                d           Method       Mean gain     Simultaneous interval     Regret bound                3
+
+4                10             NBO         0.001269       [0.000943, 0.001596]        0.025971               4
+
+5                10             Raw         0.001268       [0.000942, 0.001595]        0.025972               5
+
+6                10     Direct policy       0.001264       [0.000937, 0.001590]        0.025977               6
+
+7                10      Neural HJB         0.000974       [0.000646, 0.001302]        0.026268               7
+
+8                50             NBO         0.001342       [0.000955, 0.001729]        0.036845               8
+
+9                50             Raw         0.001343       [0.000956, 0.001730]        0.036843               9
+                 50     Direct policy       0.001347       [0.000960, 0.001734]        0.036840
+10                                                                                                            10
+                 50      Neural HJB        -0.000155      [-0.000560, 0.000249]        0.038359
+11                                                                                                            11
+
+12   All 128 original R15 selected policies are evaluated without retraining on new R16 banks. Each of the    12
+
+13   sixteen original streams receives 8192 independent paths on 2048 cells. The paired theorem, constants    13
+
+14   and new familywise allocation α = 0.01 precede these observations. Interval endpoints and regret upper   14
+     bounds are rounded outward. This is independent confirmation of fixed policies; historical stopping is
+15                                                                                                            15
+                                                    unchanged.
+16                                                                                                            16
+
+17                                                                                                            17
+
+18                                                                                                            18
+
+19                                                     TABLE V                                                19
+
+20                   P ROSPECTIVELY FIXED PAIRED TRANSFER ON FRESH CONFIRMATION BANKS                         20
+
+21           d        NBO minus            Mean          Original transfer   Fixed paired transfer            21
+
+22                                                                                                            22
+             10               Raw       0.000001    [-0.000365, 0.000367]    [-0.000114, 0.000115]
+23                                                                                                            23
+             10       Direct policy     0.000005    [-0.000361, 0.000372]    [-0.000109, 0.000120]
+24                                                                                                            24
+             10        Neural HJB       0.000295    [-0.000076, 0.000667]     [0.000176, 0.000415]
+25           50               Raw       -0.000001   [-0.000432, 0.000429]    [-0.000136, 0.000133]            25
+
+26           50       Direct policy     -0.000005   [-0.000436, 0.000426]    [-0.000140, 0.000130]            26
+
+27           50        Neural HJB       0.001497    [0.001046, 0.001948]      [0.001342, 0.001653]            27
+
+28                                                                                                            28
+     All 128 original R15 selected policies are evaluated without retraining on new R16 banks. Each of the
+29                                                                                                            29
+     sixteen original streams receives 8192 independent paths on 2048 cells. The paired theorem, constants
+30   and new familywise allocation α = 0.01 precede these observations. Interval endpoints and regret upper   30
+
+31   bounds are rounded outward. This is independent confirmation of fixed policies; historical stopping is   31
+
+32                                                  unchanged.                                                32
+     32
+
+1    new experiment confirms the value of the sharper paired account under a proof,            1
+
+2    constants, and reporting rule fixed before its bank. The earlier use of that account      2
+
+3    remains a post-freeze analytical reanalysis of the earlier observations.                  3
+
+4      The four NBO–Raw and NBO–direct-policy intervals remain unresolved at 10−4 . 4
+5    Their point estimates are close, but the protected intervals do not establish practical   5
+
+6    equivalence. This confirmation therefore supports the stated comparison with the          6
+
+7    original HJB implementation and the positive schedule-relative gains; the reusable- 7
+8    continuation experiment supplies the separate comparison of the critic’s incremental      8
+
+9    economic value. The full-class regret bounds in Table IV retain the anchor gap.           9
+
+10     The new per-policy certificates attain the primary schedule-gain target 0.0005          10
+
+11   for 14 of 16 NBO policies in dimension ten and all 16 in dimension fifty. The             11
+
+12   corresponding counts are 13 and 16 for Raw, 10 and 16 for direct policy, and zero in      12
+
+13   both dimensions for the original HJB implementation. These are outcomes of a new          13
+
+14   final assessment. They leave the original online stopping decisions unchanged. The        14
+
+15   pooled dimension-ten HJB lower endpoint exceeds 0.0005, although no individual            15
+
+16   HJB policy has a new protected lower endpoint exceeding that target. Technical            16
+
+17   Section S.20 gives the complete target account and additional verification work.          17
+
+18                                                                                             18
+
+19                                                                                             19
+                           6.3. Strengthened neural-HJB comparison
+20                                                                                             20
+
+21     The strengthened comparison trains each procedure afresh in four continuous             21
+
+22   diffusion economies, at dimensions ten and fifty, with eight fixed streams per            22
+
+23   cell. All 64 trials, 256 construction processes, and 320 policy outputs are retained. 23
+24   The exact-trace HJB procedure fits all four declared configurations, chooses its          24
+
+25   network using independent residual observations, and deploys both the optimized           25
+
+26   greedy action and its distilled actor. No training failure or reference-policy fallback   26
+
+27   occurred.                                                                                 27
+
+28     All forty method–economy mean-gain lower endpoints exceed the primary                   28
+
+29   schedule-relative target 0.0005. Table S.43 in the technical supplement gives all         29
+
+30   gains beside their full-adapted-class regret bounds. These positive policy improve- 30
+31   ments extend across the declared changes in diffusion risk, horizon, and joint stress. 31
+32   The remaining anchor gap is appreciable, particularly in the longer-horizon and           32
+                                 NEURAL BELLMAN OPERATORS                               33
+
+1    joint-stress economies, so these intervals do not establish 10−4 accuracy relative to    1
+
+2    the adapted optimum.                                                                     2
+
+3      Table VI reports all 32 direct NBO comparisons. In the low-volatility, fifty- 3
+4    dimensional economy, the lower endpoints against HJB’s greedy and distilled              4
+
+5    policies are 0.000334 and 0.000340, rounded downward. Both exceed 10−4 . The             5
+
+6    other thirty intervals contain zero and do not establish practical equivalence at that   6
+
+7    margin. In particular, the comparisons against the strengthened HJB implemen- 7
+8    tation in the original high-volatility economy are unresolved in both dimensions. 8
+9    This result is distinct from the prospective replication against the original HJB        9
+
+10   implementation in the preceding subsection.                                              10
+
+11                                                                                            11
+
+12                 TABLE VI: Direct common-path NBO comparisons across                        12
+                   economic designs
+13                                                                                            13
+
+14                                                                                            14
+                  Design    d   NBO minus          Mean     Fixed paired interval
+15                                                                                            15
+
+16                high     10           Raw     -0.000000   [-0.000180, 0.000180]             16
+
+17                high     10   Direct policy   0.000004    [-0.000176, 0.000185]             17
+
+18
+                  high     10    HJB greedy     0.000008    [-0.000173, 0.000189]             18
+                  high     10      HJB actor    0.000010    [-0.000171, 0.000191]
+19                                                                                            19
+                  high     50           Raw     -0.000002   [-0.000202, 0.000197]
+20                                                                                            20
+                  high     50   Direct policy   -0.000001   [-0.000201, 0.000198]
+21                                                                                            21
+                  high     50    HJB greedy     -0.000020   [-0.000221, 0.000180]
+22                                                                                            22
+                  high     50      HJB actor    0.000040    [-0.000161, 0.000240]
+23                                                                                            23
+                  low      10           Raw     0.000000    [-0.000153, 0.000153]
+24                low      10   Direct policy   0.000002    [-0.000151, 0.000155]             24
+
+25                low      10    HJB greedy     0.000024    [-0.000129, 0.000177]             25
+
+26                low      10      HJB actor    0.000024    [-0.000130, 0.000177]             26
+
+27                low      50           Raw     -0.000000   [-0.000174, 0.000174]             27
+
+28                low      50   Direct policy   0.000002    [-0.000172, 0.000176]             28
+
+29
+                  low      50    HJB greedy     0.000515     [0.000334, 0.000697]             29
+                  low      50      HJB actor    0.000522     [0.000340, 0.000704]
+30                                                                                            30
+                  long     10           Raw     0.000002    [-0.000901, 0.000905]
+31                                                                                            31
+                  long     10   Direct policy   0.000020    [-0.000883, 0.000924]
+32                                                                                            32
+     34
+
+1                                                                                                             1
+                     Design      d    NBO minus           Mean      Fixed paired interval
+2                                                                                                             2
+                     long       10     HJB greedy      0.000060     [-0.000846, 0.000965]
+3                                                                                                             3
+                     long       10       HJB actor     0.000072     [-0.000834, 0.000977]
+4                                                                                                             4
+                     long       50              Raw   -0.000003     [-0.001159, 0.001153]
+5                                                                                                             5
+                     long       50   Direct policy     0.000006     [-0.001151, 0.001162]
+6                                                                                                             6
+                     long       50     HJB greedy      0.000263     [-0.000897, 0.001423]
+7                    long       50       HJB actor     0.000323     [-0.000836, 0.001483]                     7
+
+8                    stress     10              Raw    0.000001     [-0.001038, 0.001040]                     8
+
+9                    stress     10   Direct policy     0.000007     [-0.001033, 0.001047]                     9
+
+10                   stress     10     HJB greedy      0.000021     [-0.001020, 0.001062]                     10
+
+11                   stress     10       HJB actor     0.000038     [-0.001003, 0.001079]                     11
+
+12
+                     stress     50              Raw   -0.000003     [-0.001254, 0.001247]                     12
+                     stress     50   Direct policy     0.000019     [-0.001233, 0.001271]
+13                                                                                                            13
+                     stress     50     HJB greedy     -0.000024     [-0.001277, 0.001229]
+14                                                                                                            14
+                     stress     50       HJB actor     0.000202     [-0.001051, 0.001455]
+15                                                                                                            15
+
+16                                                                                                            16
+
+17                                                                                                            17
+
+18   The continuous-time paired transfer and all calibration-specific constants are fixed before confirmation. 18
+19   Original-transfer intervals remain in the complete machine-readable record. A crossing interval is       19
+
+20   unresolved, not evidence of equivalence.                                                                 20
+
+21     The complete fixed-envelope costs also change with the implementation. In                              21
+
+22   the low-volatility, fifty-dimensional cell, mean complete work is 102.27 seconds                         22
+
+23   for NBO, 297.44 for HJB’s greedy deployment, and 240.86 for its distilled actor. 23
+24   Raw takes 91.29 seconds there, and its economic comparison with NBO remains                              24
+
+25   unresolved. Table S.44 retains all forty work rows and every final target outcome. 25
+26   Each HJB deployment is charged the common four-candidate construction, selection,                        26
+
+27   distillation, and finalization, together with its own deployment. These are measured                     27
+
+28   fixed-envelope costs; no new online work-to-target stopping experiment is inferred                       28
+
+29   from them.                                                                                               29
+
+30     Technical Section S.21 reports the full economic grid, all four configurations, inde- 30
+31   pendent residual diagnostics, trace variance checks, and action diagnostics. Exact                       31
+
+32   derivatives eliminate stochastic trace noise from training the specified network. 32
+                                         NEURAL BELLMAN OPERATORS                                          35
+
+1    The held-out diagnostics assess finite collocation banks, and successive value and                         1
+
+2    policy changes compare iterates. Neither quantity is a global value-error certificate. 2
+3    The family contains no direct greedy-minus-distilled payoff event, so the two de- 3
+4    ployments’ separate payoff and work records are not interpreted as a protected                             4
+
+5    distillation-loss comparison. The result concerns these declared procedures and the                        5
+
+6    complete eight-stream populations in each economy.                                                         6
+
+7                                                                                                               7
+
+8                             6.4. A prospective signed occupation account                                      8
+
+9                                                                                                               9
+       The new assessment evaluates every original selected NBO policy on fresh occu-
+10                                                                                                              10
+     pation paths. Its proof, clipping interval, confidence family, and 1,024 bridges per
+11                                                                                                              11
+     stream were fixed before the new bank was drawn. The paired continuation calcula-
+12                                                                                                              12
+     tion uses the same innovations at the candidate and reference action endpoints. It
+13                                                                                                              13
+     evaluates the signed continuation correction and applies Proposition S.12 directly
+14                                                                                                              14
+     to their joint Bellman gain, rather than subtracting separately estimated endpoints.
+15                                                                                                              15
+
+16                                                                                                              16
+                                                   TABLE VII
+17                                                                                                              17
+                              A F RESH S IGNED B ELLMAN M ECHANISM A CCOUNT
+18                                                                                                              18
+                    d    M mean          C mean        LG    Hold/transfer    Economy lower
+19                                                                                                              19
+
+20                 10    0.001243   -0.000002     0.001067         0.000300           0.000767                  20
+                   50    0.001354    0.000001     0.001138         0.000363           0.000776
+21                                                                                                              21
+      Notes: Each dimension fully enumerates the original sixteen selected NBO streams, with 1,024
+22                                                                                                              22
+      independent occupation bridges per stream. One bank of two antithetic pairs supplies the common-
+23    noise continuation endpoints. The fitted scalar continuation cancels in G = M − C before inference.       23
+
+24    All six two-sided (d, M, C, G ) statements share a new familywise error probability of 0.01. The finite   24
+
+25    lower endpoint includes numerical sample and prefix-representation allowances. The final column           25
+      additionally retains the original holding deficit and full continuous-payoff transfer. This result does
+26                                                                                                              26
+      not rank the critic against Raw.
+27                                                                                                              27
+
+28                                                                                                              28
+
+29     In dimension 10, the signed occupation account certifies a continuous-economy                            29
+
+30   gain of at least 0.000767.                                                                                 30
+
+31     In dimension 50, the signed occupation account certifies a continuous-economy                            31
+
+32   gain of at least 0.000776.                                                                                 32
+     36
+
+1      The original negative Cauchy–Schwarz mechanism bounds remain part of the               1
+
+2    record. The present calculation changes the sufficient error account and uses an         2
+
+3    independently frozen confirmation bank. Its positive endpoints, when obtained,           3
+
+4    concern the occupation Bellman identity of the returned policy. They do not estab- 4
+5    lish lower prediction risk than Raw or identify a unique incremental contribution        5
+
+6    of the learned critic. The separate common-data method comparison addresses              6
+
+7    that question. Both signed lower endpoints exceed the primary target 0.0005; nei- 7
+8    ther attains the secondary target 0.001. The intervals for the signed continuation       8
+
+9    correction itself still contain zero. The positive economic conclusion uses the joint    9
+
+10   Bellman-gain statistic, whose paired future innovations preserve the cancellation in     10
+
+11   Proposition S.12. The menu comparison measures economic decision values and              11
+
+12   work; it does not add an independent estimate of continuation-risk reduction.            12
+
+13                                                                                            13
+
+14                                                                                            14
+                         6.5. The previous evidence and its chronology
+15                                                                                            15
+
+16     The previous complete experiment used higher volatility in the same capital            16
+
+17   model, sixteen declared streams per method and dimension, and a common inde- 17
+18   pendent final payoff assessment. The complete protocols, records, and endpoint           18
+
+19   tables remain current in technical Sections S.14 and S.15. The following facts deter- 19
+20   mine how the new results are compared with that evidence.                                20
+
+21     At dimension ten, the original NBO-minus-HJB interval was approximately                21
+
+22   [−0.000073, 0.000663]. It did not establish superiority. After the original analyti- 22
+23   cal freeze and inspection of interval widths, the common-innovation transfer was         23
+
+24   refined on the same observations. Its resulting interval was [0.000179, 0.000411]. 24
+25   At dimension fifty the original interval was [0.001051, 0.001945] and the refined        25
+
+26   interval was [0.001347, 0.001650]. Endpoints in this paragraph are rounded outward. 26
+27   The refinement changes a deterministic allowance, not the simulated policies, ob- 27
+28   servations, original confidence event, or earlier stopping decisions. It is labelled a   28
+
+29   post-freeze analytical reanalysis throughout the present comparison.                     29
+
+30     All four refined NBO–Raw and NBO–DPO direct intervals remained unresolved              30
+
+31   at the 10−4 margin. They established neither a ranking nor practical equivalence. 31
+32   At dimension fifty, all sixteen NBO, Raw, and DPO streams reached the original           32
+                                 NEURAL BELLMAN OPERATORS                               37
+
+1    online gain target 0.0005. Their mean complete process times were approximately         1
+
+2    357.80, 346.22, and 596.94 seconds. The specified HJB implementation reached that       2
+
+3    online target in no stream. At dimension ten no method reached the online target;       3
+
+4    the later final certificates do not change that outcome. A pooled dimension-ten HJB     4
+
+5    lower gain above 0.0005 is a method-mean statement even though no individual            5
+
+6    HJB stream had a final certificate at that target.                                      6
+
+7      The original sufficient mechanism lower bounds were approximately −0.006778           7
+
+8    and −0.004800. Its critic–Raw continuation-risk contrasts were also unresolved. The     8
+
+9    NBO full-adapted-class regret upper bounds, rounded upward, were 0.025971 and           9
+
+10   0.036843. These are absolute accuracy bounds with their own anchor gap, rather          10
+
+11   than a 10−4 near-optimality certificate. The new signed account and strengthened        11
+
+12   comparison are assessed alongside these retained outcomes.                              12
+
+13     The scalar and observation experiments provide separate information. The scalar       13
+
+14   Howard calculation reports residual, restriction, mesh, and domain accounts for its     14
+
+15   finite-grid problem. Its deployed classical policies outperform the frozen historical   15
+
+16   neural policies in the measured scalar comparisons, and the scalar NBO–DPO rank- 16
+17   ing reverses at one initial state. In the observation experiment all four protected     17
+
+18   parent comparisons have positive lower gains, while six of twelve measurement           18
+
+19   specifications retain a positive continuous-economy lower gain after sensing al- 19
+20   lowances. Each statement remains tied to its own model parameters, policy, decision     20
+
+21   grid, and information structure.                                                        21
+
+22                                                                                           22
+
+23                                                                                           23
+                       6.6. Information and the implemented decision rule
+24                                                                                           24
+
+25     The economic institution is a controller that receives capital observations at        25
+
+26   specified dates, stores an internal state, and holds the selected consumption share     26
+
+27   until the next decision date. Its economic primitive is the original capital diffusion. 27
+28   Its internal numerical state need not equal the physical state. When the controller     28
+
+29   uses private randomization, that randomization is part of its specified information     29
+
+30   and is included in the law of the evaluated policy.                                     30
+
+31     The exact-history representation in Proposition S.18 assumes continuous noise- 31
+32   less observation of every capital coordinate, known coefficients and actions, exact     32
+     38
+
+1    drift integration, and an independent private Brownian motion. Under those as- 1
+2    sumptions the observation history supplies a Brownian representation with the law        2
+
+3    required by the innovation-driven controller. It does not recover the original latent    3
+
+4    null-space shock path by path. Proposition S.19 states why the added independent         4
+
+5    randomization leaves the economic optimum unchanged. These are representation            5
+
+6    results for a randomized history-dependent policy.                                       6
+
+7      Finite observations require a different implementation account. Proposition S.20       7
+
+8    bounds the difference between the measured-state controller and its specified            8
+
+9    protected parent, retaining sensor error, the internal recurrence, action-map error,     9
+
+10   clipping, and arithmetic. Its allowance belongs to that parent and that time grid. 10
+11   The empirical comparison reports it alongside the gain measured for the same             11
+
+12   parent and population; a certificate for a different mesh is not substituted. Complete   12
+
+13   assumptions and proofs are in Appendix S.10.                                             13
+
+14                                                                                            14
+
+15                  6.7. When is state-dependent management worth its fee?                    15
+
+16                                                                                            16
+       To give the policy differences a decision interpretation, consider a proportional
+17                                                                                            17
+     resource cost τ ∈ [0, 1) for administering a state-dependent consumption rule. Gross
+18                                                                                            18
+     withdrawals from capital remain mi eYi , and the service absorbs τmi eYi . Household
+19                                                                                            19
+     consumption is (1 − τ )mi eYi . Production, gross depletion, the gross-withdrawal
+20                                                                                            20
+     adjustment cost, and terminal capital are unchanged. This is a self-financed resource
+21                                                                                            21
+     experiment rather than an externally financed utility supplement. It changes the
+22
+     specified fee parameter, not the model used to train or benchmark the gross policy. 22
+                  RT
+23
+       Let A T = 0 e−ρt dt. Log felicity gives the exact identity                        23
+
+24                                                                                            24
+
+25                   JPτ ( a) − JP (m0 ) = JP ( a) − JP (m0 ) + A T log(1 − τ ).       (32)   25
+
+26                                                                                            26
+     Hence a positive certified improvement L a supports every fee τ satisfying
+27                                                                                            27
+
+28                                                                                            28
+                                     τ < 1 − exp(− L a /A T ).
+29                                                                                            29
+
+30   A negative upper endpoint after the fee rules out an improvement for that candidate      30
+
+31   under the confidence event; an interval spanning zero is inconclusive. The fee grid is   31
+
+32   fixed before the final simulation. We do not equate wall-clock cost to a monetary fee    32
+                                    NEURAL BELLMAN OPERATORS                               39
+
+1    or call these deliberately stylized balance sheets a calibrated household population. 1
+2    The experiment instead states precisely which adoption decisions are supported by           2
+
+3    the verified utility differences.                                                           3
+
+4                                                                                                4
+                   7. ECONOMIC APPLICATIONS OF THE BELLMAN STRUCTURE
+5                                                                                                5
+
+6      The motivating economic problem combines external choices with the costly ad- 6
+7    justment of preferences. Recursive utility changes how a given policy is evaluated;         7
+
+8    preference adjustment adds an internal choice to its Hamiltonian; and strategic             8
+
+9    interaction changes whose deviations define improvement. These distinctions de- 9
+10   termine the economic interpretation of NBO. The capital economy studied above               10
+
+11   provides a setting in which policy-specific verification can be carried through to a        11
+
+12   high-dimensional diffusion. The preference, temporal-self, and game applications            12
+
+13   establish the corresponding economic objects and their own verification results.            13
+
+14                                                                                               14
+
+15
+                        7.1. Costly preference adjustment and portfolio choice                   15
+
+16     Let u denote risk aversion and X financial wealth. The household chooses con- 16
+17   sumption c, portfolio share p, and preference-adjustment effort θ. The preference           17
+
+18   state is reflected on a declared interval [u, ū] ⊂ (1, ∞), and wealth follows the port- 18
+19   folio diffusion:                                                                            19
+
+20                                                                                               20
+             du = θ dt + σu dW u + dLu − dLū ,
+21                                                                                               21
+                                                            X               u   X
+22           dX = {[r + p(µ − r )] X − c} dt + pσX X dW ,            d⟨W , W ⟩t = ϱ dt.   (33)   22
+
+23                                                                                               23
+     For a fixed consumption unit c̄ > 0, flow utility is
+24                                                                                               24
+                                                                     1− u
+25                                                               (c/c̄)                          25
+                             U (c, u) − 12 kθ 2 ,   U (c, u) =          .
+26                                                                 1−u                           26
+
+27   The objective discounts both felicity and adjustment costs at rate ρ and includes           27
+
+28   the specified wealth-exit and terminal payoff. The baseline uses c̄ = 1. Because            28
+
+29   the household controls u, the cardinal normalization across preference states is a          29
+
+30   primitive: adding a function of u changes the incentives to adjust preferences. The         30
+
+31   reflected state, positive consumption domain, and stopping data give the evaluation         31
+
+32   equation its economic and mathematical domain.                                              32
+     40
+
+1      At an interior optimum with VX > 0 and VXX < 0, the three policy conditions are               1
+
+2                                                                                                    2
+                    c∗ = c̄(c̄VX )−1/u ,                                       θ ∗ = Vu /k,
+3                                                                                                    3
+                             VX (µ − r )   ϱσu VuX
+4                   p∗ = −           2
+                                         −         .                                          (34)   4
+                             XVXX σX       XVXX σX
+5                                                                                                    5
+
+6    Box constraints require their corresponding feasible maximizers. The cross deriva- 6
+7    tive in the portfolio rule links the external risk choice to the internal preference state. 7
+8    Its sign is an equilibrium object to be determined by evaluation. The adjustment                8
+
+9    rule likewise relates effort to the shadow value of changing preferences. A higher              9
+
+10   adjustment cost lowers the value of every fixed policy and hence the optimized                  10
+
+11   value; whenever an envelope derivative exists,                                                  11
+
+12
+                                                            Z τ                                      12
+                                                     k
+                          ∂k V k (t, u, X ) = − 12 Et,u,X
+                                                    a
+                                                                  e−ρ(s−t) θs2 ds ≤ 0.        (35)
+13                                                           t                                       13
+
+14   This comparative static holds with the feasible class and stopping payoff fixed.                14
+
+15     The numerical application implements these choices jointly. The finite-action                 15
+
+16   study evaluates complete policies by independent backward recursion. The                        16
+
+17   continuous-action study trains the actor through its own payoff and verifies its                17
+
+18   hybrid policy with a complete action-box enclosure. Fresh training on nested grids              18
+
+19   separates the effect of resolution from the evaluation of a frozen coarse policy. A             19
+
+20   model-specific compensating-consumption calculation translates its cardinal utility             20
+
+21   bounds into an explicit transfer experiment. Application Sections A.1.3, A.1.3.4,               21
+
+22   and A.1.8 give the full model, all recorded policies, refinement evidence, and com- 22
+23   pensation account.                                                                              23
+
+24                                                                                                   24
+
+25                           7.2. Recursive utility and temporal selves                              25
+
+26     Recursive utility enters policy evaluation through the policy’s own continuation              26
+
+27   utility. With a = 1 − 1/ψ, b = 1 − γ, and bV > 0, the Epstein–Zin aggregator used               27
+
+28   here is                                                                                         28
+
+29                                         ρ                                             29
+                                f (c, V ) = {c a (bV )1−a/b − bV }.                 (36)
+30                                         a                                             30
+
+31   The invariant utility interval and boundary payoff are part of the evaluation prob- 31
+32   lem. Application Section A.1.2 derives the homothetic policy conditions and verifies            32
+                                   NEURAL BELLMAN OPERATORS                               41
+
+1    the matching-bequest experiment, including the barriers that keep every policy             1
+
+2    utility in the aggregator’s domain. This application tests recursive evaluation while      2
+
+3    maintaining the same separation between value approximation and feasible action            3
+
+4    improvement.                                                                               4
+
+5      Time inconsistency requires a different improvement criterion. For the continuous        5
+
+6    discount kernel                                                                            6
+
+7                                                                                               7
+                    h(s) = βe−ρs + (1 − β)e−(ρ+κ )s ,               0 < β ≤ 1,   κ > 0,
+8                                                                                               8
+
+9    two critics evaluate the same future policy at the two discount rates. Writing these       9
+
+10   values as W1 , W2 , the current self uses V = βW1 + (1 − β)W2 and chooses an in- 10
+11   stantaneous deviation by maximizing u( a) + L a V. Application Section A.1.4 states        11
+
+12   the complete component equations and derives the spike-deviation condition. In             12
+
+13   the homothetic consumption economy, the equilibrium consumption share is the               13
+
+14   unique root in its admissible interval, and stronger present bias raises that share. 14
+15   Independently optimized finite-duration deviations check the limiting equilibrium          15
+
+16   condition. Thus the actor’s objective follows from the temporal equilibrium concept,       16
+
+17   while the critics retain their policy-evaluation role.                                     17
+
+18                                                                                              18
+
+19                       7.3. Capital investment and strategic deviations                       19
+
+20     In the dynamic Cournot application, firm i chooses investment in its own capital,        20
+
+21   with                                                                                       21
+
+22                                                                                              22
+                         dK i = ( I i − δK i ) dt + σK K i dW i ,       qi = AK i .
+23                                                                                              23
+
+24   Its flow profit is PN (K )qi − I i − bi ( I i )2 /2, where the market-size normalization   24
+
+25   in PN is specified for each economy. Given rivals’ policies, a critic evaluates the        25
+
+26   resulting own-firm payoff and the actor changes only its own action. Consequently,         26
+
+27   the relevant economic error is the gain from a complete unilateral deviation against       27
+
+28   the frozen rival profile.                                                                  28
+
+29     Application Sections A.1.5 and A.1.5.3 specify the boundaries, investment sets,          29
+
+30   and market normalizations, and report independent full dynamic best responses              30
+
+31   to every principal finite neural profile. The resulting profit-unit bounds include         31
+
+32   all dates and states of the stated finite game. They also cover randomized and             32
+     42
+
+1    history-dependent unilateral deviations against those fixed Markov rivals, by finite     1
+
+2    dynamic programming. The record reports the cost of the exhaustive training oracle       2
+
+3    and any nonzero one-step equilibrium defects along with the final exploitability         3
+
+4    calculation.                                                                             4
+
+5      These applications give the common method a precise economic interpretation. 5
+6    A recursive critic evaluates a utility process; preference and capital actors allocate   6
+
+7    resources and adjustment effort; a temporal actor satisfies a spike condition; and       7
+
+8    a strategic actor is assessed against unilateral best responses. Each application        8
+
+9    supplies the boundary conditions, approximation class, and error account required        9
+
+10   by its own economic question.                                                            10
+
+11                                                                                            11
+                                       8. CONCLUSION
+12                                                                                            12
+
+13     Neural Bellman Operators connect a specified continuation object with feasible         13
+
+14   economic decisions. The nonlinear capital economy makes this connection explicit:        14
+
+15   an exact finite Bellman identity accounts for continuation error along the chosen        15
+
+16   action change, while a separate diffusion account assesses the deployed continuous- 16
+17   time policy. Repeated decisions permit the same continuation representation to be        17
+
+18   used across economic tasks. A fixed gradient-dictionary calculation identifies the       18
+
+19   approximation–variance tradeoff of a linear projection, and the numerical experi- 19
+20   ment measures the economic performance of the nonlinear fitted procedure.                20
+
+21     The complete continuation-menu experiment establishes material NBO payoff              21
+
+22   gains over materialized Raw and direct-policy actors in two previously unpiloted         22
+
+23   fifty-dimensional economies. NBO also uses less construction and query work              23
+
+24   than direct policy in those cells. At the final prescribed SAA budget, six of eight      24
+
+25   economic cells have equivalent payoffs within 10−4 and lower construction and            25
+
+26   query work for NBO. Cached SAA has materially higher payoffs in both longest- 26
+27   horizon cells. The full set of earlier budgets, cheaper vector and Raw actors, and       27
+
+28   common confirmation costs remains part of the evidence. This result identifies           28
+
+29   specific economic gains from a reusable fitted continuation and the work needed to       29
+
+30   obtain them.                                                                             30
+
+31     Independent confirmation supports the original-policy paired comparison under          31
+
+32   a prospectively fixed analysis. The strengthened HJB procedure shows why the             32
+                                       NEURAL BELLMAN OPERATORS                                            43
+
+1    implementation must remain explicit: NBO’s material advantage over both new                                1
+
+2    HJB deployments is established in the low-volatility, fifty-dimensional economy,                           2
+
+3    while the remaining direct comparisons are unresolved. A new signed continuation                           3
+
+4    statistic verifies positive occupation Bellman gains by retaining the common-path                          4
+
+5    cancellation. These positive payoff statements coexist with the reported full-class                        5
+
+6    regret bounds and the finite menu’s separate scalar accuracy account.                                      6
+
+7      The economic applications retain their own utility domains, boundary conditions,                         7
+
+8    and deviation criteria. These determine the continuation that must be learned and                          8
+
+9    the decision that constitutes an improvement. The current application compan- 9
+10   ion preserves the complete models, derivations, proofs, and numerical records for                          10
+
+11   recursive utility, endogenous preferences, temporal selves, and strategic interac- 11
+12   tion. The common evaluation–improvement structure makes their computational                                12
+
+13   requirements comparable while retaining their distinct economic content.                                   13
+
+14                                                                                                              14
+                                                  REFERENCES
+15                                                                                                              15
+     B JÖRK , T OMAS , M ARIANA K HAPKO , AND A GATHA M URGOCI (2016): “Time Inconsistent Stochastic
+16                                                                                                              16
+      Control in Continuous Time: Theory and Examples,” ArXiv:1612.03650. [5]
+17   B ORKAR , V IVEK S. (2024): “Stochastic Approximation with Two Time Scales: The General Case,” 17
+18    ArXiv:2412.19872v1. [5]                                                                                   18
+
+19   D UFFIE , D ARRELL AND L ARRY G. E PSTEIN (1992): “Stochastic Differential Utility,” Econometrica, 60 (2), 19
+       353–394. [5]
+20                                                                                                              20
+     E PSTEIN , L ARRY G. AND S TANLEY E. Z IN (1989): “Substitution, Risk Aversion, and the Temporal
+21                                                                                                              21
+      Behavior of Consumption and Asset Returns: A Theoretical Framework,” Econometrica, 57 (4), 937–969.
+22    [5]                                                                                                       22
+
+23   H AN , J IEQUN , A RNULF J ENTZEN , AND W EINAN E (2018): “Solving High-Dimensional Partial Differen- 23
+
+24
+      tial Equations Using Deep Learning,” Proceedings of the National Academy of Sciences, 115 (34), 8505–8510. 24
+      [4]
+25                                                                                                              25
+     H ERDEGEN , M ARTIN , D AVID H OBSON , AND J OSEPH J EROME (2021): “The Infinite Horizon Investment-
+26                                                                                                              26
+      Consumption Problem for Epstein–Zin Stochastic Differential Utility,” ArXiv:2107.06593v1. [5]
+27   H ORNIK , K URT, M AXWELL S TINCHCOMBE , AND H ALBERT W HITE (1990): “Universal Approximation of           27
+
+28    an Unknown Mapping and Its Derivatives Using Multilayer Feedforward Networks,” Neural Networks, 28
+      3 (5), 551–560. [4]
+29                                                                                                              29
+     J UDD , K ENNETH L. (1998): Numerical Methods in Economics, Cambridge, MA: MIT Press. [4]
+30                                                                                                              30
+     K AKADE , S HAM AND J OHN L ANGFORD (2002): “Approximately Optimal Approximate Reinforcement
+31    Learning,” in Proceedings of the Nineteenth International Conference on Machine Learning, Morgan Kauf- 31
+32    mann, 267–274. [18]                                                                                       32
+     44
+
+1    M AURER , A NDREAS AND M ASSIMILIANO P ONTIL (2009): “Empirical Bernstein Bounds and Sample                     1
+
+2     Variance Penalization,” in Proceedings of the 22nd Annual Conference on Learning Theory, arXiv:0907.3740. 2
+      [17]
+3                                                                                                                    3
+     P IROTTA , M ATTEO , M ARCELLO R ESTELLI , A LESSIO P ECORINO , AND D ANIELE C ALANDRIELLO (2013):
+4                                                                                                                    4
+      “Safe Policy Iteration,” in Proceedings of the 30th International Conference on Machine Learning, vol. 28 of
+5     Proceedings of Machine Learning Research, 307–315. [18]                                                        5
+
+6    Q I , Q IAN (2025): “Neural Foundations of Endogenous Risk Aversion,” Unpublished manuscript, Peking            6
+
+7     University; cited as in the reviewed manuscript. [1]                                                           7
+     S CHERRER , B RUNO , M OHAMMAD G HAVAMZADEH , V ICTOR G ABILLON , B ORIS L ESNER , AND
+8                                                                                                                    8
+      M ATTHIEU G EIST (2015): “Approximate Modified Policy Iteration and its Application to the Game of
+9                                                                                                                    9
+      Tetris,” Journal of Machine Learning Research, 16 (49), 1629–1676. [11, 18]
+10   S IRIGNANO , J USTIN AND K ONSTANTINOS S PILIOPOULOS (2018): “DGM: A Deep Learning Algorithm                    10
+
+11    for Solving Partial Differential Equations,” Journal of Computational Physics, 375, 1339–1364. [4]             11
+
+12                                                                                                                   12
+
+13                                                                                                                   13
+
+14                                                                                                                   14
+
+15                                                                                                                   15
+
+16                                                                                                                   16
+
+17                                                                                                                   17
+
+18                                                                                                                   18
+
+19                                                                                                                   19
+
+20                                                                                                                   20
+
+21                                                                                                                   21
+
+22                                                                                                                   22
+
+23                                                                                                                   23
+
+24                                                                                                                   24
+
+25                                                                                                                   25
+
+26                                                                                                                   26
+
+27                                                                                                                   27
+
+28                                                                                                                   28
+
+29                                                                                                                   29
+
+30                                                                                                                   30
+
+31                                                                                                                   31
+
+32                                                                                                                   32
+
