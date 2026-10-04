@@ -1,0 +1,72 @@
+\section{Work-Indexed Learning and Finite Observation}\label{sec:r13work}
+The referee's distinction between a research design and an executed method comparison is consequential. The present revision treats every announced comparison as a data object with a specified work budget, deployment rule and verification account. Neither a successful execution nor a positive schedule-relative endpoint is a substitute for a direct comparison between methods. The original economic model and the NBO evaluation--improvement map remain unchanged.
+
+\subsection{Fixed work and a common certified endpoint}\label{sec:r13accuracy}
+For each of the ten fixed streams and each dimension, we train NBO, direct policy optimization and the affine policy for 160 iterations. We retain all 20-iteration checkpoints. At budgets of 80 and 160 iterations, selection uses only the best validation return among checkpoints already available at that budget. Each iteration visits 128 states for 32 rollout cells; each validation uses 128 paths and 64 cells. The number of rollout and validation visits therefore matches across methods at either budget. Critic updates, actor updates, differentiated operations and elapsed time need not match, and are reported separately. The fixed-work study is additional to, not a replacement for, the announced-time comparison.
+
+\input{revisions/2026-10-04-r13/manuscript/table_fixed_work.tex}
+\input{revisions/2026-10-04-r13/manuscript/table_fixed_pairs.tex}
+
+A common accuracy requirement must specify its estimand. We examine two: a lower improvement endpoint $L_a\geq\ell$ relative to the schedule, and an absolute regret upper endpoint $G_d-L_a\leq r$. The declared improvement targets are $0$, $0.0005$ and $0.001$; the declared regret targets are $0.02$, $0.03$ and $0.04$, in discounted utility units. The first requirement concerns verified improvement and the second concerns a bound on distance from the optimum. We do not identify them.
+
+For either requirement, inspect the 80- then 160-iteration certificates in that order. The total work to the first attained target includes the consumed fitting prefix, its validations, and every certificate inspected up to that point, including an earlier unsuccessful certificate. An unattained target is censored at the largest tested budget; it is not assigned zero work. Reported cost medians condition on attainment and are accompanied by attainment counts. These are observed work-to-target comparisons on a finite budget grid, not extrapolated complexity rates. Simultaneous coverage permits reporting the entire prespecified grid without selecting a fitted policy on an unaccounted test.
+
+\input{revisions/2026-10-04-r13/manuscript/table_accuracy_work.tex}
+
+The fixed-work study also replays seed 7919 in dimensions 10 and 50 in a second operating-system environment with the same numerical package versions. It compares the selected iteration, actor tensors, endpoint and measured work. Agreement, if observed, is evidence about these two executions, not platform-independent reproducibility of floating-point optimization. All ten-stream summaries remain descriptive of the fitted objects; no probability distribution over unspecified future optimization procedures is introduced.
+
+\subsection{Independent tests of the critic mechanism}\label{sec:r13mechanism}
+The evaluation block is assessed against independent rollout targets rather than its training loss. At each held-out state, two independent banks of frozen-policy rollouts supply costate samples. Denote their conditional sample means by $\overline Z_1,\overline Z_2$ and the fitted prediction by $\widehat q$. Conditional on the state and fitted objects,
+\[
+ \E\langle\widehat q-\overline Z_1,
+                  \widehat q-\overline Z_2\rangle_d
+ =\|\widehat q-\E[Z\mid X]\|_d^2.
+\]
+This cross-bank identity removes the variance of the reference sample mean in expectation. Its finite-sample estimate may be negative and is reported without truncation. The two banks also estimate rollout-target variance. Within each bank, shared fine increments give nested 32-, 64- and 128-cell costates; their differences and standard-error diagnostics expose finite-rollout time sensitivity.
+
+We independently maximize the consumption Hamiltonian using the reference costate and compare the deployed actor, critic-greedy action and critic-defined actor gap. Proposition~\ref{prop:r12costate} then has an executable diagnostic counterpart. The table links these quantities to the same saved weights used in the paired payoff comparison and to their fitting and verification work. Value-only, costate-only, raw-costate and update-count ablations receive the same diagnostic. In a direct-policy or affine fit, an unused initialized critic is not represented as a trained competing estimator.
+
+The reference costates remain Monte Carlo approximations to a finite Euler rollout's conditional derivative. Neither an estimate of target variance nor the cross-bank identity turns them into exact continuous-time costates. Thus the diagnostics can support or contradict the proposed mechanism in the tested computation, while the independent payoff endpoint supplies the economic statement. A correlation across the fixed fits is descriptive rather than a causal identification or an optimizer-population theorem.
+
+\subsection{A controller that uses finite measurements}\label{sec:r13sensing}
+The continuous-history construction in Proposition~\ref{prop:r12observation} is an exact information benchmark. We now give a separate controller that needs only the measured state at a finite sequence of dates. It does not evaluate an exact continuous drift integral or observe latent Brownian coordinates.
+
+At $t_k=kh$, let the measurement be $O_k=\overline Y_{t_k}+\eta_k$. The measurement error is causal and satisfies $(\E\|\eta_k\|_d^2)^{1/2}\leq\nu$. This assumption includes measurement quantization in $\nu$. The sensor controller applies $\widehat\pi_k(O_k)$ throughout the next cell. The physical state $\overline Y$ follows the original diffusion. The protected implementation $\widehat\pi_k$ uses the saved actor weights, the documented polynomial activation kernel and the same inward action guard as the verifier. Clipping network inputs is not clipping the economic state.
+
+Let $\pi_k$ be the corresponding real-arithmetic network with the same finite clock center and guard. Suppose it is globally $L$-Lipschitz in $\|\cdot\|_d$, and
+\[
+ \sup_x\|\widehat\pi_k(x)-\pi_k(x)\|_d\leq\kappa.
+\]
+Products of outward matrix-norm bounds give $L$. Forward propagation of dot-product roundoff and the inherited uniform polynomial-activation error gives $\kappa$. The saved weights, not sampled derivatives, determine these quantities. Let $\xi_h$ bound the normalized error in one implemented internal-state update. This is computed with the deterministic state cap implied by clipped innovations; it is not a cap on the physical diffusion.
+
+Set $\beta=\lambda\|B\|_2$, $\overline\sigma=(\sigma_I^2+\sigma_C^2)^{1/2}$, and let $M$ bound the normalized drift magnitude of any policy in the declared action tube. Let $m_-,m_+$ enclose that tube and let $s_0$ bound initial dispersion. Write
+\[
+ Q_T=s_0+(\lambda+\epsilon)T
+          +\sigma_I\sqrt{(1-1/d)T}.
+\]
+For a standard normal $Z$, let $v_c$ be an upper bound on $\E(Z-\operatorname{clip}(Z,-c,c))^2$. With $c=10$ in the implementation, one may use $2\varphi(c)(c+c^{-1})$. Define
+\begin{align*}
+ r_h&=\beta\left(\frac{Mh^2}{2}
+                  +\frac{2\overline\sigma h^{3/2}}{3}\right)
+       +\sqrt h\,\|\Sigma\|_2\sqrt{\frac{d+1}{d}v_c}+\xi_h,\\
+ e_0&=0,\qquad
+ a_k=\min\{2\epsilon,L(e_k+\nu)+2\kappa\},\\
+ e_{k+1}&=(1+\beta h)e_k+h a_k+r_h.
+\end{align*}
+Put $A=\max_{0\leq k\leq N}a_k$, $D=T e^{\beta T}A$, and
+\begin{equation}\label{eq:r13sensor}
+ B_{h,\nu}=T\{D+(m_-^{-1}+\zeta m_+)A\}
+                  +(1+2\chi Q_T)D.
+\end{equation}
+
+\begin{proposition}[Finite-observation transfer]\label{prop:r13sensor}
+Under the preceding assumptions, the absolute payoff difference between the finite-measurement controller and the protected innovation controller at the same cell count is at most $B_{h,\nu}$. Both physical state processes remain solutions of the original continuous-time capital economy. Consequently, a verified interval $[L_{\rm p},U_{\rm p}]$ for that protected innovation controller's improvement over the schedule transfers to
+\[
+ [L_{\rm p}-B_{h,\nu},\ U_{\rm p}+B_{h,\nu}]
+\]
+for the finite-measurement controller. This operation consumes no additional statistical confidence allocation. It does require a parent certificate for the protected implementation and the same time grid; an endpoint for a different actor implementation or cell count cannot be silently substituted.
+\end{proposition}
+
+The supplement proves the proposition and reports the outward accounts and shared-noise implementation diagnostics. The bound can be conservative because a global network norm controls every state, including states seldom visited. We retain its actual size, and do not replace it by the smaller observed Euler payoff difference. No universal convergence assertion is made with fixed clipping, fixed numerical error and nonvanishing measurement noise. Such a limit requires separate control of all terms in the recursion.
+
+The admissible controls in the continuous optimum may use the economic Brownian filtration and independent private randomization. Conditioning on a private randomizer leaves a feasible control adapted to economic information; averaging cannot exceed the supremum over such controls. The finite-measurement policy is a member of this admissible class. It is neither a deterministic continuously observed Markov feedback nor a claim that future economic shocks are observable.

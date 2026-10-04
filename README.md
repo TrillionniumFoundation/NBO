@@ -1,23 +1,18 @@
-# Neural Bellman Operators — R12 Econometrica revision
+# Neural Bellman Operators
 
-This revision continues **Neural Bellman Operators** by Qian QI. It addresses the advisory R11 referee report committed at `7e4393a6cae766b55975996a68515dc3e3b390e4`, on the R11 evidence snapshot `840565f451be6103aeb325a8fc548a57507a8fb2`.
+## R13 revision of the original paper
 
-## Authoritative reading order
+R13 responds to the 4 October 2026 advisory referee report on the R12 development snapshot. The review is pinned at `65110ed2991f4b955d2df37b2ab8635b12df5d1c`. The title and original recursive-utility, endogenous-preference, temporal-self, viscosity and strategic applications are retained. All historical revision folders are unchanged; the reviewed root documents, including the preceding README, are archived under `revisions/2026-10-04-r13/archive/`.
 
-1. [Main article](ECTA.tex) and [full supplement](supp.tex).
-2. [R12 response](revisions/2026-10-04-r12/manuscript/response_body.tex).
-3. [Fixed R12 protocol](revisions/2026-10-04-r12/PROTOCOL.json).
-4. [R12 reproduction and interpretation](revisions/2026-10-04-r12/README.md).
-5. Generated `revisions/2026-10-04-r12/REMOTE_EXECUTION.json`, `results/AUDIT.json`, `TABLE_MANIFEST.json` and `build/` on the evidence/referee branch.
+The source branch is `revision/econometrica-nbo-r13-source-2026-10-04`. The publication workflow creates new `revision/econometrica-nbo-r13-evidence-2026-10-04` and `revision/econometrica-nbo-r13-referee-2026-10-04` branches only after execution, preservation, identity, test and compilation gates pass. A development or source branch is not itself a completed evidence submission.
 
-## Research changes
+On an evidence branch, the authoritative reading order is:
 
-R12 adds direct common-path NBO-versus-direct-policy and NBO-versus-affine endpoints; an explicit finite initial-capital population; a continuous-state-history observation implementation with private null-space randomization; a costate-error/feasible-improvement bound; time-budgeted candidate generation; raw-costate and critic ablations; newly trained radius frontiers; full-path checkpoint and state-stress comparisons; an independent nonlinear one-state HJB reference; and a self-financed management-fee calculation. The existing title, original applications, historical adverse evidence and review reports are preserved.
+1. Root `ECTA.tex`, with compiled `revisions/2026-10-04-r13/build/ECTA.pdf`.
+2. Root `supp.tex`, with compiled `revisions/2026-10-04-r13/build/supp.pdf`.
+3. `revisions/2026-10-04-r13/response.tex` and `build/response.pdf`.
+4. `REMOTE_EXECUTION.json`, `results/AUDIT.json`, `EXTRA_AUDIT.json`, the table manifests and the complete raw records in that revision folder.
 
-A source branch specifies the computation. The evidence/referee branches add its executed weights, raw arrays, tables, compiled documents, source identity and audit. Numerical completion is not a positive economic finding. Direct method intervals may be inconclusive; population results are not uniform state-domain certificates or calibrated welfare estimates. The observation theorem assumes continuous noiseless capital history and exact known-drift integration, not discrete noisy observations.
+R13 separates direct method comparisons from schedule-relative improvement and from absolute regret bounds. It adds fixed-simulator-work prefixes, total tested work to common endpoints, independent costate-bank diagnostics, a second environment, stronger scalar-reference diagnostics and a finite-measurement implementation with an explicit error allowance. No positive economic endpoint is a software acceptance condition.
 
-## Reproduction
-
-Use the pinned environment and commands in the R12 guide. The final workflow starts all numerical workers from one immutable source and does not use a post-run numerical recovery layer. Development failures and exploratory work are described separately in [DEVELOPMENT_LOG.md](revisions/2026-10-04-r12/DEVELOPMENT_LOG.md). The current results and test counts are in the generated audit rather than the obsolete September 28 ledger. The former root README and reviewed manuscript roots are archived exactly under `revisions/2026-10-04-r12/archive/`.
-
-No successful repository workflow constitutes an Econometrica editorial decision.
+The protocol and reproduction instructions are in `revisions/2026-10-04-r13/`. All earlier research artifacts and advisory reviews remain available in their original directories and branches. Repository verification is not an Econometrica editorial decision.

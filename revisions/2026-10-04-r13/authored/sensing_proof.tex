@@ -1,0 +1,53 @@
+\section{Proof and Arithmetic Account for Finite Observation}\label{app:r13sensor}
+We use the norm $\|X\|_{2,d}=(\E\|X\|_d^2)^{1/2}$ for random state vectors. All couplings below share the initial profile and physical Brownian motion. Measurement errors may depend on information available at the observation date, but not on future innovations. The declared moment bound on those errors includes their numerical representation.
+
+\begin{proof}[Proof of Proposition~\ref{prop:r13sensor}]
+Let $Z_k$ be the implemented internal state of the protected innovation controller, and let $\overline Y$ be the physical state under the finite-measurement controller. Their actions at the left endpoint are $\widehat\pi_k(Z_k)$ and $\widehat\pi_k(\overline Y_{t_k}+\eta_k)$. Nonexpansiveness of the common guard and the uniform arithmetic account imply
+\[
+ \|\widehat\pi_k(Z_k)-\widehat\pi_k(\overline Y_{t_k}+\eta_k)\|_{2,d}
+ \leq L\{\|Z_k-\overline Y_{t_k}\|_{2,d}+\nu\}+2\kappa.
+\]
+Since both actions lie in the same coordinate tube, their normalized distance is also at most $2\epsilon$. Thus $a_k$ is an upper bound whenever $e_k$ bounds the state distance.
+
+For $0\leq u\leq h$, bounded drift and the diffusion covariance give
+\[
+ \|\overline Y_{t_k+u}-\overline Y_{t_k}\|_{2,d}
+        \leq Mu+\overline\sigma\sqrt u.
+\]
+Integrating the $\beta$-Lipschitz production difference over a cell gives
+$\beta(Mh^2/2+2\overline\sigma h^{3/2}/3)$.
+For a $(d+1)$-vector of standard normal increments, the normalized projected clipping error is bounded by
+$\sqrt h\,\|\Sigma\|_2\sqrt{(d+1)v_c/d}$.
+The remaining internal-state rounding discrepancy is at most $\xi_h$. The cellwise triangle inequality now gives
+\[
+ \|\overline Y_{t_{k+1}}-Z_{k+1}\|_{2,d}
+ \leq(1+\beta h)e_k+h a_k+r_h=e_{k+1}.
+\]
+Induction establishes the proposed recursion. This argument does not suppose that the physical state remains in the deterministic numerical-state cap.
+
+Next compare the two physical diffusions, not a physical diffusion with a numerical state. Their Brownian terms cancel synchronously. Their control difference has norm at most $A$ at each time, so Gronwall's inequality gives a physical-state distance at most $D=T e^{\beta T}A$. Let $P_d$ denote orthogonal projection away from the common-state direction. Bounded production, centered control bounded by $\epsilon$, and the projected idiosyncratic diffusion yield
+\[
+ \sup_{t\leq T}\|P_dY_t\|_{2,d}\leq Q_T
+\]
+for either controller. The common diffusion does not enter this dispersion bound.
+
+On $[m_-,m_+]$, logarithmic felicity is $m_-^{-1}$-Lipschitz, and the mean-withdrawal penalty has Lipschitz constant $\zeta m_+$. The mean-state payoff difference is bounded by $D$. At the terminal date, Cauchy--Schwarz bounds the difference in dispersion penalties by $2\chi Q_TD$. Integrating flow differences and bounding discount factors by one proves \eqref{eq:r13sensor}. Finally, add and subtract the payoff of the protected innovation controller. Its existing confidence event and the deterministic transfer inequality give the displayed transferred interval without another union bound.
+\end{proof}
+
+\subsection{Network arithmetic is part of the comparison}
+The certificate does not assume exact evaluation of a generic library activation. The protected implementation evaluates each hidden activation and the final bounded output with the inherited polynomial kernel, whose documented absolute error is at most $2^{-34}$. Each saved binary64 weight and bias is interpreted as its exact real value. Let $E_{\ell-1}$ bound componentwise input error for a layer, let $A_{\ell-1}$ bound the magnitude of its implemented inputs, and let $W_\ell,b_\ell$ be its coefficients. An outward componentwise propagation is
+\[
+ E_\ell\leq |W_\ell|E_{\ell-1}
+       +\gamma_{n_\ell+2}(|W_\ell|A_{\ell-1}+|b_\ell|)
+       +2^{-34}\bm1.
+\]
+Here $\gamma_n=nu/(1-nu)$ is rounded upward under the same binary64 contract used elsewhere in the paper. After each activation, $A_\ell\leq(1+2^{-34})\bm1$. The first-layer bounds are one for time and 100 for each clipped network-state input. Output scaling and addition of the common clock center contribute an additional outward rounding term. The normalized Euclidean norm of the resulting output-error vector gives $\kappa$. The common inward projection is nonexpansive and does not enlarge that error.
+
+The real network's state Lipschitz constant is bounded by the product of the layer norms times its output radius. For each layer the implementation takes the smaller of the outward Frobenius bound and the outward square root of the product of maximum row and column absolute sums. These are global bounds on the specified real network, not estimates from sampled derivatives. Input clipping has Lipschitz constant one. The same saved weights are evaluated by the protected verifier and the sensor implementation.
+
+The internal numerical-state cap follows from bounded actions, bounded production and componentwise clipping of each innovation. It gives a conservative per-cell dot-product, polynomial-production and state-update rounding allowance $\xi_h$. Every coefficient, matrix identity, weight hash and computed bound is stored. Physical measurement errors, including rounding at the measurement interface, are instead part of $\nu$; they are not forced into the numerical-state cap. The result remains conditional on the stated arithmetic model, without claiming formal verification of the runtime, sensor or random-number generator.
+
+\subsection{What the numerical columns establish}
+Each protected innovation parent is independently evaluated at the same cell count as its sensor descendant. The same controller weights with a different activation implementation are therefore not assigned an inherited endpoint without evaluation. The finite-family allocation includes every such parent. The finite-Euler comparison uses common fine Brownian increments and independently recorded measurement noise; it is a diagnostic of the implementation, not a replacement for the deterministic transfer bound. A small Euler difference cannot certify a small continuous-time sensing error. Conversely, a large deterministic allowance does not prove that the actual controller performs poorly.
+
+The stated proposition is finite-horizon and finite-grid. In particular, its triangle bound for innovation clipping is not uniform as the number of cells tends to infinity with a fixed clipping threshold. A convergence conclusion would additionally require an increasing clipping threshold and vanishing measurement, activation and recurrence errors at rates compatible with the displayed recursion. No such conclusion is inferred from the three finite observation grids.
