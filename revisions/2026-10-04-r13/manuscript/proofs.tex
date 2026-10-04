@@ -1,0 +1,68 @@
+\section{Additional Proofs and Numerical Contracts}\label{app:r13proofs}
+\subsection{Costate error and action quality}
+Let $\widehat m$ maximize $H_{\widehat q}$ on the stated convex feasible set, and let $e=q-\widehat q$. Strong concavity and the variational first-order condition at $\widehat m$ imply
+\[
+ H_{\widehat q}(\widehat m)-H_{\widehat q}(m)
+       \geq \frac\mu2\|m-\widehat m\|_d^2
+\]
+for every feasible $m$, including boundary maximizers. Therefore
+$\|\widetilde m-\widehat m\|_d\leq\sqrt{2\delta/\mu}$. Decomposing the true Hamiltonian difference yields
+\begin{align*}
+ H_q(m_q)-H_q(\widetilde m)
+ &\leq \delta-\frac\mu2\|m_q-\widehat m\|_d^2
+           +\langle e,\widetilde m-m_q\rangle_d\\
+ &\leq \delta+\|e\|_d\sqrt{2\delta/\mu}+\frac{\|e\|_d^2}{2\mu}.
+\end{align*}
+The last step completes the square in $\|m_q-\widehat m\|_d$. This is \eqref{eq:r13actionloss}. The Hessian of $H_q$ is the negative diagonal matrix with entries $1/(dm_i^2)$ minus the positive semidefinite mean-penalty matrix. It is bounded above by $-\mu I/d$, proving the strong-concavity premise.
+
+For \eqref{eq:r13projection}, write $Z-g(X)=[Z-\E(Z\mid X)]+[\E(Z\mid X)-g(X)]$. The cross term has zero expectation by conditioning on $X$. Integrability justifies this orthogonal decomposition. If the conditional Euler costate differs from the continuous policy costate by $b(X)$, that term remains an additional bias; it is not removed by the projection identity. Neither the sampled costate loss nor a successful optimizer return is a uniform upper bound on this bias.
+
+\subsection{Cancellation, clipping and finite-population inference}
+For each candidate, the exact payoff identity used in Proposition~\ref{prop:r11transfer} consists of a policy production term, its consumption term, its terminal dispersion, and the corresponding reference terms. When two candidates use the identical reference path, subtraction cancels every exact reference term. Comparing the two policy terms with their numerical approximations therefore requires the two policy transfer errors and the statistic-roundoff accounts, but no reference-state transfer error. The implementation retains conservative original statistic budgets even where their reference quadrature components also cancel.
+
+For any real $x,y$ and positive thresholds $b_a,b_b$,
+\[
+ (|x-y|-b_a-b_b)_+
+       \leq (|x|-b_a)_++(|y|-b_b)_+.
+\]
+Taking expectations proves the summed clipping-tail allowance without requiring independence between policies. Applying the empirical Bernstein inequality to the clipped difference and then to its negative gives the two one-sided bounds. A union bound covers all declared tests. Our allocation counts both directions and every method, profile design and auxiliary evaluation; it does not spend new confidence mass for deterministic transformations such as \eqref{eq:r13fee}.
+
+For the finite population, draw $I$ with the fixed probabilities $p_j$, independently of each future innovation path. The pair $(I,W)$ is then independent across paths. Conditional transfer gives
+\[
+ \left|\E[X_{a,h}]-\sum_jp_j\{J_{y_j}(a)-J_{y_j}(m_0)\}\right|
+       \leq\sum_jp_j E_{a,h}(y_j).
+\]
+The clipping threshold is the maximum of the profile-specific thresholds; its expectation-tail allowance is bounded by the maximum of their allowances. The prescribed implementation uses equal probabilities over nine fixed profiles. Both averaging and the final subtraction are interval-enclosed. Random empirical profile frequencies are not substituted for the population weights when calculating deterministic error budgets. They are part of the sampling variation of the final statistic.
+
+For the paired method difference, the same profile is assigned to both policies on each path. Common random numbers across different methods or training seeds do not invalidate a finite-family union bound. They also do not create independent replications of the optimizer. The ten fixed training streams are reported individually and descriptively; no confidence assertion about an unspecified distribution of future hyperparameter choices is inferred.
+
+\subsection{Observed-history implementation}
+Under the observation assumptions, $M$ is a continuous martingale with bracket $\langle M\rangle_t=Qt$. Let $A=\Sigma^\top Q^{-1}$. The matrix $A\Sigma$ is the orthogonal projector onto the row space of $\Sigma$, and $nn^\top$ is the projector onto its orthogonal complement. Independence of the private Brownian motion gives
+\[
+ \langle AM+nB^0\rangle_t
+       =(AQA^\top+nn^\top)t=I_{d+1}t.
+\]
+The multivariate L\'evy characterization proves the Brownian assertion. Also $\Sigma A=I_d$ and $\Sigma n=0$, so $\Sigma\widetilde W=M$. On each decision cell, the action is determined at its left endpoint by the stored internal state and past recovered increments. With that held action, the physical state equation has a unique strong solution because the production drift is globally Lipschitz and bounded. Induction over the cells establishes uniqueness in law for the joint physical and internal process. Driven by the Brownian motion just constructed, it therefore has the same law as the controller originally defined using directly supplied innovations. Applying the specified componentwise clipping to the recovered vector preserves this distributional equivalence.
+
+The proposition uses only private randomization and observed state history; it does not reveal the original null-space economic driver. Randomized controls are admissible in the enlarged filtration. Since the original deterministic performance envelope holds against all such adapted controls and independent randomization cannot improve an unconstrained expected-payoff supremum beyond the best deterministic randomization realization, the comparison with the original optimum is preserved. The result is not an implementability theorem for discrete noisy state measurements. The exact drift integral is stated explicitly, and errors in approximating it must be treated separately.
+
+\subsection{Independent scalar HJB approximation}
+For $d=1$, the terminal dispersion penalty vanishes but production remains nonlinear in log capital. The reference solves the same primitive action-box problem, not a Riccati or homothetic reduction. Put $f(y)=\kappa\tanh(By)$ and $\nu=(\sigma_I^2+\sigma_C^2)/2$. On a uniform grid of width $\Delta y$, define the positive rates
+\[
+ \ell_i(m)=\frac\nu{\Delta y^2}+\frac{(m-c-f(y_i))_+}{\Delta y},
+ \qquad r_i(m)=\frac\nu{\Delta y^2}+\frac{(c+f(y_i)-m)_+}{\Delta y}.
+\]
+The implicit Bellman step solves
+\[
+ \frac{v_i-v_i^+}{h}+\rho v_i
+ =\max_m\{\log m+y_i-\zeta m^2/2
+       +\ell_i(m)(v_{i-1}-v_i)+r_i(m)(v_{i+1}-v_i)\}.
+\]
+For a fixed action vector the coefficient matrix is strictly diagonally dominant with positive diagonal and nonpositive off-diagonal entries. Its inverse is nonnegative. Howard updates maximize over each drift-sign interval; on either interval the positive root of $1/m-\zeta m=p$ is clipped to its feasible endpoints, and the two candidates are compared. This is an independent monotone matrix computation, not a trained critic used as its own reference.
+
+At the two outer boundaries, the prescribed affine asymptotes replace production by its limiting saturation value. If $w(t)$ is the coefficient on initial log capital and $m_0(t)$ the common schedule, their intercept is the numerical integral of the corresponding deterministic discounted flow. The reference reports the grid, time step, boundary distance, linear-system residual, policy-iteration convergence and domain sensitivity. Fitted actors are evaluated as Markov feedbacks on this finite grid. These comparisons do not conflate that controller with the innovation-driven implementation. Grid differences and asymptotic boundary values are not asserted to be rigorous continuous-domain error enclosures.
+
+\subsection{Reproducibility and cost accounting}
+The primary fitting budget includes model initialization, optimizer creation, rollouts, derivative calculations, updates, validation and checkpoint writes. A process completes its current iteration and records the resulting overshoot. The common numerical-runtime warm-up precedes the clock for every method. Method order is rotated across the ten independent streams. Checkpoint frontiers choose saved objects by elapsed fitting work, before any final simulation result is inspected. Every final frontier row receives the same full path count and transfer calculation as a selected primary policy.
+
+Wall-clock stopping is hardware-dependent. The ledger consequently retains the realized iteration count, simulator-state visits, optimization steps, peak process memory, all checkpoints, selected checkpoint and source hash. Re-executing the time-budget protocol reproduces the experimental design, not a promise of bitwise identical weights on a different processor. A fixed-iteration replay can use the saved counts and the same random streams to investigate numerical discrepancies. The numerical compiler, random generator and machine arithmetic remain subject to the inherited conditional contract.

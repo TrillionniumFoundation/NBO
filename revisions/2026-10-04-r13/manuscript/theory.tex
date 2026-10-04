@@ -1,0 +1,80 @@
+\section{Bellman Evaluation and Direct Method Comparisons}\label{sec:r13theory}
+The NBO map has two separate empirical obligations. Its evaluation block must produce a useful continuation-value derivative, and the resulting policy must justify the resources used to construct it. Verification of a policy does not by itself answer the second question. We therefore connect evaluation error to Hamiltonian error and compare candidate-generation methods by a direct paired payoff statistic. The economic problem and the feasible competitor class remain unchanged.
+
+\subsection{What the critic contributes}
+Use the normalized inner product $\langle x,z\rangle_d=d^{-1}x^\top z$ and norm $\|x\|_d^2=\langle x,x\rangle_d$. At a state of the capital economy, set $q=dD_yV^\pi$. The part of the Hamiltonian depending on consumption is
+\[
+ H_q(m)=d^{-1}\sum_i\log m_i-\frac\zeta2\bar m^2-\langle q,m\rangle_d.
+\]
+On the original action box, and on any convex tube contained in it, $H_q$ is $\mu$-strongly concave for $\mu=\bar m_{\rm box}^{-2}$. Here $\bar m_{\rm box}$ denotes the primitive upper consumption-share bound, not the cross-sectional mean. Let $m_q$ maximize $H_q$, let $\widehat q$ be a critic costate, and let $\widetilde m$ be within $\delta$ of the maximum of $H_{\widehat q}$ over the same action set.
+
+\begin{proposition}[Evaluation error and feasible improvement]\label{prop:r13costate}
+Under the preceding conditions,
+\begin{equation}\label{eq:r13actionloss}
+ H_q(m_q)-H_q(\widetilde m)
+ \leq\left(\sqrt\delta+\frac{\|q-\widehat q\|_d}{\sqrt{2\mu}}\right)^2.
+\end{equation}
+For a random rollout costate $Z$ and a square-integrable predictor $g(X)$,
+\begin{equation}\label{eq:r13projection}
+ \E\|Z-g(X)\|_d^2
+ =\E\|Z-\E[Z\mid X]\|_d^2+
+   \E\|\E[Z\mid X]-g(X)\|_d^2.
+\end{equation}
+These statements do not identify the costate of an Euler rollout with the continuous-time costate; a discretization or evaluation bias must be added when that identification is required.
+\end{proposition}
+
+Equation~\eqref{eq:r13actionloss} identifies a reason to regress costates rather than only value levels: Hamiltonian loss is quadratic in a suitably measured costate error when the actor solves its improvement problem. Equation~\eqref{eq:r13projection} identifies both the variance reduction available from conditional prediction and its regression bias. Neither identity promises that a trained critic reduces mean-square error relative to raw rollout derivatives. The new experiment therefore includes raw-costate improvement without a learned critic, value-only and costate-only critics, changes in block-update counts, and direct policy optimization. These are substantive alternatives, not alternative labels for NBO. The strong-concavity and conditional-projection arguments are established mathematical principles; their role here is to specify a testable evaluation--improvement mechanism, not to claim a new principle of policy iteration.
+
+\subsection{Direct paired economic comparisons}
+Let $a$ and $b$ be two fitted sampled controllers, fixed before the final simulation bank. For each independent final path, compute their schedule-relative statistics $X_{a,h}$ and $X_{b,h}$ with exactly the same initial state and Brownian increments, and form
+\[
+ D_{ab,h}=X_{a,h}-X_{b,h}.
+\]
+The common schedule's numerical trajectory cancels. The implementation checks equality of its terminal arrays and the initial-state and innovation hashes. The deterministic transfer allowance is
+\[
+ E_{ab,h}=E_{a,h}^{\rm policy}+E_{b,h}^{\rm policy}
+              +E_{a,h}^{\rm stat}+E_{b,h}^{\rm stat},
+\]
+with outward arithmetic and a separate subtraction-roundoff cushion. In particular, it does not add the schedule transfer error twice. If $b_a,b_b$ are the two clipping thresholds and $\tau_a,\tau_b$ their expectation-tail allowances, use $b_{ab}=b_a+b_b$ and $\tau_{ab}=\tau_a+\tau_b$.
+
+\begin{theorem}[Simultaneous method and population comparisons]\label{thm:r13paired}
+Condition on all fitting and validation data. Suppose the final paths follow the declared independent sampling law and the conditional arithmetic and diffusion-transfer contract of Theorem~\ref{thm:r11certificate}. Apply the empirical Bernstein construction in \eqref{eq:r11lower} directly to $D_{ab,h}$, with threshold $b_{ab}$ and allowances $E_{ab,h},\tau_{ab}$. The resulting endpoints $L_{ab},U_{ab}$ satisfy
+\[
+ L_{ab}\leq J(a)-J(b)\leq U_{ab}
+\]
+simultaneously with the other declared one-sided statements at their joint confidence level. A difference of two schedule-relative lower endpoints is not used.
+
+The same construction applies to $J_{\mathcal P}(a)=\sum_j p_jJ_{y_j}(a)$ for a prespecified finite initial-state population $\mathcal P$. Draw its profile independently on every final path, average the conditional deterministic transfer bounds with the exact population weights, and use a common clipping threshold and tail bound valid for all profiles. The resulting guarantee is integrated over $\mathcal P$; it is not uniform over a continuum of initial states or over unobserved training seeds.
+\end{theorem}
+
+The comparison does not require NBO to dominate a direct method. It makes that empirical question answerable by the quantity actually of interest. A lower endpoint below zero is inconclusive about superiority unless the upper endpoint is also below zero. Certified improvement over the schedule and certified improvement over another trained policy remain different statements. Likewise, a smaller policy-regret upper endpoint need not equal the unknown actual regret.
+
+\section{Observation and the Economic Implementation}\label{sec:r13observation}
+The capital state and the innovation-driven numerical controller are distinct. We now specify an observation model under which the controller uses the history of observed capital rather than latent economic shocks. The model assumes continuous noiseless observation of every capital coordinate, known diffusion and drift coefficients, knowledge of the controller's own actions, and independent private randomization. It does not assume that a finite set of noisy observations reveals Brownian increments.
+
+Write $\Sigma=[\sigma_I I_d,\sigma_C\bm1]$, $Q=\Sigma\Sigma^\top$, and let $n$ be a unit vector spanning the one-dimensional null space of $\Sigma$. Since $\sigma_I>0$, $Q$ is invertible. The observed state path and known actions determine
+\[
+ M_t=Y_t-Y_0-\int_0^t\{c\bm1+f(Y_s)-a_s\}\,ds.
+\]
+Let $B^0$ be a scalar Brownian motion independent of the economic shocks and initial state, used only for private randomization.
+
+\begin{proposition}[Implementation from observed state history]\label{prop:r13observation}
+Define
+\begin{equation}\label{eq:r13recovery}
+ \widetilde W_t=\Sigma^\top Q^{-1}M_t+nB^0_t.
+\end{equation}
+Then $\widetilde W$ is a $(d+1)$-dimensional Brownian motion in the enlarged observation filtration and $\Sigma\widetilde W_t=M_t$. Feeding its cell increments into the prescribed numerical controller, including the componentwise clipping rule, yields the same closed-loop law and payoff as the innovation-driven controller. Thus its existing transfer and policy-specific performance statements apply under this observation model.
+\end{proposition}
+
+Private randomization in \eqref{eq:r13recovery} is essential for this exact equivalence: the right-inverse term alone has rank $d$, whereas the implemented clipping acts separately on $d+1$ drivers. The construction does not recover the original unobservable null component path by path. It replaces that component by an independent one with the correct law. Nor is the resulting controller a deterministic function of the state at a single decision date; its memory and independent randomization are part of its definition. The integrated drift in the proposition is an observation-model primitive. A sensor grid, drift quadrature or measurement error would need a further transfer allowance and is not silently treated as exact.
+
+\subsection{When is state-dependent management worth its fee?}\label{sec:r13fees}
+To give the policy differences a decision interpretation, consider a proportional resource cost $\tau\in[0,1)$ for administering a state-dependent consumption rule. Gross withdrawals from capital remain $m_i e^{Y_i}$, and the service absorbs $\tau m_i e^{Y_i}$. Household consumption is $(1-\tau)m_i e^{Y_i}$. Production, gross depletion, the gross-withdrawal adjustment cost, and terminal capital are unchanged. This is a self-financed resource experiment rather than an externally financed utility supplement. It changes the specified fee parameter, not the model used to train or benchmark the gross policy.
+
+Let $A_T=\int_0^T e^{-\rho t}dt$. Log felicity gives the exact identity
+\begin{equation}\label{eq:r13fee}
+ J_{\mathcal P}^{\tau}(a)-J_{\mathcal P}(m_0)
+ =J_{\mathcal P}(a)-J_{\mathcal P}(m_0)+A_T\log(1-\tau).
+\end{equation}
+Hence a positive certified improvement $L_a$ supports every fee below
+$1-\exp(-L_a/A_T)$. A negative upper endpoint after the fee rules out an improvement for that candidate under the confidence event; an interval spanning zero is inconclusive. The fee grid is fixed before the final simulation. We do not equate wall-clock cost to a monetary fee or call these deliberately stylized balance sheets a calibrated household population. The experiment instead states precisely which adoption decisions are supported by the verified utility differences.
