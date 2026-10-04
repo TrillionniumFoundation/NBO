@@ -1,0 +1,27 @@
+name: NBO R13 pinned source snapshot
+on:
+  push:
+    branches: [revision/econometrica-nbo-r13-2026-10-04]
+    paths: [.github/workflows/nbo-r13-source.yml]
+permissions:
+  contents: read
+jobs:
+  archive:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Archive exact tracked source and inherited evidence
+        run: |
+          mkdir -p /tmp/nbo-r13-snapshot
+          git archive --format=tar.gz --output=/tmp/nbo-r13-snapshot/source.tar.gz HEAD
+          git rev-parse HEAD > /tmp/nbo-r13-snapshot/SOURCE_COMMIT.txt
+          cd /tmp/nbo-r13-snapshot && sha256sum source.tar.gz > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r13-source-${{ github.run_id }}
+          path: /tmp/nbo-r13-snapshot/
+          retention-days: 90
+          if-no-files-found: error
