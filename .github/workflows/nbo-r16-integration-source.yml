@@ -1,0 +1,49 @@
+name: NBO R16 manuscript source closure
+on:
+  push:
+    branches: [revision/econometrica-nbo-r16-integration-2026-10-04]
+    paths: [.github/workflows/nbo-r16-integration-source.yml]
+permissions:
+  contents: read
+concurrency:
+  group: nbo-r16-integration-source-${{ github.sha }}
+  cancel-in-progress: false
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Export exact tracked journal sources and historical derivations
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,pathlib,subprocess,tarfile
+          files=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          extensions={'.tex','.bib','.bst','.cls','.cfg','.sty','.md','.aux','.png','.jpg','.jpeg','.eps'}
+          selected=[p for p in files if p and pathlib.Path(p).suffix in extensions]
+          selected += [p for p in files if p.endswith('build.py') or p.endswith('integrate.py')]
+          selected=sorted(set(selected))
+          manifest={'source_commit':subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),'files':{}}
+          with tarfile.open('manuscript-sources.tar.gz','w:gz') as tar:
+              for name in selected:
+                  p=pathlib.Path(name)
+                  if not p.is_file() or p.is_symlink():
+                      raise RuntimeError('Missing or unsafe tracked source: '+name)
+                  data=p.read_bytes()
+                  manifest['files'][name]={'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()}
+                  tar.add(name,arcname=name,recursive=False)
+          pathlib.Path('MANUSCRIPT_SOURCE_MANIFEST.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          print('Exact source files:',len(selected))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-manuscript-sources-${{ github.run_id }}
+          path: |
+            manuscript-sources.tar.gz
+            MANUSCRIPT_SOURCE_MANIFEST.json
+          if-no-files-found: error
+          retention-days: 90
