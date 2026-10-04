@@ -20,6 +20,8 @@ def reading_set(roots):
  return files
 
 def audit():
+ import decision_closure,tables
+ cat=decision_closure.make_report();tables.generate()
  old=reading_set([R/'archive/ECTA.tex',R/'archive/supp.tex',R/'archive/applications.tex'])
  new=reading_set([ROOT/'ECTA.tex',ROOT/'supp.tex',R/'applications.tex'])
  def labels(files):return set(re.findall(r'\\label\{([^}]+)\}','\n'.join(files.values())))
@@ -37,8 +39,6 @@ def audit():
  risk=json.loads(out.read_text());rows=risk['rows']
  counts={'nbo_lower_risk':sum(x['upper']<0 for x in rows),'raw_lower_risk':sum(x['lower']>0 for x in rows),'unresolved':sum(x['lower']<=0<=x['upper'] for x in rows)}
  if not risk['complete'] or len(rows)!=24 or sum(counts.values())!=24:raise ValueError('Risk attrition')
- import decision_closure,tables
- cat=decision_closure.make_report();tables.generate()
  if len(cat['rows'])!=8 or sum(x['candidate_count'] for x in cat['rows'])!=128:raise ValueError('Catalogue attrition')
  for tag,folder in [('R17','revisions/2026-10-05-r17/code'),('CLOSURE','revisions/2026-10-05-r18/code')]:
   with (R/f'results/{tag}_TESTS.log').open('w') as log:
