@@ -1,0 +1,291 @@
+\section{Reusable Continuation in a Family of Capital Decisions}
+\label{sec:r16menu}
+
+The learned Bellman object can be reused when current economic decisions
+change but their continuation does not. We examine that property within
+the capital economy. The finite-period experiment changes the current
+weight on consumption, the current adjustment cost, or a temporary
+consumption constraint. Every subsequent primitive, innovation law,
+terminal preference, and reference policy is common across these decisions.
+The stored numerical coefficients define the finite economy exactly;
+the experiment does not identify a quarterly Bellman problem with a
+continuous-time diffusion without a further approximation argument.
+
+Write the first postdecision mean as
+$x_a(y)=y+h\{c\bm1+f(y)-a\}$. For a current task $\theta$, let
+\[
+ Q_\theta(y,a)=r_\theta(y,a)+S\{x_a(y)\},\qquad
+ S(x)=\E F(x;\xi),
+\]
+where $F$ contains the current innovation and all subsequent reference
+rewards, excluding the current reward. The finite query catalog, task
+catalog, action boxes, and complete distribution over training streams
+are fixed before confirmation.
+
+\begin{proposition}[The common continuation object]
+\label{prop:r16menucache}
+If two current tasks differ only in their current reward or current
+feasible set, their postdecision continuation $S$ is identical. A cached
+continuation observation at the same $x$ and the same innovation array
+is therefore valid for either task. Cached innovations may also be
+reused when $x$ changes, but the corresponding state recursion and payoff
+must then be reevaluated. A cached payoff or derivative at a different
+$x$ is not an exact observation at the new argument.
+\end{proposition}
+
+\begin{proof}
+Conditional on $x$, every future transition kernel, reward, terminal
+payoff, and reference action is the same. Iterating these common kernels
+gives the same law and payoff functional, and hence the same expectation.
+The last assertion follows because the transition recursion depends on
+its starting state even when its innovations are fixed.
+\end{proof}
+
+This distinction determines the comparison. NBO fits one scalar
+continuation to common rollout labels and queries its derivative for
+different current choices. The vector-costate fit, cached Raw actor,
+task-conditioned direct actor, and cached sample-average optimizer are
+all allowed their own legitimate reuse. In particular, the Raw competitor
+does not regenerate an innovation array merely because an optimizer
+revisits a state. The experiment compares the economic decisions and the
+work required by these complete procedures. It does not infer that every
+form of continuation reuse requires a neural scalar critic.
+
+\begin{proposition}[A fixed-dictionary critic's bias and variance]
+\label{prop:r16menuprojection}
+Fix postdecision arguments and positive weights before drawing a new
+costate-label array. Let $q$ be the vector of true continuation gradients,
+after multiplication by the square roots of these weights, and let
+$z=q+\varepsilon$, with $\E\varepsilon=0$ and finite covariance
+$\Sigma$. Fix differentiable scalar features independently of this
+label array, and let $P$ be the Euclidean orthogonal projection onto
+their stacked, weighted gradient columns. The least-squares scalar
+critic has fitted gradients $Pz$, and
+\[
+ \E\|Pz-q\|^2-\E\|z-q\|^2
+   =\|(I-P)q\|^2-\operatorname{tr}\{(I-P)\Sigma\}.
+\]
+Thus its risk reduction equals the label variance removed outside the
+gradient dictionary less its approximation cost. If $q$ belongs to that
+dictionary, the critic weakly reduces this risk, strictly whenever
+$\operatorname{tr}\{(I-P)\Sigma\}>0$. The same fitted scalar
+function and its labels may be reused for every current task having
+the common continuation in Proposition~\ref{prop:r16menucache}.
+\end{proposition}
+
+\begin{proof}
+Write $Pz-q=-(I-P)q+P\varepsilon$. Orthogonality removes the
+cross term, and $P=P^\top=P^2$ gives
+$\E\|P\varepsilon\|^2=\operatorname{tr}(P\Sigma)$.
+The raw-label risk is $\operatorname{tr}(\Sigma)$, proving the
+identity and its consequences. Neither step uses a Gaussian law or
+independence of the coordinates of a label. Common continuation makes
+the target gradient and its scalar feature representation independent
+of the current task; evaluating an already fitted function for another
+task therefore does not require fitting it again.
+\end{proof}
+
+The identity isolates a possible statistical contribution of learning
+the continuation. It also specifies its price: a gradient dictionary
+can impose enough approximation error to outweigh its variance
+reduction. The twelve retained random-feature diagnostics and the
+nonlinear comparisons address this tradeoff; the identity does not
+determine their empirical signs. Its exact scope is a dictionary fixed
+independently of the labels used for this least-squares fit and risk
+at the declared arguments. The fully trained nonlinear NBO critic is
+assessed by the independent economic comparisons below, rather than
+being identified with that linear projection. A Raw procedure that
+uses the same projection receives the same risk calculation. Task
+reuse eliminates repeated fitting of a common object, while evaluation,
+optimization, and any new state recursions remain part of each method's
+recorded work.
+
+\subsection{A direct conditional payoff statistic}
+\label{app:r16menustatistic}
+
+For one fixed query and two already selected actions $a,b$, let
+$\overline F(x)=\{F(x;\xi)+F(x;-\xi)\}/2$, where a new base array
+$\xi$ is independent of fitting and all other confirmation pairs. Put
+$\gamma=2$ times the stored terminal-dispersion penalty and define
+\[
+ q_0^{ab}=-\frac\gamma2
+       \{\|\Pi x_a\|_d^2-\|\Pi x_b\|_d^2\},\qquad
+ R^{ab}=\overline F(x_a)-\overline F(x_b)-q_0^{ab}.
+\]
+The current reward and $q_0^{ab}$ are known conditional on this query
+and its actions. Thus
+\begin{equation}
+ Q_\theta(y,a)-Q_\theta(y,b)
+       =r_\theta(y,a)-r_\theta(y,b)+q_0^{ab}+\E R^{ab}.
+ \label{eq:r16menucentered}
+\end{equation}
+The implementation may center at an enclosed binary64 representative of
+$q_0^{ab}$. Its exact discrepancy is included in the range; the same
+representative is added back to the known part of the payoff.
+
+Let $N$ denote the number of dates, $n=N-1$, and let $\nu_I,\nu_C$
+denote the stored idiosyncratic and common innovation amplitudes per
+date. Set
+\[
+ H=(1+h\beta)^n,\qquad
+ P=\beta_\psi\sum_{j=1}^{N-1}B_j(1+h\beta)^{j-1},\qquad
+ D=\|x_a-x_b\|_d,
+\]
+and $s=\max\{\|\Pi x_a\|_d,\|\Pi x_b\|_d\}$. The following
+coefficients contain no learned parameter:
+\begin{align}
+ C&=P+\gamma H\kappa nh
+       +\gamma(H-1)\{s+\nu_I\sqrt{N(1-1/d)}\},\notag\\
+ A&=\gamma(H-1)\nu_I\sqrt{N/d}.
+ \label{eq:r16menuconstants}
+\end{align}
+
+\begin{proposition}[Query-conditional antithetic range]
+\label{prop:r16menurange}
+For one independent antithetic pair,
+\[
+ \Pr\{|R^{ab}|>D(C+Av)\}\leq e^{-v^2/2},\qquad v\geq0.
+\]
+Consequently, clipping at the prospectively fixed $v_*>0$ admits
+the expectation allowance $DAe^{-v_*^2/2}/v_*$. These statements
+hold conditional on the selected actions, so their geometry may enter
+the range before the independent pair is generated.
+\end{proposition}
+
+\begin{proof}
+Apply the pathwise mean-value identity along the straight segment from
+$x_b$ to $x_a$. The reference adjoint has norm growth at most $H$;
+its accumulated production component has norm at most $P$. Subtracting
+the known terminal derivative $-\gamma\Pi x$ leaves the production
+adjoint, a bounded accumulated-production term, and
+$(J^\top-I)$ times the centered starting state and centered future
+innovation. The unmultiplied terminal innovation cancels exactly in an
+antithetic pair. The starting state is fixed. The norm of the projected
+future innovation has mean at most $\nu_I\sqrt{N(1-1/d)}$ and,
+as a function of its standard Gaussian array, normalized Lipschitz
+constant at most $\nu_I\sqrt{N/d}$. Gaussian concentration gives
+one event, uniform over the entire straight segment. Integration proves
+the range, and integration of its tail proves the expectation allowance.
+There is no prefix-state event because the query is conditioned upon.
+\end{proof}
+
+One observation is one antithetic pair, not its two dependent paths.
+Different query-pair cells use independent arrays. Equal pair counts
+at every query and at every declared training stream identify their
+uniform finite average. For each contrast, the report pools only its
+independent pair observations, clips each query at its proved range,
+uses the maximum range in the independent nonidentical empirical-Bernstein
+bound, and averages numerical and tail allowances. Dependence across
+methods is retained by forming the direct contrast before inference.
+The primary family comprises 216 two-sided events and uses probability
+budget $0.018$. The separate scalar-accuracy family below uses $0.002$.
+Their union remains within the fixed total $0.02$ budget.
+
+\paragraph*{Arithmetic and Gaussian clipping.}
+The numerical verifier uses the preserved protected polynomial for
+$\tanh$, outward coefficient operations, and forward state-error
+recursions with multiplier $1+h\beta$. Fixed dyadic spectral proposals
+for the two declared coupling matrices are each certified by a fresh
+outward LDL calculation. Postdecision representatives are interval
+midpoints, so reconstructing their error accounts does not depend on
+the last bits of a numerical singular-value or matrix-product routine.
+A deterministic state cap
+is computed from the fixed query, bounded drift and reference actions,
+and the executed Gaussian cap. Production error is bounded by
+$\beta_\psi$ times the state error plus its protected-function and
+dot-product allowances. A terminal state error $e$ at a cap $M$
+contributes at most $(\gamma/2)e(2M+e)$, before the separately charged
+scalar reductions. The source records every component of this account.
+
+The finite economy retains untruncated Gaussian innovations. For cap $z$,
+\[
+ \E\{G-\operatorname{clip}_{z}(G)\}^2
+       \leq 4\phi(z)/z^3.
+\]
+This follows by writing the two-sided tail integral as
+$2\phi(z)\int_0^\infty u^2e^{-zu-u^2/2}du$ and dropping
+$e^{-u^2/2}$. Multiplication by $\nu_I^2+\nu_C^2$ and the
+same state-error recursion gives an $L^2$ clipping allowance. The
+production Lipschitz bound and conditional terminal Cauchy--Schwarz
+then transfer the implemented expectation to the original finite
+Gaussian economy. The clipping and arithmetic accounts are distinct.
+
+\subsection{Accuracy over an entire scalar intervention class}
+\label{app:r16menuaccuracy}
+
+A separate comparison supplies an absolute reference on a restricted
+decision class while retaining the high-dimensional state. At one fixed
+state and current task, set $a(s)=a_L+s(a_R-a_L)$, $0\leq s\leq1$.
+The endpoints are the common first-period reference consumption plus
+or minus the fixed radius, intersected with the original task box.
+All subsequent actions follow the same reference. Write
+$q(s)=Q_\theta\{y,a(s)\}$ and $r=a_R-a_L$.
+
+For the first and second variations of a future state with respect to
+$s$, start with $V_1=h\|r\|_d$ and $W_1=0$. With the global
+scalar and vector Hessian coefficients $H_m,H_x$ from the paired
+transfer, recursively set
+\[
+ V_{j+1}=(1+h\beta)V_j,\qquad
+ W_{j+1}=(1+h\beta)W_j+hH_xV_j^2.
+\]
+Let
+\[
+ S_N=\max\{\|\Pi x_{a_L}\|_d,\|\Pi x_{a_R}\|_d\}
+          +\kappa(N-1)h+\nu_I\sqrt{N(1-1/d)}.
+\]
+Then an upper continuation curvature is
+\[
+ \Lambda=\sum_{j=1}^{N-1}B_j(H_mV_j^2+\beta_\psi W_j)
+                                         +\gamma S_NW_N.
+\]
+For $u_i=\max(a_{L,i},a_{R,i})$, current utility weight $w$ and
+adjustment coefficient $\eta$, put
+\[
+ \mu=A_0\left\{w\overline{r_i^2/u_i^2}+\eta\bar r^2\right\}-\Lambda.
+\]
+
+\begin{proposition}[Scalar Bellman curvature and a protected optimality gap]
+\label{prop:r16menugap}
+The preceding coefficients imply $q''(s)\leq-\mu$ throughout
+$[0,1]$. If $[g_L,g_U]$ is a valid interval for $q'(s_0)$, then
+\[
+ \max_{0\leq s\leq1}q(s)-q(s_0)
+ \leq\max_{\substack{g\in\{g_L,g_U\}\\0\leq s\leq1}}
+           \{g(s-s_0)-\mu(s-s_0)^2/2\}.
+\]
+The maximum is a scalar quadratic calculation. It remains valid when
+$\mu\leq0$; in that case it does not assert strong concavity.
+\end{proposition}
+
+\begin{proof}
+Differentiating the finite transition recursion gives the displayed
+variation bounds. The production chain rule contributes at most
+$H_mV_j^2+\beta_\psi W_j$. The terminal second derivative is
+$-\gamma\{\|\Pi v_N\|_d^2+\langle\Pi Y_N,\Pi w_N\rangle_d\}$.
+Dropping its negative squared term and using the deterministic bound
+on $w_N$ and the moment bound on $Y_N$ gives $\gamma S_NW_N$.
+Subtracting the minimum curvature of current utility proves the
+first claim. Taylor's integral remainder gives the quadratic support
+at $s_0$. Maximizing that support over the gradient interval and
+feasible scalar displacement proves the second.
+\end{proof}
+
+The gradient interval is obtained without identifying an automatic
+derivative with an exact expectation. On a fixed neighboring interval
+$[s_-,s_+]$ containing $s_0$, a fresh paired-payoff calculation bounds
+$\{q(s_+)-q(s_-)\}/(s_+-s_-)$. A global absolute second-derivative
+bound $L$ adds the deterministic allowance
+\[
+ \frac{L\{(s_0-s_-)^2+(s_+-s_0)^2\}}{2(s_+-s_-)}.
+\]
+This is the integral of the derivative's Lipschitz bound; it also
+covers one-sided differences at a boundary. The declared scalar
+candidate is selected from the fitted continuation before this bank.
+Binary64 construction of the affine actions receives its own payoff
+allowance. All 128 scalar events use 65,536 independent antithetic
+pairs each and the fixed probability allocation. The resulting
+reference covers every scalar action in the interval, including
+unevaluated ones. Its scope is the specified finite decision class;
+it is not a high-dimensional full-adapted-control or continuous-time
+near-optimality assertion.
