@@ -1,0 +1,168 @@
+\section{Economic action contrasts and independent risk assessment}\label{sec:r17-contrast-proofs}
+This section concerns the finite continuation economy defined in
+Section~\ref{sec:r16menumain}. All expectations below use its unclipped Gaussian
+law and its stored economic coefficients. Conditioning on a fitted continuation
+is different from assuming a fixed feature dictionary before training. The
+results in this section permit nonlinear fitting, data-dependent features, and
+actions chosen by the fitted critic, provided the assessment innovations are
+independent of these choices.
+
+Let $\mathcal F$ contain the complete training record, a finite collection of
+queries indexed by $j$, two feasible actions at each query, and every deployed
+prediction to be assessed. Let $x_j^+$ and $x_j^0$ denote their postdecision
+states. Write
+\[
+ c_j=S(x_j^+)-S(x_j^0),\qquad
+ p_{Nj}=\widehat S_N(x_j^+)-\widehat S_N(x_j^0),\qquad p_{Rj}\in\mathbb R.
+\]
+Here $S$ is the true continuation of the reference policy in the finite economy;
+$p_{Rj}$ may be a realized cached simulation predictor. Conditional on
+$\mathcal F$, all these quantities are fixed. The risk uses the same action pair
+and the same query weights for both predictors:
+\begin{equation}\label{eq:r17-risk}
+ \mathcal R_M=\frac1J\sum_{j=1}^J(p_{Mj}-c_j)^2,
+ \qquad M\in\{N,R\}.
+\end{equation}
+This definition does not compare the payoffs of two different actors. It does
+not average over unrealized Raw caches or unexecuted training seeds.
+
+\begin{proposition}[Action contrasts and economic decisions]\label{prop:r17-decisions}
+Let $r_j$ be the known current-reward difference between the two actions.
+The selector that chooses the first action when $r_j+p_{Mj}\geq0$ has loss,
+relative to the better of these two actions, bounded by $|p_{Mj}-c_j|$.
+Consequently its average loss is at most $\sqrt{\mathcal R_M}$. An additive
+error of at most $\eta_j$ in maximizing the predicted two-action objective adds
+$\eta_j$ to the pointwise bound. For a finite action catalog with reference
+contrast $c_{j0}=p_{Mj0}=0$, an $\eta_j$-approximate predicted maximizer instead
+has loss at most
+\[
+ 2\max_a|p_{Mja}-c_{ja}|+\eta_j.
+\]
+If the catalog risk at query $j$ is $\sum_a w_{ja}(p_{Mja}-c_{ja})^2$ and
+$w_{ja}\geq\underline w>0$ for every action, the last bound is at most twice
+the square root of this risk divided by $\underline w$, plus $\eta_j$.
+\end{proposition}
+\begin{proof}
+Put $v=r_j+c_j$ and $\widehat v=r_j+p_{Mj}$. When the selectors based on $v$
+and $\widehat v$ agree, the loss is zero. When they disagree, zero lies between
+$v$ and $\widehat v$, so the loss $|v|$ is at most $|v-\widehat v|$.
+For an approximate choice, the same argument bounds a wrong choice by
+$|v-\widehat v|+\eta_j$. Averaging and applying Cauchy--Schwarz proves the
+risk bound. For a catalog let $a^*$ maximize the true objective and let
+$\widehat a$ be the approximate predicted maximizer. Insert the predicted
+objective at $a^*$ and $\widehat a$ into their true difference; the middle
+term is at most $\eta_j$ and each of the other terms is at most the maximum
+contrast error. Finally, each squared error is at most the weighted risk
+divided by its weight. This proves every assertion.
+\end{proof}
+
+The first assertion provides an economic unit for the risk without asserting
+that risk ordering determines payoff ordering. Such an assertion is false:
+when the true net contrast is $.01$, predictions $-.01$ and $.2$ have squared
+errors $.0004$ and $.0361$, respectively, but only the less accurate predictor
+chooses the better action. A risk comparison and an actual payoff comparison
+therefore remain separate empirical results. The two-action bound is not a
+certificate over all vector actions or over the full adapted diffusion class.
+
+\begin{proposition}[Cancellation of common continuation noise]\label{prop:r17-cancellation}
+Conditional on $\mathcal F$, let $Z_{jk}$ be independent across queries and
+replicates, with finite second moments and $\mathbb E[Z_{jk}\mid\mathcal F]=c_j$.
+Put $d_j=p_{Nj}-p_{Rj}$ and
+\[
+ T_{jk}=d_j(p_{Nj}+p_{Rj}-2Z_{jk}).
+\]
+Then the uniform average of $T_{jk}$ is unbiased for
+$\mathcal R_N-\mathcal R_R$, and
+\begin{equation}\label{eq:r17-variance}
+ \operatorname{Var}(T_{jk}\mid\mathcal F)
+   =4d_j^2\operatorname{Var}(Z_{jk}\mid\mathcal F).
+\end{equation}
+An identical pair of predictions has identically zero comparison statistic.
+Neither an independent estimate of $c_j^2$ nor two independent assessment
+banks are required for this risk difference. For absolute risk, two independent
+replicates $Z_{j1},Z_{j2}$ give the unbiased statistic
+$(p_{Mj}-Z_{j1})(p_{Mj}-Z_{j2})$.
+\end{proposition}
+\begin{proof}
+The algebraic identity
+\[
+ (p_{Nj}-z)^2-(p_{Rj}-z)^2
+   =(p_{Nj}-p_{Rj})(p_{Nj}+p_{Rj}-2z)
+\]
+removes the common $z^2$ term. Take conditional expectations and average.
+The only random component of the right side is $-2d_jZ_{jk}$, proving
+\eqref{eq:r17-variance}. For the last assertion, conditional independence
+factors the expectation of the product into
+$(p_{Mj}-c_j)^2$. Reusing one replicate instead would add its conditional
+variance. No assumption about how the predictions were fitted enters this
+argument, because fitting is included in $\mathcal F$.
+\end{proof}
+
+\begin{corollary}[An economic contrast training objective]\label{cor:r17-training}
+For fixed training-query weights, the conditional expectation of
+$\sum_j w_j\{f(x_j^+)-f(x_j^0)-Z_j\}^2$ equals the corresponding true contrast
+risk plus $\sum_jw_j\operatorname{Var}(Z_j\mid\mathcal F)$. The latter does
+not depend on $f$. Thus minimizing the population loss over scalar functions
+minimizes contrast risk, while preserving the common scalar continuation and
+its path-consistent differences. The loss is invariant to an additive constant
+in $f$. A fresh assessment bank is required after empirical fitting or model
+selection; a training loss is not an independent risk certificate.
+\end{corollary}
+\begin{proof}
+Expand the square around the conditional mean $c_j$. The cross term has zero
+conditional mean. Summing gives the identity. Additive constants cancel in
+each difference, and differences of a single scalar function telescope around
+every finite cycle. These are algebraic properties, not statistical claims.
+\end{proof}
+
+\begin{proposition}[Centered finite-sample comparison]\label{prop:r17-risk-certificate}
+Fix $q_j,b_j,t_j,e_j$ before assessment, with $b_j,t_j,e_j\geq0$. Suppose the
+exact residual $U_{jk}=Z_{jk}-q_j$ obeys
+$\mathbb E(|U_{jk}|-b_j)_+\leq t_j$. Suppose the executed residual
+$\widetilde U_{jk}$ can be coupled with $U_{jk}$ so that
+$\mathbb E|\widetilde U_{jk}-U_{jk}|\leq e_j$.
+Define the known offset and the bounded random statistic by
+\[
+ K_j=d_j(p_{Nj}+p_{Rj}-2q_j),\qquad
+ W_{jk}=-2d_j\operatorname{clip}_{b_j}(\widetilde U_{jk}).
+\]
+Then $|W_{jk}|\leq B:=\max_j2|d_j|b_j$ and the difference between the
+risk contrast and $J^{-1}\sum_jK_j+\mathbb E\overline W$ is at most
+$\varepsilon=J^{-1}\sum_j2|d_j|(e_j+t_j)$.
+For $n=JK\geq2$ independent observations with $K$ replicates per query, a
+simultaneous two-sided interval for one comparison is
+\begin{equation}\label{eq:r17-eb}
+ \frac1J\sum_jK_j+\overline W
+ \ \mathbin{\pm}\left\{
+ \sqrt{\frac{2s_W^2\log(4/\alpha_*)}{n}}
+ +\frac{14B\log(4/\alpha_*)}{3(n-1)}+\varepsilon\right\},
+\end{equation}
+with coverage at least $1-\alpha_*$. For $H$ prespecified comparisons,
+$\alpha_*\leq\alpha/H$ yields simultaneous coverage at least $1-\alpha$.
+The observations need not be identically distributed.
+\end{proposition}
+\begin{proof}
+Clipping is one-Lipschitz. The triangle inequality gives
+\[
+ \mathbb E|U_{jk}-\operatorname{clip}_{b_j}(\widetilde U_{jk})|
+ \leq t_j+e_j.
+\]
+Multiply by $2|d_j|$ and average to obtain the expectation allowance. The range
+is immediate. For $B>0$, transform $W$ from $[-B,B]$ to $[0,1]$, apply
+\citet[Theorem~11]{maurer2009} to each tail with probability
+$\alpha_*/2$, and transform back. Its sample variance is the usual unbiased
+sample variance; the theorem allows independent nonidentical observations.
+The union bound proves the family assertion. For $B=0$ the statistic is
+identically zero and only the known offset and deterministic allowance remain.
+\end{proof}
+
+The implementation takes $q_j$ to be a representative of the known terminal
+quadratic contrast. The inherited finite-economy geometric proof supplies
+$b_j,t_j$ before observation; its protected-arithmetic and Gaussian-clipping
+accounts supply $e_j$. Antithetic signs are averaged before they enter the
+sample: they are not counted as independent draws. Outward interval arithmetic
+also encloses the known offset, coefficient subtraction, coefficient
+multiplication, and final endpoint addition. The sample moments are calculated
+as exact rational moments of the stored binary64 observations before directed
+Decimal evaluation of the radius. Identical predictors are assigned their
+exact zero identity, not an artificially positive comparison width.
