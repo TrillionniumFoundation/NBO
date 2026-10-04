@@ -1,0 +1,173 @@
+name: NBO R16 prospective signed Bellman mechanism
+
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r16-signed-source-2026-10-04
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: nbo-r16-signed-${{ github.sha }}
+  cancel-in-progress: false
+
+env:
+  NBO_R16_SIGNED_SOURCE_COMMIT: ${{ github.sha }}
+  OMP_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  NUMBA_NUM_THREADS: '1'
+  PYTHONHASHSEED: '0'
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    outputs:
+      matrix: ${{ steps.pack.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Require the first execution and a new evidence branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$(git rev-parse HEAD)" = "$NBO_R16_SIGNED_SOURCE_COMMIT"
+          test -z "$(git ls-remote --heads origin refs/heads/revision/econometrica-nbo-r16-signed-evidence-2026-10-04)"
+      - name: Install exact CPU numerical dependencies
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Check manufactured identities and pre-frozen ranges without confirmation
+        run: python -m unittest discover -s revisions/2026-10-04-r16/code -p signed_tests.py -v
+      - name: Freeze the complete independent signed assessment source
+        id: pack
+        run: |
+          python revisions/2026-10-04-r16/code/signed_pipeline.py pack \
+            --repo . --out "$RUNNER_TEMP/signed-source" \
+            --source "$NBO_R16_SIGNED_SOURCE_COMMIT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-signed-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/signed-source/
+          if-no-files-found: error
+          retention-days: 90
+
+  bridge:
+    needs: source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 16
+      matrix: ${{ fromJSON(needs.source.outputs.matrix) }}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r16-signed-source-${{ github.run_id }}
+          path: source
+      - name: Install exact CPU numerical dependencies
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Execute exactly 1024 fresh signed bridges for this original NBO stream
+        run: |
+          python source/signed_pipeline.py run-trial \
+            --bundle source --workspace "$RUNNER_TEMP/signed-worker" \
+            --out "signed-${{ matrix.trial_id }}" --trial-id '${{ matrix.trial_id }}'
+      - name: Preserve every signed row and complete process record
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-signed-trial-${{ matrix.trial_id }}-${{ github.run_id }}
+          path: signed-${{ matrix.trial_id }}/
+          if-no-files-found: warn
+          retention-days: 90
+
+  evidence:
+    needs: [source, bridge]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install exact aggregation dependencies
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r16-signed-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/signed-source
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nbo-r16-signed-trial-*-${{ github.run_id }}
+          path: ${{ runner.temp }}/signed-trials
+      - name: Require every stream and recompute all six protected intervals
+        run: |
+          python revisions/2026-10-04-r16/code/signed_pipeline.py collect \
+            --repo . --bundle "$RUNNER_TEMP/signed-source" \
+            --input-dir "$RUNNER_TEMP/signed-trials"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-signed-summary-${{ github.run_id }}
+          path: revisions/2026-10-04-r16/results/signed_mechanism_summary/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Atomically create complete signed evidence without overwriting any ref
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$(git rev-parse HEAD)" = "$NBO_R16_SIGNED_SOURCE_COMMIT"
+          source_branch=revision/econometrica-nbo-r16-signed-source-2026-10-04
+          evidence_branch=revision/econometrica-nbo-r16-signed-evidence-2026-10-04
+          frozen_source=$(git ls-remote --heads origin "refs/heads/$source_branch" | cut -f1)
+          test "$frozen_source" = "$NBO_R16_SIGNED_SOURCE_COMMIT"
+          test -z "$(git ls-remote --heads origin "refs/heads/$evidence_branch")"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- revisions/2026-10-04-r16/results/signed_mechanism revisions/2026-10-04-r16/results/signed_mechanism_summary
+          python - <<'PY'
+          import json,pathlib,subprocess,os
+          root=pathlib.Path('revisions/2026-10-04-r16/results/signed_mechanism')
+          audit=json.loads((root/'FINAL_AUDIT.json').read_text())
+          assert audit['complete'] and audit['numerical_source_commit']==os.environ['NBO_R16_SIGNED_SOURCE_COMMIT']
+          names=subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines()
+          assert names and all(n.startswith('revisions/2026-10-04-r16/results/signed_mechanism/') or n.startswith('revisions/2026-10-04-r16/results/signed_mechanism_summary/') for n in names)
+          PY
+          body_file="$RUNNER_TEMP/signed-evidence-message.txt"
+          cat > "$body_file" <<'MESSAGE'
+          revision(r16): preserve every prospective signed Bellman mechanism assessment
+
+          Retain all original NBO streams, 32768 fresh occupation bridges, six protected intervals and complete additional assessment work. Historical negative mechanism bounds and original policies remain unchanged. Favorable numerical signs are not a publication gate.
+          MESSAGE
+          evidence_tree=$(git write-tree)
+          evidence_commit=$(git commit-tree "$evidence_tree" -p "$NBO_R16_SIGNED_SOURCE_COMMIT" -F "$body_file")
+          git push --atomic --force-with-lease="refs/heads/$evidence_branch:" origin "$evidence_commit:refs/heads/$evidence_branch"
+          echo "Signed numerical source: $NBO_R16_SIGNED_SOURCE_COMMIT" >> "$GITHUB_STEP_SUMMARY"
+          echo "Complete signed evidence: $evidence_commit" >> "$GITHUB_STEP_SUMMARY"

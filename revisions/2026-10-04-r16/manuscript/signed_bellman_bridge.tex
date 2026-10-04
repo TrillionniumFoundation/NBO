@@ -1,0 +1,236 @@
+% Mathematical proposal. No claim of a completed R16 experiment.
+% Uses the original R15 finite capital economy and its fixed reference policy.
+\subsection{A signed occupation account with shared continuation paths}
+\label{sec:r16signedbridge}
+
+Fix the finite economy in \eqref{eq:r15finite}--\eqref{eq:r15reward} and
+condition on the fitted candidate, the continuation predictor, and their
+selection. Let $F_k(x;\xi)$ be the reference continuation payoff along one
+future innovation array, starting at the postdecision mean $x$, including
+the innovation at $k$, excluding the current reward, and using the original
+global grid thereafter. Thus $\E F_k(x;\xi)=S_k^\pi(x)$. The two endpoint
+rollouts below use the same array $\xi$. For $r$ independent arrays, average
+each array and its exact negative, and denote this average by
+$\overline F_k(x)$. The innovation clipping map is odd. Antithetic pairing
+preserves the marginal law and hence the expectation of the continuation.
+
+Draw an independent trajectory under the selected candidate and an independent
+uniform date $K$. At that date write $\delta=a_K-\pi_K\bm1$ and
+$x_a=x_{a_K}(Z_K)$, $x_\pi=x_{\pi_K}(Z_K)$. Define
+\begin{align}
+ G&=N\{\ell_K(Z_K,a_K)-\ell_K(Z_K,\pi_K)
+                 +\overline F_K(x_a)-\overline F_K(x_\pi)\},\label{eq:r16signedG}\\
+ C&=N\{\widehat S_K(x_a)-\widehat S_K(x_\pi)
+                 -\overline F_K(x_a)+\overline F_K(x_\pi)\}.
+ \label{eq:r16signedC}
+\end{align}
+The difference of the two continuation payoffs is evaluated by differencing
+their running production rewards and their terminal dispersion rewards,
+using common innovations throughout. In exact arithmetic, $G=M-C$ for every
+sample. This cancellation is applied before clipping or constructing a
+confidence interval.
+
+\begin{proposition}[Signed Bellman assessment]
+\label{prop:r16signedbridge}
+Under the original integrability assumptions,
+\[
+ \E G=\mathcal R_h(a)-\mathcal R_h(\pi),\qquad
+ \E C=\mathcal M_h-\{\mathcal R_h(a)-\mathcal R_h(\pi)\}.
+\]
+Consequently, a fresh simultaneous lower endpoint $L_G\leq\E G$, including
+its numerical and clipping allowances, implies
+\[
+ J(a)-J(m_0)\geq L_G-D_{\rm hold}-E_{a,h}^{\rm all}.
+\]
+No positive-part replacement of $C$ is made. No separate endpoints for $M$
+and $C$ are subtracted to obtain $L_G$.
+\end{proposition}
+
+\begin{proof}
+Conditional on the candidate history through $K$, antithetic averaging is
+unbiased at each endpoint, and their shared innovations affect covariance
+only. Hence the conditional expectation of $G/N$ is the reference Bellman
+advantage $Q_K^\pi(Z_K,a_K)-Q_K^\pi(Z_K,\pi_K)$. Uniform sampling of $K$
+and the finite performance-difference identity \eqref{eq:r15telescoping}
+give the first assertion. The second follows from the sample identity
+$C=M-G$. The same finite-reference holding deficit and continuous-payoff
+transfer used in Theorem~\ref{thm:r15mechanism} give the final assertion.
+\end{proof}
+
+The proposition identifies the contribution of the fitted continuation to
+the advantage it predicts, while retaining the signed error of that prediction.
+A positive $L_G$ verifies the selected candidate's occupation Bellman account.
+It does not, by itself, rank the learned critic against a Raw estimator or
+attribute a package-level gain uniquely to continuation learning. Those
+comparisons require the separately specified common-data experiment.
+
+\subsection{A range that contains no fitted network norm}
+\label{app:r16signedrange}
+
+The antithetic difference in \eqref{eq:r16signedG} has a range based only on
+the economy and the action tube. Let $\Delta$ be a proved uniform bound on
+$\|a_k-\pi_k\bm1\|_d$, and retain the original bound $\varepsilon$ on the
+candidate's deviation from the scalar schedule. Let $s_0$ be the maximal
+initial dispersion. Put $\gamma=2\chi e^{-\rho T}$, $s_d=\sqrt{d-1}$,
+$t_k=kh$, $n_k=N-k-1$, $\tau_k=(N-k)h$, and
+\[
+ F_k=(1+h\beta)^{n_k},\qquad
+ P_k=\beta_\psi\sum_{j=k+1}^{N-1} B_j(1+h\beta)^{j-k-1},
+\qquad H_k=s_0+(\kappa+\varepsilon)(t_k+h).
+\]
+Here $\beta\geq\kappa\|B\|_2$ and
+$\beta_\psi\geq\sup_x\|Df(x)^\top\bm1\|_d$ are independently
+proved bounds, as in the paired-transfer account. The bound $H_k$ covers
+the prefix and the current postdecision bridge. Projection removes the
+scalar reference action and the exogenous scalar drift; the centered
+candidate action has norm at most $\varepsilon$. A separately proved
+state-representation allowance is added to $H_k$ when the implemented
+bridge endpoints require it.
+
+Define, for the single future bank of $r$ antithetic pairs,
+\begin{align}
+ C_{Z,k}&=P_k+\gamma F_k\kappa n_kh
+       +\gamma(F_k-1)\left\{H_k+
+          \frac{\sigma_I s_d}{\sqrt d}(\sqrt{t_k}+\sqrt{\tau_k})\right\},\notag\\
+ A_{Z,k}&=\gamma(F_k-1)\frac{\sigma_I}{\sqrt d}
+                         (\sqrt{t_k}+\sqrt{\tau_k/r}).
+ \label{eq:r16residualrange}
+\end{align}
+Let $L_{\ell,k}$ be a proved bound on the normalized action-gradient
+norm of $\ell_k/h$ throughout the original action box. For example,
+\[
+ L_{\ell,k}=\max_{m\in\{l_k,u_k\}}
+       |(A_k/h)(m^{-1}-\zeta m)-B_k/h|
+\]
+is valid when $[l_k,u_k]$ bounds every coordinate of the action and its
+line segment to the reference. The derivative is decreasing in its own
+consumption coordinate and in the cross-sectional mean, so the two
+diagonal endpoints enclose every component.
+Set
+\begin{align}
+ C_{G,k}&=T\Delta\left[L_{\ell,k}
+       +\gamma\left(H_k+\frac{\sigma_I s_d\sqrt{t_k}}{\sqrt d}\right)
+       +C_{Z,k}\right],\notag\\
+ A_{G,k}&=T\Delta\left[\frac{\gamma\sigma_I\sqrt{t_k}}{\sqrt d}
+                                      +A_{Z,k}\right],\qquad
+ C_G=\max_k C_{G,k},\quad A_G=\max_k A_{G,k}.
+ \label{eq:r16signedrange}
+\end{align}
+
+\begin{proposition}[Antithetic paired-continuation range]
+\label{prop:r16signedrange}
+For the exact-real statistic in \eqref{eq:r16signedG},
+\[
+ \Pr\{|G|>C_G+A_G v\}\leq 2e^{-v^2/2},\qquad v\geq0.
+\]
+For a fixed $v_*>0$, valid clipping and expectation-tail allowances are
+\[
+ b_G=C_G+A_Gv_*,\qquad
+ \tau_G=2A_Ge^{-v_*^2/2}/v_*.
+\]
+The same formulas may be evaluated conditionally on a prespecified date
+or initial-profile stratum before averaging its protected endpoint.
+They require no maximum of an observed fitted derivative or simulated
+outcome. All executed arithmetic errors are added separately.
+\end{proposition}
+
+\begin{proof}
+For each fixed innovation array, the mean-value identity gives
+\[
+ \overline F_k(x_a)-\overline F_k(x_\pi)
+       =-h\int_0^1\langle\delta,
+               \overline q_k(x_\pi-uh\delta)\rangle_d\,du,
+\]
+where $\overline q_k=dD\overline F_k$. This is an identity used for the
+proof; computing the statistic requires no derivatives.
+
+The adjoint recursion in \eqref{eq:r15adjoint} gives
+$\|J\|_2\leq F_k$, $\|J-I\|_2\leq F_k-1$, and production-adjoint
+norm at most $P_k$. For the terminal derivative, subtract
+$q_0(x)=-\gamma\Pi x$. The exact residual consists of the production
+adjoint and
+\[
+ -\gamma\left\{(J^\top-I)\Pi x
+       +J^\top\sum_{j>k}h\Pi f(Z_j)
+       +(J^\top-I)\Pi\xi+\Pi\xi\right\}.
+\]
+The average of the final term is exactly zero in every antithetic pair.
+The other terms are bounded by $P_k$, $\gamma F_k\kappa n_kh$, and
+$\gamma(F_k-1)(\|\Pi x\|_d+\|\Pi\xi\|_d)$.
+
+The normalized norm of the projected prefix innovation sum has mean
+at most $s_d$ and Lipschitz constant one as a function of its standard
+Gaussian inputs. The average of the corresponding future norms from
+$r$ independent base paths has mean at most $s_d$ and Lipschitz constant
+$r^{-1/2}$. Odd coordinatewise clipping is one-Lipschitz. Gaussian
+concentration and a union bound therefore give a common event of failure
+probability at most $2e^{-v^2/2}$ on which, uniformly in $u$,
+\[
+ \|\Pi x_u\|_d\leq H_k+
+               \frac{\sigma_I\sqrt{t_k}}{\sqrt d}(s_d+v),
+ \quad
+ \|\overline q_k(x_u)+\gamma\Pi x_u\|_d
+                                      \leq C_{Z,k}+A_{Z,k}v.
+\]
+The future event is uniform in the endpoint and the bridge parameter:
+only the common innovation norms and global drift/adjoint bounds enter.
+No union over bridge points or integration nodes is required. For $k=0$
+the prefix contribution is zero.
+
+The known terminal derivative integrates exactly:
+\[
+ -h\int_0^1\langle\delta,-\gamma\Pi x_u\rangle_d\,du
+       =h\gamma\langle\delta,\Pi(x_a+x_\pi)/2\rangle_d.
+\]
+Combining its bound, the residual bound, and
+$N|\ell_k(z,a)-\ell_k(z,\pi)|\leq T\Delta L_{\ell,k}$
+proves the displayed tail inequality. Integrating that inequality above
+$b_G$ and using
+$\int_{v_*}^{\infty}e^{-v^2/2}dv\leq e^{-v_*^2/2}/v_*$ proves
+the expectation allowance. The bound concerns the exact-real statistic;
+it does not remove roundoff, protected-function, or state-representation
+allowances from an implementation.
+\end{proof}
+
+\paragraph*{The asymmetric stage range used in the implementation.}
+The implemented account further avoids symmetrizing the known current
+reward. Define
+\[
+ f_k(m)=A_k\log m-B_k m-\zeta A_km^2/2,
+\]
+\[
+ L_k^{\rm stage}=N\min\{f_k(l_k)-f_k(\pi_k),
+                              f_k(u_k)-f_k(\pi_k)\},
+\]
+and
+\[
+ U_k^{\rm stage}=N\left|A_k(\pi_k^{-1}-\zeta\pi_k)-B_k\right|\Delta_k,
+ \quad \Delta_k\geq\sup\|a_k-\pi_k\bm1\|_d.
+\]
+These are respectively lower and upper bounds on the current stage
+advantage. For the lower bound, the chord of $\log$ on $[l_k,u_k]$
+is a lower bound, and its coordinate average depends only on the
+cross-sectional mean. Subtracting the linear term and the mean quadratic
+gives a concave function of that mean, whose minimum is at an endpoint.
+For the upper bound, apply the concave reward's tangent support at the
+uniform reference action and Cauchy--Schwarz.
+
+Put
+\[
+ C_{q,k}=C_{Z,k}+\gamma\left(H_k+\sigma_I s_d\sqrt{t_k/d}\right),
+ \qquad A_{q,k}=A_{Z,k}+\gamma\sigma_I\sqrt{t_k/d}.
+\]
+On the same two-event intersection,
+\[
+ L_k^{\rm stage}-T\Delta_k(C_{q,k}+A_{q,k}v)
+       \leq G\leq
+ U_k^{\rm stage}+T\Delta_k(C_{q,k}+A_{q,k}v).
+\]
+The minimum lower endpoint and maximum upper endpoint at the fixed $v_*$
+therefore give a valid asymmetric clipping interval. Centering that interval
+at an exact binary64 representative and enclosing both distances from its
+center changes neither the estimand nor the event. The absolute expectation
+allowance is
+$2\max_k(T\Delta_k A_{q,k})e^{-v_*^2/2}/v_*$.
+Thus the tighter date-specific prefix and asymmetric stage ranges retain
+the same proof and spend no additional probability budget.
