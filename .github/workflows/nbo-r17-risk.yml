@@ -17,22 +17,19 @@ jobs:
         with:
           filter: blob:none
           sparse-checkout-cone-mode: false
-          sparse-checkout: |
-            /revisions/2026-10-05-r17/
-      - name: Materialize and verify source before any audit observations
+          sparse-checkout: /revisions/2026-10-05-r17/
+      - name: Materialize source before any audit observations
         id: freeze
         run: |
           python - <<'PY'
           import base64,hashlib,json,pathlib,subprocess,zlib,os
           p=pathlib.Path('revisions/2026-10-05-r17/source/contrast_science.b64')
           s=p.read_text().strip()
-          # Correct transport transcription only; the decoded source digest is authoritative.
-          for a,b in [('SHjhIYYvh','SHjhIYvh'),('pxZZDx','pxZDx'),('nrzMMEB','nrzMEB'),('4LEv7bvrCJ','4LEvvrCJ'),('adC7vn','adC31vn')]:
-              s=s.replace(a,b)
+          for a,b in [('SHjhIYYvh','SHjhIYvh'),('pxZZDx','pxZDx'),('NrzMMEB','NrzMEB'),('4LEv7bvrCJ','4LEvvrCJ'),('adC7vn','adC31vn')]: s=s.replace(a,b)
           data=zlib.decompress(base64.b64decode(s,validate=True))
           assert hashlib.sha256(data).hexdigest()=='92b1b8b88ef28eb7ed1fe802bb7111b715d60d3b98bf2b3d04791a191ecefcad'
-          files=json.loads(data);manifest={}
-          for name,text in files.items():
+          manifest={}
+          for name,text in json.loads(data).items():
               q=pathlib.Path(name)
               assert name.startswith('revisions/2026-10-05-r17/') and '..' not in q.parts
               q.parent.mkdir(parents=True,exist_ok=True);q.write_text(text)
@@ -44,8 +41,7 @@ jobs:
           subprocess.run(['git','add','revisions/2026-10-05-r17'],check=True)
           subprocess.run(['git','commit','-m','Freeze R17 conditional risk proof, code and 24-event protocol before new observations'],check=True)
           sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
-          branch='revision/econometrica-nbo-r17-risk-source-2026-10-05'
-          subprocess.run(['git','push','origin','HEAD:refs/heads/'+branch],check=True)
+          subprocess.run(['git','push','origin','HEAD:refs/heads/revision/econometrica-nbo-r17-risk-source-2026-10-05'],check=True)
           with open(os.environ['GITHUB_OUTPUT'],'a') as f:f.write('sha='+sha+'\n')
           PY
       - uses: actions/upload-artifact@v4
@@ -74,18 +70,16 @@ jobs:
           ref: ${{ needs.source.outputs.sha }}
           filter: blob:none
           sparse-checkout-cone-mode: false
-          sparse-checkout: |
-            /revisions/2026-10-05-r17/
-      - name: Read only required immutable model and code files
+          sparse-checkout: /revisions/2026-10-05-r17/
+      - name: Read immutable models and required code
         env:
           CAL: ${{ matrix.calibration }}
           DIM: ${{ matrix.dimension }}
         run: |
           python - <<'PY'
           import os,subprocess
-          paths=subprocess.check_output(['git','ls-tree','-r','--name-only','HEAD'],text=True).splitlines()
           selected=[]
-          for p in paths:
+          for p in subprocess.check_output(['git','ls-tree','-r','--name-only','HEAD'],text=True).splitlines():
               needed=(p.startswith('revisions/2026-10-05-r17/') or ('/code/' in p and p.endswith('.py')) or p.startswith('revisions/2026-10-04-r16/protocols/') or p=='revisions/2026-10-04-r12/PROTOCOL.json')
               prefix='revisions/2026-10-04-r16/results/continuation_menu/trials/'+os.environ['CAL']+'_d'+os.environ['DIM']+'_s'
               needed=needed or (p.startswith(prefix) and '/fits/nbo_scalar/' in p and p.rsplit('/',1)[-1] in ['FIT_WORK.json','model_stage3.pt','actions_stage3.npz'])
@@ -95,11 +89,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install fixed numerical environment
+      - name: Fixed numerical environment
         run: |
           python -m pip install numpy==2.3.5
           python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
-      - name: Exact tests then complete cell
+      - name: Exact tests and complete cell
         run: |
           mkdir -p assessment/${{ matrix.calibration }}_d${{ matrix.dimension }}
           python revisions/2026-10-05-r17/code/test_contrast_risk.py > assessment/${{ matrix.calibration }}_d${{ matrix.dimension }}/TESTS.log 2>&1
@@ -141,7 +135,7 @@ jobs:
       - run: |
           python -m pip install numpy==2.3.5
           python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
-      - name: Replay all 24 risk intervals and retain all observations
+      - name: Retain every observation and all 24 intervals
         run: |
           mkdir -p revisions/2026-10-05-r17/results
           python revisions/2026-10-05-r17/code/contrast_risk.py report --root assessment --out revisions/2026-10-05-r17/results/RISK_REPORT.json
