@@ -9,5 +9,3 @@ The revision integrates all four completed numerical families: positive signed B
 See the publication `README.md`, `COMMENT_STATUS.json`, `EDITORIAL_PRESERVATION.json`, `FINAL_AUDIT.json`, and `PUBLICATION_MANIFEST.json` for reading order, exact sources, changes, checks, and remaining comparative scope. Complete strengthened-HJB and nonlinear continuation-menu outcomes are included at immutable source commits, with all favorable, unfavorable and unresolved comparisons retained. Publication integrity is not a claim of editorial acceptance or universal NBO superiority.
 
 Every preceding source and result remains at its original path. The exact previous `ECTA.tex`, `supp.tex`, and `README.md` are also preserved in `publication/archive/`.
-
-The final reading edition also includes the stable-active-face decision-value proposition and its full proof. Its ten exact constrained-optimizer tests and completion receipt are in `completion/`. All original numerical evidence and all 78 inherited unit-test requirements are retained.

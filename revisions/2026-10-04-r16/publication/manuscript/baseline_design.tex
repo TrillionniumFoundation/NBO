@@ -1,0 +1,75 @@
+\subsection{Contribution-isolating comparisons}
+\label{sec:r15baselines}
+
+The comparison separates continuation regression, direct policy optimization,
+and direct approximation of the Bellman equation.  The direct HJB method uses
+the same two learned scalar components as NBO: a time network of widths
+$(16,16)$ and a state--time network of widths $(32,32)$, each with hyperbolic
+tangent activations and a scalar output.  Its known lift is the full-value
+lift, so the terminal condition is imposed exactly.  NBO's known lift instead
+represents its postdecision continuation target.  This difference follows from
+the objects being approximated; the learned residual capacity is the same.
+Both methods use the prespecified occupation sample and the same available
+model information.  No reference solution enters either training objective.
+
+Write $c=a-(\sigma_I^2+\sigma_C^2)/2$ and
+$\Sigma\Sigma'=\sigma_I^2I+\sigma_C^2\mathbf1\mathbf1'$.  The direct method
+minimizes the squared residual of
+\begin{equation}
+ \begin{aligned}
+ 0={}&-v_t-\max_{m\in\mathcal M_t}
+ \{u(y,m)+(c\mathbf1+\kappa\tanh(By)-m)'D_yv\}\\
+ &-\tfrac12\operatorname{tr}(\Sigma\Sigma'D_y^2v)+\rho v,
+ \qquad v(T,y)=g(y),
+ \end{aligned}
+ \label{eq:r15-direct-hjb}
+\end{equation}
+where $\mathcal M_t$ is the action tube shared by the four primary methods.
+For $q=dD_yv$, the action-dependent Hamiltonian is
+\begin{equation}
+ H_q(m)=\frac1d\sum_i\log m_i-\frac\zeta2\bar m^2
+          -\frac1d\sum_iq_i m_i.
+ \label{eq:r15-hjb-hamiltonian}
+\end{equation}
+It is strictly concave.  Its maximizer is obtained from the scalar consistency
+equation $z=d^{-1}\sum_i m_i(z)$, with
+$m_i(z)=\operatorname{proj}_{[\ell_t,u_t]}(q_i+\zeta z)^{-1}$ when
+$q_i+\zeta z>0$, and $m_i(z)=u_t$ otherwise.  The implementation uses the same
+44 monotone bisection steps as the other feasible costate comparisons.
+The direct HJB policy evaluates a critic gradient and this maximization at
+every decision.  NBO deploys its separately learned actor.  The resulting
+difference in online computation is included in validation, stopping,
+confirmation, and deployment costs.
+
+Two independent Gaussian probe banks estimate the covariance Hessian trace.
+If $\widehat R_1$ and $\widehat R_2$ are the corresponding residual estimates,
+then, conditional on a collocation state and the current critic,
+\begin{equation}
+ \mathbb E[\widehat R_1\widehat R_2]=R[v]^2.
+ \label{eq:r15-hjb-independent-traces}
+\end{equation}
+The product, rather than the square of one estimate, is the training loss.
+Its realized value can be negative.  Negative batches are retained.  This
+identity specifies an optimization objective; the common payoff verifier
+supplies the economic comparison.
+
+\paragraph*{Classical scalar training.}
+The original volatility calibration also has a scalar comparison.  A monotone
+implicit Howard method solves the one-state problem and saves an action at
+every time and state node.  These saved policies are deployed by interpolation
+on fresh diffusion paths, together with the analytical schedule and the
+hash-pinned scalar NBO and DPO policies from the earlier experiment.  Full-box
+and matched-tube classical policies are separate candidates.  Three successively
+refined state--time grids are followed by an enlargement of the state interval
+at fixed spatial and temporal spacing.  The deployment meshes aggregate the
+same fine Brownian increments.  Policy differences are reported both over
+the declared initial population and at its individual states $-1$, $0$, and
+$1$.  Historical neural fitting clocks retain their historical interpretation;
+the new classical solves and all new deployment work are measured separately.
+
+The scalar reference has a numerical error account at the level of the
+declared finite-grid equations.  Its algebraic error account uses an outward
+residual calculation.  State-domain approximation and diffusion time
+discretization remain separate from this algebraic account.  The scalar
+comparison supplies an independent low-dimensional accuracy and work
+benchmark; the high-dimensional method comparison uses its own payoff data.

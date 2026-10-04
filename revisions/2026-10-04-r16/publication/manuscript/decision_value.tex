@@ -1,0 +1,45 @@
+\subsection{When gradient compression improves economic decisions}
+\label{sec:r16decisionvalue}
+A quadratic specialization turns the statistical identity into an exact economic comparison. It is useful because it identifies both the potential gain from the common object and the approximation cost that may reverse that gain. It is not used to identify the nonlinear capital experiment with a quadratic model.
+
+Consider current tasks $j=1,\ldots,K$, with positive economic weights $\omega_j$, known $b_j$, positive-definite $H_j$, and Bellman objectives
+\[
+ Q_j(a;q)=c_j+b_j^\top a-\tfrac12 a^\top H_j a-h_j q^\top a.
+\]
+Here $q\in\R^p$ is the common continuation marginal value and $h_j>0$. Suppose the true optimizer and the optimizers obtained from each estimator below lie in the interior of the specified feasible boxes almost surely. This condition makes the displayed unconstrained first-order solutions feasible; without it the following equality is not asserted. Let $z=q+\varepsilon$, where $\E\varepsilon=0$ and $\operatorname{Cov}(\varepsilon)=\Sigma$. Set
+\[
+ W=\sum_{j=1}^K\omega_jh_j^2H_j^{-1},\quad
+ y=W^{1/2}q,\quad \Omega=W^{1/2}\Sigma W^{1/2}.
+\]
+Fix a scalar-gradient dictionary independently of $z$. Let $P$ be the Euclidean orthogonal projection onto its columns after multiplication by $W^{1/2}$. The Raw rule uses $\widehat q_R=z$; the fitted scalar-gradient rule uses $\widehat q_C=W^{-1/2}PW^{1/2}z$. Each chooses $a_j(\widehat q)=H_j^{-1}(b_j-h_j\widehat q)$.
+
+\begin{proposition}[The decision value of the common critic]
+\label{prop:r16decisionvalue}
+Under the preceding conditions,
+\begin{equation}
+\begin{split}
+ &\sum_{j=1}^K\omega_j\E\bigl[Q_j(a_j(\widehat q_C);q)
+                          -Q_j(a_j(\widehat q_R);q)\bigr]\\
+ &\qquad=\tfrac12\bigl[\operatorname{tr}\{(I-P)\Omega\}
+                          -\|(I-P)y\|^2\bigr].
+\end{split}\label{eq:r16decisionvalue}
+\end{equation}
+In particular, if $y$ belongs to the weighted gradient dictionary and
+$\operatorname{tr}\{(I-P)\Omega\}>0$, fitting the common scalar object strictly improves expected weighted economic payoff relative to these Raw actions. With misspecification, strict improvement holds exactly when the removed economic-weighted variance exceeds the displayed approximation cost.
+\end{proposition}
+\begin{proof}
+Completing the square in each true objective gives
+\[
+ Q_j(a_j(q);q)-Q_j(a_j(\widehat q);q)
+  =\tfrac12h_j^2(\widehat q-q)^\top H_j^{-1}(\widehat q-q).
+\]
+Sum with weights $\omega_j$. Raw expected loss is $\tfrac12\operatorname{tr}(\Omega)$. The critic's weighted estimation error is $-(I-P)y+PW^{1/2}\varepsilon$. Its expected squared norm is $\|(I-P)y\|^2+\operatorname{tr}(P\Omega)$ by orthogonality. Subtracting the losses proves the identity and both strictness statements.
+\end{proof}
+
+The comparison is deliberately conditional on a fixed dictionary, a common label law, exact quadratic maximization, and the stated feasibility condition. Adaptive nonlinear feature learning, different actors, boundary constraints, and unequal label budgets require their own analysis. A Raw implementation permitted to apply the identical projection has the identical estimator and payoff; the proposition does not award a method-name advantage. Its economic content is the value of the estimated common continuation representation under an explicit comparison.
+
+Reuse also has a transparent work threshold. If complete shared construction costs are $F_C,F_R$, and per-task deployment and optimization costs are $c_C,c_R$, total work differs by
+\[
+ (F_C-F_R)+K(c_C-c_R).
+\]
+When $c_R>c_C$ and $F_C>F_R$, weak work advantage begins at the smallest integer $K$ with $K(c_R-c_C)\ge F_C-F_R$. Validation, loading, action optimization, and any required state recursions belong to these costs. Shared cached labels may reduce $F_R$ or $c_R$ as well. Economic noninferiority cannot be inferred from this accounting identity; it must be established separately on the declared paired payoff event.

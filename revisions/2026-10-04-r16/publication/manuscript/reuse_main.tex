@@ -1,0 +1,150 @@
+\section{The Economic Value of Reusable Continuation}
+\label{sec:r16menu}
+
+The learned Bellman object can be reused when current economic decisions
+change but their continuation does not. We examine that property within
+the capital economy. The finite-period experiment changes the current
+weight on consumption, the current adjustment cost, or a temporary
+consumption constraint. Every subsequent primitive, innovation law,
+terminal preference, and reference policy is common across these decisions.
+The stored numerical coefficients define the finite economy exactly;
+the experiment does not identify a quarterly Bellman problem with a
+continuous-time diffusion without a further approximation argument.
+
+Write the first postdecision mean as
+$x_a(y)=y+h\{c\bm1+f(y)-a\}$. For a current task $\theta$, let
+\[
+ Q_\theta(y,a)=r_\theta(y,a)+S\{x_a(y)\},\qquad
+ S(x)=\E F(x;\xi),
+\]
+where $F$ contains the current innovation and all subsequent reference
+rewards, excluding the current reward. The finite query catalog, task
+catalog, action boxes, and complete distribution over training streams
+are fixed before confirmation.
+
+\begin{proposition}[The common continuation object]
+\label{prop:r16menucache}
+If two current tasks differ only in their current reward or current
+feasible set, their postdecision continuation $S$ is identical. A cached
+continuation observation at the same $x$ and the same innovation array
+is therefore valid for either task. Cached innovations may also be
+reused when $x$ changes, but the corresponding state recursion and payoff
+must then be reevaluated. A cached payoff or derivative at a different
+$x$ is not an exact observation at the new argument.
+\end{proposition}
+
+\begin{proof}
+Conditional on $x$, every future transition kernel, reward, terminal
+payoff, and reference action is the same. Iterating these common kernels
+gives the same law and payoff functional, and hence the same expectation.
+The last assertion follows because the transition recursion depends on
+its starting state even when its innovations are fixed.
+\end{proof}
+
+This distinction determines the comparison. NBO fits one scalar
+continuation to common rollout labels and queries its derivative for
+different current choices. The vector-costate fit, cached Raw actor,
+task-conditioned direct actor, and cached sample-average optimizer are
+all allowed their own legitimate reuse. In particular, the Raw competitor
+does not regenerate an innovation array merely because an optimizer
+revisits a state. The experiment compares the economic decisions and the
+work required by these complete procedures. It does not infer that every
+form of continuation reuse requires a neural scalar critic.
+
+\begin{proposition}[A fixed-dictionary critic's bias and variance]
+\label{prop:r16menuprojection}
+Fix postdecision arguments and positive weights before drawing a new
+costate-label array. Let $q$ be the vector of true continuation gradients,
+after multiplication by the square roots of these weights, and let
+$z=q+\varepsilon$, with $\E\varepsilon=0$ and finite covariance
+$\Sigma$. Fix differentiable scalar features independently of this
+label array, and let $P$ be the Euclidean orthogonal projection onto
+their stacked, weighted gradient columns. The least-squares scalar
+critic has fitted gradients $Pz$, and
+\[
+ \E\|Pz-q\|^2-\E\|z-q\|^2
+   =\|(I-P)q\|^2-\operatorname{tr}\{(I-P)\Sigma\}.
+\]
+Thus its risk reduction equals the label variance removed outside the
+gradient dictionary less its approximation cost. If $q$ belongs to that
+dictionary, the critic weakly reduces this risk, strictly whenever
+$\operatorname{tr}\{(I-P)\Sigma\}>0$. The same fitted scalar
+function and its labels may be reused for every current task having
+the common continuation in Proposition~\ref{prop:r16menucache}.
+\end{proposition}
+
+\begin{proof}
+Write $Pz-q=-(I-P)q+P\varepsilon$. Orthogonality removes the
+cross term, and $P=P^\top=P^2$ gives
+$\E\|P\varepsilon\|^2=\operatorname{tr}(P\Sigma)$.
+The raw-label risk is $\operatorname{tr}(\Sigma)$, proving the
+identity and its consequences. Neither step uses a Gaussian law or
+independence of the coordinates of a label. Common continuation makes
+the target gradient and its scalar feature representation independent
+of the current task; evaluating an already fitted function for another
+task therefore does not require fitting it again.
+\end{proof}
+
+The identity isolates a possible statistical contribution of learning
+the continuation. It also specifies its price: a gradient dictionary
+can impose enough approximation error to outweigh its variance
+reduction. The retained random-feature diagnostics and the
+registered nonlinear comparisons are designed to address this tradeoff; the identity does not
+determine their empirical signs. Its exact scope is a dictionary fixed
+independently of the labels used for this least-squares fit and risk
+at the declared arguments. The fully trained nonlinear NBO critic requires
+independent economic comparisons rather than identification with that
+linear projection. A Raw procedure that
+uses the same projection receives the same risk calculation. Task
+reuse eliminates repeated fitting of a common object, while evaluation,
+optimization, and any new state recursions remain part of each method's
+recorded work.
+
+
+\subsection{When gradient compression improves economic decisions}
+\label{sec:r16decisionvalue}
+A quadratic specialization turns the statistical identity into an exact economic comparison. It is useful because it identifies both the potential gain from the common object and the approximation cost that may reverse that gain. It is not used to identify the nonlinear capital experiment with a quadratic model.
+
+Consider current tasks $j=1,\ldots,K$, with positive economic weights $\omega_j$, known $b_j$, positive-definite $H_j$, and Bellman objectives
+\[
+ Q_j(a;q)=c_j+b_j^\top a-\tfrac12 a^\top H_j a-h_j q^\top a.
+\]
+Here $q\in\R^p$ is the common continuation marginal value and $h_j>0$. Suppose the true optimizer and the optimizers obtained from each estimator below lie in the interior of the specified feasible boxes almost surely. This condition makes the displayed unconstrained first-order solutions feasible; without it the following equality is not asserted. Let $z=q+\varepsilon$, where $\E\varepsilon=0$ and $\operatorname{Cov}(\varepsilon)=\Sigma$. Set
+\[
+ W=\sum_{j=1}^K\omega_jh_j^2H_j^{-1},\quad
+ y=W^{1/2}q,\quad \Omega=W^{1/2}\Sigma W^{1/2}.
+\]
+Fix a scalar-gradient dictionary independently of $z$. Let $P$ be the Euclidean orthogonal projection onto its columns after multiplication by $W^{1/2}$. The Raw rule uses $\widehat q_R=z$; the fitted scalar-gradient rule uses $\widehat q_C=W^{-1/2}PW^{1/2}z$. Each chooses $a_j(\widehat q)=H_j^{-1}(b_j-h_j\widehat q)$.
+
+\begin{proposition}[The decision value of the common critic]
+\label{prop:r16decisionvalue}
+Under the preceding conditions,
+\begin{equation}
+\begin{split}
+ &\sum_{j=1}^K\omega_j\E\bigl[Q_j(a_j(\widehat q_C);q)
+                          -Q_j(a_j(\widehat q_R);q)\bigr]\\
+ &\qquad=\tfrac12\bigl[\operatorname{tr}\{(I-P)\Omega\}
+                          -\|(I-P)y\|^2\bigr].
+\end{split}\label{eq:r16decisionvalue}
+\end{equation}
+In particular, if $y$ belongs to the weighted gradient dictionary and
+$\operatorname{tr}\{(I-P)\Omega\}>0$, fitting the common scalar object strictly improves expected weighted economic payoff relative to these Raw actions. With misspecification, strict improvement holds exactly when the removed economic-weighted variance exceeds the displayed approximation cost.
+\end{proposition}
+\begin{proof}
+Completing the square in each true objective gives
+\[
+ Q_j(a_j(q);q)-Q_j(a_j(\widehat q);q)
+  =\tfrac12h_j^2(\widehat q-q)^\top H_j^{-1}(\widehat q-q).
+\]
+Sum with weights $\omega_j$. Raw expected loss is $\tfrac12\operatorname{tr}(\Omega)$. The critic's weighted estimation error is $-(I-P)y+PW^{1/2}\varepsilon$. Its expected squared norm is $\|(I-P)y\|^2+\operatorname{tr}(P\Omega)$ by orthogonality. Subtracting the losses proves the identity and both strictness statements.
+\end{proof}
+
+The comparison is deliberately conditional on a fixed dictionary, a common label law, exact quadratic maximization, and the stated feasibility condition. Adaptive nonlinear feature learning, different actors, boundary constraints, and unequal label budgets require their own analysis. A Raw implementation permitted to apply the identical projection has the identical estimator and payoff; the proposition does not award a method-name advantage. Its economic content is the value of the estimated common continuation representation under an explicit comparison.
+
+Reuse also has a transparent work threshold. If complete shared construction costs are $F_C,F_R$, and per-task deployment and optimization costs are $c_C,c_R$, total work differs by
+\[
+ (F_C-F_R)+K(c_C-c_R).
+\]
+When $c_R>c_C$ and $F_C>F_R$, weak work advantage begins at the smallest integer $K$ with $K(c_R-c_C)\ge F_C-F_R$. Validation, loading, action optimization, and any required state recursions belong to these costs. Shared cached labels may reduce $F_R$ or $c_R$ as well. Economic noninferiority cannot be inferred from this accounting identity; it must be established separately on the declared paired payoff event.
+
+Binding task constraints also admit a positive decision-value result. Proposition~\ref{prop:r16activefacevalue} in the supplement replaces full interiority by stable active faces and weights continuation errors by the directions in which the tasks can respond. Its strict-gain condition compares removed economically relevant variance with approximation cost; it is not inferred from a favorable fitted-policy endpoint.

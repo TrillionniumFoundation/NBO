@@ -1,0 +1,449 @@
+\section{Proofs and Computable Accounts for the Bellman Bridge}
+\label{app:r15bridge}
+Throughout this section, $\langle u,v\rangle_d=d^{-1}u^\top v$ and
+$\|u\|_d^2=\langle u,u\rangle_d$. Conditioning on fitted parameters
+and selection is understood. The initial distribution has finite
+support and maximal dispersion $s_0$. The same arguments apply under
+any initial distribution with the stated moment and tail bounds.
+
+\subsection{Finite performance difference and the action bridge}
+Bounded drift, bounded controls, clipped innovations, and a finite
+horizon give finite state moments of every order. For the deterministic
+reference $\pi_k$, the finite composition of smooth transition maps has
+derivatives bounded by a polynomial in the initial state and innovations.
+The running state reward is bounded and smooth, and the terminal reward
+is quadratic. Dominated differentiation therefore establishes
+\eqref{eq:r15postdecision} and its first two derivatives. This argument
+concerns the finite continuation, so no continuous-time PDE regularity
+or derivative-discretization estimate is needed.
+
+Let
+$Q_k^\pi(z,b)=\ell_k(z,b)+S_k^\pi\{x_b(z)\}$.
+The reference recursion is $V_k^\pi(z)=Q_k^\pi(z,\pi_k)$.
+For a possibly history-dependent candidate, condition on its history
+at $k$, then telescope $V_{k+1}^\pi(Z_{k+1})-V_k^\pi(Z_k)$.
+The two terminal functions agree and the initial law is common, giving
+\begin{equation}
+ \mathcal R_h(a)-\mathcal R_h(\pi)
+ =\sum_k\E\{Q_k^\pi(Z_k,a_k)-Q_k^\pi(Z_k,\pi_k)\}.
+ \label{eq:r15telescoping}
+\end{equation}
+Put $e_k=\widehat q_k-q_k^\pi$ and
+$v_k=a_k-\pi_k\bm1$. Since $x_{a_k}-x_{\pi_k}=-hv_k$, the
+fundamental theorem of calculus implies, pathwise,
+\begin{align*}
+ &[\widehat Q_k(Z_k,a_k)-\widehat Q_k(Z_k,\pi_k)]
+       -[Q_k^\pi(Z_k,a_k)-Q_k^\pi(Z_k,\pi_k)]\\
+ &\hspace{25mm}=-h\int_0^1\langle e_k(X_{k,u}),v_k\rangle_d\,du.
+\end{align*}
+Cauchy--Schwarz with respect to $h$ times counting measure on the grid,
+the candidate probability law, and uniform measure on $[0,1]$ proves
+Proposition~\ref{prop:r15bellmanbridge}. The sign of the line integral
+is immaterial to its absolute bound. Independence of future reference
+innovations from the candidate history is used in the recursion.
+
+\subsection{A computable action gap}
+The normalized action Hessian of the approximate continuation problem is
+\[
+ dD_b^2\widehat Q_k(z,b)
+ =-A_k\operatorname{diag}(b_i^{-2})
+      -\frac{\zeta A_k}{d}\bm1\bm1^\top
+      +h^2dD^2\widehat S_k\{x_b(z)\}
+ \preceq\Gamma_k I_d.
+\]
+The second-order integral remainder on the convex action box proves
+\eqref{eq:r15actorgap}. Maximizing its scalar quadratic in each
+coordinate gives the stated endpoint or projection rule, including
+$\Gamma_k=0$. The value is nonnegative because $b=a_k$ is allowed.
+
+For the quadratic conclusion, let $b_k$ maximize $\widehat Q_k$.
+When $-\Gamma_k\geq\mu_0h$, strong concavity and the constrained
+first-order inequality at $b_k$ give
+\[
+ \|a_k-b_k\|_d^2\leq\frac{2\delta_k}{\mu_0h},\qquad
+ \widehat Q_k(Z_k,b_k)-\widehat Q_k(Z_k,\pi_k)
+                  \geq\frac{\mu_0h}{2}\|b_k-\pi_k\bm1\|_d^2.
+\]
+Use
+$\|b_k-\pi_k\bm1\|_d^2\geq
+\|a_k-\pi_k\bm1\|_d^2/2-\|a_k-b_k\|_d^2$
+and subtract the actor's gap. Summation yields
+$\mathcal M_h\geq\mu_0\mathcal A_h/4-2\mathcal D_h$.
+Consequently
+\[
+ \sqrt{\mathcal A_h\mathcal E_h}
+ \leq2\sqrt{(\mathcal M_h+2\mathcal D_h)\mathcal E_h/\mu_0}
+ \leq\mathcal M_h/2+\mathcal D_h+2\mathcal E_h/\mu_0.
+\]
+Together with \eqref{eq:r15bridge}, this proves
+\eqref{eq:r15quadratic}. If $a_k=b_k$, the stronger relation
+$\mathcal M_h\geq\mu_0\mathcal A_h/2$ proves the stated improvement.
+No claim of global concavity of the original stochastic control
+functional enters this argument.
+
+\subsection{Continuation targets on one global grid}
+The following recursion computes an unbiased normalized derivative
+target without a matrix-valued state Jacobian. Start at the supplied
+postdecision mean $x$, add innovation $k$, and then simulate the
+reference states at $j=k+1,\ldots,N$ with the same global grid and
+the disclosed $\pi_j$. With
+$\gamma_T=2\chi e^{-\rho T}$, set
+\begin{equation}
+ \begin{aligned}
+ p_N&=-\gamma_T\Pi Z_N,\\
+ p_j&=B_j Df(Z_j)^\top\bm1
+               +\{I+hDf(Z_j)\}^\top p_{j+1},
+       \quad j=N-1,\ldots,k+1.
+ \end{aligned}
+ \label{eq:r15adjoint}
+\end{equation}
+The output is $p_{k+1}$; for $k=N-1$ it is $p_N$.
+There is no derivative of the reference action because the reference
+depends only on the date. Every running consumption term is likewise
+constant in the starting state. The chain rule proves
+\eqref{eq:r15adjoint}, and the dominated-differentiation argument above
+shows its expectation is $q_k^\pi(x)$.
+
+The implemented scalar critic has the explicit decomposition, at
+$s=t_{k+1}$,
+\begin{equation}
+ \widehat S_k(x)=-\chi e^{-\rho T}
+     \{\|\Pi x\|_d^2+\sigma_I^2(1-1/d)(T-s+h)\}
+       +(T-s)\{F_0(s)+F_1(s,x)/d\}.
+ \label{eq:r15criticform}
+\end{equation}
+The two networks have distinct parameters. Thus
+\[
+\widehat q_k(x)=-\gamma_T\Pi x+(T-s)D_xF_1(s,x):
+\]
+fitting the time level cannot change the spatial costate. Using one
+instead of the exact clipped-normal second moment in the known
+state-independent noise term changes neither an action difference nor
+the costate. The terminal costate is exact. Fitting on a 64-cell grid
+and applying this scalar predictor on a 2,048-cell grid does not make
+their continuation problems equal; their difference remains in the
+assessed $\mathcal E_h$.
+
+For two hidden tanh layers, write
+$F_1(s,x)=w_3^\top\tanh\{W_2\tanh(W_1(s,x)+b_1)+b_2\}+b_3$.
+Let $W_{1x}$ contain the state columns of $W_1$. Any verified spectral
+upper bounds $l_1\geq\|W_{1x}\|_2$,
+$l_2\geq\|W_2\|_2$, $l_3\geq\|w_3\|_2$ give
+\begin{align}
+ \|\widehat q_k(x)+\gamma_T\Pi x\|_d
+       &\leq C_{\theta,k}:=(T-s)l_1l_2l_3/\sqrt d,\notag\\
+ dD^2\widehat S_k(x)&\preceq\Lambda_k I_d,
+       \qquad \Lambda_k=(T-s)l_3l_1^2(l_2^2+l_2).
+ \label{eq:r15networkbounds}
+\end{align}
+The Hessian bound uses $|\tanh'|\leq1$ and $|\tanh''|\leq1$.
+The negative quadratic lift may be omitted in this upper bound; an
+absolute normalized Hessian bound is $\gamma_T+\Lambda_k$.
+These are computable bounds from the saved parameters, not fitted
+derivative maxima.
+
+\subsection{Antithetic cancellation and nonasymptotic ranges}
+We give explicit ranges for the statistics used in
+\eqref{eq:r15statistics}. All displayed constants are upper endpoints
+when implemented. The raw costate comparison uses precisely one bank
+with $r$ independent antithetic pairs. The executed choice is $r=2$,
+or four paths per bank. Set
+\[
+ \begin{gathered}
+ \beta\geq\kappa\|B\|_2,\quad n_k=N-k-1,\quad
+ F_k=(1+h\beta)^{n_k},\quad\tau_k=(N-k)h,\\
+ P_k=\beta\sum_{j=k+1}^{N-1}B_j(1+h\beta)^{j-k-1}.
+ \end{gathered}
+\]
+A larger enclosed bound $e^{\beta n_kh}$ may replace $F_k$.
+A smaller proved bound on $\|Df(z)^\top\bm1\|_d$ may replace the
+leading $\beta$ in $P_k$. Suppose
+$\|\Pi(a_k-m_0(t_k)\bm1)\|_d\leq\epsilon$.
+Define $s_d=\sqrt{d-1}$ and
+\begin{align}
+ C_k={}&C_{\theta,k}+P_k+\gamma_TF_k\kappa n_kh\notag\\
+ &+\gamma_T(F_k-1)\left\{s_0+(\kappa+\epsilon)T
+             +\frac{\sigma_I}{\sqrt d}
+                    (\sqrt{t_k}+\sqrt{\tau_k})s_d\right\},\notag\\
+ a_k^{\rm tail}={}&\gamma_T(F_k-1)\frac{\sigma_I}{\sqrt d}
+                       (\sqrt{t_k}+\sqrt{\tau_k/r}),
+ \quad C_E=\max_k C_k,\quad A_E=\max_k a_k^{\rm tail}.
+ \label{eq:r15costaterange}
+\end{align}
+Then the ideal statistic $E$ satisfies
+\begin{equation}
+ \Pr\{|E|>T(C_E+A_Ev)^2\}\leq3e^{-v^2/2},\qquad v\geq0.
+ \label{eq:r15etail}
+\end{equation}
+For the executed choice $v_*=8$, a clipping threshold and an absolute
+expectation allowance are
+\begin{equation}
+ b_E=T(C_E+A_Ev_*)^2,\qquad
+ \tau_E=6TA_E e^{-v_*^2/2}(C_E/v_*+A_E).
+ \label{eq:r15eclip}
+\end{equation}
+The same proof bounds $E^{\rm raw}$ by
+$2T(C_Z+A_Zv)^2$, where $C_Z,A_Z$ omit $C_{\theta,k}$ from
+\eqref{eq:r15costaterange}. Its expectation allowance is twice the
+corresponding value of \eqref{eq:r15eclip}. For $E-E^{\rm raw}$,
+one can add these two ranges and allowances; equivalently the direct
+bound $T(C_E+A_Ev)^2+2T(C_Z+A_Zv)^2$ uses the same three-event
+union. Numerical errors are enclosed separately.
+
+To prove these claims, let $J$ be the derivative of a reference
+terminal state with respect to $x$. Then
+$\|J\|_2\leq F_k$ and $\|J-I\|_2\leq F_k-1$.
+Writing the terminal state as its initial value, the accumulated
+production, common deterministic drift, and total innovation gives,
+after subtracting $q_0(x)=-\gamma_T\Pi x$, the production-adjoint
+term plus
+\[
+ -\gamma_T\{(J^\top-I)\Pi x
+           +J^\top\textstyle\sum_{j>k}h\Pi f(Z_j)
+           +(J^\top-I)\Pi\xi+\Pi\xi\}.
+\]
+The average of the last term is exactly zero within an antithetic bank:
+the clipping map is odd. The production norm is at most
+$\kappa n_kh$. The first term is bounded by $P_k$.
+Common noise disappears from $\Pi\xi$, although it still affects the
+states and their Jacobians; the bounds on those terms are global.
+
+For the candidate prefix, let
+$H_0=\|\Pi\sum_{j<k}\operatorname{clip}_{z}(G_{j,I})\|_2/\sqrt k$
+when $k>0$, with zero contribution at $k=0$. The map defining $H_0$
+is 1-Lipschitz on its standard Gaussian input and
+$\E H_0\leq s_d$. The average of the analogous future norms from
+$r$ independent antithetic base paths has mean at most $s_d$ and
+Lipschitz constant $r^{-1/2}$. Gaussian concentration therefore bounds
+the failure of
+$H_0\leq s_d+v$ and of the two future bounds
+$H_l\leq s_d+v/\sqrt r$ by $3e^{-v^2/2}$ in total.
+On their intersection,
+\[
+ \|\Pi X_{k,U}\|_d\leq s_0+(\kappa+\epsilon)T
+                  +\sigma_I\sqrt{t_k/d}(s_d+v),
+\]
+and each bank error has norm at most $C_E+A_Ev$.
+Cauchy--Schwarz proves \eqref{eq:r15etail}. Integrating its tail,
+using $\int_{v_*}^{\infty}e^{-v^2/2}dv\leq e^{-v_*^2/2}/v_*$,
+proves \eqref{eq:r15eclip}. Subtracting two bank residuals proves the
+raw and paired-error bounds.
+
+For completeness, the predicted improvement has a substantially
+smaller range than the sum of two global value bounds. Let
+$\Delta\geq\sup_k\|a_k-\pi_k\bm1\|_d$ and let $l_k,u_k$ enclose
+the candidate, reference, and line segments between them. Put
+\[
+ L_\ell=\max_k\max_{m\in\{l_k,u_k\}}
+       |(A_k/h)(m^{-1}-\zeta m)-B_k/h|,
+ \quad C_\theta=\max_k C_{\theta,k},
+\]
+and
+\begin{align*}
+ C_M&=T\Delta\left[L_\ell+C_\theta+
+       \gamma_T\{s_0+(\kappa+\epsilon)T+
+                        \sigma_I\sqrt{T/d}\,s_d\}\right],\\
+ A_M&=T\Delta\gamma_T\sigma_I\sqrt{T/d}.
+\end{align*}
+The mean value theorem and the prefix event above imply
+$\Pr\{|M|>C_M+A_Mv\}\leq e^{-v^2/2}$.
+Thus $b_M=C_M+A_Mv_*$ and
+$\tau_M=A_Me^{-v_*^2/2}/v_*$ are valid. Also
+$0\leq A\leq T\Delta^2$. If $w_{\mathcal A}$ bounds the normalized
+diameter of the action boxes and
+$\Gamma_+=\max_k\max(0,\Gamma_k/h)$, then
+\[
+ D\leq T w_{\mathcal A}
+       \{L_\ell+C_\theta+\gamma_T\|\Pi x_{a_K}(Z_K)\|_d\}
+                    +T\Gamma_+w_{\mathcal A}^2/2.
+\]
+This gives $b_D,\tau_D$ from the same affine Gaussian-tail calculation.
+All ranges remain valid under mixtures over the disclosed initial
+profiles and, using the maximum constants, over fitted streams.
+
+\subsection{Statistics, arithmetic, and payoff transfer}
+Conditional independence of the two continuation banks gives
+\[
+ \E[E\mid K,Z_K,U]
+       =T\|\widehat q_K(X_{K,U})-q_K^\pi(X_{K,U})\|_d^2,
+\]
+and the usual two-replicate identity gives
+\[
+\E[E^{\rm raw}\mid K,Z_K,U]=
+T\E[\|Z_1-q_K^\pi(X_{K,U})\|_d^2\mid K,Z_K,U].
+\]
+Uniform sampling of $K$ proves all the mean identities in
+\eqref{eq:r15statistics}. Equal independent samples from each
+declared stream identify the finite uniform mean. Independence across
+streams and the nonidentical-variable version of the empirical
+Bernstein inequality, \citet[Theorem~11]{maurer2009}, justify pooling.
+Dependence among $M,A,E,D$ on one path does not invalidate a union
+bound across their confidence statements. Clipping changes each
+expectation by at most its proved tail allowance.
+
+The finite-grid identities above concern exact real transition and
+reward maps with the disclosed coefficients. A protected numerical
+audit must additionally enclose its scalar weights, forward-state
+error, neural values and derivatives, adjoint recurrence, and statistic
+arithmetic. The controller's rounded actions are held fixed when its
+rounded state is compared with the exact internal state, so this state
+account does not require a derivative of the actor. For example, if
+the action bridge has normalized representation error at most $e_x$
+and the normalized critic and true continuation costates have
+Lipschitz bounds $L_{\widehat q},L_q$ on the enclosing domain,
+Minkowski's inequality gives
+\[
+ \sqrt{\mathcal E_h^{\rm exact}}
+ \leq\sqrt{\mathcal E_h^{\rm represented}}
+              +\sqrt T(L_{\widehat q}+L_q)e_x.
+\]
+A deterministic clipped-noise state enclosure may be used to multiply
+these small arithmetic errors. It is not used as the statistical
+range in place of \eqref{eq:r15costaterange}. The audit saves the
+resulting cushions and evaluates the endpoint with outward rounding.
+An ordinary platform derivative without such an account remains a
+finite-grid diagnostic, rather than a protected confidence endpoint.
+
+The executed account makes these numerical terms explicit. Let
+$C_{\max}$ enclose every coordinate of a candidate prefix followed by
+a reference continuation, including its numerical representatives.
+A sufficient choice is
+\[
+ C_{\max}=4\left\{\max_y\|y\|_\infty+M_\epsilon T
+          +(\sigma_I+\sigma_C)zT/\sqrt h+1\right\}.
+\]
+The maximum is over the disclosed initial profiles. This deterministic
+bound is used for numerical error only. Put $u=2^{-52}$,
+$\gamma_n=nu/(1-nu)$, and $\varepsilon_{\tanh}=2^{-34}$.
+The inherited polynomial kernels have uniform tanh and consumption-log
+error at most $\varepsilon_{\tanh}$. The row dot-product error is bounded
+by $\gamma_{d+2}C_{\max}\max_i\sum_j|B_{ij}|$.
+Multiplication by $\kappa$, addition of the drift constants and action,
+and the protected state update give the saved one-step bound $\xi_h$.
+The source evaluates all its positive terms outward, with
+$\gamma_{32}$ for the scalar update and an additional
+$16u(\sigma_I+\sigma_C)z\sqrt h$ for represented innovations.
+Thus
+\[
+ e_Z=Ne^{\beta T}\xi_h,\qquad
+ e_x=(1+h\beta)e_Z+2\xi_h+
+                     \gamma_{16}(C_{\max}+hM_\epsilon)
+\]
+are sufficient prefix and bridge representation bounds. The last term
+also covers the line interpolation and a coupling of the binary uniform
+representative to a continuous uniform variable within $2^{-53}$.
+
+Let $b_r=\max_i\|B_{i\cdot}\|_2$ and
+$b_1=\max_i\sum_j|B_{ij}|$. A sufficient operator error for the
+drift derivative used in the adjoint is
+\begin{equation}
+ \varepsilon_{Df}=\beta\left\{
+ b_r\sqrt d\,e_Z+\gamma_{d+2}C_{\max}b_1
+       +2\varepsilon_{\tanh}
+       +\gamma_5(1+\varepsilon_{\tanh})^2\right\}.
+ \label{eq:r15dfarithmetic}
+\end{equation}
+The first term uses $|\tanh''|\leq1$ to propagate the state error;
+the last two enclose the computed $1-\tanh^2$.
+If $\widetilde p_{j+1}$ is a computed adjoint and $e_{j+1}$ encloses
+its normalized error, a valid next error is
+\begin{align}
+ e_j={}&(1+h\beta)e_{j+1}
+       +(h\|\widetilde p_{j+1}\|_d+B_j^+)
+                                      \varepsilon_{Df}
+       +\beta r_{B_j}+\omega_j,\label{eq:r15adjointarithmetic}\\
+ \omega_j={}&\gamma_{d+24}\left[
+       \|\widetilde p_{j+1}\|_d+
+       \kappa\||B|\|_2
+       \{h\|\widetilde p_{j+1}\|_d+|\bar B_j|\}
+                    (1+4\varepsilon_{\tanh})\right]+10^{-24}.
+       \notag
+\end{align}
+Here $B_j^+$ and $r_{B_j}$ are its scalar upper endpoint and midpoint
+radius. The terminal error combines an interval evaluation of
+$-\gamma_T\Pi\widetilde Z_N$ with $\gamma_Te_Z$.
+The coefficient $\gamma_{d+24}$ covers the products, row dot product,
+and addition in
+$\widetilde p+\{(h\widetilde p+\bar B_j)
+\kappa(1-\widetilde{\tanh}^{\,2})\}B$.
+The relative dot-product bound uses $\||B|\|_2$, bounded outward by
+its Frobenius norm. The small absolute term dominates gradual-underflow
+errors in this fixed $d\leq50$ update: the primitive coefficients and
+step are bounded, $|B_{ij}|\leq1$, and even a sum of all its elementary
+underflow errors is less than $10^{-24}$. The positive recurrence
+\eqref{eq:r15adjointarithmetic} itself is evaluated by interval
+operations, so no additional empirical error or terminal correction is
+inferred from a comparison of grids. Averaging the four path errors
+and enclosing the bank's summation gives its recorded error.
+
+An explicit costate Lipschitz bound, used only to multiply $e_x$, is
+obtained by putting $H_f=\kappa\|B\|_2^2$ and
+$\mathcal B=\sum_jB_j$. The Euclidean bilinear second derivative of
+the reference state flow is at most $H_fTe^{2\beta T}$, while the
+Hessian of $\overline{f}$ has norm at most $H_f/d$. The chain rule
+therefore gives
+\begin{equation}
+ L_q=H_fe^{2\beta T}\mathcal B(1+\beta\sqrt d\,T)
+       +\gamma_Te^{2\beta T}
+                          (1+\sqrt d\,C_{\max}H_fT).
+ \label{eq:r15qlipschitz}
+\end{equation}
+For the neural costate one may use
+$L_{\widehat q}=\gamma_T+T l_3l_1^2(l_2^2+l_2)$.
+The error in the predicted advantage caused by the prefix replacement
+is at most
+$T\Delta L_{\widehat q}(1+h\beta)e_Z$.
+This uses the difference of the two continuation gradients before
+taking an absolute bound. The corresponding actor-gap error is at
+most $Tw_{\mathcal A}L_{\widehat q}(1+h\beta)e_Z$.
+The squared-error account uses the previously displayed Minkowski
+bound with $\sqrt T(L_q+L_{\widehat q})e_x$. The source saves all
+these constants and the verified positive-curvature indicator.
+
+Finally, numerical enclosures of sample values can be used more
+accurately than a uniform arithmetic allowance. Suppose the exact
+clipped sample lies in $[L_i,U_i]$, let $m_i$ be the disclosed binary
+midpoint, and let $r_i$ enclose
+$\max(m_i-L_i,U_i-m_i)$. Projection onto the subspace orthogonal to
+the constant vector is nonexpansive. Consequently the exact sample
+mean differs from $\bar m$ by at most $\bar r$, and its sample
+standard deviation is at most
+\[
+ s_m+\sqrt{\frac{n}{n-1}}
+                  \left(\frac1n\sum_i r_i^2\right)^{1/2}.
+\]
+With $\ell=\log(4/\alpha_{\rm event})$, it suffices to add
+\[
+ \bar r+\sqrt{\frac{2\ell}{n-1}}
+                  \left(\frac1n\sum_i r_i^2\right)^{1/2}
+\]
+to each side of the midpoint empirical Bernstein interval. This
+construction encloses the unknown exact sample moments. Its
+data-dependent numerical radii do not replace the independently proved
+population clipping ranges. For the costate product, for example, bank
+and critic norm errors $\eta_1,\eta_2$ give the sample radius
+$T\{\eta_1\|\widetilde e_2\|_d+
+\eta_2\|\widetilde e_1\|_d+\eta_1\eta_2\}$, in addition to the
+interval dot product. All mean and variance corrections are evaluated
+outward. The raw costate comparison uses the identical represented
+queries; the welfare endpoint additionally includes their
+exact-state representation account.
+
+Finally, subtraction of the reference transformed reward gives exactly
+\[
+ \E X_{a,h}=\mathcal R_h(a)-\mathcal R_h(\pi)-D_{\rm hold}
+\]
+at the level of expectations, where $X_{a,h}$ is the paired statistic
+in Proposition~\ref{prop:r11transfer}. The reference internal drift
+uses precisely $h\pi_k=\bar M_k$; the difference from the continuous
+schedule is already included in that proposition's scalar quadrature
+and reference-state account. Pointwise optimality of $m_0(t)$ in the
+consumption-only part implies $D_{\rm hold}\geq0$. Applying
+Proposition~\ref{prop:r15bellmanbridge}, the simultaneous endpoints,
+and the paired payoff-transfer allowance proves
+Theorem~\ref{thm:r15mechanism}. Applying
+Proposition~\ref{prop:r15actorgap} on the same event proves its
+optional quadratic bound. The nonnegative parts of upper risk and
+action endpoints are valid because their true expectations are
+nonnegative. The maximum of two valid lower bounds is again valid
+on that event.
