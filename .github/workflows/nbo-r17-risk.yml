@@ -1,0 +1,159 @@
+name: NBO R17 independent contrast-risk assessment
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r17-2026-10-05']
+    paths: ['.github/workflows/nbo-r17-risk.yml']
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      sha: ${{ steps.freeze.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-05-r17/
+      - name: Materialize and verify source before any audit observations
+        id: freeze
+        run: |
+          python - <<'PY'
+          import base64,hashlib,json,pathlib,subprocess,zlib,os
+          p=pathlib.Path('revisions/2026-10-05-r17/source/contrast_science.b64')
+          s=p.read_text().strip()
+          # Correct transport transcription only; the decoded source digest is authoritative.
+          for a,b in [('SHjhIYYvh','SHjhIYvh'),('pxZZDx','pxZDx'),('nrzMMEB','nrzMEB'),('4LEv7bvrCJ','4LEvvrCJ'),('adC7vn','adC31vn')]:
+              s=s.replace(a,b)
+          data=zlib.decompress(base64.b64decode(s,validate=True))
+          assert hashlib.sha256(data).hexdigest()=='92b1b8b88ef28eb7ed1fe802bb7111b715d60d3b98bf2b3d04791a191ecefcad'
+          files=json.loads(data);manifest={}
+          for name,text in files.items():
+              q=pathlib.Path(name)
+              assert name.startswith('revisions/2026-10-05-r17/') and '..' not in q.parts
+              q.parent.mkdir(parents=True,exist_ok=True);q.write_text(text)
+              manifest[name]=hashlib.sha256(q.read_bytes()).hexdigest()
+          p.write_text(s+'\n')
+          pathlib.Path('revisions/2026-10-05-r17/SOURCE_FREEZE.json').write_text(json.dumps({'files':manifest,'baseline':'0b15260752b8e988236f82cc0ee7752b44f326f1','observations_consumed':0},indent=2)+'\n')
+          subprocess.run(['git','config','user.name','NBO revision automation'],check=True)
+          subprocess.run(['git','config','user.email','nbo-revision@users.noreply.github.com'],check=True)
+          subprocess.run(['git','add','revisions/2026-10-05-r17'],check=True)
+          subprocess.run(['git','commit','-m','Freeze R17 conditional risk proof, code and 24-event protocol before new observations'],check=True)
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          branch='revision/econometrica-nbo-r17-risk-source-2026-10-05'
+          subprocess.run(['git','push','origin','HEAD:refs/heads/'+branch],check=True)
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:f.write('sha='+sha+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r17-source-transport
+          path: revisions/2026-10-05-r17/
+          retention-days: 30
+  assess:
+    needs: source
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        calibration: [original_low, quarterly_reuse, long_reuse, untouched_intermediate]
+        dimension: [10, 50]
+    env:
+      OPENBLAS_NUM_THREADS: 1
+      OMP_NUM_THREADS: 1
+      MKL_NUM_THREADS: 1
+      FROZEN_SOURCE_SHA: ${{ needs.source.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.source.outputs.sha }}
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-05-r17/
+      - name: Read only required immutable model and code files
+        env:
+          CAL: ${{ matrix.calibration }}
+          DIM: ${{ matrix.dimension }}
+        run: |
+          python - <<'PY'
+          import os,subprocess
+          paths=subprocess.check_output(['git','ls-tree','-r','--name-only','HEAD'],text=True).splitlines()
+          selected=[]
+          for p in paths:
+              needed=(p.startswith('revisions/2026-10-05-r17/') or ('/code/' in p and p.endswith('.py')) or p.startswith('revisions/2026-10-04-r16/protocols/') or p=='revisions/2026-10-04-r12/PROTOCOL.json')
+              prefix='revisions/2026-10-04-r16/results/continuation_menu/trials/'+os.environ['CAL']+'_d'+os.environ['DIM']+'_s'
+              needed=needed or (p.startswith(prefix) and '/fits/nbo_scalar/' in p and p.rsplit('/',1)[-1] in ['FIT_WORK.json','model_stage3.pt','actions_stage3.npz'])
+              if needed:selected.append('/'+p)
+          subprocess.run(['git','sparse-checkout','set','--no-cone','--stdin'],input='\n'.join(selected)+'\n',text=True,check=True)
+          PY
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install fixed numerical environment
+        run: |
+          python -m pip install numpy==2.3.5
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Exact tests then complete cell
+        run: |
+          mkdir -p assessment/${{ matrix.calibration }}_d${{ matrix.dimension }}
+          python revisions/2026-10-05-r17/code/test_contrast_risk.py > assessment/${{ matrix.calibration }}_d${{ matrix.dimension }}/TESTS.log 2>&1
+          python revisions/2026-10-05-r17/code/contrast_risk.py cell --cal ${{ matrix.calibration }} --dimension ${{ matrix.dimension }} --out assessment/${{ matrix.calibration }}_d${{ matrix.dimension }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r17-risk-${{ matrix.calibration }}-d${{ matrix.dimension }}
+          path: assessment/
+          retention-days: 30
+  report:
+    needs: [source, assess]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      OPENBLAS_NUM_THREADS: 1
+      OMP_NUM_THREADS: 1
+      FROZEN_SOURCE_SHA: ${{ needs.source.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.source.outputs.sha }}
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-05-r17/
+            /revisions/*/code/*.py
+            /revisions/2026-10-04-r16/protocols/
+            /revisions/2026-10-04-r12/PROTOCOL.json
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nbo-r17-risk-*
+          path: assessment
+          merge-multiple: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          python -m pip install numpy==2.3.5
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Replay all 24 risk intervals and retain all observations
+        run: |
+          mkdir -p revisions/2026-10-05-r17/results
+          python revisions/2026-10-05-r17/code/contrast_risk.py report --root assessment --out revisions/2026-10-05-r17/results/RISK_REPORT.json
+          mv assessment revisions/2026-10-05-r17/results/contrast_risk
+          git config user.name 'NBO revision automation'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add --sparse revisions/2026-10-05-r17/results
+          git commit -m 'Retain every R17 contrast-risk observation and complete 24-event report'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r17-risk-evidence-2026-10-05
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r17-risk-complete
+          path: revisions/2026-10-05-r17/
+          retention-days: 30
