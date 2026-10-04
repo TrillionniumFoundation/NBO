@@ -1,0 +1,281 @@
+{
+  "revision": "R15",
+  "protocol_version": 1,
+  "status": "frozen_before_confirmatory_execution",
+  "reviewed_parent_commit": "f5021cefa71492babfcbfa580e0c984f59a9de26",
+  "review_report": "review_source/referee_report.md",
+  "design": {
+    "dimensions": [
+      10,
+      50
+    ],
+    "methods": [
+      "nbo",
+      "raw_costate",
+      "direct_policy",
+      "neural_hjb"
+    ],
+    "primary_width": 32,
+    "secondary_widths": [],
+    "seeds": [
+      2095568532,
+      2133755523,
+      153722668,
+      603655094,
+      216592699,
+      1950831757,
+      107486742,
+      1142235589,
+      1824517164,
+      1965147083,
+      1860620983,
+      1618144748,
+      592131000,
+      964082955,
+      887230079,
+      1818435806
+    ],
+    "seed_derivation": "first four SHA256 bytes (big endian) of 'NBO-R15-confirmatory-stream-v1/'+str(i), modulo 2**31, i=0,...,15",
+    "seed_scope": "Complete, prospectively declared finite uniform distribution over deterministic complete algorithm streams; all 16 enumerated. No inference to arbitrary unseen initialization laws.",
+    "initial_state_population": {
+      "means": [
+        -0.5,
+        0.0,
+        0.5
+      ],
+      "spreads": [
+        0.0,
+        0.25,
+        0.5
+      ],
+      "weights": "uniform over nine profiles as in R12"
+    },
+    "primitives": {
+      "T": 1.0,
+      "discount": 0.04,
+      "productivity": 0.1,
+      "coupling": 0.15,
+      "idiosyncratic_sigma": 0.6,
+      "common_sigma": 0.3,
+      "adjustment": 0.2,
+      "lower": 0.02,
+      "upper": 2.0,
+      "CHI": 0.03
+    },
+    "primitives_canonical_json": "{\"CHI\":0.03,\"T\":1.0,\"adjustment\":0.2,\"common_sigma\":0.3,\"coupling\":0.15,\"discount\":0.04,\"idiosyncratic_sigma\":0.6,\"lower\":0.02,\"productivity\":0.1,\"upper\":2.0}",
+    "primitives_sha256": "f795e65fa8ee89a92e3935217032cdc940c6dc5a50230aee4a510720b03b6e4e",
+    "primitive_scope": "Same capital economy and action box; high-volatility parameter regime. R14 original-regime evidence is retained separately. Every simulator, transfer constant, imported module alias, and checkpoint must receive this dictionary."
+  },
+  "training": {
+    "status": "specified_before_confirmatory_execution",
+    "checkpoint_count": 3,
+    "global_steps": 64,
+    "cumulative_replay_states": [
+      256,
+      512,
+      1024
+    ],
+    "checkpoint_budgets": [
+      256,
+      512,
+      1024
+    ],
+    "budget_unit": "cumulative independent reference-occupation states; no assertion of equal floating-point or simulator work across methods",
+    "reference_policy": "cell-average analytical schedule M_k/h; frozen for all three stages",
+    "occupation_time_law": "uniform over global decision nodes k=0,...,63, one state per independent clipped-innovation reference trajectory",
+    "postdecision_time_input": "after-decision date t_(k+1); state input is pre-noise postdecision mean x_k",
+    "actor_width": 32,
+    "critic_width": 32,
+    "critic_time_width": 16,
+    "epsilon": 0.1,
+    "batch": 128,
+    "actor_lr": 0.003,
+    "critic_lr": 0.002,
+    "critic_time_lr": 0.003,
+    "hjb_lr": 0.002,
+    "antithetic_replicates": 4,
+    "normal_clip": 10.0,
+    "critic_adam_updates_per_stage": 1200,
+    "critic_time_updates_per_stage": 400,
+    "critic_lbfgs": {
+      "lr": 1.0,
+      "max_iter": 300,
+      "max_eval": 400,
+      "history_size": 30,
+      "line_search_fn": "strong_wolfe",
+      "tolerance_grad": 1e-10,
+      "tolerance_change": 1e-12,
+      "counting": "max_iter and max_eval are optimizer settings; finish the current line search and record every actual closure, derivative, and accepted iteration"
+    },
+    "actor_updates_per_stage": [
+      200,
+      400,
+      800
+    ],
+    "direct_updates_per_stage": [
+      100,
+      200,
+      400
+    ],
+    "hjb_updates_per_stage": [
+      100,
+      200,
+      400
+    ],
+    "update_scope": "Each listed stage count is additional; model weights and replay continue across stages. Adam spatial/time optimizers restart per NBO evaluation block; actor and HJB optimizer states continue.",
+    "hjb_trace_probes": 2,
+    "hjb_objective": "product of two conditionally independent Hutchinson residual estimates; four total Hessian probes per collocation batch",
+    "critic_architecture": "known lift plus (T-t_after)*(time_MLP_16_16 + spatial_MLP_32_32/d); Tanh hidden layers, zero output initialization; postdecision for NBO, original full-value lift for neural_hjb",
+    "nbo_spatial_objective": "full-replay d-scaled costate Sobolev MSE; no value-level gradients update spatial parameters",
+    "nbo_time_objective": "value MSE updates the time-only intercept with the fitted spatial residual held fixed",
+    "actor_loss": "identical reference-postdecision Hamiltonian linearization for NBO and raw_costate; NBO uses learned q, raw_costate the same four-antithetic mean targets; all labels reusable",
+    "raw_costate_noise_reduction": "antithetic4; every member rollout charged; known terminal-noise control variate has zero average adjustment for paired antithetic costates",
+    "direct_policy_objective": "four-antithetic complete 64-cell transformed-payoff gradient from population initial states; all simulator/backward work counted",
+    "randomness": "SHA256 domain-separated complete streams for initialization, occupation, training innovations, optimization, online checks and independent confirmation",
+    "fine_grid_scope": "trained64-cell scalar critic is a fixed predictor on audit2048 dates; measured bridge error includes all training-to-audit discretization discrepancy, without a zero-bias claim",
+    "pilot_scope": "scratch exploratory pilots selected this design before the protocol/source freeze; their states, parameters and outcomes are not confirmatory observations"
+  },
+  "stopping": {
+    "primary_certified_gain_target": 0.0005,
+    "secondary_final_gain_target": 0.001,
+    "maximum_checkpoint_checks": 3,
+    "paths_looks_per_checkpoint": 1,
+    "rule": "Pause and perform the actual fresh-bank check at each registered checkpoint; stop training if its lower endpoint is at least 0.0005. Return final feasible policy if never attained; return schedule on failure. Charge every attempted check and all initialization/I/O/final confirmation.",
+    "secondary_scope": "0.001 is a final attainment endpoint, not a separately executed early-stopping frontier.",
+    "bank_rule": "New domain-separated online bank at each checkpoint, independent of all previous training/validation/checks. Independent final bank after all selection/stopping.",
+    "paths_per_checkpoint": 8192,
+    "steps": 2048
+  },
+  "confirmation": {
+    "paths_per_seed": 8192,
+    "steps": 2048,
+    "status": "fixed_before_confirmatory_execution",
+    "equal_paths_per_seed": true,
+    "independent_noise_across_seeds": true,
+    "common_initial_states_and_noise_across_methods_within_seed": true,
+    "replicates": "One independent final confirmation array per returned method/seed/dimension; no pooling of stopping arrays.",
+    "direct_contrasts": [
+      [
+        "nbo",
+        "raw_costate"
+      ],
+      [
+        "nbo",
+        "direct_policy"
+      ],
+      [
+        "nbo",
+        "neural_hjb"
+      ]
+    ],
+    "required_pair_identity": [
+      "initial_profile_hash",
+      "noise_hash",
+      "steps",
+      "paths",
+      "stream_seed",
+      "confirmation_bank",
+      "primitives_sha256",
+      "initial_state_hash",
+      "terminal_anchor_hash"
+    ]
+  },
+  "estimands": {
+    "method_gain": "Uniform average over all 16 streams of continuous-economy payoff minus analytical schedule payoff.",
+    "method_contrast": "Uniform average over all 16 paired streams of NBO payoff minus comparator payoff; common schedule cancels pathwise.",
+    "per_seed_gain_and_contrast": "Conditional policy endpoints for each registered complete stream.",
+    "attainment_probability": "Exact fraction in the finite uniform method distribution; bounds follow from simultaneous per-seed endpoints.",
+    "method_work": "Complete observed work distribution over all streams on the declared environment. Failed targets remain unattained; no successful-only median."
+  },
+  "inference": {
+    "alpha_total_r15": 0.05,
+    "alpha_allocation": {
+      "online_stopping": 0.01,
+      "method_confirmation": 0.02,
+      "mechanism": 0.01,
+      "protected_observation": 0.01
+    },
+    "online_stopping_events": 384,
+    "online_stopping_event_count_formula": "2 dimensions * 4 methods * 16 streams * 3 checkpoints * 1 path look; each event is two-sided",
+    "method_confirmation_events": 238,
+    "method_confirmation_event_count_formula": "2 dimensions * (4 schedule gains + 3 NBO direct contrasts) * (16 per-seed intervals + 1 finite-method mean); each event is two-sided",
+    "empirical_bernstein": "Maurer-Pontil (2009), Theorem 11 (independent, possibly nonidentically distributed bounded variables); two-sided margin uses log(4/event_alpha).",
+    "method_mean_rule": "Clip each stratum at its proved bound, pool equal-sized independent strata, use maximum range and average transfer/tail allowances.",
+    "cross_seed_common_noise_rule": "If cross-seed noise is reused, average across seeds within each independent path block; sample size is N, not 16N. Default implementation rejects reuse.",
+    "historical_statement_scope": "R14 historical 0.05 confidence event is separate; no claim that all historical and R15 endpoints hold jointly at 0.05.",
+    "unused_alpha": "No recycling of skipped checkpoint/failed-fit events.",
+    "secondary_decisions": "Thresholds, fee transformations, equivalence and superiority use existing registered endpoints and spend no additional alpha."
+  },
+  "economic_decision": {
+    "equivalence_margin_payoff": 0.0001,
+    "margin_fee_rate_exact": 0.00010200812979467157,
+    "statistical_superiority": "direct lower > 0",
+    "economically_material_superiority": "direct lower > 0.0001",
+    "noninferiority": "direct lower > -0.0001",
+    "practical_equivalence": "direct lower > -0.0001 AND direct upper < 0.0001",
+    "otherwise": "Unresolved unless the interval establishes material inferiority. Nonsignificance is not equivalence.",
+    "margin_scope": "Prespecified numerical/economic tolerance in payoff units in this stylized economy; no empirical calibration claim."
+  },
+  "failure_policy": {
+    "training_failure": "Deploy analytical schedule; retain failed fit and all consumed work.",
+    "missing_seed": "Invalid complete-method dataset; cannot silently drop or replace.",
+    "check_failure": "Retain failure and consumed work; do not certify target attainment.",
+    "final_evaluation_failure": "Report missing certificate and fail publication completeness; never substitute successful seeds."
+  },
+  "work_accounting": {
+    "timer": "Parent clock from before fresh worker process launch through durable final evidence files.",
+    "stages": [
+      "imports_and_setup",
+      "deterministic_constants",
+      "initialization",
+      "training",
+      "validation",
+      "checkpoint_io",
+      "unsuccessful_checks",
+      "successful_check",
+      "weights_reload",
+      "independent_confirmation",
+      "output_io"
+    ],
+    "counters": [
+      "simulator_transitions",
+      "rollout_starts",
+      "actor_forward_rows",
+      "critic_forward_rows",
+      "first_derivative_rows",
+      "second_derivative_rows",
+      "backward_passes",
+      "actor_updates",
+      "critic_updates",
+      "action_search_iterations",
+      "verification_paths",
+      "verification_transitions",
+      "peak_rss_kib",
+      "cpu_seconds"
+    ],
+    "median_rule": "Unattained runs have infinite work-to-target; represent unattained median with null plus status. Also report restricted mean at declared cap.",
+    "precision_scope": "Counters are work proxies, not exact FLOP equivalence.",
+    "restricted_mean_wall_cap_seconds": 900.0
+  },
+  "freeze_gate": [
+    "All training hyperparameters and three checkpoint budgets fixed.",
+    "Exactly one confirmation path count and mesh fixed.",
+    "Primitive dictionaries/aliases/checkpoints verified equal.",
+    "Worker, baselines, inference, protocol, environment manifest and source commit frozen.",
+    "No confirmatory outcome inspected before source/protocol freeze.",
+    "Every complete-stream run and failure retained."
+  ],
+  "reporting": {
+    "decomposition_components": [
+      "production",
+      "negative_consumption_deficit",
+      "terminal_dispersion_gain"
+    ],
+    "decomposition_scope": "Descriptive observed finite-step paired payoff components only. Verify the pathwise total identity. No separate continuous-time component interval or causal attribution. The total payoff certificate remains authoritative.",
+    "decomposition_additional_confidence_events": 0,
+    "method_report": "code/report_experiment.py",
+    "failure_disclosure": "Every seed, method, training failure, target failure and final verification failure retained; missing confirmation cannot silently be replaced."
+  },
+  "freeze_utc": "2026-10-04T08:17:45Z",
+  "freeze_scope": "Design and numerical source fixed before any main confirmatory outcome; the source Git commit is recorded externally by the execution manifest."
+}

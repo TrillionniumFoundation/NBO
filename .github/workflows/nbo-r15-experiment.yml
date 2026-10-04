@@ -1,0 +1,203 @@
+name: NBO R15 complete registered method experiment
+
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r15-experiment-source-2026-10-04
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: nbo-r15-experiment-${{ github.sha }}
+  cancel-in-progress: false
+
+env:
+  NBO_R15_NUMERICAL_SOURCE_COMMIT: ${{ github.sha }}
+  OMP_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  NUMBA_NUM_THREADS: '1'
+  PYTHONHASHSEED: '0'
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    outputs:
+      matrix: ${{ steps.pack.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install the registered numerical environment for source gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Verify new mathematical identities and execution controls in isolated calibrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test_file in revisions/2026-10-04-r15/code/test_*.py; do
+            python -m unittest discover -s revisions/2026-10-04-r15/code \
+              -p "$(basename "$test_file")" -v
+          done
+      - name: Pack the exact committed code, protocols, kernel closure and two scalar weights
+        id: pack
+        run: |
+          python revisions/2026-10-04-r15/code/pipeline_experiment.py pack \
+            --repo . --out "$RUNNER_TEMP/nbo-r15-experiment-source"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r15-experiment-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/nbo-r15-experiment-source/
+          if-no-files-found: error
+          retention-days: 90
+
+  trial:
+    needs: source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix: ${{ fromJSON(needs.source.outputs.matrix) }}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r15-experiment-source-${{ github.run_id }}
+          path: source
+      - name: Install the exact CPU numerical environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Execute all four complete method streams in the registered rotation
+        run: |
+          python source/pipeline_experiment.py run-trial \
+            --bundle source --workspace "$RUNNER_TEMP/nbo-r15-method-worker" \
+            --out "trial-${{ matrix.trial_id }}" --trial-id '${{ matrix.trial_id }}'
+      - name: Retain all policies, online decisions, final raw arrays and work records
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r15-experiment-trial-${{ matrix.trial_id }}-${{ github.run_id }}
+          path: trial-${{ matrix.trial_id }}/
+          if-no-files-found: warn
+          retention-days: 90
+
+  scalar:
+    needs: source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r15-experiment-source-${{ github.run_id }}
+          path: source
+      - name: Install the exact CPU numerical environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Train and deploy every prespecified scalar classical candidate
+        run: |
+          python source/pipeline_experiment.py run-scalar \
+            --bundle source --workspace "$RUNNER_TEMP/nbo-r15-scalar-worker" \
+            --out scalar-results
+      - name: Retain complete scalar evidence and failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r15-experiment-scalar-${{ github.run_id }}
+          path: scalar-results/
+          if-no-files-found: warn
+          retention-days: 90
+
+  evidence:
+    needs: [source, trial, scalar]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install exact reporting dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r15-experiment-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/experiment-source
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nbo-r15-experiment-trial-*-${{ github.run_id }}
+          path: ${{ runner.temp }}/experiment-trials
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r15-experiment-scalar-${{ github.run_id }}
+          path: ${{ runner.temp }}/experiment-scalar
+      - name: Require every declared seed and method and recompute registered inference
+        run: |
+          python revisions/2026-10-04-r15/code/pipeline_experiment.py collect \
+            --repo . --bundle "$RUNNER_TEMP/experiment-source" \
+            --input-dir "$RUNNER_TEMP/experiment-trials" \
+            --scalar-dir "$RUNNER_TEMP/experiment-scalar"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r15-experiment-complete-${{ github.run_id }}
+          path: revisions/2026-10-04-r15/results/experiment/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Create the complete main evidence branch without changing its numerical source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$NBO_R15_NUMERICAL_SOURCE_COMMIT"
+          source_branch=revision/econometrica-nbo-r15-experiment-source-2026-10-04
+          evidence_branch=revision/econometrica-nbo-r15-experiment-evidence-2026-10-04
+          remote_source=$(git ls-remote --heads origin "refs/heads/$source_branch" | cut -f1)
+          test "$remote_source" = "$NBO_R15_NUMERICAL_SOURCE_COMMIT"
+          existing=$(git ls-remote --heads origin "refs/heads/$evidence_branch")
+          if test -n "$existing"; then
+            echo "Main evidence branch already exists; refusing to alter it."
+            exit 1
+          fi
+          git diff --exit-code "$NBO_R15_NUMERICAL_SOURCE_COMMIT" --
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- revisions/2026-10-04-r15/results/experiment
+          git commit --quiet -m 'revision(r15): retain all registered method streams, actual stopping work, independent confirmation and scalar baseline'
+          git push --atomic origin "HEAD:refs/heads/$evidence_branch"
+          evidence_commit=$(git rev-parse HEAD)
+          echo "Main numerical source: $NBO_R15_NUMERICAL_SOURCE_COMMIT" >> "$GITHUB_STEP_SUMMARY"
+          echo "Complete main experiment evidence: $evidence_commit" >> "$GITHUB_STEP_SUMMARY"
+          echo 'The entire registered finite training distribution and scalar study are retained. Observation, mechanism and later manuscript sources remain explicitly distinct.' >> "$GITHUB_STEP_SUMMARY"

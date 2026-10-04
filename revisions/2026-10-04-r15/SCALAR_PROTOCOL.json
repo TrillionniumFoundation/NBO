@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "study_id": "r15_scalar_original_regime",
+  "role": "separate scalar classical-training and deployment comparison; not counted in the high-volatility primary method experiment",
+  "primitives": {
+    "T": 1.0,
+    "discount": 0.04,
+    "productivity": 0.10,
+    "coupling": 0.15,
+    "idiosyncratic_sigma": 0.15,
+    "common_sigma": 0.10,
+    "adjustment": 0.2,
+    "lower": 0.02,
+    "upper": 2.0
+  },
+  "dimension": 1,
+  "B_11": 1.0,
+  "terminal_dispersion_coefficient": 0.03,
+  "terminal_dispersion_scope": "the dispersion term is identically zero at dimension one; terminal payoff remains y",
+  "method_id": "scalar_howard",
+  "classical_action_classes": [
+    {"id": "primitive_box", "epsilon": null},
+    {"id": "common_schedule_tube", "epsilon": 0.1}
+  ],
+  "grids": [
+    {"nx": 401, "nt": 256, "L": 6.0},
+    {"nx": 801, "nt": 512, "L": 6.0},
+    {"nx": 1601, "nt": 1024, "L": 6.0},
+    {"nx": 2401, "nt": 1024, "L": 9.0}
+  ],
+  "domain_comparison": "grids three and four have identical spatial spacing 0.0075 and time spacing 1/1024; only the state domain changes",
+  "maximum_policy_iterations_per_time_step": 100,
+  "howard_value_tolerance": 1e-11,
+  "finite_grid_audit": "save all time-state values and actions; enclose log/tanh and the maximized two-branch Hamiltonian by outward interval arithmetic and branchwise concavity tangents; apply the M-matrix recurrence to the exact finite-grid equations with declared binary64 grid, action-bound and boundary inputs",
+  "boundary_data": "affine far-state values for limiting production +/-coupling, as defined in scalar_baseline.asymptotic_boundaries; finite-domain approximations, not true unbounded boundary values",
+  "deployed_policy": "save every time-state action node; bilinear interpolation inside the grid, analytic schedule outside, followed by the declared primitive-box or schedule-tube clipping",
+  "frozen_neural_candidates": [
+    {
+      "name": "frozen_r12_nbo",
+      "method_id": "nbo_r12",
+      "path": "revisions/2026-10-04-r12/results/reference/nbo_d1_s7919.pt",
+      "sha256": "4b2dd62b6a8670eab13ef33d83402e728e7b598a49efc51d4a00ff7a2d1c8018",
+      "numerical_source_commit": "95053e722e57523c1a61c71f2f8bb7a6afbf09a7",
+      "selected_iteration": 160,
+      "training_scope": "historical frozen R12 fit; no retraining or selection using R15 scalar final paths"
+    },
+    {
+      "name": "frozen_r12_dpo",
+      "method_id": "dpo_r12",
+      "path": "revisions/2026-10-04-r12/results/reference/dpo_d1_s7919.pt",
+      "sha256": "804f8ca1fb46b0d3cfed41561d7b8c452f98c527d480fe57d942afe261915c3c",
+      "numerical_source_commit": "95053e722e57523c1a61c71f2f8bb7a6afbf09a7",
+      "selected_iteration": 340,
+      "training_scope": "historical frozen R12 fit; no retraining or selection using R15 scalar final paths"
+    }
+  ],
+  "include_schedule": true,
+  "initial_profiles": [-1.0, 0.0, 1.0],
+  "initial_weights": [0.3333333333333333, 0.3333333333333333, 0.3333333333333333],
+  "initial_sampling": "independent uniform draw from the three fixed scalar states; identical indices for every policy and both deployment meshes",
+  "evaluation_paths": 8192,
+  "evaluation_steps": [1024, 2048],
+  "brownian_base_steps": 2048,
+  "evaluation_seed": 92515071,
+  "shock_design": "untruncated normal increments, independent of classical training and historical neural selection; the coarse deployment mesh aggregates consecutive increments from the same fine Brownian path",
+  "reporting": "retain all eight trained grid candidates, both deployment meshes, all raw payoffs, all pairwise policy differences, each initial-state stratum, grid/Howard residuals, failures, and adverse rankings",
+  "work_scope": "measure new classical training, serialization and deployment on the R15 worker; retain historical neural fit clocks as historical only, without treating clocks from different executions as a matched end-to-end comparison",
+  "inference_scope": "conditional Monte Carlo standard errors for the listed Euler-deployed policies; algebraic M-matrix bound for the declared finite-grid equations; mesh/domain sensitivity is not a rigorous unbounded continuous-time optimum certificate",
+  "source_binding": "the official run must bind this protocol and scalar_baseline.py to NBO_R15_NUMERICAL_SOURCE_COMMIT before final simulation; development pilots remain separately labelled"
+}

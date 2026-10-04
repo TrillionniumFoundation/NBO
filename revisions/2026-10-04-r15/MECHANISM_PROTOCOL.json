@@ -1,0 +1,112 @@
+{
+  "schema": "nbo-r15-occupation-bridge-v1",
+  "status": "design_fixed_before_any_confirmatory_outcome",
+  "primary_protocol": "PROTOCOL.json",
+  "dimensions": [
+    10,
+    50
+  ],
+  "declared_seeds": [
+    2095568532,
+    2133755523,
+    153722668,
+    603655094,
+    216592699,
+    1950831757,
+    107486742,
+    1142235589,
+    1824517164,
+    1965147083,
+    1860620983,
+    1618144748,
+    592131000,
+    964082955,
+    887230079,
+    1818435806
+  ],
+  "primitives": {
+    "T": 1.0,
+    "discount": 0.04,
+    "productivity": 0.1,
+    "coupling": 0.15,
+    "idiosyncratic_sigma": 0.6,
+    "common_sigma": 0.3,
+    "adjustment": 0.2,
+    "lower": 0.02,
+    "upper": 2.0,
+    "CHI": 0.03
+  },
+  "primitives_sha256": "f795e65fa8ee89a92e3935217032cdc940c6dc5a50230aee4a510720b03b6e4e",
+  "initial_state_population": {
+    "means": [
+      -0.5,
+      0.0,
+      0.5
+    ],
+    "spreads": [
+      0.0,
+      0.25,
+      0.5
+    ],
+    "weights": "uniform over nine profiles as in R12"
+  },
+  "candidate": "Actual selected NBO policy, with the same torch proposal, inward guard, protected drift, and clipped-innovation recurrence as actor_verifier.verify.",
+  "checkpoint_selection": "Already selected by registered actual online stopping; mechanism noise is independent of fitting, validation, online stopping and primary confirmation. No mechanism outcome can change the selected policy.",
+  "assessment_steps": 2048,
+  "bridges_per_stream": 256,
+  "stream_count": 16,
+  "pooled_bridges_per_dimension": 4096,
+  "node_law": "One independent uniform K in {0,...,N-1} for each independently simulated complete candidate trajectory.",
+  "bridge_law": "Independent U uniform[0,1]; x_U=x_pi+U(x_a-x_pi), x_b=Z_K+h(c+f(Z_K)-b).",
+  "reference": "Deterministic cell-average schedule pi_k=midpoint(M_k)/h on the SAME global assessment grid.",
+  "critic": "Selected split scalar postdecision critic; date input is t_(K+1), state input is postdecision mean before current noise. Reinstantiate known noise lift with h=1/2048. N_train remains separately recorded.",
+  "future_banks": 2,
+  "antithetic_pairs_per_bank": 2,
+  "rollouts_per_bank": 4,
+  "future_paths_per_bridge": 8,
+  "bank_law": "Two conditionally independent banks. Within each bank two independent base Gaussian paths and their exact negatives; clip at +/-10 before pairing. No independence assertion within a pair.",
+  "gaussian_innovation_cap": 10.0,
+  "statistic_tail_v": 8.0,
+  "randomness_domain": "NBO-R15-mechanism-v1/{stream_seed}/{dimension}/{purpose}",
+  "randomness_purposes": [
+    "initial_profile",
+    "uniform_node",
+    "uniform_bridge",
+    "occupation_innovations",
+    "future_bank_1",
+    "future_bank_2"
+  ],
+  "randomness_seed_derivation": "first eight SHA256 bytes big endian, modulo 2**64; independent purpose and stream domains",
+  "statistics": [
+    "M",
+    "A",
+    "E",
+    "D",
+    "E_raw",
+    "E_minus_raw"
+  ],
+  "statistic_definitions": {
+    "M": "N times actual approximate-Q advantage using scalar continuation at the two endpoints.",
+    "A": "T times squared normalized action deviation from cell-average reference.",
+    "E": "T times cross inner product of critic errors against two independent derivative banks; retain signed observations.",
+    "D": "N times global-curvature quadratic-support upper bound on actual feasible actor Q-gap; endpoint fallback when curvature is not negative.",
+    "E_raw": "T/2 times squared normalized difference of the two banks; antithetic4 direct-costate MSE on SAME NBO occupation.",
+    "E_minus_raw": "Paired difference E-E_raw; an upper confidence endpoint below zero establishes evaluation-subproblem risk reduction."
+  },
+  "range_rule": "Explicit deterministic coefficient and Gaussian concentration formulas in new_proofs.tex and costate_bridge.py, fixed v=8. Saved coefficient-derived ranges may differ by frozen checkpoint. No empirical maximum supplies a population bound.",
+  "arithmetic_rule": "Protected polynomial tanh/log, outward scalar weights and neural values/gradients, proved vector-adjoint forward error, and interval sample moments. Rounded candidate actions held fixed in exact-state comparison. Save all numerical allowances.",
+  "confidence": {
+    "alpha": 0.01,
+    "event_count": 12,
+    "sides": 2,
+    "event_alpha": 0.0008333333333333334,
+    "allocation": "2 dimensions times 6 pooled statistics; no per-stream inferential endpoint.",
+    "theorem": "Maurer-Pontil (2009) Theorem 11 for independent possibly nonidentical bounded variables; two-sided log(4/event_alpha)."
+  },
+  "pooling": "Equal 256 independent bridge rows from every one of the 16 declared streams, maximum proved range, average tail/numerical allowances; no post hoc stream exclusion.",
+  "economic_endpoint": "L_M-sqrt(U_A*U_E)-D_hold-E_all; use nonnegative upper risk/action endpoints. Optional quadratic actor-gap bound only when verified minimum curvature modulus is positive. Raw actual policy welfare is assessed only by the separately registered direct method contrasts.",
+  "work_scope": "Independent post-selection mechanism-assessment work, reported separately from actual primary stopping work; charge loading, constants, all target paths and output I/O.",
+  "fallback_rule": "Retain every analytical-schedule fallback as a deterministic zero-gain stream. Set all six bridge/evaluation-work statistics and allowances to zero for that stream; the costate-risk estimand is the registered evaluation subproblem for streams actually deploying an NBO critic, with zero mass at fallback. Never drop a stream.",
+  "failure_rule": "A mechanism execution failure is retained and prevents a complete protected mechanism endpoint; it does not alter the primary policy or direct welfare result. No replacement seeds or adaptive sample increases.",
+  "freeze_rule": "All design choices above fixed before first confirmatory outcome; numerical producer and source closure frozen before execution. Development verification uses manufactured small problems and does not inspect confirmatory snapshots."
+}
