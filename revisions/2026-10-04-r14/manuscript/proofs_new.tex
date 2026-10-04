@@ -1,0 +1,117 @@
+\section{Finite-Observation Transfer Proof}\label{app:r14sensingproof}
+\subsection{Proof of Proposition~\ref{prop:r14sensor}}
+All processes are coupled using the same economic Brownian motion and
+initial profile; the sensor noise uses the independent randomizer.
+The real-map Lipschitz bound, uniform implementation error, and
+nonexpansiveness of the common guard give
+\[
+ \|\widehat\pi_k(\overline Y_{t_k}+\eta_k)
+                  -\widehat\pi_k(Z_k)\|_{2,d}
+ \leq L\{\|\overline Y_{t_k}-Z_k\|_{2,d}+\nu_{\rm obs}\}+2\delta_\pi.
+\]
+The common action tube also bounds this difference by $2\epsilon$.
+
+Apply It\^o's formula to $f(\overline Y)$ on each cell, where the
+sensor action has already been chosen. The generator and derivative
+bounds used in the R11 proof remain valid for this adapted held action.
+Stochastic Fubini yields
+\begin{align*}
+ \int_{t_j}^{t_{j+1}}
+       \{f(\overline Y_s)-f(\overline Y_{t_j})\}\,ds
+ ={}&\int_{t_j}^{t_{j+1}}(t_{j+1}-v)
+       \mathcal A^{\overline a_j}f(\overline Y_v)\,dv\\
+ &+\int_{t_j}^{t_{j+1}}(t_{j+1}-v)
+             Df(\overline Y_v)\Sigma\,dW_v.
+\end{align*}
+The $L^2$ norm of the accumulated first term through $t_k$ is at most
+$Kht_k/2$. The stochastic integrals are martingale increments over
+disjoint cells. It\^o's isometry bounds their accumulated normalized
+$L^2$ norm by $Hh\sqrt{t_k/3}$.
+
+Before representation error, every component of
+$\Delta W_j-\sqrt h\operatorname{clip}(\Delta W_j/\sqrt h,-z,z)$
+has zero mean and variance at most $hv_{\rm clip}$. Components and cells are
+independent. Therefore the normalized second moment of the accumulated
+projected clipping error is at most
+\[
+ \frac1d\operatorname{tr}(\Sigma\Sigma^\top)t_kv_{\rm clip}
+       =\overline\sigma^2t_kv_{\rm clip}.
+\]
+The clipping error and the preceding local-drift martingale need not
+be independent: the triangle inequality between their already
+accumulated norms is sufficient. The implementation error contributes
+at most $k\xi_h$.
+
+Let $E_k=\|\overline Y_{t_k}-Z_k\|_{2,d}$. Subtracting the internal
+recursion from the integrated sensor state equation thus gives
+\[
+ E_k\leq\beta h\sum_{j<k}E_j
+       +h\sum_{j<k}\|\overline a_j-a_j\|_{2,d}+b_k.
+\]
+The recursion in~\eqref{eq:r14sensorrecursion} is equivalent to
+$e_k=\beta h\sum_{j<k}e_j+h\sum_{j<k}a_j^\Delta+b_k$.
+Induction, using the action bound already proved, establishes
+$E_k\leq e_k$ and the asserted action inequalities.
+
+The two physical diffusions have the same Brownian term. Subtracting
+their integral equations and applying the $\beta$-Lipschitz production
+bound gives
+\[
+ \|\overline Y_t-Y_t\|_{2,d}
+ \leq\beta\int_0^t\|\overline Y_s-Y_s\|_{2,d}\,ds
+       +\int_0^t a_{\lfloor s/h\rfloor}^\Delta\,ds.
+\]
+The integral form of Gronwall's inequality proves the bound by $D(t)$.
+Projection away from the common-state direction eliminates common
+drift, the common schedule, and common diffusion. Bounded production,
+the action tube, and It\^o's isometry give, for both physical states,
+$\sup_{t\leq T}\|\Pi Y_t\|_{2,d}\leq Q_T$.
+
+It remains to compare payoffs. Subtract the two exact identities
+\eqref{eq:r11gain}; the common schedule terms cancel. Production
+contributes at most $\beta\int_0^TW(t)D(t)dt$.
+For the consumption deficit $R_t$ in~\eqref{eq:r11deficit}, its gradient
+in the normalized inner product has components
+\[
+ -\frac1{m_i}+w(t)+\zeta\bar m
+  =\frac1{m_0(t)}-\frac1{m_i}
+       +\zeta\{\bar m-m_0(t)\}.
+\]
+Every point on the segment between the two held actions remains in
+their common coordinate tube at $t_k$. Its distance from $m_0(t)$ is
+at most $r_k(t)$, and its coordinates are at least $m_{-,k}$. Thus the
+normalized gradient norm is bounded by $C_k(t)$. The mean-value
+inequality and Cauchy--Schwarz bound the absolute expected deficit
+difference by $C_k(t)a_k^\Delta$.
+
+Finally,
+\[
+ \left|\E\{\|\Pi\overline Y_T\|_d^2-\|\Pi Y_T\|_d^2\}\right|
+ \leq\|\overline Y_T-Y_T\|_{2,d}
+       \{\|\Pi\overline Y_T\|_{2,d}+\|\Pi Y_T\|_{2,d}\}
+ \leq2Q_TD(T).
+\]
+Adding these three contributions proves
+\eqref{eq:r14sensorpayoff}. Adding and subtracting the parent's payoff
+on the existing confidence event proves the interval transfer.
+
+\paragraph*{An outward finite computation.}
+One need not infer a scalar integral error from a refinement plot.
+The function $D$ is nondecreasing and obeys the exact cell recursion
+\[
+ D(t_{k+1})=e^{\beta h}D(t_k)
+                +a_k^\Delta\int_0^h e^{\beta s}\,ds.
+\]
+An interval enclosure of $m_0$ on each cell gives an upper bound
+$C_k^+$ for $C_k(t)$. With the already enclosed weights $A_k,B_k$,
+a computable upper allowance is
+\[
+ \beta\sum_k B_kD(t_{k+1})
+       +\sum_k A_kC_k^+a_k^\Delta
+       +2\chi e^{-\rho T}Q_TD(T),
+\]
+evaluated outward. In the forcing recurrence, use nondecreasing saved
+upper endpoints $b_k^+\geq b_k$ and the differences of those exact
+saved scalars. This preserves the telescoping majorant. The network
+and recurrence arithmetic assumptions are the same conditional
+binary64 assumptions used for the protected parent.

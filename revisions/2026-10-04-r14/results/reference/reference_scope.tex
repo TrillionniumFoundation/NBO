@@ -1,0 +1,138 @@
+\subsection{The scalar reference and its residual account}
+\label{sec:r14-scalar-account}
+
+The scalar reference isolates policy evaluation and policy improvement in a
+nonlinear member of the coupled-capital family. It uses the three stored scalar
+actors selected in the original experiment and the analytical anchor, without
+retraining. The four state--time--domain specifications are
+$(401,256,6)$, $(801,512,6)$, $(1601,1024,6)$ and $(1601,1024,8)$, where the
+last coordinate is the half-width $L$ of the log-capital interval. All model
+coefficients, action limits, terminal values and boundary data remain those
+of the original reference. The diagnostic program checks the source and input
+hashes before computation and verifies the input hashes again afterwards.
+
+Write $\eta=(\sigma_{\mathrm{id}}^2+\sigma_{\mathrm{com}}^2)/2$,
+$c=\alpha-\eta$, and $a$ for the adjustment-cost coefficient. The realized
+scalar coupling entry is $B_{11}=1$. For scalar log capital $y$ and consumption
+rate $m\in[\underline m,\overline m]=[0.02,2]$, the running payoff and drift are
+\[
+ u(y,m)=y+\log m-\frac a2m^2,
+ \qquad \mu(y,m)=c+\beta\tanh y-m.
+\]
+The terminal payoff is $y$; the cross-sectional dispersion term vanishes in
+one dimension. Put $t_k=kh$, $h=T/n_t$ and let $\delta$ be the uniform state
+spacing. The original upwind generator is
+\begin{align*}
+ (L^m_\delta v)_i
+ &=q_i^-(m)(v_{i-1}-v_i)+q_i^+(m)(v_{i+1}-v_i),\\
+ q_i^-&=\frac{\eta}{\delta^2}+\frac{(-\mu_i)^+}{\delta},\\
+ q_i^+&=\frac{\eta}{\delta^2}+\frac{\mu_i^+}{\delta}.
+\end{align*}
+Both coefficients are nonnegative. A fixed-policy backward step solves
+\[
+ \frac{v_i^k-v_i^{k+1}}{h}+\rho v_i^k
+ -(L^{m_i^k}_\delta v^k)_i-u(y_i,m_i^k)=0
+\]
+at every interior node. Boundary values enter neighboring differences exactly
+once. In particular, residuals are evaluated in this original equation,
+not by subtracting a boundary-adjusted right-hand side after reintroducing
+the boundary terms.
+
+For Howard improvement, the Hamiltonian depending on $m$ is
+\[
+ \log m-\frac a2m^2+(d_i-m)^+p_i^f+(d_i-m)^-p_i^b,
+\]
+where
+\[
+ d_i=c+\beta\tanh y_i,\qquad
+ p_i^f=\frac{v_{i+1}-v_i}{\delta},\qquad
+ p_i^b=\frac{v_i-v_{i-1}}{\delta},
+\]
+where $z^-=\min(z,0)$. On each of the intervals cut by $m=d_i$, the
+objective is strictly concave. Its unconstrained maximizer has the form
+$2/(p+\sqrt{p^2+4a})$, with the algebraically equivalent stable expression
+used when $p<0$. Clipping this root to each nonempty interval and comparing
+the two attained values gives the global scalar action maximum for the
+upwind Hamiltonian. Thus the reported HJB residual uses the full economic
+action interval, without action-grid enumeration or a neural critic.
+
+The imposed boundary functions have the form
+$b_\pm(t)=\pm Lw(t)+Q_\pm(t)$, where
+\[
+ w(t)=\frac{1-e^{-\rho(T-t)}}{\rho}+e^{-\rho(T-t)},\qquad
+ \overline m(t)=\frac{2}{w(t)+\sqrt{w(t)^2+4a}},
+\]
+and
+\[
+ Q_\pm(t)=\int_t^T e^{-\rho(s-t)}
+ \left[\log\overline m(s)-\frac a2\overline m(s)^2
+       +w(s)\{c\pm\beta-\overline m(s)\}\right]ds.
+\]
+The original cumulative-trapezoid rule and time interpolation evaluate these
+functions. They represent asymptotic boundary data shared by all policies;
+they are not independently verified exact boundary values for each learned
+policy in the unbounded economy. Their satisfaction at grid endpoints is
+an algebraic check, not a bound on economic boundary bias.
+
+For the optimized grid value, define the original-equation HJB defect
+\[
+ r_i^k=\frac{v_i^k-v_i^{k+1}}{h}+\rho v_i^k
+       -\max_m\{u(y_i,m)+(L^m_\delta v^k)_i\}.
+\]
+For a fixed policy, omit the maximization and use its stored feedback action.
+The diagnostic files retain the maximum residual at every time step, the
+linear residual of every Howard evaluation, every iterate difference, and
+the iteration count. The original stopping rule is an iterate difference
+below $10^{-11}$, with a cap of 100 iterations. A separate Howard check
+evaluates $\|\mathcal T_k(v^k)-v^k\|_\infty/h$, where $\mathcal T_k$
+solves the linear system for the greedy policy selected from $v^k$.
+
+The significance of these residuals can be stated directly. Let
+$\widetilde v$ be the exact solution of the same finite-grid backward
+equations, with the same frozen policy (or the same Bellman operator),
+terminal data and boundary data, and let $v$ be the approximate sequence
+whose defect is $r$. In exact arithmetic, the fixed-policy matrix has
+positive diagonal, nonpositive
+off-diagonal entries, and row sums at least $h^{-1}+\rho$ after boundary
+elimination. The discrete maximum principle therefore yields
+\[
+ \|\widetilde v^k-v^k\|_\infty
+ \le \frac{\|\widetilde v^{k+1}-v^{k+1}\|_\infty+hR_k}{1+\rho h}
+\]
+whenever the boundary data agree and $\|r^k\|_\infty\le R_k$.
+The same estimate holds for the Bellman step: at a positive maximum of the
+difference, select an action maximizing the Hamiltonian of the upper
+candidate and apply the fixed-action maximum principle; interchange the
+candidates for the negative part. With exact common terminal data this gives
+\[
+ \|\widetilde v^0-v^0\|_\infty
+ \le\sum_{k=0}^{n_t-1}\frac{hR_k}{(1+\rho h)^{k+1}}
+ \le \frac{\max_k R_k}{\rho}\{1-(1+\rho h)^{-n_t}\}.
+\]
+The archived propagation diagnostic substitutes the observed floating-point
+residuals in this formula. These residuals are not outward-rounded enclosures,
+so that substitution is a numerical diagnostic rather than a certified bound.
+The estimate concerns the finite-grid equations with the prescribed boundary
+data; it does not include consistency, state interpolation or boundary bias.
+
+The tables report all four grids, the five initial states
+$y_0\in\{-1,-0.5,0,0.5,1\}$, the policies' action-bound frequencies, and
+changes in values, optimal actions and policy losses. Initial-state values
+are linearly interpolated from nodal time-zero values. Bound frequencies
+use an absolute tolerance of $10^{-12}$ and count equally weighted interior
+state--time nodes; they are not occupation probabilities. The first two grid
+comparisons halve both $h$ and $\delta$. Increasing $L$ from 6 to 8 at fixed
+$(n_y,n_t)=(1601,1024)$ changes $\delta$ from 0.0075 to 0.01. This comparison
+measures joint domain and spacing sensitivity, not boundary truncation error
+in isolation. Full common-domain changes and their locations accompany the
+central-region summaries.
+
+The scalar calculation supplies an independent finite-grid benchmark for
+nonlinear feedback, with a reproducible algebraic error account. In the
+10-, 20- and 50-dimensional economies, cross-sectional dispersion, the
+coupling matrix and the covariance structure remain economically active.
+Moreover, this scalar benchmark evaluates Markov feedback, whereas the
+continuous-time deployment theorem specifies a randomized controller with
+innovation history. Scalar reference losses therefore have their stated
+one-dimensional meaning; multidimensional conclusions rely on the separate
+multidimensional policy comparisons and certification arguments.

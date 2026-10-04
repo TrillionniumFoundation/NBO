@@ -1,0 +1,131 @@
+\subsection{From evaluation error to economic improvement}
+\label{sec:r14costate}
+Proposition~\ref{prop:r12costate} controls a decision at a given state.
+The distribution of states at which that decision is used matters for
+the economic conclusion. We make this link explicit. In this subsection,
+$\pi$ is a fixed Markov policy with a sufficiently regular policy value
+$V^\pi$ to justify It\^o's formula and the expectations below. Specifically, $V^\pi\in C^{1,2}([0,T)\times\mathbb R^d)$ is continuous at the terminal date with $V^\pi(T,\cdot)=g$. Along each candidate considered, the drift and terminal terms in the discounted It\^o identity are integrable and its stochastic integral is a zero-mean martingale. The condition
+\[
+ \E\int_0^T e^{-2\rho t}
+ \|\Sigma^\top D_yV^\pi(t,Y_t^a)\|_2^2\,dt<\infty
+\]
+is sufficient for the latter. The parameters of $\pi$ are frozen. Let $a$ be any admissible candidate, including
+a history-dependent candidate, and let $Y^a$ be its physical state.
+Set $q^\pi=dD_yV^\pi$ and define
+\[
+ g^\pi(t,y)=\max_{m\in\mathcal A}H_{q^\pi(t,y)}(m)
+                 -H_{q^\pi(t,y)}(\pi(t,y))\geq0,
+\]
+where $\mathcal A$ is the same convex action set for both maximizations
+and both policies. One may always take the primitive action box.
+For a costate predictor $\widehat q$, let $\delta_t$ bound the
+$H_{\widehat q(t,Y_t^a)}$ maximization gap of $a_t$ over that set.
+Write $\overline q_h(t,y)$ for the conditional mean of the frozen-policy
+rollout costate at mesh $h$. Define, under the candidate's state law,
+\begin{align*}
+ \mathcal G_a&=\E\int_0^T e^{-\rho t}g^\pi(t,Y_t^a)\,dt,\\
+ \mathcal D_a&=\E\int_0^T e^{-\rho t}\delta_t\,dt,\\
+ \mathcal E_{a,h}^2&=\E\int_0^T e^{-\rho t}
+      \|\widehat q(t,Y_t^a)-\overline q_h(t,Y_t^a)\|_d^2\,dt,\\
+ \mathcal B_{a,h}^2&=\E\int_0^T e^{-\rho t}
+      \|\overline q_h(t,Y_t^a)-q^\pi(t,Y_t^a)\|_d^2\,dt.
+\end{align*}
+The quantity $\mathcal E_{a,h}$ concerns regression accuracy;
+$\mathcal B_{a,h}$ retains the rollout discretization bias.
+
+\begin{proposition}[Evaluation, action quality, and payoff]
+\label{prop:r14economiccostate}
+Suppose the displayed quantities are finite and the consumption
+Hamiltonian is $\mu$-strongly concave on $\mathcal A$. Then
+\begin{equation}\label{eq:r14economiccostate}
+ J_y(a)-J_y(\pi)\geq
+ \mathcal G_a-
+ \left\{\sqrt{\mathcal D_a}
+       +\frac{\mathcal E_{a,h}+\mathcal B_{a,h}}{\sqrt{2\mu}}
+ \right\}^{\!2}.
+\end{equation}
+In particular, an upper bound on the action-loss term and a lower bound
+on $\mathcal G_a$ establish a sufficient condition for policy
+improvement. The proposition applies to any costate estimator; a
+method comparison still requires the independently evaluated payoffs
+and their associated work.
+\end{proposition}
+
+\begin{proof}
+The fixed-policy equation for $V^\pi$, evaluated along $Y^a$, gives
+the performance-difference identity
+\begin{equation}\label{eq:r14performanceidentity}
+ J_y(a)-J_y(\pi)=\E\int_0^T e^{-\rho t}
+  \{H_{q^\pi(t,Y_t^a)}(a_t)
+       -H_{q^\pi(t,Y_t^a)}(\pi(t,Y_t^a))\}\,dt.
+\end{equation}
+The diffusion and the state-dependent part of felicity are common to
+the two actions, so their differences cancel. The terminal terms agree.
+Localization followed by the assumed integrability justifies the
+martingale expectation. Subtract the true greedy Hamiltonian inside
+the integrand and use Proposition~\ref{prop:r12costate}. Minkowski's
+inequality for the measure $e^{-\rho t}dt\,d\Pr$, first for
+$\sqrt{\delta_t}$ and the costate norm, and then for the regression
+and bias components of the costate, gives
+\[
+ \E\int_0^T e^{-\rho t}
+ \left(\sqrt{\delta_t}+
+     \frac{\|q^\pi-\widehat q\|_d}{\sqrt{2\mu}}\right)^2dt
+ \leq\left\{\sqrt{\mathcal D_a}+
+       \frac{\mathcal E_{a,h}+\mathcal B_{a,h}}{\sqrt{2\mu}}\right\}^2.
+\]
+Combining these statements proves the result.
+\end{proof}
+
+\paragraph*{Independent costate diagnostics.}
+Condition on a fitted policy, its critic, and a held-out state $X$.
+Let $\overline Z_1,\overline Z_2$ be means from independent rollout
+banks with the same conditional mean $\overline q_h(X)$. Conditional
+independence and zero conditional mean of the two errors imply
+\[
+ \E[\langle\widehat q(X)-\overline Z_1,
+                  \widehat q(X)-\overline Z_2\rangle_d\mid X]
+       =\|\widehat q(X)-\overline q_h(X)\|_d^2.
+\]
+With $r$ independent replicates per bank and conditional single-rollout
+variance $v_h(X)=\E[\|Z-\overline q_h(X)\|_d^2\mid X]$,
+\[
+ \frac12\E[\|\overline Z_1-\overline Z_2\|_d^2\mid X]
+       =\frac{v_h(X)}r.
+\]
+The first sample average is not constrained to be positive. Both
+identities refer to the actual held-out state distribution. They
+estimate the quantities in~\eqref{eq:r14economiccostate} only when
+that distribution is the candidate's discounted state occupation law,
+or when a justified change-of-measure account is supplied. Nested-grid
+differences diagnose time-step sensitivity; without a remainder bound
+they do not bound $\mathcal B_{a,h}$.
+
+\paragraph*{A continuous-time costate error account.}
+There is also a direct sufficient condition for controlling the true
+costate, independent of a rollout bias estimate. For a smooth candidate
+value $v$, define its fixed-policy residual and terminal error by
+\[
+ r^\pi[v]=-v_t-\mathcal L^\pi v-u(\cdot,\pi)+\rho v,
+ \qquad b_v=v(T,\cdot)-g.
+\]
+Suppose $b^\pi=c\bm1+f-\pi$ is continuously differentiable with
+$\|D_yb^\pi\|_2\leq L_b$, and suppose differentiating the following
+Feynman--Kac expectations is justified. If
+$\|dD_yb_v\|_d\leq C_T$ and
+$\|dD_yr^\pi[v](s,\cdot)\|_d\leq C_r(s)$ everywhere, then
+\begin{equation}\label{eq:r14costateresidual}
+ \|dD_yv(t,y)-q^\pi(t,y)\|_d
+ \leq e^{(L_b-\rho)(T-t)}C_T
+       +\int_t^T e^{(L_b-\rho)(s-t)}C_r(s)\,ds.
+\end{equation}
+To see this, write $v-V^\pi$ as the expected discounted terminal error
+plus the expected discounted residual integral. The state Jacobian
+$J_{t,s}$ satisfies
+$\dot J_{t,s}=D_yb^\pi(s,Y_s)J_{t,s}$, $J_{t,t}=I$, and hence
+$\|J_{t,s}\|_2\leq e^{L_b(s-t)}$. Differentiate the expectation and
+apply that bound. A hard terminal condition gives $C_T=0$.
+Equation~\eqref{eq:r14costateresidual} is a sufficient mathematical
+account for a smooth continuous policy. A sampled residual, a rollout
+grid difference, or the derivatives of a different deployed
+implementation do not supply its global hypotheses.

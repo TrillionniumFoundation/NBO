@@ -1,0 +1,104 @@
+\subsection{Finite observations with a continuous-economy transfer}
+\label{sec:r14sensing}
+At dates $t_k=kh$, a finite-observation controller receives
+$O_k=\overline Y_{t_k}+\eta_k$ and holds
+$\overline a_k=\widehat\pi_k(O_k)$ until the next date. The sensor
+error is measurable at $t_k$ in the product filtration just specified
+and satisfies $\|\eta_k\|_{2,d}\leq\nu_{\rm obs}$, where
+$\|X\|_{2,d}=(\E\|X\|_d^2)^{1/2}$. Both the sensor state
+$\overline Y$ and the comparison parent's physical state $Y$ obey the
+original continuous diffusion. No Brownian coordinate or continuous
+drift integral is supplied to the sensor controller.
+
+The protected parent has internal state $Z_0=y$ and selects
+$a_k=\widehat\pi_k(Z_k)$. Its update is the specified clipped-innovation
+Euler update, with an implementation error of normalized norm at most
+$\xi_h$ per cell. This includes innovation conversion and recurrence
+arithmetic. Both action maps use the same inward guard and lie within
+$\epsilon$ of the common schedule $m_0(t_k)$ coordinatewise.
+For a real reference map $\pi_k$, suppose
+\[
+ \|\pi_k(x)-\pi_k(z)\|_d\leq L\|x-z\|_d,
+ \qquad \sup_x\|\widehat\pi_k(x)-\pi_k(x)\|_d\leq\delta_\pi.
+\]
+Global matrix-norm products and forward error propagation through the
+protected activation supply $L$ and $\delta_\pi$ for the saved weights.
+Measurement error is measured before the protected map; input
+representation within that map is included in $\delta_\pi$.
+
+Retain the production coefficient $\kappa$ of the economic model and
+let $\beta\geq\kappa\|B\|_2$. Put
+$\overline\sigma=(\sigma_I^2+\sigma_C^2)^{1/2}$ and let $M$ bound
+$\|c\bm1+f(y)-m\|_d$ for all feasible held actions. Define the
+generator constants $H$ and $K=\beta M+Q_f$ as in the diffusion-transfer argument of Theorem~\ref{thm:r11certificate},
+where $H^2\geq d^{-1}\sup_y\|Df(y)\Sigma\|_F^2$, $q_i=(B\Sigma\Sigma^\top B^\top)_{ii}$, and $Q_f=(\kappa/2)(d^{-1}\sum_iq_i^2)^{1/2}$ is the generator
+bound, not a diffusion covariance. Let $z>0$ be the clipping threshold and let
+$v_{\rm clip}\geq\E(G-\operatorname{clip}(G,-z,z))^2$ for a standard normal
+$G$. The inherited bound $2\varphi(z)(z+z^{-1})$ is valid.
+Set
+\begin{align}
+ b_k&=h\{Kt_k/2+H\sqrt{t_k/3}\}
+          +\overline\sigma\sqrt{t_kv_{\rm clip}}+k\xi_h,
+          \qquad b_0=0,\label{eq:r14sensorforcing}\\
+ e_0&=0,\qquad
+ a_k^\Delta=\min\{2\epsilon,L(e_k+\nu_{\rm obs})+2\delta_\pi\},\notag\\
+ e_{k+1}&=(1+\beta h)e_k+h a_k^\Delta+(b_{k+1}-b_k),
+       \qquad 0\leq k<N.\label{eq:r14sensorrecursion}
+\end{align}
+The forcing is nondecreasing. Each term retains the accumulated
+martingale cancellation; in particular, the clipping term is a
+finite-horizon second-moment account rather than a sum of cellwise
+absolute clipping errors.
+
+Define the nonnegative function
+\begin{align*}
+ D(t)&=\int_0^t e^{\beta(t-s)}a_{\lfloor s/h\rfloor}^\Delta\,ds,\\
+ Q_T&=s_0+(\kappa+\epsilon)T
+                    +\sigma_I\sqrt{(1-1/d)T}.
+\end{align*}
+Here $s_0\geq\|\Pi Y_0\|_{2,d}$, with $\Pi$ the projection away from the common-state direction. For $t\in[t_k,t_{k+1})$, choose $m_{-,k}>0$ below every action in the
+common tube and put
+\[
+ r_k(t)=\epsilon+|m_0(t)-m_0(t_k)|,
+ \qquad C_k(t)=r_k(t)
+           \{[m_0(t)m_{-,k}]^{-1}+\zeta\}.
+\]
+With $W(t)=e^{-\rho t}w(t)$ as before, define
+\begin{equation}\label{eq:r14sensorpayoff}
+ \begin{split}
+ B^{\rm sens}_{h,\nu_{\rm obs}}={}&\beta\int_0^T W(t)D(t)\,dt
+ +\sum_{k=0}^{N-1}a_k^\Delta
+       \int_{t_k}^{t_{k+1}}e^{-\rho t}C_k(t)\,dt\\
+ &+2\chi e^{-\rho T}Q_TD(T).
+ \end{split}
+\end{equation}
+
+\begin{proposition}[Finite-observation payoff transfer]
+\label{prop:r14sensor}
+Under the stated assumptions,
+\begin{align*}
+ \|\overline Y_{t_k}-Z_k\|_{2,d}&\leq e_k,\\
+ \|\overline a_k-a_k\|_{2,d}&\leq a_k^\Delta,\\
+ \|\overline Y_t-Y_t\|_{2,d}&\leq D(t),
+\end{align*}
+and
+\[
+       |J_y(\overline a)-J_y(a)|\leq B^{\rm sens}_{h,\nu_{\rm obs}}.
+\]
+Consequently, a valid improvement interval $[L_a,U_a]$ for the
+protected parent at the same time grid transfers to
+$[L_a-B^{\rm sens}_{h,\nu_{\rm obs}},U_a+B^{\rm sens}_{h,\nu_{\rm obs}}]$ for the
+finite-observation controller. This deterministic operation uses no
+additional statistical confidence allocation. It requires a certificate
+for that exact protected parent and grid.
+\end{proposition}
+
+The allowance concerns the original physical diffusion and uses only
+the stated sensor moment bound. A shared-noise fine-Euler comparison
+checks the finite-observation implementation and reports its observed
+payoff difference. Such a diagnostic does not replace the allowance or
+certify the Euler bias. For fixed weights and horizon, uniformly bounded $L,\beta,\epsilon$ and generator constants, and $m_{-,k}\geq\underline m>0$, the forcing vanishes if $h\to0$,
+$v_{\rm clip}(h)\to0$, $\xi_h/h\to0$, $\nu_{\rm obs}\to0$, and
+$\delta_\pi\to0$. Discrete Gronwall then makes the transfer allowance
+vanish. Fixed clipping and fixed numerical or measurement error leave
+the corresponding terms in the finite-grid bound.

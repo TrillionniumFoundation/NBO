@@ -1,0 +1,133 @@
+name: NBO R14 complete evidence and referee delivery
+
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r14-source-2026-10-04
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: nbo-r14-delivery-2026-10-04
+  cancel-in-progress: false
+
+env:
+  OMP_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  PYTHONHASHSEED: '0'
+  PYTHONDONTWRITEBYTECODE: '1'
+  NBO_R14_SOURCE_COMMIT: ${{ github.sha }}
+
+jobs:
+  materialize-and-publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Require three new publication branches
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$NBO_R14_SOURCE_COMMIT"
+          for branch in \
+            revision/econometrica-nbo-r14-evidence-2026-10-04 \
+            revision/econometrica-nbo-r14-referee-2026-10-04 \
+            revision/econometrica-nbo-r14-2026-10-04
+          do
+            existing=$(git ls-remote --heads origin "refs/heads/$branch")
+            if test -n "$existing"; then
+              echo "Publication branch already exists; refusing to alter it: $branch"
+              exit 1
+            fi
+          done
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install exact numerical versions and journal build packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-base texlive-latex-extra texlive-science \
+            texlive-fonts-recommended cm-super \
+            latexmk poppler-utils
+
+      - name: Restore, replay, diagnose, compile and strictly finalize
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python revisions/2026-10-04-r14/code/reproduce.py \
+            --repo-root . --require-source-checkout
+
+      - name: Retain complete R14 publication and failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r14-delivery-${{ github.run_id }}
+          path: |
+            revisions/2026-10-04-r14/
+            ECTA.tex
+            supp.tex
+            README.md
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Commit the complete evidence and atomically create three review branches
+        id: publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$NBO_R14_SOURCE_COMMIT"
+          python - <<'PY'
+          import hashlib,json,pathlib
+          root=pathlib.Path('.')
+          audit=json.loads((root/'revisions/2026-10-04-r14/FINAL_AUDIT.json').read_text())
+          assert audit['complete'] and audit['publication_source_verified']
+          manifest=json.loads((root/'revisions/2026-10-04-r14/EVIDENCE_MANIFEST.json').read_text())
+          for name,expected in manifest['files'].items():
+              h=hashlib.sha256()
+              with (root/name).open('rb') as stream:
+                  for chunk in iter(lambda:stream.read(1024*1024),b''): h.update(chunk)
+              assert h.hexdigest()==expected, name
+          PY
+          for branch in \
+            revision/econometrica-nbo-r14-evidence-2026-10-04 \
+            revision/econometrica-nbo-r14-referee-2026-10-04 \
+            revision/econometrica-nbo-r14-2026-10-04
+          do
+            existing=$(git ls-remote --heads origin "refs/heads/$branch")
+            if test -n "$existing"; then
+              echo "Publication branch appeared during execution; refusing to alter it: $branch"
+              exit 1
+            fi
+          done
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- ECTA.tex supp.tex README.md \
+            revisions/2026-10-04-r14 \
+            revisions/2026-10-04-r12/results \
+            revisions/2026-10-04-r13/results
+          git commit --quiet -m 'revision(r14): publish complete source-bound evidence, manuscript, proofs and referee response'
+          evidence_commit=$(git rev-parse HEAD)
+          git push --atomic origin \
+            HEAD:refs/heads/revision/econometrica-nbo-r14-evidence-2026-10-04 \
+            HEAD:refs/heads/revision/econometrica-nbo-r14-referee-2026-10-04 \
+            HEAD:refs/heads/revision/econometrica-nbo-r14-2026-10-04
+          echo "commit=$evidence_commit" >> "$GITHUB_OUTPUT"
+          echo "Published R14 evidence commit $evidence_commit" >> "$GITHUB_STEP_SUMMARY"
+          echo 'The evidence, referee, and revision branches identify the same complete tree. The original numerical sources remain separately recorded.' >> "$GITHUB_STEP_SUMMARY"
