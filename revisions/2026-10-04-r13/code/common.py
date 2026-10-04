@@ -9,6 +9,9 @@ import bellman_study as old
 import policy_certificate as pc
 import numpy as np
 import torch
+# Historical kernels add their own directories while importing dependencies.
+# Restore the current namespace for unqualified current-revision modules.
+sys.path.insert(0,str(R/'code'))
 P=old.P; CHI=old.CHI
 PROTOCOL=json.loads((R/'PROTOCOL.json').read_text())
 torch.set_num_threads(1);torch.set_default_dtype(torch.float64)
