@@ -1,0 +1,343 @@
+name: NBO R16 prospective continuation reuse menu
+
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r16-menu-source-2026-10-04
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: nbo-r16-menu-${{ github.sha }}
+  cancel-in-progress: false
+
+env:
+  NBO_R16_MENU_SOURCE_COMMIT: ${{ github.sha }}
+  OMP_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  NUMBA_NUM_THREADS: '1'
+  PYTHONHASHSEED: '0'
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      actions: read
+    outputs:
+      matrix: ${{ steps.pack.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            .github/workflows/nbo-r16-continuation-menu.yml
+            .github/workflows/nbo-r15-experiment.yml
+            revisions/2026-10-04-r16/code/
+            revisions/2026-10-04-r16/protocols/
+            revisions/2026-10-04-r16/manuscript/menu_theory.tex
+            revisions/2026-10-04-r16/results/exploratory/menu/
+            revisions/2026-09-29-r6/code/
+            revisions/2026-10-04-r10/code/
+            revisions/2026-10-04-r11/code/
+            revisions/2026-10-04-r12/code/
+            revisions/2026-10-04-r12/PROTOCOL.json
+            revisions/2026-10-04-r12/results/reference/dpo_d1_s7919.pt
+            revisions/2026-10-04-r12/results/reference/nbo_d1_s7919.pt
+            revisions/2026-10-04-r15/code/
+            revisions/2026-10-04-r15/PROTOCOL.json
+            revisions/2026-10-04-r15/SCALAR_PROTOCOL.json
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Require the first execution and a new evidence branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$(git rev-parse HEAD)" = "$NBO_R16_MENU_SOURCE_COMMIT"
+          test -z "$(git ls-remote --heads origin refs/heads/revision/econometrica-nbo-r16-menu-evidence-2026-10-04)"
+          test -z "$(git ls-remote --heads origin refs/heads/revision/econometrica-nbo-r16-menu-transport-2026-10-04)"
+      - name: Install exact CPU numerical dependencies
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Check independent manufactured menu identities and immutable transport
+        run: python -m unittest discover -s revisions/2026-10-04-r16/code -p 'menu*tests.py' -v
+      - name: Freeze the complete independent menu scientific source
+        id: pack
+        run: |
+          python revisions/2026-10-04-r16/code/menu_pipeline.py pack \
+            --repo . --out "$RUNNER_TEMP/menu-source" \
+            --source "$NBO_R16_MENU_SOURCE_COMMIT"
+      - name: Create the new append-only raw transport ref at the immutable source
+        run: |
+          python revisions/2026-10-04-r16/code/menu_transport.py initialize \
+            --repo . --source "$NBO_R16_MENU_SOURCE_COMMIT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-menu-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/menu-source/
+          if-no-files-found: error
+          retention-days: 90
+
+  menu:
+    needs: source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    permissions:
+      contents: write
+      actions: read
+    strategy:
+      fail-fast: false
+      max-parallel: 16
+      matrix: ${{ fromJSON(needs.source.outputs.matrix) }}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r16-menu-source-${{ github.run_id }}
+          path: source
+      - name: Install exact CPU numerical dependencies
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Fit every method and work stage before the independent confirmation process
+        run: |
+          python source/menu_pipeline.py run-trial \
+            --bundle source --workspace "$RUNNER_TEMP/menu-worker" \
+            --out "$RUNNER_TEMP/trial-${{ matrix.trial_id }}" --parts "parts-${{ matrix.trial_id }}" --trial-id '${{ matrix.trial_id }}'
+      - name: Preserve complete menu evidence part 00
+        if: always() && hashFiles('parts-*/part00/PART.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-menu-part-${{ matrix.trial_id }}-00-${{ github.run_id }}
+          path: parts-${{ matrix.trial_id }}/part00/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Preserve complete menu evidence part 01
+        if: always() && hashFiles('parts-*/part01/PART.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-menu-part-${{ matrix.trial_id }}-01-${{ github.run_id }}
+          path: parts-${{ matrix.trial_id }}/part01/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Preserve complete menu evidence part 02
+        if: always() && hashFiles('parts-*/part02/PART.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-menu-part-${{ matrix.trial_id }}-02-${{ github.run_id }}
+          path: parts-${{ matrix.trial_id }}/part02/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Preserve complete menu evidence part 03
+        if: always() && hashFiles('parts-*/part03/PART.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-menu-part-${{ matrix.trial_id }}-03-${{ github.run_id }}
+          path: parts-${{ matrix.trial_id }}/part03/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Preserve complete menu evidence part 04
+        if: always() && hashFiles('parts-*/part04/PART.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-menu-part-${{ matrix.trial_id }}-04-${{ github.run_id }}
+          path: parts-${{ matrix.trial_id }}/part04/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Preserve complete menu evidence part 05
+        if: always() && hashFiles('parts-*/part05/PART.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-menu-part-${{ matrix.trial_id }}-05-${{ github.run_id }}
+          path: parts-${{ matrix.trial_id }}/part05/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Preserve complete menu evidence part 06
+        if: always() && hashFiles('parts-*/part06/PART.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-menu-part-${{ matrix.trial_id }}-06-${{ github.run_id }}
+          path: parts-${{ matrix.trial_id }}/part06/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Preserve complete menu evidence part 07
+        if: always() && hashFiles('parts-*/part07/PART.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-menu-part-${{ matrix.trial_id }}-07-${{ github.run_id }}
+          path: parts-${{ matrix.trial_id }}/part07/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Preserve complete menu evidence part 08
+        if: always() && hashFiles('parts-*/part08/PART.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-menu-part-${{ matrix.trial_id }}-08-${{ github.run_id }}
+          path: parts-${{ matrix.trial_id }}/part08/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Preserve complete menu evidence part 09
+        if: always() && hashFiles('parts-*/part09/PART.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-menu-part-${{ matrix.trial_id }}-09-${{ github.run_id }}
+          path: parts-${{ matrix.trial_id }}/part09/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Preserve complete menu evidence part 10
+        if: always() && hashFiles('parts-*/part10/PART.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-menu-part-${{ matrix.trial_id }}-10-${{ github.run_id }}
+          path: parts-${{ matrix.trial_id }}/part10/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Preserve complete menu evidence part 11
+        if: always() && hashFiles('parts-*/part11/PART.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-menu-part-${{ matrix.trial_id }}-11-${{ github.run_id }}
+          path: parts-${{ matrix.trial_id }}/part11/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Persist this original trial through bounded compare-and-swap Git transport
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          NBO_R16_TRANSPORT_REMOTE_URL: ${{ github.server_url }}/${{ github.repository }}.git
+        shell: bash
+        run: |
+          set -euo pipefail
+          trial_dir="$RUNNER_TEMP/trial-${{ matrix.trial_id }}"
+          if [ ! -f "$trial_dir/TRIAL.json" ]; then
+            echo 'No sealed trial receipt exists; scientific infrastructure failure remains in the original job log.'
+            exit 0
+          fi
+          python "$RUNNER_TEMP/menu-worker/revisions/2026-10-04-r16/code/menu_transport.py" publish \
+            --repo "$RUNNER_TEMP/menu-transport.git" \
+            --url "$NBO_R16_TRANSPORT_REMOTE_URL" \
+            --trial-dir "$trial_dir" --manifest "$GITHUB_WORKSPACE/source/SOURCE_MANIFEST.json" \
+            --analysis "$RUNNER_TEMP/menu-analysis" --analysis-parts "analysis-parts-${{ matrix.trial_id }}"
+      - name: Preserve bounded complete analysis part 00
+        if: always() && hashFiles('analysis-parts-*/analysis00/ANALYSIS_PART.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-menu-analysis-${{ matrix.trial_id }}-00-${{ github.run_id }}
+          path: analysis-parts-${{ matrix.trial_id }}/analysis00/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Preserve bounded complete analysis part 01
+        if: always() && hashFiles('analysis-parts-*/analysis01/ANALYSIS_PART.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-menu-analysis-${{ matrix.trial_id }}-01-${{ github.run_id }}
+          path: analysis-parts-${{ matrix.trial_id }}/analysis01/
+          if-no-files-found: error
+          retention-days: 90
+
+  evidence:
+    needs: [source, menu]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            .github/workflows/nbo-r16-continuation-menu.yml
+            .github/workflows/nbo-r15-experiment.yml
+            revisions/2026-10-04-r16/code/
+            revisions/2026-10-04-r16/protocols/
+            revisions/2026-10-04-r16/manuscript/menu_theory.tex
+            revisions/2026-10-04-r16/results/exploratory/menu/
+            revisions/2026-09-29-r6/code/
+            revisions/2026-10-04-r10/code/
+            revisions/2026-10-04-r11/code/
+            revisions/2026-10-04-r12/code/
+            revisions/2026-10-04-r12/PROTOCOL.json
+            revisions/2026-10-04-r12/results/reference/dpo_d1_s7919.pt
+            revisions/2026-10-04-r12/results/reference/nbo_d1_s7919.pt
+            revisions/2026-10-04-r15/code/
+            revisions/2026-10-04-r15/PROTOCOL.json
+            revisions/2026-10-04-r15/SCALAR_PROTOCOL.json
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install exact aggregation dependencies
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r16-menu-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/menu-source
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nbo-r16-menu-analysis-*-${{ github.run_id }}
+          path: ${{ runner.temp }}/menu-analysis-parts
+      - name: Require every stream and recompute all 216 payoff and 128 scalar endpoints
+        run: |
+          python revisions/2026-10-04-r16/code/menu_pipeline.py collect \
+            --repo . --bundle "$RUNNER_TEMP/menu-source" \
+            --input-dir "$RUNNER_TEMP/menu-analysis-parts"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-menu-summary-${{ github.run_id }}
+          path: revisions/2026-10-04-r16/results/continuation_menu_summary/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Atomically create complete evidence from the full staging tree and bounded report additions
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$(git rev-parse HEAD)" = "$NBO_R16_MENU_SOURCE_COMMIT"
+          python revisions/2026-10-04-r16/code/menu_transport.py finalize \
+            --repo . --manifest-path "$RUNNER_TEMP/menu-source/SOURCE_MANIFEST.json" \
+            --results-root revisions/2026-10-04-r16/results/continuation_menu \
+            --summary-root revisions/2026-10-04-r16/results/continuation_menu_summary \
+            | tee "$RUNNER_TEMP/menu-final-publication.json"
+          python - <<'PY'
+          import json,pathlib,os
+          result=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'menu-final-publication.json').read_text())
+          assert result['complete'] and result['numerical_source_commit']==os.environ['NBO_R16_MENU_SOURCE_COMMIT']
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+              f.write('Numerical source: '+result['numerical_source_commit']+'\n\n')
+              f.write('Complete raw staging parent: '+result['staging_parent']+'\n\n')
+              f.write('Complete menu evidence: '+result['evidence_commit']+'\n')
+          PY

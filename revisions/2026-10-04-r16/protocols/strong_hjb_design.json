@@ -1,0 +1,63 @@
+{
+  "schema": "nbo-r16-strong-hjb-design-v1",
+  "role": "Prospective baseline specification; the enclosing robustness protocol fixes economic designs, complete streams, confidence events and final payoff banks before execution.",
+  "economic_scope": "The original capital economy with explicit primitives, action radius and nine initial profiles supplied by the enclosing protocol.",
+  "selection": {
+    "candidate_order_is_fixed": true,
+    "criterion": "Minimum root mean square exact HJB residual, giving equal weight to independent occupation and broad selection banks, over all retained candidate checkpoints.",
+    "tie_break": "Earliest candidate in the listed order, then earliest checkpoint.",
+    "excluded_from_selection": ["final payoff", "final certification", "untouched residual audit", "probe variance audit", "relative performance against NBO, Raw or DPO"],
+    "failure_rule": "Retain every failed fit and prior checkpoint file; exclude a failed candidate from selection. If all four fail, preserve the complete failed stream under the enclosing protocol without a replacement seed.",
+    "checkpoint_label": "Selection-bank residuals are selection data. Independent audit residuals are reported only after the critic and deployment objects are fixed. Neither constitutes a uniform residual or value certificate."
+  },
+  "diffusion_trace": {
+    "training": "Exact architecture-specific covariance contraction in both dimensions, propagated through the two Linear/Tanh layers.",
+    "formula": "For a hidden preactivation z with Jacobian J and contracted Hessian q, tanh(z) has Jacobian (1-tanh(z)^2)J and contraction (1-tanh(z)^2)q - 2 tanh(z)(1-tanh(z)^2) diag(J Sigma Sigma' J').",
+    "validation": "Independent automatic-differentiation Hessian contractions and weight gradients in dimensions 1, 10 and 50; hard terminal lift checked at nonzero weights.",
+    "probe_diagnostics": "Frozen independent banks with 2, 8 and 32 probes compare the original Gaussian covariance estimator and a Rademacher idiosyncratic estimator with exact common-shock contraction. Probe outcomes never select the fitted baseline."
+  },
+  "deployment": {
+    "method_ids": ["hjb_greedy", "hjb_distilled"],
+    "greedy": "Safeguarded Newton solve of the one-dimensional mean-action fixed point, tolerance 2e-13, at most 16 Newton iterations then a charged 44-step bisection fallback; the exact first jet is propagated without a reverse-mode input-gradient call.",
+    "distilled": "Same two-layer width-32 materialized actor capacity as the NBO/Raw/DPO actor. Greedy labels are cached once; actor is fitted before any final payoff is evaluated.",
+    "selection_between_deployments": "None. Both are prespecified reported methods, and both must receive their own final common-path evaluation.",
+    "work": "Charge all four candidate fits, every residual check, every retained snapshot, greedy label generation, actor fitting, independent residual and probe diagnostics, loading, final evaluation and durable output. The full shared family construction cost is assigned to each reported deployment; disclose the common computation explicitly."
+  },
+  "diagnostics": {
+    "curves": ["exact residual RMS by occupation and broad state bank", "four time-stratum residual summaries", "hard terminal value error", "successive selected-bank value differences", "successive selected-bank greedy policy differences"],
+    "untouched_audit": ["exact residual RMS and maximum sampled residual", "distilled actor error relative to the selected critic's greedy policy", "selected-critic Hamiltonian gap", "2/8/32-probe trace variance against the exact Hessian contraction"],
+    "scope": "Value and policy differences are convergence diagnostics between iterates, not error against the unknown optimum. Economic performance is determined only by the independent final verifier in the enclosing protocol."
+  },
+  "implementation_configuration": {
+    "critic_width": 32,
+    "critic_time_width": 16,
+    "actor_width": 32,
+    "training_rows": 2048,
+    "selection_rows_per_group": 1024,
+    "audit_rows_per_group": 1024,
+    "occupation_steps": 64,
+    "broad_noise_scale": 1.5,
+    "batch": 128,
+    "adam_updates": 1200,
+    "checkpoint_every": 200,
+    "minimum_adam_updates": 400,
+    "residual_stop_rms": 0.001,
+    "lbfgs_iterations": 150,
+    "lbfgs_evaluations": 220,
+    "distillation_adam_updates": 1200,
+    "distillation_learning_rate": 0.002,
+    "distillation_lbfgs_iterations": 100,
+    "probe_diagnostic_rows": 64,
+    "probe_diagnostic_banks": 64,
+    "probe_counts": [2, 8, 32],
+    "candidates": [
+      {"id": "occupation_lr0015", "collocation": "occupation", "learning_rate": 0.0015},
+      {"id": "occupation_lr0005", "collocation": "occupation", "learning_rate": 0.0005},
+      {"id": "mixture_lr0015", "collocation": "half_occupation_half_broad", "learning_rate": 0.0015},
+      {"id": "mixture_lr0005", "collocation": "half_occupation_half_broad", "learning_rate": 0.0005}
+    ]
+  },
+  "stopping_semantics": "Independent residual stopping may end a candidate's optimization within the fixed maximum envelope at a registered checkpoint after at least 400 Adam updates. It is not economic work-to-certified-gain stopping. The enclosing study reports fixed-envelope complete work and independent final certification; the historical R15 online-stop results remain separate.",
+  "source_files": ["revisions/2026-10-04-r16/code/strong_hjb.py", "revisions/2026-10-04-r16/code/strong_hjb_tests.py", "revisions/2026-10-04-r16/code/capital_adapter.py", "revisions/2026-10-04-r16/code/capital_verifier.py", "revisions/2026-10-04-r16/code/robustness_worker.py"],
+  "development_record": "Development arithmetic and optimizer API checks are separate from prospective economic evidence; no final payoff has been evaluated by the baseline implementation."
+}
