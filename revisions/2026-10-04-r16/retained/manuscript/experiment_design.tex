@@ -1,0 +1,56 @@
+% R15 component; only input paths and enumerated location/grammar prose are edited.
+% Source: revisions/2026-10-04-r15/manuscript/experiment_design.tex; commit 1cb3cc9efe135966ec228dfaf51c6841a6dfc97c.
+\subsection{The capital experiment}
+\label{sec:r15experimentdesign}
+The experiment uses the capital state equation and objective in
+\eqref{eq:r10state}--\eqref{eq:r10payoff}, in dimensions ten and fifty.
+It changes the volatility parameters to $\sigma_I=0.6$ and $\sigma_C=0.3$;
+the remaining primitives are $T=1$, $\rho=0.04$, $a=0.10$,
+$\kappa=0.15$, $\zeta=0.2$, $\chi=0.03$, and
+$[\underline m,M]=[0.02,2]$. The initial population assigns equal mass to
+nine profiles with means $-0.5,0,0.5$ and cross-sectional spreads
+$0,0.25,0.5$. The methods share the declared radius-$0.1$ feasible tube,
+coupling matrix, initial population, and payoff evaluator. This is a
+parameter regime of the same economic model. The earlier comparison,
+scalar study, and protected-observation experiment retain their original
+volatility parameters and their separate evidence records.
+
+Training uses a global grid of 64 cells. Its reference policy is the
+cell-average analytical schedule and remains fixed through all three
+work levels. The cumulative occupation samples contain 256, 512, and
+1,024 states. Each state comes from an independent reference trajectory
+at a uniformly selected decision node. Postdecision inputs are the
+pre-noise mean and the next decision date. NBO and Raw share four-antithetic
+continuation targets; all member rollouts and all reused labels are
+counted. These sample sizes define increasing information budgets,
+not equal floating-point work across methods.
+
+At each stage NBO fits the spatial continuation derivative by full-replay
+Sobolev mean-square loss, with 1,200 Adam updates followed by L-BFGS.
+The latter has nominal iteration and evaluation limits of 300 and 400;
+the current line search is completed and every actual closure call is counted.
+A separate time component then receives 400 value-fitting updates with
+the spatial component fixed. NBO and Raw use the same feasible actor
+objective and minibatch/update streams, with 200, 400, and 800 additional
+actor updates at the three stages. DPO and HJB use 100, 200, and 400
+additional updates. The minibatch size is 128; the actor, spatial-critic,
+time-component, and HJB learning rates are $0.003$, $0.002$, $0.003$,
+and $0.002$, respectively. Model weights and replay continue across
+stages. These are declared optimization procedures; a common sample
+budget does not make their optimization costs identical.
+
+Online certification and independent final confirmation both use 2,048
+decision cells and 8,192 paths per stream. The selected fixed networks
+are deployed on that finer grid. The learned 64-cell continuation
+derivative is consequently a predictor in the fine-grid mechanism
+assessment, whose error account includes that discrepancy; it is not
+identified with an exact fine-grid or continuous-time costate.
+The protocol and numerical source were frozen before the confirmation
+experiment. Exploratory pilots that selected the design remain distinct
+from the confirmatory observations.
+
+The measured process clock begins before a fresh worker is launched and
+ends after its final evidence is durably written. It includes imports,
+model setup, deterministic constants, fitting, checks, weight reloading,
+confirmation, and output. Dependency installation and artifact extraction
+precede this clock and are not charged as method execution time.

@@ -1,0 +1,114 @@
+name: NBO R16 four-document revision and complete-evidence publication
+
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r16-delivery-source-2026-10-04
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: nbo-r16-publication-${{ github.sha }}
+  cancel-in-progress: false
+
+env:
+  OMP_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  NUMBA_NUM_THREADS: '1'
+  PYTHONHASHSEED: '0'
+  PYTHONDONTWRITEBYTECODE: '1'
+  NBO_R16_PUBLICATION_SOURCE_COMMIT: ${{ github.sha }}
+
+jobs:
+  manuscript-and-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      # sparse-checkout automatically selects the blob:none fetch filter in
+      # checkout@v4; no separate filter input is needed for this bounded fetch.
+      # Start with six small files, never the complete 11+ GiB raw worktree.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: true
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /README.md
+            /.github/workflows/nbo-r16-delivery.yml
+            /revisions/2026-10-04-r16/PUBLICATION_SOURCES.json
+            /revisions/2026-10-04-r16/code/publication_audit.py
+            /revisions/2026-10-04-r16/code/publication_families.py
+            /revisions/2026-10-04-r16/code/delivery.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Require immutable D and three absent publication branches
+        run: |
+          python revisions/2026-10-04-r16/code/delivery.py preflight \
+            --repo . --publication-source "$NBO_R16_PUBLICATION_SOURCE_COMMIT" --require-sparse
+      - name: Fetch complete Git metadata and the bounded analysis closure
+        run: |
+          python revisions/2026-10-04-r16/code/delivery.py materialize \
+            --repo . --publication-source "$NBO_R16_PUBLICATION_SOURCE_COMMIT"
+      - name: Install the frozen report environment and journal packages
+        run: |
+          set -euo pipefail
+          python -m pip install --no-cache-dir numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install --no-cache-dir torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-base texlive-latex-extra texlive-science \
+            texlive-fonts-recommended cm-super latexmk poppler-utils
+      - name: Exercise adversarial publication gates without scientific draws
+        run: |
+          python -m unittest discover -s revisions/2026-10-04-r16/code \
+            -p publication_tests.py -v
+      - name: Materialize the reviewed article, proofs, applications and response
+        run: |
+          set -euo pipefail
+          python revisions/2026-10-04-r16/code/integrate.py --write-roots
+          python revisions/2026-10-04-r16/code/build.py --publication
+      - name: Render every final page and check physical page geometry
+        run: |
+          python revisions/2026-10-04-r16/code/layout_diagnostics.py \
+            --repo . --out "$RUNNER_TEMP/nbo-r16-final-pages-${GITHUB_RUN_ID}"
+      - name: Audit complete Git evidence, replay reports and verify the current proof corpus
+        run: |
+          python revisions/2026-10-04-r16/code/publication_audit.py \
+            --repo . --publication-source "$NBO_R16_PUBLICATION_SOURCE_COMMIT" \
+            --sources revisions/2026-10-04-r16/PUBLICATION_SOURCES.json --strict
+      - name: Retain all four review documents and final audit receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r16-publication-${{ github.run_id }}
+          path: |
+            ECTA.tex
+            supp.tex
+            README.md
+            revisions/2026-10-04-r16/applications.tex
+            revisions/2026-10-04-r16/response.tex
+            revisions/2026-10-04-r16/build/*.pdf
+            revisions/2026-10-04-r16/build/*.txt
+            revisions/2026-10-04-r16/build/*.log
+            revisions/2026-10-04-r16/build/*.stdout
+            revisions/2026-10-04-r16/*.json
+            revisions/2026-10-04-r16/*.md
+            revisions/2026-10-04-r16/manuscript/
+            revisions/2026-10-04-r16/results/COMPILATION.json
+            revisions/2026-10-04-r16/results/FINAL_LAYOUT_DIAGNOSTICS.json
+            revisions/2026-10-04-r16/results/MATERIALIZATION.json
+            revisions/2026-10-04-r16/results/current_source_closure.tsv
+          if-no-files-found: error
+          retention-days: 90
+      - name: Create one audited child F and atomically create three review branches
+        run: |
+          python revisions/2026-10-04-r16/code/delivery.py publish --execute \
+            --repo . --publication-source "$NBO_R16_PUBLICATION_SOURCE_COMMIT"

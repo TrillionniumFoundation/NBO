@@ -1,0 +1,44 @@
+{
+  "changed_current_roots": {
+    "revisions/2026-10-04-r16/applications.tex": {
+      "after": {
+        "bytes": 2075,
+        "git_blob": "cacc8e3c3070821049514b1c888937e7381c6bbd",
+        "sha256": "781904c755a67bd32164e76591adcece6258e8cdab02b6ff4984d338390d768f"
+      },
+      "before": {
+        "bytes": 1975,
+        "git_blob": "8929892f6d6e63d82bbe7b0a1571c4b04754062e",
+        "sha256": "11cc3b274448607dca7a86a603357520815a0901fbe254a1ae63c61dbcac8c31"
+      }
+    },
+    "supp.tex": {
+      "after": {
+        "bytes": 4196,
+        "git_blob": "ae84abcc65d60e63ed9e8d84284056b000ad5ce6",
+        "sha256": "9ee61cd61ac48167d5f33eec0f46d339ce0906ed3760043fc6b0ad81ae57a2d9"
+      },
+      "before": {
+        "bytes": 4114,
+        "git_blob": "1e4bd77586f58167c133a1fcf971c8d98f602160",
+        "sha256": "0cbff788ad67825b389203c2eb4432a57fb229bdd85fae657cb9396370b96456"
+      }
+    }
+  },
+  "checks": [
+    "Reversing only the two outer preamble edits exactly reproduces the previously reviewed complete scientific source-closure fingerprint.",
+    "All mathematics, proofs, original component bytes, citations, numerical reports and author numerical presentation tables remain unchanged.",
+    "S.25 and S.28 start with caption followed by one first-page header.",
+    "A.11 is kept as a single two-line display by an environment-local page-break penalty."
+  ],
+  "complete": true,
+  "integrator_after_sha256": "0c0c24636d149e07f405d69ad219bd6fcf81e33f6863d917546b1873e6a334dc",
+  "integrator_before_sha256": "3f8a3d0796df0601fce2a94d7fcfb0f6e8091a880476c48fa21bcb0102ab8848",
+  "integrator_unified_diff": "--- before-final-layout/integrate.py\n+++ current/integrate.py\n@@ -241,7 +241,21 @@\n         text += '\\\\newcommand{\\\\NBOEditorialPending}[1]{\\\\begin{quote}\\\\textbf{Development draft.} #1\\\\end{quote}}\\n'\n     # A longtable needs its caption, header and several body rows on its first\n     # page. This wrapper leaves every inherited table/source byte unchanged.\n-    text += '\\\\let\\\\NBOLongtable\\\\longtable\\n\\\\def\\\\longtable{\\\\Needspace{7\\\\baselineskip}\\\\NBOLongtable}\\n'\n+    text += '\\\\let\\\\NBOLongtable\\\\longtable\\n'\n+    if kind == 'supp':\n+        # The two fixed R15 tables S.25/S.28 otherwise start at the very foot\n+        # of a page and repeat the continuation header before their caption.\n+        # Move only those starts; the retained table files remain unchanged.\n+        text += ('\\\\def\\\\longtable{\\\\ifnum\\\\value{table}=24\\\\relax\\\\clearpage\\\\fi'\n+                 '\\\\ifnum\\\\value{table}=27\\\\relax\\\\clearpage\\\\fi'\n+                 '\\\\Needspace{7\\\\baselineskip}\\\\NBOLongtable}\\n')\n+    else:\n+        text += '\\\\def\\\\longtable{\\\\Needspace{7\\\\baselineskip}\\\\NBOLongtable}\\n'\n+    if kind == 'applications':\n+        # Keep the two lines of the retained HJB display A.11 together.\n+        # This environment-local penalty leaves all formula bytes untouched.\n+        text += ('\\\\AddToHook{env/align/begin}{\\\\ifnum\\\\value{equation}=10\\\\relax'\n+                 '\\\\interdisplaylinepenalty=10000\\\\relax\\\\fi}\\n')\n     for other in ['ECTA', 'supp', 'applications']:\n         if other != kind:\n             text += '\\\\externaldocument{' + build + '/' + other + '_refs}[' + other + '.pdf]\\n'\n",
+  "new_scientific_events": 0,
+  "schema": "nbo-r16-final-layout-only-source-review-v1",
+  "source_closure_after": "fbeb2eba4ab1573db0a62e83e8cb00b53064ff59c5091db1f8baa13504c5ee12",
+  "source_closure_before": "bde160cf2c9d3944fa08e755d1f98c49068aad77926c54cf0556f5eb86c90daa",
+  "unchanged_scientific_source_files": 114,
+  "unresolved_issues": []
+}

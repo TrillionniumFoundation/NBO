@@ -1,0 +1,201 @@
+% R15 component; only input paths and enumerated location/grammar prose are edited.
+% Source: revisions/2026-10-04-r15/manuscript/new_theory.tex; commit 1cb3cc9efe135966ec228dfaf51c6841a6dfc97c.
+\subsection{An operational evaluation--improvement account}
+\label{sec:r15mechanism}
+The costate in a rollout is the derivative of a specified continuation
+problem. Its approximation error has to be measured where the new policy
+uses that continuation. We now make both objects explicit. The construction
+uses the capital economy, including its dense production interaction,
+common and idiosyncratic shocks, consumption curvature, and terminal
+dispersion preference. It also accommodates a critic fitted on a coarser
+grid than the one used for assessment.
+
+Fix the assessment grid $t_k=kh$, $Nh=T$. Write $\pi_k=\bar M_k/h$,
+where $\bar M_k$ is the disclosed numerical representative of
+$\int_{t_k}^{t_{k+1}}m_0(t)dt$. In the following finite problem, these
+representatives are fixed real numbers. They specify a feasible,
+state-independent reference. The internal transition and transformed
+reward are
+\begin{align}
+ Z_{k+1}&=Z_k+h\{c\bm1+f(Z_k)-a_k\}
+                  +\Sigma\sqrt h\,\operatorname{clip}_{z}(G_k),
+       \qquad G_k\sim N(0,I_{d+1}),\label{eq:r15finite}\\
+ \ell_k(z,a)&=B_k\overline{f(z)}+A_k\overline{\log a}
+       -B_k\bar a-\frac{\zeta A_k}{2}\bar a^2,
+       \qquad g_N(z)=-\chi e^{-\rho T}\|\Pi z\|_d^2.
+       \label{eq:r15reward}
+\end{align}
+Here $A_k,B_k$ are the integrated weights defined above; all discounting
+is included in them. Let $\mathcal R_h(a)$ be the expected sum of these
+rewards and $g_N$. The candidate may depend on its entire observed
+innovation history. Its actions and the reference belong to the same
+declared convex action box $\mathcal A_k$ at each date.
+
+Let $V_k^\pi$ be the value of this finite problem under $\pi$, and define
+its continuation after choosing the deterministic drift by
+\begin{equation}
+ S_k^\pi(x)=\E\big[V_{k+1}^\pi
+       \{x+\Sigma\sqrt h\operatorname{clip}_{z}(G_k)\}\big],
+ \qquad q_k^\pi=dD_xS_k^\pi.
+ \label{eq:r15postdecision}
+\end{equation}
+The argument $x$ is the conditional mean before the current innovation.
+The current reward $\ell_k$ is excluded from $S_k^\pi$; subsequent
+rewards start at $k+1$ on the same global grid. In particular,
+$q_{N-1}^\pi(x)=-2\chi e^{-\rho T}\Pi x$. Smoothness of $f$, bounded
+actions, finite moments, and the quadratic terminal reward justify the
+derivatives and expectations in this finite problem.
+
+After fitting, freeze an arbitrary continuously differentiable scalar
+predictor $\widehat S_k$ and its costate $\widehat q_k=dD\widehat S_k$.
+Set
+\[
+ x_b(z)=z+h\{c\bm1+f(z)-b\},\qquad
+ \widehat Q_k(z,b)=\ell_k(z,b)+\widehat S_k\{x_b(z)\}.
+\]
+For $U$ uniform on $[0,1]$, independent of the candidate's past, the
+\emph{action bridge} is
+$X_{k,U}=x_{\pi_k}(Z_k)+U\{x_{a_k}(Z_k)-x_{\pi_k}(Z_k)\}$.
+Define the following quantities under the candidate's internal-state law:
+\begin{align}
+ \mathcal M_h&=\sum_{k=0}^{N-1}\E\big[
+       \widehat Q_k(Z_k,a_k)-\widehat Q_k(Z_k,\pi_k)\big],\notag\\
+ \mathcal A_h&=\sum_{k=0}^{N-1}h\E\|a_k-\pi_k\bm1\|_d^2,
+ &\mathcal E_h&=\sum_{k=0}^{N-1}h\E
+       \|\widehat q_k(X_{k,U})-q_k^\pi(X_{k,U})\|_d^2.
+ \label{eq:r15accounts}
+\end{align}
+$\mathcal M_h$ records the improvement predicted by the fitted scalar
+continuation, $\mathcal A_h$ records the size of the implemented change,
+and $\mathcal E_h$ measures the error that can affect this particular
+change. Training-state accuracy alone does not identify $\mathcal E_h$.
+
+\begin{proposition}[Finite Bellman bridge]
+\label{prop:r15bellmanbridge}
+If the displayed quantities are integrable, then
+\begin{equation}
+ \mathcal R_h(a)-\mathcal R_h(\pi)
+       \geq\mathcal M_h-\sqrt{\mathcal A_h\mathcal E_h}.
+ \label{eq:r15bridge}
+\end{equation}
+The assertion holds for every feasible candidate. It requires neither
+exact maximization of $\widehat Q$ nor a continuous-time costate
+approximation. A predictor fitted on another mesh enters
+$\mathcal E_h$ with its full discrepancy from the assessment-grid
+continuation.
+\end{proposition}
+
+The proposition follows from the finite-horizon performance-difference
+identity and a line integral of the costate error along each action
+bridge. It is useful even when action optimization is incomplete. The
+next result additionally quantifies that incompleteness with a finite,
+checkable calculation.
+
+\begin{proposition}[A feasible-actor account]
+\label{prop:r15actorgap}
+Suppose $\widehat S_k$ is twice continuously differentiable and
+$dD^2\widehat S_k(x)\preceq\Lambda_k I_d$ everywhere. Let
+$m_{+,k}$ be the upper endpoint of $\mathcal A_k$, and put
+\[
+ \Gamma_k=h^2\Lambda_k-A_k/m_{+,k}^2,\qquad
+ g_{k,i}=A_k\{a_{k,i}^{-1}-\zeta\bar a_k\}
+                    -B_k-h\widehat q_{k,i}\{x_{a_k}(Z_k)\}.
+\]
+An upper bound on the actor's $\widehat Q_k$ maximization gap is
+\begin{equation}
+ \delta_k=\max_{b\in\mathcal A_k}
+     \left\{\langle g_k,b-a_k\rangle_d
+                      +\frac{\Gamma_k}{2}\|b-a_k\|_d^2\right\}.
+ \label{eq:r15actorgap}
+\end{equation}
+This is a separable scalar calculation. If $\Gamma_k<0$, its maximizer
+is the coordinate projection of $a_k-g_k/\Gamma_k$. If
+$\Gamma_k\geq0$, one compares the two endpoints in each coordinate.
+Thus \eqref{eq:r15actorgap} remains valid when global strong concavity
+of the learned continuation problem cannot be verified.
+
+If $\mu_0=\min_k(-\Gamma_k/h)>0$ is verified and
+$\mathcal D_h=\sum_k\E\delta_k$, then
+\begin{equation}
+ \mathcal R_h(a)-\mathcal R_h(\pi)
+       \geq\tfrac12\mathcal M_h-\mathcal D_h
+                            -2\mathcal E_h/\mu_0.
+ \label{eq:r15quadratic}
+\end{equation}
+For exact $\widehat Q$ maximizers, $\mathcal D_h=0$ and the coefficient
+of $\mathcal E_h/\mu_0$ improves from two to one. These conclusions
+apply to the actual feasible action; a small training loss is not
+substituted for $\delta_k$.
+\end{proposition}
+
+\paragraph*{Independent occupation and continuation samples.}
+Draw an independent candidate trajectory, $K$ uniformly from
+$\{0,\ldots,N-1\}$, and $U$ uniformly from $[0,1]$. At its bridge
+state, draw two independent continuation banks $Z_1,Z_2$ with
+conditional mean $q_K^\pi(X_{K,U})$. A bank may contain antithetic
+pairs; independence is required between the two banks, not between
+the members of an antithetic pair. The statistics
+\begin{align}
+ M&=N\{\widehat Q_K(Z_K,a_K)-\widehat Q_K(Z_K,\pi_K)\},
+ &A&=T\|a_K-\pi_K\bm1\|_d^2,\notag\\
+ E&=T\langle\widehat q_K(X_{K,U})-Z_1,
+                    \widehat q_K(X_{K,U})-Z_2\rangle_d,
+ &D&=N\delta_K
+ \label{eq:r15statistics}
+\end{align}
+have expectations $\mathcal M_h,\mathcal A_h,\mathcal E_h,
+\mathcal D_h$. Individual values of $E$ may be negative. Replacing
+them by their positive parts would change the estimand. Moreover,
+$E^{\rm raw}=T\|Z_1-Z_2\|_d^2/2$ estimates the integrated mean-square
+error of one raw bank on this same occupation law. A confidence bound
+for $E-E^{\rm raw}$ therefore assesses the critic's reusable costate
+prediction against a direct bank with the declared number of rollouts.
+It concerns this evaluation subproblem; the direct method comparison
+continues to use the returned policies' independently assessed payoffs.
+
+The supplement gives explicit clipping ranges and expectation
+allowances for these statistics. They exploit the common quadratic
+terminal component and antithetic cancellation. They do not use an
+empirical maximum as a population bound. Independent, equally sized
+samples for every member of a declared finite stream distribution may
+be pooled using the maximum proved range and the mean numerical and
+tail allowances. The resulting target is the uniform mean over all
+declared streams.
+
+\begin{theorem}[From fitted continuation to continuous economic gain]
+\label{thm:r15mechanism}
+Condition on the fitted objects and their selection. Suppose a fresh,
+simultaneous assessment gives $L_M\leq\mathcal M_h$,
+$\mathcal A_h\leq U_A$, $\mathcal E_h\leq U_E$, and, when used,
+$\mathcal D_h\leq U_D$. Include the disclosed arithmetic and
+state-representation errors in these endpoints. Define the deterministic
+holding deficit
+\[
+ D_{\rm hold}=\sum_k\left\{C_k-A_k\log\pi_k+B_k\pi_k
+                                      +\zeta A_k\pi_k^2/2\right\}\geq0.
+\]
+For the sampled continuous-economy implementation of
+Proposition~\ref{prop:r11transfer}, let $E_{a,h}^{\rm all}$ be its
+saved paired payoff-transfer allowance. Then, on that same event,
+\begin{equation}
+ J(a)-J(m_0)\geq
+ L_M-\sqrt{\max(0,U_A)\max(0,U_E)}
+                  -D_{\rm hold}-E_{a,h}^{\rm all}.
+ \label{eq:r15economicgain}
+\end{equation}
+When the positive curvature modulus in
+Proposition~\ref{prop:r15actorgap} is verified, one may also use
+$L_M/2-U_D-2\max(0,U_E)/\mu_0$ before subtracting the same two
+allowances. Taking the larger of these two bounds spends no additional
+probability. Subtracting a valid lower gain bound from the analytical
+reference regret bound gives a bound against all adapted feasible
+controls in the original economy.
+\end{theorem}
+
+This account separates three observable economic requirements: a
+continuation that predicts a useful feasible change, an error small
+enough under the candidate's occupation law, and a sufficiently accurate
+implementation. The finite Bellman identity is exact; the transfer of
+payoffs to the diffusion is quantitative. Neither equality of discrete
+and continuous costates nor global concavity of the full adapted-control
+problem is assumed.

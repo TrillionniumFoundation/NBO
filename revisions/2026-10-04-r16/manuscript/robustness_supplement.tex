@@ -1,0 +1,124 @@
+\section{Economic Robustness and the Strengthened HJB Procedure}
+\label{app:r16robustnessrecord}
+This experiment changes the continuous-diffusion capital economy and trains
+all procedures anew. It is separate from both the confirmation of 128
+previously selected policies and the finite-period continuation menu. Its
+four economic calibrations, dimensions ten and fifty, and eight fixed
+training streams give 64 trials. The report retains all 256 construction
+processes and 320 deployed policy outputs. All procedures completed without
+reference-policy fallback. A fresh bank of 8,192 paths on 2,048 cells
+assesses each output, with common innovations within a trial. The
+648-event family has allocation $\alpha=0.01$ and includes method averages,
+individual-policy endpoints, and the declared direct comparisons. No
+calibration or stream is selected on its outcome.
+
+\subsection{Economic variation}
+Table~\ref{tab:r16ctcalibrations} gives the complete economic grid. The high
+calibration retains the original high-volatility diffusion; low changes
+its diffusion risk. The longer-horizon economy has horizon two years.
+The joint-stress economy changes coupling, terminal dispersion costs,
+initial heterogeneity, and the actor's feasible radius together. Its
+comparison therefore describes that economic design rather than a
+single-primitive causal effect. These names are local to the continuous
+economy: in particular, the finite menu's Long calibration has a four-year
+horizon and half-year periods.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Continuous-economy robustness designs}
+\label{tab:r16ctcalibrations}
+\begin{tabular}{lrrrrrr}
+\toprule
+Design & $T$ & $\sigma_I$ & $\sigma_C$ & $\kappa$ & $\chi$ & Actor radius\\
+\midrule
+high & 1 & .60 & .30 & .15 & .03 & .10\\
+low & 1 & .15 & .10 & .15 & .03 & .10\\
+long & 2 & .30 & .15 & .15 & .03 & .10\\
+stress & 1 & .30 & .15 & .30 & .10 & .20\\
+\bottomrule
+\end{tabular}
+\par\medskip\begin{minipage}{.97\linewidth}\footnotesize\raggedright
+All designs use dimensions 10 and 50, eight fixed streams per dimension,
+discount rate .04, productivity .10, adjustment parameter .20, and action
+bounds $[.02,2]$. The first three designs use nine initial profiles from
+means $\{-.5,0,.5\}$ and dispersions $\{0,.25,.5\}$. Stress uses
+means $\{-.75,0,.75\}$ and dispersions $\{0,.375,.75\}$. The feasible
+actor radius is measured around the reference schedule.
+\end{minipage}
+\end{table}
+
+\subsection{HJB differentiation, selection, and deployment}
+The two-layer tanh value network propagates its value, gradient, and
+covariance-contracted Hessian by the chain rule. The diffusion trace is exact
+for this network in both dimensions, so training uses no random trace
+estimate. Independent automatic-differentiation checks compare both the
+network derivatives and their parameter gradients. The source validation
+records discrepancies at floating-point precision. Stochastic traces with
+2, 8, and 32 probes are evaluated only on an untouched finite diagnostic
+bank after selection, for both covariance-Gaussian probes and idiosyncratic
+Rademacher probes with the common-noise term treated exactly.
+
+Four candidates combine learning rates .0015 and .0005 with either
+reference occupation collocation or an equal mixture of reference occupation
+and broad collocation. Each uses up to 1,200 Adam updates and 150 L-BFGS
+iterations. Checkpoints are evaluated on independent occupation and broad
+residual banks; the combined residual criterion chooses the candidate and
+checkpoint. Its prescribed residual threshold is .001. Final payoff
+observations play no role in selection. Every candidate, including an
+unsuccessful or unselected candidate, is charged to the procedure.
+
+The selected value network yields two retained actions. The greedy action
+uses the explicit first-derivative calculation and a bracketed scalar root
+solver with Newton updates; the prescribed bisection fallback remains part
+of the implementation. A width-32 actor is separately fitted to these
+actions. Independent diagnostic states record its action difference and
+Hamiltonian difference from the greedy action. These are finite-state
+diagnostics. They do not establish the economic loss of distillation, since
+the protected family does not contain a direct greedy-minus-distilled
+payoff contrast.
+
+The diagnostic tables below retain all four configurations in all eight
+economic cells. Their means and ranges use all eight streams in each cell.
+The complete checkpoint histories, time-stratified residuals, selected
+network identities, root counters, and action diagnostics remain in the
+unchanged machine-readable report. A zero terminal discrepancy follows
+from the specified terminal lift. Residuals on finite independent banks and
+changes between iterates are reported with their corresponding scope;
+they are not uniform PDE residual bounds or errors against the unknown
+optimal value and policy.
+
+\input{revisions/2026-10-04-r16/manuscript/robustness_diagnostics_tables.tex}
+
+\subsection{Economic gains and complete process work}
+Table~\ref{tab:r16-robustness-methods} gives all forty mean method gains and
+their full-adapted-class regret upper bounds. Every mean lower endpoint
+exceeds .0005. The complete direct comparison is
+Table~\ref{tab:r16-robustness-comparisons} in the main article. Only the two
+low-volatility, fifty-dimensional NBO--HJB comparisons have lower endpoints
+above $10^{-4}$; the other thirty direct intervals cross zero. The intervals
+are conditional on the complete declared eight-stream policy populations.
+They do not assert a law for unseen optimizer randomness or pool across
+economic designs.
+
+\input{revisions/2026-10-04-r16/results/robustness/report/robustness_methods.tex}
+
+Table~\ref{tab:r16-robustness-work} reports the complete process work for
+all outputs and the number of individual-policy final lower endpoints
+exceeding .0005. A pooled positive mean is distinct from an individual
+policy's target certificate. In the high-volatility, ten-dimensional cell,
+all five pooled lower endpoints exceed .0005 while no individual policy's
+protected final lower endpoint does. In dimension fifty, the corresponding
+individual counts are 2 of 8 for NBO, 4 for Raw, 4 for direct policy, 8 for
+HJB's greedy deployment, and zero for its distilled actor. All of these
+outcomes remain in the comparison; a policy is not dropped because its
+final certificate does not attain the target.
+
+The recorded costs include every fixed-envelope fit, independent selection,
+action construction, confirmation, and outer process overhead. Both HJB
+outputs retain their shared prerequisites and their own deployment cost.
+Their common construction is not divided to manufacture a cheaper actor.
+These are environment-specific observed times, with complete operation
+counters available in the report. They are not equal-FLOP comparisons,
+runtime confidence intervals, or newly observed online stopping times.
+
+\input{revisions/2026-10-04-r16/results/robustness/report/robustness_work.tex}

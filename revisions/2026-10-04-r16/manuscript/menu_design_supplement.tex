@@ -1,0 +1,155 @@
+\section{Design of the Reusable Capital Decision Menu}
+\label{app:r16menudesign}
+This experiment evaluates the finite Bellman object in
+\eqref{eq:r16mainmenu}. A current task changes the consumption utility weight
+$w$, the coefficient $\eta$ on squared mean consumption, or the current upper
+consumption bound $u$. All future primitives and the feasible future schedule
+remain fixed within a calibration. The continuation identity in
+Proposition~\ref{prop:r16menucache} therefore holds across tasks. A change to
+the future horizon, technology, preferences, innovation law, terminal
+dispersion cost, or schedule defines a different continuation and requires a
+different cache or fitted object.
+
+\subsection{Calibrations and the query population}
+Table~\ref{tab:r16menucalibrations} records all four calibrations. The drift
+uses the original fixed dense coupling matrix in dimensions ten and fifty,
+with $f(y)=\kappa\tanh(By)$. Productivity is $0.1$, discounting is $0.04$,
+the future consumption penalty coefficient is $0.2$, and the original
+consumption interval is $[0.02,2]$. The terminal penalty is proportional to
+cross-sector dispersion. The period weights, feasible reference schedule,
+drift constant, innovation amplitudes, and terminal coefficients are stored
+before fitting. Their binary64 values, together with the stored states and
+coupling matrices, are the exact real coefficients of the finite economic
+problem under study. The continuous-diffusion primitives motivate these
+coefficients; they do not make the coarse finite value an unqualified
+continuous-time approximation.
+
+\begin{table}[!htbp]
+\centering\small
+\caption{Complete capital-menu calibration design}
+\label{tab:r16menucalibrations}
+\begin{tabular}{lrrrrrrr}
+\toprule
+Calibration & $T$ & $K$ & $h$ & $\sigma_I$ & $\sigma_C$ & $\kappa$ & $\chi$\\
+\midrule
+Original & 1 & 4 & 0.25 & 0.15 & 0.10 & 0.15 & 0.03\\
+Quarterly & 2 & 8 & 0.25 & 0.60 & 0.30 & 0.30 & 0.10\\
+Long & 4 & 8 & 0.50 & 0.60 & 0.30 & 0.30 & 0.10\\
+Intermediate & 3 & 12 & 0.25 & 0.375 & 0.20 & 0.225 & 0.06\\
+\bottomrule
+\end{tabular}
+\par\medskip\noindent\footnotesize\raggedright $K$ is the number of finite decision
+periods and $h=T/K$. Each row is run at $d=10,50$ with sixteen fixed streams.
+Original retains the original low-volatility primitive anchor. Quarterly
+was used in one disclosed exploratory five-method pilot; Long and
+Intermediate had no method-development or outcome pilot. Long increases
+calendar time and the length of a period relative to Quarterly while
+retaining eight periods.
+\end{table}
+
+Nine tasks are the Cartesian product
+$w\in\{0.8,1,1.2\}$ and $\eta\in\{0.1,0.2,0.4\}$ with $u=2$.
+The other three are $(w,\eta,u)=(0.9,0.3,0.6)$,
+$(1.1,0.15,0.8)$, and $(1,0.25,1)$. Every task retains the lower bound
+$0.02$. The first nine appeared in the disclosed pilot; the three tighter-cap
+tasks did not. Each dimension has thirty-two stored states crossed with all
+twelve tasks. The inferential population is the uniform finite collection
+of these 384 queries and the sixteen declared streams, separately in each
+calibration and dimension. No query, stream, task, or work stage is removed
+because of its realized performance. Training inputs, method failures,
+completed prefixes, and feasible reference fallbacks remain recorded.
+
+\subsection{Five reusable procedures}
+The NBO scalar critic and the vector costate predictor both have width
+thirty-two. At each work stage they share the same replay states, uniform
+feasible training actions, postdecision arguments, and four-path antithetic
+continuation labels. The scalar critic fits gradients of one differentiable
+continuation; an intercept fits its level using the value labels. The vector
+predictor fits costate components without the restriction that they be the
+gradient of a scalar. These procedures consequently share observations while
+using different fitted function classes and optimization objectives. Their
+economic contrast does not by itself isolate a single statistical mechanism.
+
+The materialized Raw procedure stores costate labels at the reference current
+consumption. Its task-conditioned actor maximizes the exact current reward
+and the corresponding linearized continuation in the action. Direct policy
+optimization also uses a task-conditioned actor, but retains innovations and
+recomputes the nonlinear future payoff at each proposed postdecision argument.
+Both actors have width thirty-two. Query-level Raw instead optimizes each of
+the 384 task-state decisions directly against a sample-average continuation.
+Its innovation cache grows from four to sixteen to sixty-four antithetic
+paths, and its previous action initializes the next stage. Retaining an
+innovation does not eliminate the state-recursion work required by a new
+argument. All five methods follow the same cache-validity rule.
+
+For the fitted procedures, the cumulative replay budgets are 128, 512, and
+2,048 states. Each field stage has 1,200 Adam updates with learning rate
+$0.003$, followed by L-BFGS with at most 300 iterations and 400 function
+evaluations. Each actor stage has 1,200 Adam updates with learning rate
+$0.003$ and batch size 128. Query optimization uses 180 Adam updates with
+learning rate $0.06$. NBO and sample-average Raw then apply L-BFGS to their
+scalar objective, with at most sixty iterations and ninety evaluations. The
+vector costate procedure retains its 180 gradient-driven action updates;
+it has no additional scalar-objective L-BFGS stage. All three completed
+stages are assessed. The final payoff bank is inaccessible to fitting and
+cannot select a method, checkpoint, work stage, query, or replacement stream.
+
+\subsection{Independent payoff and scalar-accuracy statements}
+There are $4\times2\times16=128$ trials, 640 method processes, and 1,920
+stage candidates. Conditional on these fitted objects, each task-state query
+has 512 independent antithetic confirmation pairs. Common innovations pair
+the method contrasts. Proposition~\ref{prop:r16menurange} supplies the
+query-conditional range after removing known analytic centers. The numerical
+account also retains the fixed Gaussian truncation and arithmetic
+allowances. The primary family allocates error $0.018$ across all 216 events:
+120 method-versus-reference gains and 96 direct NBO-versus-comparator
+contrasts. Thus every comparator has twenty-four direct statements across
+all calibrations, dimensions, and stages. There are no additional per-stream
+confidence events or continuation-risk estimates.
+
+The economic superiority margin is $10^{-4}$. A protected lower contrast
+above zero establishes a positive difference; material superiority requires
+the lower contrast to reach $10^{-4}$. Equivalence requires the complete
+interval to lie in $[-10^{-4},10^{-4}]$. Positive differences and equivalence
+can therefore both be established for the same comparison. These categories
+are reported separately. Training loss and an observed economic payoff gain
+do not establish a reduction in independent critic mean-squared error.
+
+The separate scalar family allocates error $0.002$ across 128 statements.
+For the central task $(w,\eta,u)=(1,0.2,2)$ and the first stored state
+(index zero), a successful fit selects its
+candidate using the final NBO critic on 257 fixed grid points
+in the interval consisting of the reference current consumption plus or
+minus $0.1$, intersected with the action box. A failed fit retains the
+predeclared feasible reference fallback. All sectors receive this same
+scalar action. The independent verifier uses 65,536 antithetic pairs and the
+proved derivative and curvature account to cover the entire continuous
+interval, including points between the candidate grid. These bounds concern
+this restricted finite scalar intervention. They do not bound regret over
+all vector actions, future adapted policies, or the continuous diffusion.
+
+\subsection{Complete work and development history}
+The final-stage process clock covers startup, imports, input checking, all
+three fitting stages, caches, derivative and optimization work, query
+deployment, candidate output, and finalization. Earlier-stage clocks combine
+the executed prefix with all measured outer overhead and finalization; they
+are conservative allocations of this run. They are not observations from
+separate online stopping experiments. The independent confirmation process
+is a shared workload covering all five methods, all three stages, and the
+scalar assessment. Its full bill is reported separately. Charging that bill
+to each method is an explicit upper allocation, not a measurement of five
+independently executed verification jobs. Timing summaries describe these
+runs; the confidence family makes no claim about an unseen runtime or
+optimizer distribution.
+
+The development archive retains the single exploratory five-method menu
+pilot, its interrupted preliminary attempt, and all twelve fixed-random-feature
+explorations, including their adverse results. Their payoff observations are
+not confirmation observations. The final source fixes new streams, the
+complete task population, every budget, both margins, failure behavior,
+power calculations, and all inference code before the registered fitting
+and confirmation. The independent fixed-dictionary identity in
+Proposition~\ref{prop:r16menuprojection} describes a precise conditional
+statistical benefit and its approximation cost. It neither identifies the
+nonlinear fitted network with that projection nor makes the observed
+five-procedure economic comparison a causal decomposition of critic risk.

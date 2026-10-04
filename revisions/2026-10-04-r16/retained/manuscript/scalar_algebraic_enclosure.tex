@@ -1,0 +1,152 @@
+% R15 component; only input paths and enumerated location/grammar prose are edited.
+% Source: revisions/2026-10-04-r15/manuscript/scalar_algebraic_enclosure.tex; commit 1cb3cc9efe135966ec228dfaf51c6841a6dfc97c.
+\section{An Outward Algebraic Error Account for the Scalar Comparator}
+\label{app:r15scalar}
+
+Fix the declared spatial nodes, common spacing $\Delta y$, time step $h$,
+action endpoints, and terminal and boundary data.  Each stored binary64 input
+denotes an exact real in this finite-grid problem.  Let
+$\eta=(\sigma_I^2+\sigma_C^2)/2$,
+$d_0(y)=a-\eta+\kappa\tanh y$, and define the forward and backward slopes
+$p_f=(v_{i+1}-v_i)/\Delta y$ and $p_b=(v_i-v_{i-1})/\Delta y$.
+The action-dependent upwind Hamiltonian is
+\begin{equation}
+ \mathcal H_i(m;v)=\log m-\frac\zeta2m^2
+        +\max\{d_0(y_i)-m,0\}p_f+\min\{d_0(y_i)-m,0\}p_b.
+ \label{eq:r15-scalar-upwind-hamiltonian}
+\end{equation}
+The positive-drift and negative-drift branches are each concave in $m$.
+Their feasible intervals are, respectively,
+$[\ell,\min\{u,d_0(y_i)\}]$ and
+$[\max\{\ell,d_0(y_i)\},u]$, when nonempty.  On either branch, the
+unconstrained positive critical point solves $1/m-\zeta m=p_j$.
+The Howard update clips this point to the branch interval and compares the
+two resulting objective values.  Thus the sign of the drift selects the
+appropriate difference operator throughout maximization.
+
+The floating-point Howard solve proposes values and actions.  A separate
+outward calculation encloses the Bellman residual, including the error in
+the proposed maximizer.  For a concave branch $H$ on $[a,b]$ and any
+$m_\circ\in[a,b]$,
+\begin{equation}
+ \max_{m\in[a,b]}H(m)
+ \le H(m_\circ)+
+ \max\{0,H'(m_\circ)(a-m_\circ),H'(m_\circ)(b-m_\circ)\}.
+ \label{eq:r15-scalar-tangent-upper}
+\end{equation}
+Interval evaluations of $\log$, $\tanh$, the slopes, and the arithmetic
+operations enclose the right-hand side.  Interval uncertainty in $d_0(y_i)$
+is handled by enlarging each branch interval before constructing its upper
+bound.  An arbitrary globally feasible action supplies a lower bound for
+the maximized Hamiltonian.  Combining the two bounds encloses
+\begin{equation}
+ r_{k,i}=
+ \frac{v_{k,i}-v_{k+1,i}}h+\rho v_{k,i}
+ -\eta\frac{v_{k,i+1}-2v_{k,i}+v_{k,i-1}}{(\Delta y)^2}
+ -y_i-\max_m\mathcal H_i(m;v_k).
+ \label{eq:r15-scalar-discrete-residual}
+\end{equation}
+The artifact stores every proposed value and action, the boundary arrays,
+the action endpoints, and the outward residual bound at every time step.
+
+\begin{proposition}[Algebraic error in the declared scalar boundary problem]
+\label{prop:r15scalarresidual}
+Fix finitely many ordered spatial coordinate labels and a common positive
+difference spacing $\Delta y$,
+$h>0$, $\rho\ge0$, $\eta\ge0$, compact action intervals
+$[\ell_k,u_k]$ with $0<\ell_k\le u_k<\infty$, and finite terminal and
+boundary data.  Let $\widetilde v$ denote the exact solution of the backward
+Bellman equations~\eqref{eq:r15-scalar-discrete-residual} with zero residual.
+Let $v$ have identical terminal and boundary data and residuals $r_{k,i}$.
+For any $R_k\ge\max_i|r_{k,i}|$, define $E_N=0$ and
+\begin{equation}
+ E_k=\frac{E_{k+1}+hR_k}{1+\rho h}.
+ \label{eq:r15-scalar-algebraic-bound}
+\end{equation}
+Then the exact finite-grid solution exists uniquely, and
+$\|v_k-\widetilde v_k\|_\infty\le E_k$ at every time step.
+\end{proposition}
+
+\begin{proof}
+For a fixed action $m$, write the discrete generator at an interior node as
+\[
+ \begin{aligned}
+ (L_mw)_i&=\lambda_i^-(m)(w_{i-1}-w_i)
+            +\lambda_i^+(m)(w_{i+1}-w_i),\\
+ \lambda_i^-(m)&=\frac{\eta}{(\Delta y)^2}
+                 +\frac{\max\{m-d_0(y_i),0\}}{\Delta y},\\
+ \lambda_i^+(m)&=\frac{\eta}{(\Delta y)^2}
+                 +\frac{\max\{d_0(y_i)-m,0\}}{\Delta y}.
+ \end{aligned}
+\]
+Both rates are nonnegative.  Each frozen-policy matrix therefore has
+nonpositive off-diagonal entries and diagonal dominance at least
+$h^{-1}+\rho$ after the boundary values are moved to the right-hand side.
+This is the $M$-matrix comparison property used below.
+
+For completeness, existence can be established at each backward step by
+uniformizing these finitely many bounded rates.  Choose
+$\Lambda\ge\max_{i,m}\{\lambda_i^-(m)+\lambda_i^+(m)\}$.
+When $\Lambda>0$, $L_m=\Lambda(P_m-I)$, where $P_m$ has nonnegative
+entries and row sums one before the fixed boundary values are substituted.
+The Bellman equation is a fixed-point equation whose dependence on the
+unknown interior values has supremum-norm Lipschitz constant at most
+$\Lambda/(h^{-1}+\rho+\Lambda)<1$.  The fixed-point theorem gives a
+unique solution.  If $\Lambda=0$, the equation is pointwise and its
+coefficient $h^{-1}+\rho$ is strictly positive.  Backward recursion starts
+from the specified terminal values.
+
+To establish the error bound, suppose
+$\|v_{k+1}-\widetilde v_{k+1}\|_\infty\le E_{k+1}$ and set
+$e_i=v_{k,i}-\widetilde v_{k,i}$.  If $M=\max_i e_i>0$, the maximum
+occurs at an interior node $i$, because the boundary error is zero.
+Nonnegative rates give $(L_me)_i\le0$ for every feasible $m$.
+Writing $f_i(m)=y_i+\log m-\zeta m^2/2$, it follows that
+\[
+ \sup_m\{(L_mv_k)_i+f_i(m)\}
+ -\sup_m\{(L_m\widetilde v_k)_i+f_i(m)\}\le0.
+\]
+Subtract the exact and approximate Bellman equations at this node.
+The preceding inequality implies
+\[
+ (h^{-1}+\rho)M
+ \le h^{-1}(v_{k+1,i}-\widetilde v_{k+1,i})+r_{k,i}
+ \le h^{-1}E_{k+1}+R_k.
+\]
+Interchanging $v_k$ and $\widetilde v_k$ gives the same bound for the
+largest negative error.  Equation~\eqref{eq:r15-scalar-algebraic-bound}
+follows, and induction from $E_N=0$ completes the proof.
+\end{proof}
+
+The implementation evaluates this recurrence outward under the inherited
+arithmetic contract.  It controls algebraic solution error for a specified
+finite-grid boundary problem.  The separate grid, domain, and deployed-policy
+mesh comparisons measure the remaining numerical sensitivities.
+
+\begin{corollary}[Loss from a nested scalar action restriction]
+\label{cor:r15scalartube}
+Consider two problems in Proposition~\ref{prop:r15scalarresidual} with
+identical spatial labels, difference and time steps, primitives, and terminal
+and boundary data.  Suppose the action intervals of the second problem are
+contained in those of the first at every date.  Denote their exact values by
+$\widetilde v^F$ and $\widetilde v^T$, their computed values by $v^F$ and
+$v^T$, and their algebraic error bounds by $E^F$ and $E^T$.  Then, at every
+initial-date node,
+\[
+ 0\le\widetilde v^F_{0,i}-\widetilde v^T_{0,i}
+ \le \|v^F_0-v^T_0\|_\infty+E^F_0+E^T_0.
+\]
+In particular, identical stored initial-date values reduce the upper bound
+to $E^F_0+E^T_0$.
+\end{corollary}
+
+\begin{proof}
+At each backward step, use the common uniformization constant from the
+preceding proof for both action sets.  The resulting Bellman maps are
+monotone in continuation and current interior values.  Enlarging the
+maximization set increases the map pointwise.  The contraction fixed points
+therefore inherit this order; backward induction from the common terminal
+data gives $\widetilde v^F\ge\widetilde v^T$.  The upper inequality follows
+by adding and subtracting $v^F_{0,i}$ and $v^T_{0,i}$ and applying the two
+algebraic error bounds.
+\end{proof}
