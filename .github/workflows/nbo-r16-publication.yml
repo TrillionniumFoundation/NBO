@@ -7,7 +7,7 @@ permissions:
   contents: read
 concurrency:
   group: nbo-r16-paper-publication
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   publish:
     runs-on: ubuntu-24.04
@@ -27,6 +27,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          filter: blob:none
       - name: Preserve immutable scientific and referee parents
         shell: bash
         run: |
@@ -41,7 +42,7 @@ jobs:
             git fetch --no-tags origin "$s"
             git merge --no-ff --no-edit "$s"
           done
-      - name: Materialize hash-verified editable sources
+      - name: Materialize hash-verified editable sources and bind the corrected abstract
         shell: bash
         run: |
           set -euo pipefail
@@ -61,6 +62,7 @@ jobs:
           (p/'transport/RECEIPT.json').write_text(json.dumps({'sha256':digest,'files':len(files),'segments':names,'rejected_segment':'payload.part02.b64','scope':'Text transport only; final editable source files are materialized outside transport.'},indent=2)+'\n')
           print('Verified editable files:',len(files),digest)
           PY
+          python "$P/transport/bind_current_abstract.py"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -92,6 +94,17 @@ jobs:
           python "$P/code/assemble_publication.py"
           cp "$P/ROOT_README.md" README.md
           python "$P/code/build.py"
+          python - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('revisions/2026-10-04-r16/publication')
+          pages=json.loads((p/'results/COMPILATION.json').read_text())['ECTA']['pages']
+          readme=p/'README.md'
+          readme.write_text(readme.read_text().replace('49 pages in the verified local build',f'{pages} pages in the verified publication build'))
+          status=p/'COMMENT_STATUS.json'
+          content=json.loads(status.read_text())
+          content['M9']['completed']=content['M9']['completed'].replace('49-page',f'{pages}-page')
+          status.write_text(json.dumps(content,indent=2)+'\n')
+          PY
           git add -- ECTA.tex supp.tex README.md
           git add -f -- "$P"
           python "$P/code/publication_audit.py"
