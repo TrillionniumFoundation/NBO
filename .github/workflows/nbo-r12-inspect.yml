@@ -1,0 +1,42 @@
+name: NBO R12 retained development diagnostics
+on:
+  push:
+    branches: [revision/econometrica-nbo-r12-development-2026-10-04]
+    paths: [.github/workflows/nbo-r12-inspect.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r12-development-37165156468
+          run-id: 37165156468
+          github-token: ${{ github.token }}
+          repository: TrillionniumFoundation/NBO
+          path: /tmp/typography
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r12-development-37165415935
+          run-id: 37165415935
+          github-token: ${{ github.token }}
+          repository: TrillionniumFoundation/NBO
+          path: /tmp/history
+      - name: Print exact retained failure contexts
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for root in ['/tmp/typography','/tmp/history']:
+              for p in sorted(Path(root).rglob('*.log')):
+                  lines=p.read_text(errors='replace').splitlines()
+                  selected=set()
+                  for i,line in enumerate(lines):
+                      if 'Overfull' in line or line.startswith(('FAIL:','ERROR:','Traceback')):
+                          selected.update(range(max(0,i-4),min(len(lines),i+24)))
+                  if selected:
+                      print('\n=== '+str(p)+' ===')
+                      for i in sorted(selected):print(str(i+1)+': '+lines[i])
+          PY
