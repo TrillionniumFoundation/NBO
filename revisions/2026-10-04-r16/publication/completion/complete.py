@@ -26,6 +26,12 @@ def restore():
         rel=PurePosixPath(name)
         assert not rel.is_absolute() and '..' not in rel.parts
         rows[str((archive/name).relative_to(ROOT))]=info
+    declared=json.loads((R16/'protocols/menu_protocol.json').read_text())['execution']['source_files']
+    for name in declared:
+        if name not in rows:
+            blob=subprocess.check_output(['git','rev-parse','HEAD:'+name],cwd=ROOT,text=True).strip()
+            assert re.fullmatch('[0-9a-f]{40}',blob),name
+            rows[name]={'git_blob':blob}
     for name in rows:
         rel=PurePosixPath(name)
         assert not rel.is_absolute() and '..' not in rel.parts
@@ -33,12 +39,13 @@ def restore():
     receipts=[]
     for name,info in rows.items():
         data=(ROOT/name).read_bytes()
-        assert len(data)==info['bytes'] and hashlib.sha256(data).hexdigest()==info['sha256'],name
+        if 'bytes' in info:
+            assert len(data)==info['bytes'] and hashlib.sha256(data).hexdigest()==info['sha256'],name
         if 'git_blob' in info:
             assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()==info['git_blob'],name
-        receipts.append({'path':name,'bytes':len(data),'sha256':info['sha256']})
-    put(P/'checks/remote/POLICY_DEPENDENCIES.json',{'policies':32,'all_registered_pilot_files_restored':True,'files':receipts,'scientific_sources_changed':False})
-    print('Restored and hash-checked 32 original policies and every archived pilot file.')
+        receipts.append({'path':name,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()})
+    put(P/'checks/remote/POLICY_DEPENDENCIES.json',{'policies':32,'all_registered_pilot_files_restored':True,'declared_menu_source_files':len(declared),'files':receipts,'scientific_sources_changed':False})
+    print('Restored and hash-checked all 32 policies, archived pilot files and the complete declared menu source closure.')
 
 def assemble():
     subprocess.run(['python',str(P/'code/assemble_publication.py')],cwd=ROOT,check=True)
@@ -85,7 +92,7 @@ def package():
         if path.is_file():paths.add(path)
     for path in ROOT.rglob('*'):
         if '.git' in path.parts or not path.is_file():continue
-        if path.suffix in {'.tex','.bib','.bst','.cls','.sty'}:paths.add(path)
+        if path.suffix in {'.tex','.bib','.bst','.cls','.sty','.cfg','.clo','.def'}:paths.add(path)
     for base in (R16/'code',R16/'protocols'):
         for path in base.rglob('*'):
             if path.is_file() and path.suffix in {'.py','.json','.md'}:paths.add(path)
