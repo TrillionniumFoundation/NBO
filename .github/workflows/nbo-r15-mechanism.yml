@@ -1,0 +1,240 @@
+name: NBO R15 protected occupation-bridge assessment
+
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r15-mechanism-source-2026-10-04
+      - revision/econometrica-nbo-r15-mechanism-execute-2026-10-04
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: nbo-r15-mechanism-${{ github.ref_name }}-${{ github.sha }}
+  cancel-in-progress: false
+
+env:
+  NBO_R15_NUMERICAL_SOURCE_COMMIT: ${{ github.sha }}
+  OMP_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  NUMBA_NUM_THREADS: '1'
+  PYTHONHASHSEED: '0'
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      matrix: ${{ steps.pack.outputs.matrix }}
+      primary_run_id: ${{ steps.pack.outputs.primary_run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Require activation to identify the already frozen mechanism source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$NBO_R15_NUMERICAL_SOURCE_COMMIT"
+          source_branch=revision/econometrica-nbo-r15-mechanism-source-2026-10-04
+          frozen_source=$(git ls-remote --heads origin "refs/heads/$source_branch" | cut -f1)
+          test "$frozen_source" = "$NBO_R15_NUMERICAL_SOURCE_COMMIT"
+      - name: Read the predeclared primary artifact lineage
+        id: primary
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json,os,pathlib
+          record=json.loads(pathlib.Path('revisions/2026-10-04-r15/MECHANISM_EXECUTION.json').read_text())
+          with open(os.environ['GITHUB_OUTPUT'],'a') as stream:
+              stream.write('run_id='+str(record['primary_actions_run_id'])+'\n')
+          PY
+      - name: Check that activation follows a fully successful fixed-source primary run
+        if: github.ref_name == 'revision/econometrica-nbo-r15-mechanism-execute-2026-10-04'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json,os,pathlib,urllib.request
+          p=json.loads(pathlib.Path('revisions/2026-10-04-r15/MECHANISM_EXECUTION.json').read_text())
+          url='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+str(p['primary_actions_run_id'])
+          request=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['GITHUB_TOKEN'],'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'})
+          with urllib.request.urlopen(request,timeout=60) as response: run=json.load(response)
+          assert run['head_sha']==p['primary_numerical_source_commit']
+          assert run['status']=='completed' and run['conclusion']=='success', 'The complete primary run must finish before mechanism activation.'
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r15-experiment-source-${{ steps.primary.outputs.run_id }}
+          run-id: ${{ steps.primary.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/primary-source
+      - name: Install exact protected-assessment dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Verify manufactured protected-bridge identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test_file in revisions/2026-10-04-r15/code/test_costate_bridge*.py revisions/2026-10-04-r15/code/test_*mechanism*.py; do
+            if test -f "$test_file"; then
+              python -m unittest discover -s revisions/2026-10-04-r15/code -p "$(basename "$test_file")" -v
+            fi
+          done
+      - name: Freeze and verify the complete mechanism source closure
+        id: pack
+        run: |
+          python revisions/2026-10-04-r15/code/pipeline_mechanism.py pack \
+            --repo . --out "$RUNNER_TEMP/mechanism-source" \
+            --primary-bundle "$RUNNER_TEMP/primary-source"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r15-mechanism-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/mechanism-source/
+          if-no-files-found: error
+          retention-days: 90
+
+  bridge:
+    if: github.ref_name == 'revision/econometrica-nbo-r15-mechanism-execute-2026-10-04'
+    needs: source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      max-parallel: 16
+      matrix: ${{ fromJSON(needs.source.outputs.matrix) }}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r15-mechanism-source-${{ github.run_id }}
+          path: source
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r15-experiment-trial-${{ matrix.trial_id }}-${{ needs.source.outputs.primary_run_id }}
+          run-id: ${{ needs.source.outputs.primary_run_id }}
+          github-token: ${{ github.token }}
+          path: primary-trial
+      - name: Install the exact CPU numerical environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Assess the actual selected NBO policy on independent occupation bridges
+        run: |
+          python source/pipeline_mechanism.py run \
+            --bundle source --workspace "$RUNNER_TEMP/mechanism-worker" \
+            --primary-dir primary-trial --out "bridge-${{ matrix.trial_id }}" \
+            --trial-id '${{ matrix.trial_id }}'
+      - name: Retain all bridge rows, arithmetic certificates and work diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r15-mechanism-trial-${{ matrix.trial_id }}-${{ github.run_id }}
+          path: bridge-${{ matrix.trial_id }}/
+          if-no-files-found: warn
+          retention-days: 90
+
+  evidence:
+    if: github.ref_name == 'revision/econometrica-nbo-r15-mechanism-execute-2026-10-04'
+    needs: [source, bridge]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install exact aggregation dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5 scipy==1.17.0 numba==0.65.1 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r15-mechanism-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/mechanism-source
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nbo-r15-mechanism-trial-*-${{ github.run_id }}
+          path: ${{ runner.temp }}/mechanism-trials
+      - name: Join the exact existing primary evidence subtree
+        id: join
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$NBO_R15_NUMERICAL_SOURCE_COMMIT"
+          primary_branch=revision/econometrica-nbo-r15-experiment-evidence-2026-10-04
+          git fetch --no-tags origin "refs/heads/$primary_branch"
+          primary_commit=$(git rev-parse FETCH_HEAD)
+          primary_tree=$(git rev-parse "$primary_commit:revisions/2026-10-04-r15/results/experiment")
+          git read-tree --prefix=revisions/2026-10-04-r15/results/experiment/ -u "$primary_tree"
+          echo "commit=$primary_commit" >> "$GITHUB_OUTPUT"
+          echo "tree=$primary_tree" >> "$GITHUB_OUTPUT"
+      - name: Require every registered bridge stream and recompute its protected family
+        run: |
+          python revisions/2026-10-04-r15/code/pipeline_mechanism.py collect \
+            --repo . --bundle "$RUNNER_TEMP/mechanism-source" \
+            --input-dir "$RUNNER_TEMP/mechanism-trials" \
+            --primary-evidence-commit '${{ steps.join.outputs.commit }}' \
+            --primary-evidence-tree '${{ steps.join.outputs.tree }}'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r15-mechanism-complete-${{ github.run_id }}
+          path: revisions/2026-10-04-r15/results/mechanism/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish complete joined evidence with both immutable parents
+        env:
+          NBO_PRIMARY_EVIDENCE_COMMIT: ${{ steps.join.outputs.commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$NBO_R15_NUMERICAL_SOURCE_COMMIT"
+          source_branch=revision/econometrica-nbo-r15-mechanism-source-2026-10-04
+          evidence_branch=revision/econometrica-nbo-r15-mechanism-evidence-2026-10-04
+          frozen_source=$(git ls-remote --heads origin "refs/heads/$source_branch" | cut -f1)
+          test "$frozen_source" = "$NBO_R15_NUMERICAL_SOURCE_COMMIT"
+          existing=$(git ls-remote --heads origin "refs/heads/$evidence_branch")
+          if test -n "$existing"; then
+            echo "Mechanism evidence branch already exists; refusing to alter it."
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- revisions/2026-10-04-r15/results/mechanism
+          tree=$(git write-tree)
+          body_file="$RUNNER_TEMP/mechanism-evidence-message.txt"
+          cat > "$body_file" <<'MESSAGE'
+          revision(r15): preserve all protected occupation bridges and join the complete primary evidence
+
+          The primary result subtree is reused unchanged. The independent mechanism assessment retains every registered stream and has a distinct numerical source. Both source lineages are parents of this complete evidence tree.
+          MESSAGE
+          evidence_commit=$(git commit-tree "$tree" -p "$NBO_R15_NUMERICAL_SOURCE_COMMIT" -p "$NBO_PRIMARY_EVIDENCE_COMMIT" -F "$body_file")
+          git push --atomic origin "$evidence_commit:refs/heads/$evidence_branch"
+          echo "Mechanism numerical source: $NBO_R15_NUMERICAL_SOURCE_COMMIT" >> "$GITHUB_STEP_SUMMARY"
+          echo "Preserved primary evidence parent: $NBO_PRIMARY_EVIDENCE_COMMIT" >> "$GITHUB_STEP_SUMMARY"
+          echo "Complete joined evidence: $evidence_commit" >> "$GITHUB_STEP_SUMMARY"
