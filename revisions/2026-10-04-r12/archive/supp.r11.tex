@@ -1,0 +1,187 @@
+\documentclass[ecta,draft]{econsocart}
+\RequirePackage[colorlinks,citecolor=blue,linkcolor=blue,urlcolor=blue]{hyperref}
+\usepackage{amsmath,amsfonts,amssymb,amsthm,graphicx,booktabs,array,longtable}
+\usepackage{algorithm,algpseudocode,bm,enumitem}
+\usepackage[T1]{fontenc}
+\usepackage{mathpazo}
+\usepackage{microtype}
+\startlocaldefs
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{assumption}{Assumption}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+\newcommand{\E}{\mathbb E}
+\newcommand{\R}{\mathbb R}
+\newcommand{\HH}{\mathcal H}
+\newcommand{\LL}{\mathcal L}
+\newcommand{\Act}{\mathcal A}
+\newcommand{\sg}{\operatorname{sg}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\Lip}{\operatorname{Lip}}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\endlocaldefs
+\usepackage{xr}
+\externaldocument{revisions/2026-10-04-r11/build/ECTA_refs}
+\begin{document}
+\begin{frontmatter}
+\title{Supplement to Neural Bellman Operators}
+\runtitle{NBO Supplement}
+\begin{aug}
+\author[id=au1,addressref={add1}]{\fnms{Qian}~\snm{QI}}
+\address[id=add1]{Peking University}
+\end{aug}
+\end{frontmatter}
+
+\section{Organization of the Revised Supplement}
+The new policy-specific proofs appear first. The inherited supplement follows, with its historical iteration labels retained. Full application sections, prior proofs, and the R10 comparison are reproduced later without deleting their mathematical content. The corresponding main-text roots are archived by exact byte identity. Historical statements about the then-current revision are read in that temporal context; the R11 protocol, results, and response identify the present evidence.
+\input{revisions/2026-10-04-r11/manuscript/proofs.tex}
+\section{Relation to the Main Text}
+This supplement expands the models and algorithms of the revised main manuscript. It does not introduce an alternative total loss or a different equilibrium definition. Policy evaluation freezes all actor outputs. Policy improvement freezes the critic's value and derivative channels. For games, only the acting player's objective is differentiated. For temporal selves, both exponential components evaluate the same future policy. The earlier main and supplementary sources are preserved in the revision archive for comparison; they are not alternative implementations of the revised method.
+
+The inherited portfolio and quadratic laboratories retain their declared exact-structure classes. R6 trains generic multilayer policies in stopped consumption, preference adjustment, and dense nonlinear capital economies. R7 adds successful finite preference actors, neural game policies with full dynamic best responses, common-noise coverage records, and an independent arithmetic replay. R8 integrates those results and adds continuous-action training without maximizing labels, complete-action enclosures, direct and projection comparisons, and a separate continuous-transfer theorem. These approximation and verification classes are distinguished throughout the supplement.
+
+\section{Policy Evaluation and the Recursive Policy Gradient}
+Let $a_\phi$ be differentiable in a scalar parameter direction, and suppose $V^{a_\phi}$ is sufficiently differentiable for the following calculation. The terminal payoff is independent of the policy parameter. Assume differentiation under the expectation is justified, that the differentiated state and utility equations are integrable, and that the boundary conditions of the differentiated problem are zero. Denote the directional derivative of the policy value by $w$.
+
+Differentiating the fixed-policy equation gives
+\[
+ 0=w_t+\LL^{a_\phi}w+f_y(t,x,a_\phi,V^{a_\phi})w
+  +D_a\HH^{a_\phi}[V^{a_\phi}]\,D_\phi a_\phi.
+\]
+The operator derivative includes the dependence of both drift and covariance on the action. The derivative of the generator acting on the changing value is contained in $\LL^{a_\phi}w$, while the action derivative of the generator acting on the fixed value is contained in $D_a\HH$. No Hessian-action channel is discarded.
+
+Applying the linear Feynman--Kac formula to the differentiated equation gives
+\[
+ w(t,x)=\E_{t,x}^{a_\phi}\int_t^\tau
+ \exp\left(\int_t^s f_y(v,S_v,a_v,V^{a_\phi})dv\right)
+ D_a\HH^{a_\phi}[V^{a_\phi}](s,S_s)D_\phi a_\phi(s,S_s)ds.
+\]
+This formula concerns the performance derivative from the stated initial state. A domain-uniform Hamiltonian objective uses a different weighting. Such an objective is useful for approximate pointwise improvement, but it becomes a lifetime policy gradient only with the appropriate occupation and adjoint weights. Trajectories sampled by the current actor are detached in the implemented domain objective. Differentiating through their sampling law would define a different gradient estimator and must be analyzed separately.
+
+The critic's residual derivative is the derivative of the entire fixed-policy equation. In particular, its level is determined by the recursive evaluation equation together with boundary data. A separate negative-Hamiltonian gradient in the critic is not an innocuous level anchor: in the scalar stationary example it moves the minimizer away from the Bellman root.
+
+\section{Representation, Boundary Conditions, and Error Measurement}
+\subsection{Smooth approximation and what it establishes}
+A derivative-approximation result concerns a smooth target on a compact domain and a family of networks whose capacity can increase. It does not imply that a fixed network attains zero residual, that optimization finds its best approximation, or that a nonsmooth target has classical derivatives everywhere. In a smooth problem, increasing the representation class can reduce approximation error in the value and derivatives. In a nonsmooth problem, NBO instead evaluates a consistent positive-weight Bellman equation, or solves an explicitly regularized equation before taking a justified limit.
+
+The hard-terminal architecture is $v(t,x)=G(x)+(T-t)N(t,x)$. It exactly enforces $v(T,x)=G(x)$ independently of training. A lateral Dirichlet face needs an additional compatible lifting and vanishing factor. For a reflected state, the Neumann condition is a different constraint. A loss on only interior points leaves all of these boundary questions unanswered. The regression test evaluates the terminal architecture at randomly chosen states and checks exact equality, not merely a small mean terminal error.
+
+The recursive Epstein--Zin domain is $bV>0$. An exponential output ensures positivity, while an interval transformation can keep $bV$ between declared positive barriers. If $bG>0$, one terminal-compatible positive representation is
+\[
+ bv(t,x)=\exp\left[\log(bG(x))+(T-t)N(t,x)\right].
+\]
+Its terminal value is exact. It does not by itself impose a lateral exit payoff or a two-sided barrier. These additional conditions must be built into the architecture or measured explicitly. Clipping an invalid utility argument inside a fractional power changes the equation and is not an acceptable hidden numerical repair.
+
+\subsection{From residual samples to a uniform bound}
+Let $r$ be $K$-Lipschitz on a domain in $\R^d$. If every point is within distance $h_V$ of a validation point, the triangle inequality gives $\|r\|_\infty\leq\max_{x\in\mathcal V}|r(x)|+Kh_V$. If $K$ is estimated from samples rather than bounded, the resulting expression is itself a diagnostic, not a certified uniform bound.
+
+An integral bound needs more assumptions. Suppose the sampling density is at least $p_0>0$, and each ball of radius $r_0$ or less centered in the domain intersects the domain in volume at least $c_Dr^d$. Let $M=\|r\|_\infty$ and assume $M/(2K)\leq r_0$. Near a point approaching the maximum, Lipschitz continuity gives $|r|\geq M/2$ on a ball of radius $M/(2K)$. Hence
+\[
+ \E r^2\geq\frac{p_0c_D}{2^{d+2}K^d}M^{d+2},\qquad
+ M\leq\left(\frac{2^{d+2}K^d\E r^2}{p_0c_D}\right)^{1/(d+2)}.
+\]
+For larger $M$, use the capped radius $r_0$ and the corresponding two-case inequality. A concentration argument is additionally needed to replace the population mean by an empirical one. This calculation explains why a dimension-free uniform certificate cannot be read directly from an average training loss.
+
+The action gap is treated similarly. If an action net has covering radius $h_A$ and the Hamiltonian is $K_A$-Lipschitz in the action, the unobserved supremum exceeds the net maximum by at most $K_Ah_A$. Thus the net gap plus this term is an upper bound. A collection of successful deviations without a covering or duality argument is only a lower bound on exploitability.
+
+\section{Benchmark Derivations}
+\subsection{Merton consumption and transversality}
+Write $b=1-\gamma$ and $V=KX^b/b$. Then $V_X=KX^{-\gamma}$ and $V_{XX}=-\gamma KX^{-\gamma-1}$. Substituting $c=mX$ into the stationary time-additive equation and dividing by the positive number $KX^b$ gives
+\[
+ 0=\frac{m^b}{bK}-\frac\rho b+r+p(\mu-r)-m-\tfrac12\gamma p^2\sigma^2.
+\]
+Consumption maximization gives $m^{-\gamma}=K$; portfolio maximization gives $p=(\mu-r)/(\gamma\sigma^2)$ when interior. With a no-short-sale constraint and negative excess return, the maximizing share is zero. Let $R_*=r+p(\mu-r)-\gamma p^2\sigma^2/2$. After substitution, $\gamma m=\rho+(\gamma-1)R_*$.
+
+For the optimal constant shares, $e^{-\rho t}\E[X_t^{1-\gamma}]$ decays as $e^{-m t}$. Thus $m>0$ gives the candidate's additive transversality condition. Verification against a larger policy class also requires the relevant localization and integrability conditions for the competitors, as specified in the main text. Policies with minus-infinite utility are not preferred to the finite candidate. The numerical laboratory checks the candidate formulas and does not silently apply a stationary constant to an unspecified finite-horizon terminal problem.
+
+\subsection{Recursive coefficient and the utility interval}
+For $f(c,V)=\rho[c^a(bV)^{1-a/b}-bV]/a$, the same homothetic substitution gives
+\[
+ 0=\frac\rho a[m^aK^{-a/b}-1]+R_*-m.
+\]
+Since $f_c=V_X$ implies $\rho m^{a-1}K^{-a/b}=1$, the first term becomes $(m-\rho)/a$. Consequently, $m=\psi\rho+(1-\psi)R_*$ and $K=[\rho m^{a-1}]^{b/a}$. The formula assumes the stationary candidate has positive consumption. It is not an infinite-horizon utility-selection theorem.
+
+For the finite-horizon matching-bequest test at $a>0>b$, define $Y=bV$. The consumption domain is compact and bounded away from zero. At sufficiently small positive $Y$, $c^aY^{-a/b}<1$ uniformly in consumption, so $f<0$. At sufficiently large $Y$, the reverse inequality holds and $f>0$. Because dividing by negative $b$ reverses the order of the utility endpoints, the large-$Y$ constant is a lower utility barrier and the small-$Y$ constant is an upper utility barrier. The matching bequest lies between them after enlarging the interval. Lipschitz scalar comparison then keeps each policy utility inside the interval, on which the aggregator and its utility derivative are bounded. This verifies the finite-horizon interpretation without claiming an unrestricted infinite-horizon result at those parameters.
+
+\section{Endogenous-Preference Details}
+\subsection{State restrictions and the reference experiment}
+In the baseline application, the risk-aversion interval lies strictly above one and the process is reflected. The reference wealth problem is stopped at positive finite bounds. Consumption shares are bounded away from zero, adjustment efforts are bounded, and the horizon is finite. These choices bound the flow utility, its relevant derivatives away from the terminal-boundary compatibility issue, and the bequest. They provide a well-defined finite reference calculation. The numerical reflection is a folded reflection of Brownian cubature endpoints; the wealth boundary is absorbing with the prescribed payoff. The same terminal and boundary values are imposed for both adjustment-cost parameters.
+
+The grid reference operates in $y=\log X$. Its drift is
+\[
+ b_y=r+p(\mu-r)-m-\tfrac12p^2\sigma_X^2,
+\]
+and its covariance with $u$ is $\varrho\sigma_u p\sigma_X$. The two Brownian-factor columns can be written $(\sigma_u,\varrho p\sigma_X)^\top$ and $(0,\sqrt{1-\varrho^2}p\sigma_X)^\top$. Four symmetric cubature directions reproduce this covariance. The correction $-p^2\sigma_X^2/2$ in log wealth is essential; omitting it would change the economic diffusion.
+
+For each action, the backward update is current utility times the time step plus the exponentially discounted positive-weight interpolation of next-period value. Feasible actions are enumerated on the declared 27-element grid. Because the terminal/exit payoff is fixed, raising $k$ weakly lowers each action's payoff and, by backward induction, lowers value at every state and time. The recorded arrays permit a direct check of this order. The reported grid-refinement difference is not an estimate of unrestricted neural approximation error.
+
+\subsection{Policy conditions and comparative statics}
+The consumption marginal utility in reference units is $U_c=\bar c^{-1}(c/\bar c)^{-u}$. Equating it to $V_X$ yields $c=\bar c(\bar cV_X)^{-1/u}$. Adjustment maximizes $\theta V_u-k\theta^2/2$ and hence uses the projection of $V_u/k$ under a box. Portfolio choice maximizes a quadratic with coefficient $X^2\sigma_X^2V_{XX}/2$. The projected first-order solution is valid only when this coefficient is negative. These conditions clarify why numerical curvature and feasibility must be checked independently.
+
+The cross derivative $V_{uX}$ is an endogenous object. Its sign cannot be inferred from the label ``risk aversion'' or from a negative shock correlation. Nor can the sign of $\partial_k\theta^k$ be inferred by differentiating $1/k$ while keeping $V_u^k$ fixed. In contrast, the value monotonicity in $k$ holds policy by policy. At a differentiable optimum the envelope formula follows because $k$ appears only in the quadratic running cost. Changing the normalization function $\kappa(u)$ can change both adjustment and portfolio policies even while leaving utility curvature in consumption unchanged.
+
+An observation model is needed for structural estimation. With latent $u$, uncertainty in $\kappa$, and unknown adjustment or shock parameters, a sensitivity plot for one policy component does not prove identification. A practical estimation exercise would compute moment derivatives jointly, inspect their rank after normalization restrictions, and propagate numerical approximation error into the implied moment map. Those are distinct tasks from solving the controlled economy.
+
+\section{Temporal-Self Deviations}
+For the two-exponential kernel, the component value under constant consumption share $m$ is $W_j(X)=m^bX^b/[b\lambda_j(m)]$, where $\lambda_j(m)=\rho_j-b(r-m)$. A deviation to share $z$ for duration $\epsilon$, followed by $m$, has component value at $X=1$
+\[
+ J_j(z,\epsilon)=\frac1b\left[
+ z^b\frac{1-e^{-\lambda_j(z)\epsilon}}{\lambda_j(z)}
+ +e^{-\lambda_j(z)\epsilon}\frac{m^b}{\lambda_j(m)}\right].
+\]
+The continuous extension is used if $\lambda_j(z)=0$. The deviation gain is $\sum_jw_jJ_j(z,\epsilon)-\sum_jw_jW_j(1)$, with weights $(\beta,1-\beta)$. This is the quantity independently maximized in the experiment, rather than a restatement of the equilibrium first-order condition.
+
+At an equilibrium share, the first-order gain is nonpositive for every feasible instantaneous share and equals zero at the equilibrium share. A finite-duration self can generally choose a slightly different share, so the maximized gain need not be exactly zero for positive duration. The required diagnostic is its gain divided by duration as duration tends to zero. For $\beta=1$ the ordinary exponential solution is recovered.
+
+As $\kappa$ grows, the kernel becomes increasingly concentrated near the present before approaching its long-run component. Taking the instantaneous-deviation limit and taking $\kappa\to\infty$ are conceptually different operations. The finite-$\kappa$ model in this paper explicitly specifies the order: the spike condition is derived for fixed $\kappa$, and any duration-limit comparative static is taken afterward. This avoids assigning an undefined continuous-time meaning to a discrete present-bias multiplier.
+
+\section{Games and Independent Best Responses}
+A fixed rival profile turns each player's problem into an ordinary controlled Markov problem, so the main verification results apply player by player. The derivative graph must implement this reduction. During player $i$'s actor step, every rival policy and every derivative of player $i$'s critic is detached. During player $i$'s critic step, all players' actions are detached. A sum of these reporting losses can be logged, but differentiation of a joint-profit objective is not equivalent to those block steps.
+
+The two-firm static diagnostic has best response $q_i=(1-q_j)/2$ when interior. At the joint-profit allocation $(1/4,1/4)$, the deviating firm chooses $3/8$ and improves profit from $1/8$ to $9/64$, a gain of $1/64$. The own-action derivative is $1/4$ at the joint optimum. These numbers verify a graph-level distinction; they are not a computation of the dynamic capital game.
+
+For the dynamic problem, a reported equilibrium should include an independent solution of each fixed-rival best-response problem, or an upper bound on the unilateral Hamiltonian gap over the entire verification domain. A finite list of unsuccessful deviations does not supply such an upper bound. Multiple initializations, asymmetric profiles, boundary actions, and the market-size normalization are part of the same experiment. The specification in the main text retains the dynamic Cournot application but does not invent a dynamic Nash table from the static arithmetic.
+
+\section{Stochastic Hessian Objectives and Complexity}
+Let $B=\Sigma^\top D^2v\Sigma$, a symmetric matrix in Brownian-factor space. For Gaussian probes, Isserlis' identity gives $\E(z^\top Bz)=\tr B$ and $\operatorname{Var}(z^\top Bz)=2\tr(B^2)=2\|B\|_F^2$. Averaging $K$ independent probes divides the variance by $K$. Rademacher probes instead have variance $2\sum_{i\ne j}B_{ij}^2/K$. The variance depends on the chosen covariance factor and probe law, both of which must be specified.
+
+Write $\widehat q_j=q+\epsilon_j$, with conditionally mean-zero independent errors. Then
+\[
+ \E[(d-\widehat q_1/2)(d-\widehat q_2/2)]
+ =(d-q/2)^2+\tfrac14\E[\epsilon_1\epsilon_2]=(d-q/2)^2.
+\]
+Using one bank twice would retain its variance term. In the scalar Gaussian example, a single-bank squared residual has expectation $1-h+3h^2/4$, minimized at $h=2/3$, whereas the exact residual $(1-h/2)^2$ is minimized at $h=2$. The independent product restores the latter population objective. The saved Monte Carlo diagnostic uses 400,000 pairs and records both empirical estimates; it does not claim that the sampling error is identically zero.
+
+The core implementation uses exact Hessians to make the covariance contraction independently testable. A Hessian-vector implementation can replace it without changing the conditional-independence requirement. The cost of a Hessian-vector product depends on the network graph, not just the state dimension. Total cost also includes sampling, optimization, domain coverage, action maximization, and stopping at an agreed error level. A quadratic-neural representation with a Lyapunov solve has different approximation and optimization costs from a generic multilayer network. The inherited quadratic laboratory is explicitly the former; the new dense nonlinear experiments actually train generic networks and Hessian-vector estimators.
+
+\section{Reproduction and Further Comparisons}
+From the repository root, execute the experiment program and then the regression suite. The dependency versions and CPU setting are recorded with the results. The experiment output distinguishes acceptance of a calibration or identity test from execution of a reference computation. A separate reviewer-check output reproduces the original twelve diagnostics against the archived original manuscript, not against the revised article.
+
+A broader method comparison should use one problem specification and evaluate value error, policy error, boundary error, and the independent action gap at matched accuracy. A direct neural-HJB comparator eliminates the actor with the same feasible maximization routine. A temporal-regression comparator uses the same recursive discretization and utility domain, without adding discount twice. A separability-aware classical comparator exploits all available economic structure. Network capacity, sampling, covariance treatment, random seeds, failures, wall time, and memory should all be reported. R6 executes the architecture-matched direct-HJB and finite-Bellman comparisons. The broader deep-BSDE comparison remains unexecuted and is not counted as a measured advantage. R7 neural-game evidence and the additional R8 comparisons are reported in the integrated sections below.
+
+The inherited read-only workflow is preserved. The separately scoped R6 replication workflow commits materialized source and raw recomputation outputs only to its designated candidate branch, without editing the review or earlier revision branches. Hashes and exact source commits distinguish these artifacts. No workflow rewrites a failed numerical accuracy target as a pass.
+\input{revisions/2026-09-29-r6/manuscript/supplement_details.tex}
+\input{revisions/2026-09-29-r6/manuscript/tables_supplement.tex}
+\input{revisions/2026-10-04-r11/manuscript/r8_supplement_layout.tex}
+\input{revisions/2026-10-03-r9/manuscript/supplement.tex}
+\input{revisions/2026-10-04-r11/manuscript/r10_supplement_layout.tex}
+
+\input{revisions/2026-10-04-r11/manuscript/retained_applications.tex}
+\input{revisions/2026-10-04-r10/manuscript/study.tex}
+\input{revisions/2026-10-04-r11/manuscript/retained_conclusion.tex}
+\input{revisions/2026-10-04-r11/manuscript/retained_proofs.tex}
+\section{R11 Complete Numerical Record}\label{app:r11record}
+\input{revisions/2026-10-04-r11/manuscript/table_all_seeds.tex}
+\input{revisions/2026-10-04-r11/manuscript/table_all_frontiers.tex}
+\input{revisions/2026-10-04-r11/manuscript/table_all_sensitivity.tex}
+\input{revisions/2026-10-04-r11/manuscript/table_greedy.tex}
+\bibliographystyle{ecta-fullname}
+\bibliography{revision_reference}
+
+\end{document}
