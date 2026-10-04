@@ -1,0 +1,125 @@
+name: NBO R12 clean single-source study and referee publication
+on:
+  push:
+    branches: [revision/econometrica-nbo-r12-source-2026-10-04]
+permissions:
+  contents: read
+env:
+  OMP_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  PYTHONHASHSEED: '0'
+  NBO_R12_SOURCE_COMMIT: ${{ github.sha }}
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0 mpmath==1.3.0 numba==0.65.1
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - run: python revisions/2026-10-04-r12/code/test_runner.py
+  study:
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        shard: ['7919', '15401', '22807', '30223', '37633', '45061', '52453', '59879', '67307', '74719', 'aux', 'reference']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install pinned numerical environment
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0 mpmath==1.3.0 numba==0.65.1
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Execute the fixed shard from scratch
+        run: |
+          set -euo pipefail
+          python revisions/2026-10-04-r12/code/environment.py '${{ matrix.shard }}'
+          python revisions/2026-10-04-r12/code/run.py --shard '${{ matrix.shard }}' 2>&1 | tee 'revisions/2026-10-04-r12/results/${{ matrix.shard }}/EXECUTION.stdout'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r12-shard-${{ matrix.shard }}-${{ github.run_id }}
+          path: revisions/2026-10-04-r12/results/
+          if-no-files-found: error
+          retention-days: 90
+  evidence:
+    needs: study
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch only pinned history objects
+        run: |
+          git fetch --no-tags --depth=1 origin 7e4393a6cae766b55975996a68515dc3e3b390e4
+          git fetch --no-tags --depth=1 origin 840565f451be6103aeb325a8fc548a57507a8fb2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nbo-r12-shard-*-${{ github.run_id }}
+          path: revisions/2026-10-04-r12/results/
+          merge-multiple: true
+      - name: Install numerical and Econometrica build environment
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0 mpmath==1.3.0 numba==0.65.1
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          sudo apt-get update -qq
+          sudo apt-get install -y texlive-latex-extra texlive-science texlive-fonts-recommended poppler-utils
+      - name: Replay, preserve, compile and bind complete evidence
+        run: |
+          set -euo pipefail
+          mkdir -p revisions/2026-10-04-r12/logs
+          python revisions/2026-10-04-r12/code/test_runner.py --inherited 2>&1 | tee revisions/2026-10-04-r12/logs/tests.log
+          python revisions/2026-10-04-r12/code/report.py 2>&1 | tee revisions/2026-10-04-r12/logs/report.log
+          python revisions/2026-10-04-r12/code/integrate.py
+          python revisions/2026-10-04-r12/code/build.py 2>&1 | tee revisions/2026-10-04-r12/logs/build.log
+          python revisions/2026-10-04-r12/code/finalize.py > revisions/2026-10-04-r12/logs/finalize.log
+      - name: Publish new evidence and referee branches atomically
+        run: |
+          set -euo pipefail
+          find revisions/2026-10-04-r12 -type d -name __pycache__ -prune -exec rm -rf '{}' +
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ECTA.tex supp.tex README.md revisions/2026-10-04-r12
+          git commit -m 'revision(r12): clean single-source evidence, full manuscript and paired-method referee response [skip ci]'
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r12-evidence-2026-10-04 HEAD:refs/heads/revision/econometrica-nbo-r12-referee-2026-10-04
+      - name: Prepare compact authoritative document package
+        run: |
+          mkdir -p /tmp/nbo-r12-documents
+          cp revisions/2026-10-04-r12/build/ECTA.pdf /tmp/nbo-r12-documents/NBO_R12_manuscript.pdf
+          cp revisions/2026-10-04-r12/build/supp.pdf /tmp/nbo-r12-documents/NBO_R12_supplement.pdf
+          cp revisions/2026-10-04-r12/build/response.pdf /tmp/nbo-r12-documents/NBO_R12_referee_response.pdf
+          cp revisions/2026-10-04-r12/{README.md,REMOTE_EXECUTION.json,TABLE_MANIFEST.json,EDITORIAL_MAP.json,PROTOCOL.json} /tmp/nbo-r12-documents/
+          cp revisions/2026-10-04-r12/results/AUDIT.json /tmp/nbo-r12-documents/
+          git rev-parse HEAD > /tmp/nbo-r12-documents/EVIDENCE_COMMIT.txt
+          cd /tmp/nbo-r12-documents && sha256sum * > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r12-documents-${{ github.run_id }}
+          path: /tmp/nbo-r12-documents/
+          if-no-files-found: error
+          retention-days: 90
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r12-audit-${{ github.run_id }}
+          path: |
+            revisions/2026-10-04-r12/logs/
+            revisions/2026-10-04-r12/build/
+            revisions/2026-10-04-r12/REMOTE_EXECUTION.json
+          if-no-files-found: warn
+          retention-days: 90
