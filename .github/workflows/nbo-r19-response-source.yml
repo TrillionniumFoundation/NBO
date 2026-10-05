@@ -18,19 +18,32 @@ jobs:
           persist-credentials: false
           fetch-depth: 1
           filter: blob:none
-      - name: Export immutable text sources and full path inventory
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            *.tex
+            *.bib
+            *.cls
+            *.bst
+            *.sty
+            *.py
+            *.md
+            *.txt
+            *.yml
+            *.aux
+            *.bbl
+            **/protocols/*.json
+      - name: Export immutable manuscript and derivation sources
         shell: python
         run: |
           import subprocess, pathlib, tarfile, hashlib, json
           out=pathlib.Path('/tmp/nbo-r19-source'); out.mkdir()
           paths=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
-          keep={'.tex','.bib','.cls','.bst','.sty','.py','.md','.txt','.json','.yml','.yaml','.aux','.bbl','.csv'}
           selected=[]; omitted=[]
           with tarfile.open(out/'source.tar.gz','w:gz') as archive:
               for name in paths:
+                  if not name: continue
                   p=pathlib.Path(name)
-                  if not name or not p.is_file(): continue
-                  if p.suffix in keep and p.stat().st_size < 4000000:
+                  if p.is_file() and p.stat().st_size < 4000000:
                       archive.add(p,arcname=name); selected.append(name)
                   else: omitted.append(name)
           (out/'INVENTORY.json').write_text(json.dumps({'selected':selected,'omitted':omitted},indent=2))
