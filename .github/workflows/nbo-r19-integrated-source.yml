@@ -1,0 +1,56 @@
+name: NBO R19 integrated source snapshot
+on:
+  push:
+    branches: [revision/econometrica-nbo-r19-integrated-2026-10-05]
+    paths: [.github/workflows/nbo-r19-integrated-source.yml]
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            *.tex
+            *.bib
+            *.cls
+            *.cfg
+            *.bst
+            *.sty
+            *.py
+            *.md
+            *.txt
+            *.yml
+            *.aux
+            *.bbl
+            **/protocols/*.json
+            /revisions/2026-10-05-r19-response/delivery/
+            /revisions/2026-10-05-r18/results/*.json
+      - name: Archive the pinned scientific sources
+        shell: python
+        run: |
+          import pathlib, subprocess, tarfile, json, hashlib
+          out=pathlib.Path('/tmp/nbo-r19-integrated-source'); out.mkdir()
+          names=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          selected=[]
+          with tarfile.open(out/'source.tar.gz','w:gz') as archive:
+              for name in names:
+                  if not name: continue
+                  p=pathlib.Path(name)
+                  if p.is_file() and p.stat().st_size < 4000000:
+                      archive.add(p,arcname=name); selected.append(name)
+          (out/'COMMIT.txt').write_bytes(subprocess.check_output(['git','rev-parse','HEAD']))
+          (out/'INVENTORY.json').write_text(json.dumps(selected,indent=2))
+          (out/'SHA256SUMS').write_text(hashlib.sha256((out/'source.tar.gz').read_bytes()).hexdigest()+'  source.tar.gz\n')
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r19-integrated-pinned-source
+          path: /tmp/nbo-r19-integrated-source/
+          if-no-files-found: error
+          retention-days: 30
