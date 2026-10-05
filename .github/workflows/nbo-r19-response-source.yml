@@ -5,22 +5,38 @@ on:
     paths: [.github/workflows/nbo-r19-response-source.yml]
 permissions:
   contents: read
+concurrency:
+  group: nbo-r19-response-source
+  cancel-in-progress: true
 jobs:
   snapshot:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
           fetch-depth: 1
-      - name: Export immutable tracked sources
+          filter: blob:none
+      - name: Export immutable text sources and full path inventory
+        shell: python
         run: |
-          set -eu
-          mkdir -p /tmp/nbo-r19-source
-          git rev-parse HEAD > /tmp/nbo-r19-source/COMMIT.txt
-          git archive --format=tar HEAD | gzip -n > /tmp/nbo-r19-source/source.tar.gz
-          sha256sum /tmp/nbo-r19-source/source.tar.gz > /tmp/nbo-r19-source/SHA256SUMS
+          import subprocess, pathlib, tarfile, hashlib, json
+          out=pathlib.Path('/tmp/nbo-r19-source'); out.mkdir()
+          paths=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          keep={'.tex','.bib','.cls','.bst','.sty','.py','.md','.txt','.json','.yml','.yaml','.aux','.bbl','.csv'}
+          selected=[]; omitted=[]
+          with tarfile.open(out/'source.tar.gz','w:gz') as archive:
+              for name in paths:
+                  p=pathlib.Path(name)
+                  if not name or not p.is_file(): continue
+                  if p.suffix in keep and p.stat().st_size < 4000000:
+                      archive.add(p,arcname=name); selected.append(name)
+                  else: omitted.append(name)
+          (out/'INVENTORY.json').write_text(json.dumps({'selected':selected,'omitted':omitted},indent=2))
+          (out/'COMMIT.txt').write_bytes(subprocess.check_output(['git','rev-parse','HEAD']))
+          (out/'SHA256SUMS').write_text(hashlib.sha256((out/'source.tar.gz').read_bytes()).hexdigest()+'  source.tar.gz\n')
+          print('Selected',len(selected),'omitted',len(omitted),'archive bytes',(out/'source.tar.gz').stat().st_size)
       - uses: actions/upload-artifact@v4
         with:
           name: nbo-r19-response-pinned-source
