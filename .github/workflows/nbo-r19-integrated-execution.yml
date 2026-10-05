@@ -1,0 +1,113 @@
+name: NBO R19 integrated frozen execution
+on:
+  push:
+    branches: [revision/econometrica-nbo-r19-integrated-2026-10-05]
+    paths: [.github/workflows/nbo-r19-integrated-execution.yml]
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r19-integrated-execution
+  cancel-in-progress: false
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      R: revisions/2026-10-05-r19-integrated
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-05-r19-integrated/
+            /revisions/2026-10-05-r19-response/delivery/
+            /revisions/2026-10-05-r19-response/protocols/
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install the recorded numerical environment
+        run: |
+          python -m pip install numpy==2.3.5 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Materialize only complete hash-verified frozen sources
+        shell: python
+        run: |
+          from pathlib import Path
+          import base64, hashlib, json, lzma, sys
+          root=Path('revisions/2026-10-05-r19-integrated')
+          old=Path('revisions/2026-10-05-r19-response')
+          frozen=json.loads((root/'protocols/IMPLEMENTATION_FREEZE.json').read_text())['sha256']
+          payload=''.join((old/'delivery'/f'part{i:02}.b64').read_text().strip() for i in range(3))
+          decoder=lzma.LZMADecompressor()
+          raw=decoder.decompress(base64.b64decode(payload,validate=True))
+          # The legacy transport is incomplete. Only complete regular tar members
+          # with individually frozen hashes are eligible; no archive-complete claim.
+          pos=0; restored={}
+          while pos+512 <= len(raw):
+              header=raw[pos:pos+512]
+              if not any(header): break
+              name=header[:100].split(b'\0')[0].decode('utf-8')
+              size=int(header[124:136].strip(b'\0 ') or b'0',8)
+              begin=pos+512; end=begin+size
+              if end>len(raw): break
+              if name.startswith('code/') and name in frozen:
+                  assert header[156:157] in (b'0',b'\0')
+                  data=raw[begin:end]
+                  digest=hashlib.sha256(data).hexdigest()
+                  assert digest==frozen[name],name
+                  target=root/name;target.parent.mkdir(parents=True,exist_ok=True)
+                  target.write_bytes(data);restored[name]=digest
+              pos=begin+((size+511)//512)*512
+          assert len(restored)==5,restored
+          sys.path.insert(0,str(root/'code'))
+          from economy import make_inputs
+          for d in (10,50):
+              name=f'protocols/economy_d{d}.json'
+              data=(json.dumps(make_inputs(d),sort_keys=True,indent=2)+'\n').encode()
+              digest=hashlib.sha256(data).hexdigest()
+              assert digest==frozen[name],(name,digest,frozen[name])
+              (root/name).write_bytes(data);restored[name]=digest
+          from study import verify_freeze
+          verify_freeze()
+          (root/'results').mkdir(exist_ok=True)
+          (root/'results/SOURCE_RECOVERY.json').write_text(json.dumps({'individual_frozen_hashes':restored,'legacy_transport_complete':decoder.eof,'scope':'Only complete individually hash-verified scientific sources were recovered.'},indent=2)+'\n')
+      - name: Run frozen algebra and arithmetic preflight
+        run: python -m unittest discover -s "$R/code" -p test_revision.py -v 2>&1 | tee "$R/results/PREFLIGHT.log"
+      - name: Execute all 252 services without outcome-dependent edits
+        run: |
+          set -o pipefail
+          python -u "$R/code/study.py" 2>&1 | tee "$R/results/EXECUTION.log"
+      - name: Validate complete outcomes and bind execution identity
+        shell: python
+        run: |
+          import os,json,hashlib,pathlib
+          r=pathlib.Path(os.environ['R']);p=r/'results/registered/SUMMARY.json';s=json.loads(p.read_text())
+          assert s['completed_count']==s['expected_count']==252
+          assert not s['failures']
+          assert len({(x['dimension'],x['queries'],x['stream'],x['method']) for x in s['records']})==252
+          rec={'source_commit':os.environ['GITHUB_SHA'],'run_id':os.environ['GITHUB_RUN_ID'],'summary_sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'completed':252,'failures':0,'interpretation':'Same frozen streams as the earlier design; this remote execution is a replay, not additional independent streams.'}
+          (r/'results/EXECUTION_IDENTITY.json').write_text(json.dumps(rec,indent=2)+'\n')
+      - name: Commit readable source and complete evidence on this revision only
+        run: |
+          set -euo pipefail
+          BRANCH=revision/econometrica-nbo-r19-integrated-2026-10-05
+          test "$GITHUB_REF_NAME" = "$BRANCH"
+          CURRENT=$(git ls-remote origin "refs/heads/$BRANCH" | cut -f1)
+          test "$CURRENT" = "$GITHUB_SHA"
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -- "$R/code" "$R/protocols" "$R/results"
+          git commit -m 'research(r19): publish complete frozen 252-service replay and readable source'
+          git push origin "HEAD:refs/heads/$BRANCH"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r19-integrated-execution
+          path: revisions/2026-10-05-r19-integrated/
+          if-no-files-found: error
+          retention-days: 30
