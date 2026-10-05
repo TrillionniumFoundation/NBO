@@ -1,0 +1,115 @@
+name: NBO R23 native Econometrica publication
+on:
+  push:
+    branches: [revision/econometrica-nbo-r23-full-policy-manuscript-2026-10-05]
+    paths:
+      - 'revisions/2026-10-05-r23/manuscript/**'
+      - 'revisions/2026-10-05-r23/code/replay_and_tables.py'
+      - 'revisions/2026-10-05-r23/code/test_review_revision.py'
+      - 'revisions/2026-10-05-r23/code/assemble_publication.py'
+      - 'revisions/2026-10-05-r23/code/build_publication.py'
+      - '.github/workflows/nbo-r23-native-publication.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r23-native-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      R: revisions/2026-10-05-r23
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install numerical and native typesetting dependencies
+        run: |
+          python -m pip install numpy==2.3.5 mpmath==1.3.0
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-science texlive-fonts-recommended texlive-publishers lmodern poppler-utils
+          git fetch --depth=1 origin 281e57b18a2d88de68d2219da1a7194e90570d13
+      - name: Run new and inherited suites in separate processes
+        run: |
+          python - <<'PY'
+          import json,os,re,subprocess,sys
+          from pathlib import Path
+          r=Path(os.environ['R']);out=r/'results';out.mkdir(exist_ok=True)
+          suites=[('R23',r/'code'),('R21',Path('revisions/2026-10-05-r21/code')),('R19',Path('revisions/2026-10-05-r19-integrated/code'))]
+          records=[]
+          for name,path in suites:
+              p=subprocess.run([sys.executable,'-m','unittest','discover','-s',str(path),'-p','test*.py','-v'],text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+              (out/f'TESTS_{name}.log').write_text(p.stdout)
+              print(p.stdout,flush=True)
+              m=re.search(r'Ran (\d+) tests?',p.stdout);n=int(m[1]) if m else 0
+              s=re.search(r'skipped=(\d+)',p.stdout);skip=int(s[1]) if s else 0
+              records.append({'suite':name,'run':n,'skipped':skip,'passed':n-skip if p.returncode==0 else None,'returncode':p.returncode})
+              (out/'TESTS.json').write_text(json.dumps(records,indent=2)+'\n')
+              if p.returncode or n==0:raise SystemExit('Suite did not pass: '+name)
+          PY
+      - name: Replay every original certificate and construct derived tables
+        run: |
+          set -o pipefail
+          python "$R/code/replay_and_tables.py" 2>&1 | tee "$R/results/REPLAY_RUN.log"
+      - name: Assemble without deleting inherited content
+        run: python "$R/code/assemble_publication.py"
+      - name: Compile all five native documents with strict diagnostics
+        run: |
+          set -o pipefail
+          python "$R/code/build_publication.py" 2>&1 | tee "$R/results/BUILD_RUN.log"
+      - name: Render selected publication pages
+        run: |
+          python - <<'PY'
+          import json,os,re,subprocess
+          from pathlib import Path
+          r=Path(os.environ['R']);b=r/'build';o=r/'results/previews';o.mkdir(exist_ok=True)
+          picks={'ECTA':{'thm:r23coercive','sec:r23experiment','tab:r23frontier'},'supp':{'sec:r23proofs'},'applications':set(),'evidence':set(),'response':set()}
+          records=[]
+          for name,labels in picks.items():
+              pages={1}
+              for line in (b/f'{name}_refs.aux').read_text().splitlines():
+                  m=re.match(r'\\newlabel\{([^}]+)\}\{\{[^}]*\}\{(\d+)\}',line)
+                  if m and m[1] in labels:pages.add(int(m[2]))
+              for page in sorted(pages):
+                  path=o/f'{name}-p{page}'
+                  subprocess.run(['pdftoppm','-f',str(page),'-l',str(page),'-r','110','-singlefile','-png',str(b/f'{name}.pdf'),str(path)],check=True)
+                  records.append({'document':name,'page':page,'image':str(path.with_suffix('.png'))})
+          (r/'results/RENDERED_PAGES.json').write_text(json.dumps(records,indent=2)+'\n')
+          PY
+      - name: Commit native manuscripts, evidence audit and PDFs to a new publication branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f "$R" CURRENT_REVISION.md
+          git commit -m 'R23: publish full native NBO revision, exhaustive replay, response and source preservation'
+          BRANCH="revision/econometrica-nbo-r23-full-policy-publication-${GITHUB_RUN_NUMBER}-2026-10-05"
+          git push origin "HEAD:refs/heads/$BRANCH"
+          git rev-parse HEAD
+          echo "PUBLICATION_BRANCH=$BRANCH"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r23-native-publication
+          path: |
+            /tmp/NBO_R23_publication.zip
+            revisions/2026-10-05-r23/build/*.pdf
+            revisions/2026-10-05-r23/build/*.log
+            revisions/2026-10-05-r23/build/*.stdout
+            revisions/2026-10-05-r23/results/TEST*.log
+            revisions/2026-10-05-r23/results/TESTS.json
+            revisions/2026-10-05-r23/results/COMPILATION.json
+            revisions/2026-10-05-r23/results/generated/*.json
+            revisions/2026-10-05-r23/results/previews/*.png
+            revisions/2026-10-05-r23/PRESERVATION.json
+            revisions/2026-10-05-r23/README.md
+          retention-days: 90
+          compression-level: 6
+          if-no-files-found: warn
