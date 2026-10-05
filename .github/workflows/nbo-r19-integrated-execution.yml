@@ -66,18 +66,28 @@ jobs:
           assert len(restored)==5,restored
           sys.path.insert(0,str(root/'code'))
           from economy import make_inputs
+          # These exact frozen binary64 coefficients are model inputs, not
+          # quantities to recompute using another platform's vector exp/log.
+          coefficients={
+              'A':[0.2487541562708001,0.24627901106031858,0.24382849395617745,0.24140235990462444],
+              'W':[0.4541172718560631,0.3922386415940249,0.3309757139904965,0.27032236270167154],
+              'constants':[-0.4022413448448606,-0.3666909282403622,-0.33149424419138135,-0.2966477730001863],
+              'c0':0.041800000000000004,'terminal_gamma':0.15372631026437172}
           for d in (10,50):
               name=f'protocols/economy_d{d}.json'
-              data=(json.dumps(make_inputs(d),sort_keys=True,indent=2)+'\n').encode()
+              obj=make_inputs(d);obj.update(coefficients)
+              data=(json.dumps(obj,sort_keys=True,indent=2)+'\n').encode()
               digest=hashlib.sha256(data).hexdigest()
-              assert digest==frozen[name],(name,digest,frozen[name])
+              assert digest==frozen[name],(name,digest,frozen[name],obj['increments_sha256'])
               (root/name).write_bytes(data);restored[name]=digest
           from study import verify_freeze
           verify_freeze()
           (root/'results').mkdir(exist_ok=True)
-          (root/'results/SOURCE_RECOVERY.json').write_text(json.dumps({'individual_frozen_hashes':restored,'legacy_transport_complete':decoder.eof,'scope':'Only complete individually hash-verified scientific sources were recovered.'},indent=2)+'\n')
+          (root/'results/SOURCE_RECOVERY.json').write_text(json.dumps({'individual_frozen_hashes':restored,'legacy_transport_complete':decoder.eof,'pre_execution_environment_failure_run':'37267623597','scope':'Only complete individually hash-verified scientific sources and exact frozen economic inputs were recovered. No scientific outcome preceded input verification.'},indent=2)+'\n')
       - name: Run frozen algebra and arithmetic preflight
-        run: python -m unittest discover -s "$R/code" -p test_revision.py -v 2>&1 | tee "$R/results/PREFLIGHT.log"
+        run: |
+          set -o pipefail
+          python -m unittest discover -s "$R/code" -p test_revision.py -v 2>&1 | tee "$R/results/PREFLIGHT.log"
       - name: Execute all 252 services without outcome-dependent edits
         run: |
           set -o pipefail
@@ -101,6 +111,7 @@ jobs:
           test "$CURRENT" = "$GITHUB_SHA"
           git config user.name 'NBO revision verification'
           git config user.email 'nbo-revision@users.noreply.github.com'
+          find "$R/code" -type d -name __pycache__ -prune -exec rm -rf {} +
           git add -- "$R/code" "$R/protocols" "$R/results"
           git commit -m 'research(r19): publish complete frozen 252-service replay and readable source'
           git push origin "HEAD:refs/heads/$BRANCH"
