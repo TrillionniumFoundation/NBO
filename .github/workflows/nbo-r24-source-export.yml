@@ -6,20 +6,57 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: nbo-r24-input-export
+  cancel-in-progress: true
 jobs:
   export:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Export tracked scientific source and immutable evidence
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*.tex
+            /*.bib
+            /*.cls
+            /*.cfg
+            /*.bst
+            /*.md
+            /.github/workflows/
+            /reviews/
+            /revisions/**/*.tex
+            /revisions/**/*.bib
+            /revisions/**/*.py
+            /revisions/**/*.md
+            /revisions/**/protocols/
+            /revisions/**/results/generated/
+            /revisions/2026-10-05-r23/results/
+      - name: Export tracked scientific source and current evidence
         run: |
           mkdir -p /tmp/nbo-r24-input
-          git rev-parse HEAD > /tmp/nbo-r24-input/REMOTE_COMMIT.txt
-          git ls-tree -r HEAD > /tmp/nbo-r24-input/GIT_TREE.txt
-          git archive --format=tar HEAD | gzip -6 > /tmp/nbo-r24-input/inherited-repository.tar.gz
-          sha256sum /tmp/nbo-r24-input/inherited-repository.tar.gz > /tmp/nbo-r24-input/SHA256.txt
+          python - <<'PY'
+          import hashlib,json,subprocess,tarfile
+          from pathlib import Path
+          out=Path('/tmp/nbo-r24-input')
+          (out/'REMOTE_COMMIT.txt').write_text(subprocess.check_output(['git','rev-parse','HEAD'],text=True))
+          (out/'GIT_TREE.txt').write_bytes(subprocess.check_output(['git','ls-tree','-r','HEAD']))
+          allowed={'.tex','.bib','.cls','.cfg','.bst','.md','.py','.json','.csv','.tsv','.yml','.yaml','.sh'}
+          paths=[]
+          for name in subprocess.check_output(['git','ls-files','-z']).split(b'\0'):
+              if not name:continue
+              p=Path(name.decode())
+              if p.is_file() and (p.suffix in allowed or str(p).startswith('revisions/2026-10-05-r23/results/')):paths.append(p)
+          with tarfile.open(out/'inherited-repository.tar.gz','w:gz') as archive:
+              for p in paths:archive.add(p,arcname=str(p),recursive=False)
+          manifest={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
+          (out/'FILES_SHA256.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          (out/'SHA256.txt').write_text(hashlib.sha256((out/'inherited-repository.tar.gz').read_bytes()).hexdigest()+'\n')
+          print(len(paths),'files', (out/'inherited-repository.tar.gz').stat().st_size,'bytes')
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: nbo-r24-pinned-input
           path: /tmp/nbo-r24-input/
+          compression-level: 0
           retention-days: 90
