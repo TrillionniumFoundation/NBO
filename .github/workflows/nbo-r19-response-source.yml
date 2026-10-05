@@ -1,0 +1,29 @@
+name: NBO R19 response source snapshot
+on:
+  push:
+    branches: [revision/econometrica-nbo-r19-response-2026-10-05]
+    paths: [.github/workflows/nbo-r19-response-source.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Export immutable tracked sources
+        run: |
+          set -eu
+          mkdir -p /tmp/nbo-r19-source
+          git rev-parse HEAD > /tmp/nbo-r19-source/COMMIT.txt
+          git archive --format=tar HEAD | gzip -n > /tmp/nbo-r19-source/source.tar.gz
+          sha256sum /tmp/nbo-r19-source/source.tar.gz > /tmp/nbo-r19-source/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r19-response-pinned-source
+          path: /tmp/nbo-r19-source/
+          if-no-files-found: error
+          retention-days: 30
