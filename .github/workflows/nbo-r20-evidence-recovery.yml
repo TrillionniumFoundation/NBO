@@ -1,0 +1,79 @@
+name: NBO R20 lossless evidence publication
+on:
+  push:
+    branches: [revision/econometrica-nbo-r20-2026-10-05]
+    paths: [.github/workflows/nbo-r20-evidence-recovery.yml]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: nbo-r20-evidence-recovery
+  cancel-in-progress: false
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-05-r20/
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r20-future-execution
+          run-id: 37270916186
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: /tmp/frozen-execution
+      - name: Recover exact completed observations without any numerical rerun
+        shell: python
+        run: |
+          from pathlib import Path,PurePosixPath
+          import gzip,hashlib,json,zipfile
+          archive=Path('/tmp/frozen-execution/SOURCE_AND_EVIDENCE.zip')
+          assert hashlib.sha256(archive.read_bytes()).hexdigest()=='dda33417d187c63bda9409a6b93535635049b5f1f9955fb5c193379ac9025e56'
+          prefix='revisions/2026-10-05-r20/results/'
+          original={};compressed=None
+          with zipfile.ZipFile(archive) as z:
+              for name in z.namelist():
+                  assert not PurePosixPath(name).is_absolute() and '..' not in PurePosixPath(name).parts
+                  if not name.startswith(prefix): continue
+                  raw=z.read(name);h=hashlib.sha256(raw).hexdigest()
+                  original[name[len(prefix):]]=dict(sha256=h,bytes=len(raw))
+                  p=Path(name);p.parent.mkdir(parents=True,exist_ok=True)
+                  if name.endswith('/future-study/SUMMARY.json'):
+                      assert h=='9e22610f6af5996ce7781ba623cad9c2be49e0e77696ac09f58a201cc4be8550'
+                      assert len(raw)==136097535
+                      packed=gzip.compress(raw,compresslevel=6,mtime=0)
+                      assert gzip.decompress(packed)==raw
+                      p.with_suffix('.json.gz').write_bytes(packed)
+                      compressed=dict(path='future-study/SUMMARY.json.gz',sha256=hashlib.sha256(packed).hexdigest(),bytes=len(packed),uncompressed_sha256=h,uncompressed_bytes=len(raw))
+                  else:p.write_bytes(raw)
+          assert len(original)==1011 and compressed is not None
+          r=Path(prefix)
+          (r/'future-study/.gitignore').write_text('/SUMMARY.json\n')
+          manifest=dict(execution_run='37270916186',execution_source_commit='b9ab61dcfe7e47294fa65ef0924e25d9e99e53b1',artifact_id=11329266685,artifact_inner_sha256='dda33417d187c63bda9409a6b93535635049b5f1f9955fb5c193379ac9025e56',original_files=original,summary=compressed,scientific_execution='COMPLETE 168 FAILURES 0',delivery='The first push was rejected solely because the 136097535-byte aggregate exceeded the per-file limit. All individual observations remain readable and byte-identical. The aggregate is losslessly gzip-compressed. No scientific rerun, deletion, filtering or change occurred.')
+          (r/'EVIDENCE_STORAGE.json').write_text(json.dumps(manifest,sort_keys=True,indent=2)+'\n')
+          assert all(p.stat().st_size<100000000 for p in r.rglob('*') if p.is_file())
+          print(json.dumps(compressed,indent=2));print('Recovered original files',len(original))
+      - name: Push exact evidence only to the new revision branch
+        run: |
+          set -euo pipefail
+          BRANCH=revision/econometrica-nbo-r20-2026-10-05
+          test "$GITHUB_REF_NAME" = "$BRANCH"
+          test "$(git ls-remote origin "refs/heads/$BRANCH" | cut -f1)" = "$GITHUB_SHA"
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -- revisions/2026-10-05-r20/results
+          git commit -m 'evidence(r20): publish all 168 services and 840 outcomes with lossless summary'
+          git push origin "HEAD:refs/heads/$BRANCH"
+          git rev-parse HEAD
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r20-evidence-storage-manifest
+          path: revisions/2026-10-05-r20/results/EVIDENCE_STORAGE.json
+          if-no-files-found: error
+          retention-days: 30
