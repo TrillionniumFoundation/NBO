@@ -1,0 +1,31 @@
+name: NBO R21 pinned source snapshot
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r21-2026-10-05']
+    paths: ['.github/workflows/nbo-r21-source-snapshot.yml']
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 76b633dbf10b00861b7f06dba8d632dd25c96d61
+      - name: Archive immutable source and small evidence
+        run: |
+          python - <<'PY'
+          import subprocess, pathlib, zipfile
+          files = subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          with zipfile.ZipFile('nbo-r21-base.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for name in files:
+                  p=pathlib.Path(name)
+                  if not name or not p.is_file(): continue
+                  if p.suffix.lower() in {'.tex','.bib','.bst','.cls','.cfg','.py','.md','.json','.csv','.yml','.yaml','.txt','.toml','.sh','.npz','.gz'} or name == 'LICENSE':
+                      if p.stat().st_size < 25000000: z.write(p,name)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r21-pinned-base
+          path: nbo-r21-base.zip
+          retention-days: 14
