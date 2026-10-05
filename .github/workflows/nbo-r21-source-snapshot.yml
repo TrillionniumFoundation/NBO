@@ -5,27 +5,48 @@ on:
     paths: ['.github/workflows/nbo-r21-source-snapshot.yml']
 permissions:
   contents: read
+concurrency:
+  group: nbo-r21-source
+  cancel-in-progress: true
 jobs:
   source:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           ref: 76b633dbf10b00861b7f06dba8d632dd25c96d61
-      - name: Archive immutable source and small evidence
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            *.tex
+            *.bib
+            *.cls
+            *.cfg
+            *.bst
+            *.sty
+            *.py
+            *.md
+            /revisions/2026-10-05-r19-integrated/protocols/
+            /revisions/2026-10-05-r19-integrated/results/
+            /revisions/2026-10-05-r20/results/
+      - name: Archive immutable source and selected evidence
+        shell: python
         run: |
-          python - <<'PY'
-          import subprocess, pathlib, zipfile
+          import subprocess, pathlib, zipfile, hashlib, json
           files = subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
-          with zipfile.ZipFile('nbo-r21-base.zip','w',zipfile.ZIP_DEFLATED) as z:
+          manifest={}
+          with zipfile.ZipFile('/tmp/nbo-r21-base.zip','w',zipfile.ZIP_DEFLATED) as z:
               for name in files:
                   p=pathlib.Path(name)
                   if not name or not p.is_file(): continue
-                  if p.suffix.lower() in {'.tex','.bib','.bst','.cls','.cfg','.py','.md','.json','.csv','.yml','.yaml','.txt','.toml','.sh','.npz','.gz'} or name == 'LICENSE':
-                      if p.stat().st_size < 25000000: z.write(p,name)
-          PY
+                  if p.suffix.lower() not in {'.pdf','.aux','.bbl','.log','.out'} and p.stat().st_size < 25000000:
+                      z.write(p,name); manifest[name]=hashlib.sha256(p.read_bytes()).hexdigest()
+              z.writestr('BASE_SNAPSHOT_SHA256.json',json.dumps(manifest,indent=2)+'\n')
       - uses: actions/upload-artifact@v4
         with:
           name: nbo-r21-pinned-base
-          path: nbo-r21-base.zip
+          path: /tmp/nbo-r21-base.zip
+          if-no-files-found: error
           retention-days: 14
