@@ -1,0 +1,97 @@
+\section{Finite Neural Construction: Complete Accounts}\label{sec:r25proofs}
+\subsection{The finalized-future invariant}
+At the terminal date, $P_T=Q_T$. Suppose all gains after date $t$ have been
+finalized, and $P_{t+1}$ is their own value coefficient. Train
+$\widehat P_{t+1}=W_{t+1}'W_{t+1}/d$ against $dP_{t+1}$, and set
+\[
+ K_t=(R_t+\beta B_t'\widehat P_{t+1}B_t)^{-1}
+                       \beta B_t'\widehat P_{t+1}A_t.
+\]
+The inverse exists because $R_t\succeq r_tI\succ0$. Evaluate the supplied
+current gain with the fixed future using~\eqref{eq:r23evaluation}. This
+produces the own value of the enlarged finalized policy. No subsequent
+step changes a finalized gain. Backward induction therefore gives the
+returned policy's own $P_{t+1}$ at every training date. The mathematical
+target drift in~\eqref{eq:r24drift} is zero, not an omitted error term.
+In a rounded computation the nominal target and exact own value may differ;
+the independent final interval evaluation encloses that difference.
+
+\subsection{Residual and full-policy bound}
+Proposition~\ref{prop:r25isotropic} gives
+$0\preceq\widehat P_{t+1}\preceq P_{t+1}\preceq L_{t+1}I/d$.
+Consequently,
+\begin{align*}
+ \|K_t\|_2&\leq\frac{\beta b_tL_{t+1}a_t}{d r_t},\\
+ \|A_t-B_tK_t\|_2&\leq a_t
+            \left(1+\frac{\beta b_t^2L_{t+1}}{d r_t}\right).
+\end{align*}
+The exact actor has $Z_t=0$. Subtracting its fitted and own-policy normal
+equations gives
+\[
+ D_t=\beta B_t'(\widehat P_{t+1}-P_{t+1})(A_t-B_tK_t).
+\]
+Taking norms proves the displayed bound in
+Theorem~\ref{thm:r25finitepolicy}. At the last action date the exact terminal
+continuation makes $D_{T-1}=0$. If $\chi_t=0$, either the action has no
+continuation channel or the uncontrolled next-state mean is zero; the same
+identity gives $D_t=0$ directly. The all-state advantage bound follows from
+$H_t\succeq r_tI$ and $Q_t\succeq q_tI$. Telescoping along an arbitrary
+adapted finite-cost comparison policy, as in
+Theorem~\ref{thm:r23coercive}, proves
+$J^{\rm NBO}\leq(1+\bar\eta)J^*$. For an infimum not attained, apply the
+comparison to an infimizing sequence; attainment is not needed. Thus
+\[
+ J^{\rm NBO}-J^*\leq\bar\eta J^*
+             \leq\bar\eta J^{\rm ref}\leq\varepsilon_0.
+\]
+The reference policy provides an a priori scale and is not an optimal-policy
+oracle. With a finite horizon, finite coefficients, coercive quadratic stage
+costs and finite innovation covariance, its value is finite on every bounded
+initial domain.
+
+\subsection{Coverage, transfer, and implementation}
+The six policy-account terms can now be read directly. The local full-action
+opportunity is the quadratic form $x'D_t'H_t^{-1}D_tx$ against the finalized
+future. The coefficient inequalities cover the whole of $\mathbb R^d$;
+there is no visited-state substitution. The continuation weights are the
+specified powers of $\beta$. The comparison is already over all adapted
+finite-cost policies, so no neural policy-class approximation term enters
+this declared instance. The model is discrete-time by definition, so no
+continuous-time discretization error enters this instance either. These
+zeros do not transfer to the original nonlinear diffusion applications.
+Finally, the physical execution account remains the separately declared
+relative action-error class of~\eqref{eq:r23stop}.
+
+The implemented design assigns half the total tolerance to the ideal
+reference-policy allocation and halves each sufficient Gram tolerance again.
+These margins leave room for the explicitly computed implementation bound;
+they are not treated as numerical rounding certificates. The accepted policy
+must satisfy the full outward stopping inequality under its stored binary
+coefficients. Both the proposal matrices and every final unsuccessful check
+are retained.
+
+\subsection{Arithmetic and complexity}
+The update theorem is about real arithmetic. An exact implementation exists
+for rational model coefficients: choose a rational scaled isometry, rational
+step sizes strictly below the displayed upper bounds, and rational Gram
+thresholds strictly below the sufficient tolerances. Squared Frobenius
+residuals can then be compared exactly. Rational linear solves and own-policy
+matrix updates preserve rationality. This supplies a finite construction,
+but not a bound on fixed-precision wall time or a polynomial bit-complexity
+claim. In particular, growth of rational numerators and denominators must
+not be omitted from an implementation bill.
+
+The executed double-precision procedure is instead an approximate candidate
+generator with a fixed budget. It computes a Gram check every eight updates
+and at the cap. The stored-target residual uses outward matrix products.
+The final policy certificate independently reevaluates the returned future,
+which encloses both target-evaluation rounding and actor-solve error.
+Increasing precision would be a distinct, charged algorithmic choice; it is
+not silently invoked when a frozen budget is exhausted.
+
+Initialization, reference evaluation, spectral bounds, all updates, residual
+checks, actor solves, final verification and durable candidate writes belong
+to complete work. A factor step uses dense matrix products, whereas the
+quadratic structural comparator can bypass factor training entirely. The
+new result is therefore an explicit neural learning-to-policy guarantee,
+not a representation-separation or simulation lower-bound theorem.

@@ -1,0 +1,130 @@
+\subsection{Constructive continuation learning}\label{sec:r25constructive}
+The rank-basin bound in Section~\ref{sec:r24learning} applies to a general
+warm start. A cold start can instead be chosen to satisfy a global invariant.
+This gives a finite learning budget without assuming that the first critic
+is already close to its evaluation target. The result concerns the same
+trainable square-activation critic; it is not a fixed-dictionary argument.
+Identity-based learning of positive-definite maps has a substantial antecedent
+\citep{r25bartlett2018}. We give the calculation for the tied Gram factor used
+here, rather than transfer a convergence theorem for a different network.
+
+\begin{proposition}[An isotropic cold start]\label{prop:r25isotropic}
+Let $0<m\leq L$, $mI\preceq M\preceq LI$, and $O'O=I$ for
+$O\in\mathbb R^{k\times d}$, $k\geq d$. Choose $0<c\leq m$,
+$W_0=\sqrt c\,O$, and $0<\alpha\leq(4L)^{-1}$. Under the hidden-weight
+update~\eqref{eq:r24update}, put $C_j=W_j'W_j$ and $\rho=1-2\alpha c$.
+Then, for every $j\geq0$,
+\begin{equation}
+ cI\preceq C_j\preceq C_{j+1}\preceq M,\qquad
+ \|C_j-M\|_F\leq\rho^j\|cI-M\|_F.
+ \label{eq:r25global}
+\end{equation}
+In particular, the least singular value never falls below $\sqrt c$.
+For a target $e_*>0$, it suffices to take
+\begin{equation}
+ N=\max\left\{0,\left\lceil
+       \frac{\log(\|cI-M\|_F/e_*)}{-\log\rho}
+       \right\rceil\right\},
+ \label{eq:r25budget}
+\end{equation}
+where $N=0$ when the initial residual is at most $e_*$.
+\end{proposition}
+
+\begin{proof}
+$C_0=cI$ commutes with $M$. The Gram update is
+$C_{j+1}=[I+\alpha(M-C_j)]C_j[I+\alpha(M-C_j)]$, so commutation
+persists. For a common eigenvector, write $r$ for the eigenvalue of $C_j$
+and $\lambda$ for that of $M$. The next eigenvalue is
+$r^+=r[1+\alpha(\lambda-r)]^2$. If $c\leq r\leq\lambda$, then
+$r^+\geq r$. Moreover, with $u=\sqrt{r/\lambda}$,
+$u[1+\alpha\lambda(1-u^2)]\leq1$: this function is increasing on
+$[0,1]$ and equals one at its right endpoint. Finally,
+\[
+ \lambda-r^+=(\lambda-r)
+       [1-2\alpha r-\alpha^2r(\lambda-r)]
+       \leq\rho(\lambda-r).
+\]
+Induction and the Frobenius norm in the common orthonormal eigenbasis give
+\eqref{eq:r25global}. Taking logarithms proves the budget.
+\end{proof}
+
+This initialization does not require the eigenvectors or a square root of
+$M$. A dyadically scaled signed permutation supplies $W_0$ exactly from a
+positive lower bound on $m$. A row-sum bound supplies $L$. Every hidden
+weight is subsequently updated. Isometric orientations are symmetries of
+the population problem, not independent draws of scientific evidence.
+The guarantee holds for all such orientations; it does not concern an
+arbitrary nonisotropic random start or a general nonlinear neural network.
+
+\subsection{A finite backward NBO construction}\label{sec:r25backward}
+A second issue is whether the fitted future remains the future of the returned
+policy. In a finite-horizon additive problem, the order of construction can
+remove that discrepancy. Start at the terminal date and finalize gains in
+reverse chronological order. At date $t$, evaluate the already finalized
+future to obtain $P_{t+1}$, train its continuation, solve the current actor
+problem, and leave all later gains unchanged. Thus $P_{t+1}$ is an own-policy
+target throughout, although it need not be an optimal continuation.
+
+Let $\overline J_{\rm ref}>0$ bound the value of a specified feasible reference
+policy on the initial domain. The zero-adjustment policy is sufficient in
+the capital economy. Given an ideal-policy allowance $\varepsilon_0>0$, set
+$\bar\eta=\varepsilon_0/\overline J_{\rm ref}$. At each nonterminal
+continuation date, choose $m_{t+1}I\preceq dP_{t+1}\preceq L_{t+1}I$.
+With $a_t\geq\|A_t\|_2$ and $b_t\geq\|B_t\|_2$, define
+\begin{equation}
+ \chi_t=\beta b_t a_t
+       \left(1+\frac{\beta b_t^2L_{t+1}}{d r_t}\right).
+ \label{eq:r25chi}
+\end{equation}
+For $\chi_t>0$, train to a positive Gram tolerance no larger than
+\begin{equation}
+ e_{t+1}^{\rm req}
+       =\frac{d\sqrt{\bar\eta q_t r_t}}{\chi_t}.
+ \label{eq:r25allocation}
+\end{equation}
+The terminal continuation is used exactly. An uncoupled date, $\chi_t=0$,
+requires no continuation accuracy for its actor decision.
+
+\begin{theorem}[Finite construction of an accurate neural policy]
+\label{thm:r25finitepolicy}
+In the capital economy of Section~\ref{sec:r23policy}, suppose the coefficient
+bounds above are valid and the reference value is finite on the initial
+domain. Train each nonterminal continuation by
+Proposition~\ref{prop:r25isotropic} to~\eqref{eq:r25allocation}, and solve
+its actor problem exactly. The resulting backward NBO policy is constructed
+in finitely many hidden-weight updates and satisfies
+\begin{equation}
+ 0\leq J_0^{\rm NBO}(x)-J_0^*(x)\leq\varepsilon_0
+ \quad\text{on the initial domain}.
+ \label{eq:r25policy}
+\end{equation}
+The comparison includes all adapted finite-cost policies and all real vector
+actions. The update budget is the sum of~\eqref{eq:r25budget} over the
+constructed targets, with $T$ actor solves and $T$ own-policy matrix updates.
+No optimal-policy labels or unresolved outer policy-iteration limit are
+required.
+\end{theorem}
+
+\begin{proof}
+The proof of the target invariant and all error terms is in
+Supplement~\ref{sec:r25proofs}. Its central inequality is
+\[
+ \|D_t\|_F\leq\chi_t\|W_{t+1}'W_{t+1}-dP_{t+1}\|_F/d
+                  \leq\sqrt{\bar\eta q_t r_t}.
+\]
+The coercive comparison yields $J^{\rm NBO}\leq(1+\bar\eta)J^*$.
+Since $J^*\leq J^{\rm ref}$, the policy gap is at most
+$\bar\eta J^{\rm ref}\leq\varepsilon_0$. Each own-policy target is
+positive definite before the terminal date, because its stage cost is.
+There are finitely many dates, and every inner budget is finite.
+\end{proof}
+
+The statement is a constructive, real-arithmetic guarantee for the trained
+factor in a declared economic class. The conventional quadratic and the
+Riccati recursion receive the same population information. The theorem does
+not establish a cost advantage over those procedures. Its contribution is
+the complete implication from a specified initialization and finite neural
+training to an unrestricted policy-loss target. Finite-precision candidates
+are accepted only after the independent outward own-policy check, including
+the implementation allowance. A failed check is not repaired by appealing
+to the real-arithmetic iteration count.
