@@ -1,0 +1,25 @@
+name: NBO R24 pinned source export
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r24-source-2026-10-05']
+    paths: ['.github/workflows/nbo-r24-source-export.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Export tracked scientific source and immutable evidence
+        run: |
+          mkdir -p /tmp/nbo-r24-input
+          git rev-parse HEAD > /tmp/nbo-r24-input/REMOTE_COMMIT.txt
+          git ls-tree -r HEAD > /tmp/nbo-r24-input/GIT_TREE.txt
+          git archive --format=tar HEAD | gzip -6 > /tmp/nbo-r24-input/inherited-repository.tar.gz
+          sha256sum /tmp/nbo-r24-input/inherited-repository.tar.gz > /tmp/nbo-r24-input/SHA256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r24-pinned-input
+          path: /tmp/nbo-r24-input/
+          retention-days: 90
