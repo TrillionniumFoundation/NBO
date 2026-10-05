@@ -23,6 +23,7 @@ jobs:
       OMP_NUM_THREADS: '1'
       OPENBLAS_NUM_THREADS: '1'
       MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
       R: revisions/2026-10-05-r23
     steps:
       - uses: actions/checkout@v4
@@ -34,6 +35,7 @@ jobs:
       - name: Install numerical and native typesetting dependencies
         run: |
           python -m pip install numpy==2.3.5 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
           sudo apt-get update -qq
           sudo apt-get install -y -qq texlive-latex-extra texlive-science texlive-fonts-recommended texlive-publishers lmodern poppler-utils
           git fetch --depth=1 origin 281e57b18a2d88de68d2219da1a7194e90570d13
@@ -43,6 +45,8 @@ jobs:
           import json,os,re,subprocess,sys
           from pathlib import Path
           r=Path(os.environ['R']);out=r/'results';out.mkdir(exist_ok=True)
+          history={'run':37312535231,'outcome':'Publication stopped at inherited R19 import because the CI environment omitted torch. R23 28/28 and R21 22/22 passed. No frozen source or numerical output was changed; CPU torch is installed in this run and all suites rerun.'}
+          (out/'PUBLICATION_ENVIRONMENT_CORRECTION.json').write_text(json.dumps(history,indent=2)+'\n')
           suites=[('R23',r/'code'),('R21',Path('revisions/2026-10-05-r21/code')),('R19',Path('revisions/2026-10-05-r19-integrated/code'))]
           records=[]
           for name,path in suites:
