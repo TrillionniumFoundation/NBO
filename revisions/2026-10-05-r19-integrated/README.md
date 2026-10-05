@@ -4,11 +4,11 @@
 
 This revision answers the R18 advisory referee report at `74f0a278aeeb5c62fa556a65f758092621cedf02`, on the reviewed R18 paper `20afc6c1c4828e3c469e7906366bcc8730cc04d0`. It retains the original title, author, general controlled-economy problem, all historical results, and the complete economic applications. It builds on the pre-existing R19 response head and adds a complete integrated publication on a new branch; neither prior R19 branch is overwritten.
 
-- [Main article](revisions/2026-10-05-r19-integrated/build/ECTA.pdf), [LaTeX source](revisions/2026-10-05-r19-integrated/ECTA.tex).
-- [Technical supplement](revisions/2026-10-05-r19-integrated/build/supp.pdf), [source](revisions/2026-10-05-r19-integrated/supp.tex).
-- [Complete economic applications](revisions/2026-10-05-r19-integrated/build/applications.pdf), [source](revisions/2026-10-05-r19-integrated/applications.tex).
-- [Point-by-point response](revisions/2026-10-05-r19-integrated/build/response.pdf), [response text](revisions/2026-10-05-r19-integrated/RESPONSE_TO_REFEREE.md).
-- [Execution and report audit](revisions/2026-10-05-r19-integrated/results/REPORT_AUDIT.json), [all 252 records](revisions/2026-10-05-r19-integrated/results/registered/), [complete protocol](revisions/2026-10-05-r19-integrated/protocols/DESIGN.json).
+- [Main article](./build/ECTA.pdf), [LaTeX source](./ECTA.tex).
+- [Technical supplement](./build/supp.pdf), [source](./supp.tex).
+- [Complete economic applications](./build/applications.pdf), [source](./applications.tex).
+- [Point-by-point response](./build/response.pdf), [response text](./RESPONSE_TO_REFEREE.md).
+- [Execution and report audit](./results/REPORT_AUDIT.json), [all 252 records](./results/registered/), [complete protocol](./protocols/DESIGN.json).
 
 ### Additions
 
@@ -19,13 +19,13 @@ The revision proves a centered-risk decision-loss bound, a continuation-transpor
 From the repository root, install the documented NumPy, CPU PyTorch and LaTeX dependencies, then run:
 
 ```sh
-python revisions/2026-10-05-r19-integrated/code/study.py --out revisions/2026-10-05-r19-integrated/results/registered-replay
-python -m unittest discover -s revisions/2026-10-05-r19-integrated/code -p 'test*.py' -v
-python revisions/2026-10-05-r19-integrated/code/build.py
+python ./code/study.py --out ./results/registered-replay
+python -m unittest discover -s ./code -p 'test*.py' -v
+python ./code/build.py
 ```
 
 Do not overwrite an existing evidence directory. `report.py` generates publication tables from the declared `results/registered/SUMMARY.json`; a new timing environment must be labeled as a replay, not silently substituted into an old table.
 
 The new integrated replay is not counted as extra independent streams. Its seven methods use three original streams, two dimensions, and six query volumes. The readable descriptive design is reconstructed from the frozen code, not a backdated replacement for the missing original design file.
 
-The final publication uses the native `econsocart` class. Exact replaced roots and the answered report are retained in [revisions/2026-10-05-r19-integrated/archive/](revisions/2026-10-05-r19-integrated/archive/). No claim is made that the new finite-support scalar certificate validates an uncomputed continuous-time HJB or an unmeasured training-stream population.
+The final publication uses the native `econsocart` class. Exact replaced roots and the answered report are retained in [./archive/](./archive/). No claim is made that the new finite-support scalar certificate validates an uncomputed continuous-time HJB or an unmeasured training-stream population.
