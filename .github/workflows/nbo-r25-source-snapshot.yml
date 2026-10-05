@@ -1,0 +1,35 @@
+name: NBO R25 inherited source snapshot
+on:
+  push:
+    branches: [revision/econometrica-nbo-r25-2026-10-05]
+    paths: [.github/workflows/nbo-r25-source-snapshot.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Package pinned scientific sources and records
+        run: |
+          git rev-parse HEAD > R25_SNAPSHOT_COMMIT.txt
+          python - <<'PY'
+          from pathlib import Path
+          import zipfile, hashlib, json
+          roots = [Path('revisions/2026-10-05-r23'), Path('revisions/2026-10-05-r24'), Path('reviews/2026-10-05-econometrica-numerical-methods-r21')]
+          files = [p for r in roots for p in r.rglob('*') if p.is_file()]
+          manifest = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
+          Path('R25_SNAPSHOT_SHA256.json').write_text(json.dumps(manifest, indent=2)+'\n')
+          with zipfile.ZipFile('NBO_R25_inherited_source.zip', 'w', zipfile.ZIP_DEFLATED) as out:
+              for p in files: out.write(p)
+              out.write('R25_SNAPSHOT_COMMIT.txt')
+              out.write('R25_SNAPSHOT_SHA256.json')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r25-inherited-source
+          path: NBO_R25_inherited_source.zip
+          retention-days: 30
