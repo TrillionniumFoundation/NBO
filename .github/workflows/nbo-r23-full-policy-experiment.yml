@@ -1,0 +1,71 @@
+name: NBO R23 frozen full-policy evidence
+on:
+  push:
+    branches: [revision/econometrica-nbo-r23-full-policy-2026-10-05]
+    paths:
+      - 'revisions/2026-10-05-r23/code/experiment.py'
+      - 'revisions/2026-10-05-r23/code/policy_certificate.py'
+      - 'revisions/2026-10-05-r23/protocols/PROTOCOL.json'
+      - '.github/workflows/nbo-r23-full-policy-experiment.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r23-primary-execution
+  cancel-in-progress: false
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      R: revisions/2026-10-05-r23
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install numpy==2.3.5
+      - name: Verify frozen source bytes before any primary outcome
+        run: |
+          mkdir -p "$R/results"
+          python - <<'PY'
+          import hashlib,json,os,sys
+          from pathlib import Path
+          r=Path(os.environ['R'])
+          freeze=json.loads((r/'protocols/FREEZE.json').read_text())
+          actual={p:hashlib.sha256((r/p).read_bytes()).hexdigest() for p in freeze['files']}
+          assert actual==freeze['files'],(actual,freeze['files'])
+          out={'source_commit':os.environ['GITHUB_SHA'],'freeze_commit':'8b2d4175227801950e6ceaaed1f229d5378191f0','workflow_run':os.environ['GITHUB_RUN_ID'],'source_hashes':actual,'status':'matched before primary execution'}
+          (r/'results/EXECUTION_IDENTITY.json').write_text(json.dumps(out,indent=2)+'\n')
+          sys.path.insert(0,str(r/'code'))
+          from experiment import economy,riccati
+          from policy_certificate import certify
+          m=economy(3,'anchor',4)
+          assert certify(m,riccati(m))['policy_gap_upper']<1e-8
+          print(json.dumps(out,indent=2))
+          PY
+      - name: Execute every frozen service and preserve all failed checks
+        run: |
+          set -o pipefail
+          python "$R/code/experiment.py" --output "$R/results/primary" 2>&1 | tee "$R/results/PRIMARY_RUN.log"
+      - name: Commit complete original evidence to its own new branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f "$R/results"
+          git commit -m 'R23: retain full frozen execution, every policy array and every failed check'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r23-full-policy-evidence-2026-10-05
+          git rev-parse HEAD > "$R/results/EVIDENCE_COMMIT.txt"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r23-full-policy-primary
+          path: revisions/2026-10-05-r23/results
+          retention-days: 90
+          compression-level: 6
+          if-no-files-found: error
