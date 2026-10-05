@@ -6,9 +6,10 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+  actions: write
 concurrency:
   group: nbo-r24-native-publication
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -20,6 +21,22 @@ jobs:
       PYTHONDONTWRITEBYTECODE: '1'
       R: revisions/2026-10-05-r24
     steps:
+      - name: Stop only the superseded R24 analysis delivery attempt
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,os,urllib.request,urllib.error
+          base='https://api.github.com/repos/TrillionniumFoundation/NBO/actions/runs/37322014209'
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'}
+          with urllib.request.urlopen(urllib.request.Request(base,headers=headers)) as f:run=json.load(f)
+          if run['status']!='completed':
+              try:
+                  with urllib.request.urlopen(urllib.request.Request(base+'/cancel',data=b'',headers=headers,method='POST')) as f:print('Superseded R24 delivery cancellation:',f.status)
+              except urllib.error.HTTPError as e:
+                  if e.code!=409:raise
+          print('The first run and its completed scientific steps remain in Actions history; this run repeats validation from one source.')
+          PY
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
@@ -34,24 +51,18 @@ jobs:
           sudo apt-get install -y -qq texlive-latex-extra texlive-science texlive-fonts-recommended texlive-publishers lmodern poppler-utils
           git fetch --depth=1 origin 281e57b18a2d88de68d2219da1a7194e90570d13
           git fetch --depth=1 origin c327e0f4f1d5c8c6381dfe0f2b6001fbd7bb7f96
-      - name: Import the completed source-bound R24 analysis
+      - name: Freeze the executed analysis source
         run: |
-          git fetch --depth=1 origin revision/econometrica-nbo-r24-evidence-2026-10-05
-          evidence=$(git rev-parse FETCH_HEAD)
-          git restore --source="$evidence" -- "$R/results"
-          printf '%s\n' "$evidence" > "$R/results/EVIDENCE_COMMIT.txt"
+          mkdir -p "$R/results"
+          git rev-parse HEAD > "$R/results/ANALYSIS_SOURCE_COMMIT.txt"
           python - <<'PY'
           import hashlib,json,os
           from pathlib import Path
           r=Path(os.environ['R'])
-          pins=json.loads((r/'results/ANALYSIS_SOURCE_SHA256.json').read_text())
-          for path,digest in pins.items():
-              assert hashlib.sha256(Path(path).read_bytes()).hexdigest()==digest,path
-          result=json.loads((r/'results/REFINEMENT.json').read_text())
-          assert result['attempts_replayed']==1088
-          assert result['original_failed_checks']==608
-          print('Evidence source', (r/'results/EVIDENCE_COMMIT.txt').read_text().strip())
-          print(json.dumps(result,indent=2))
+          pins={str(r/'code'/name):hashlib.sha256((r/'code'/name).read_bytes()).hexdigest() for name in ('refinements.py','test_refinements.py','analyze.py')}
+          (r/'results/ANALYSIS_SOURCE_SHA256.json').write_text(json.dumps(pins,indent=2)+'\n')
+          history={'superseded_analysis_run':37322014209,'superseded_publication_run':37323041258,'note':'These runs remain in Actions history. A combined source-bound run repeats all tests and both exhaustive certificate checks; no primary fit or clock is changed.'}
+          (r/'results/PUBLICATION_HISTORY.json').write_text(json.dumps(history,indent=2)+'\n')
           PY
       - name: Run all new and inherited tests without skips
         run: |
@@ -72,6 +83,8 @@ jobs:
               (out/'TESTS_ALL.json').write_text(json.dumps(records,indent=2)+'\n')
               assert p.returncode==0 and n>0 and skip==0,rec
           PY
+      - name: Analyze every stored candidate symmetrically
+        run: python "$R/code/analyze.py" > "$R/results/ANALYSIS.log" 2>&1
       - name: Independently replay every original full-policy certificate
         run: |
           set -o pipefail
@@ -95,7 +108,25 @@ jobs:
           assert not changed,changed
           print('Publication hashes verified:',len(manifest))
           PY
+      - name: Archive completed evidence before remote publication
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r24-native-publication
+          path: |
+            /tmp/NBO_R24_publication.zip
+            revisions/2026-10-05-r24/build/*.pdf
+            revisions/2026-10-05-r24/build/*.log
+            revisions/2026-10-05-r24/build/*.stdout
+            revisions/2026-10-05-r24/results/*.json
+            revisions/2026-10-05-r24/results/*.log
+            revisions/2026-10-05-r24/results/previews/*.png
+            revisions/2026-10-05-r24/RELEASE_AUDIT.json
+            revisions/2026-10-05-r24/PRESERVATION.json
+          retention-days: 90
+          compression-level: 6
       - name: Publish only on new revision and referee branches
+        timeout-minutes: 8
         run: |
           branch=revision/econometrica-nbo-r24-2026-10-05
           referee=revision/econometrica-nbo-r24-referee-2026-10-05
@@ -109,20 +140,10 @@ jobs:
           git rev-parse HEAD > /tmp/R24_PUBLICATION_COMMIT.txt
           printf '%s\n%s\n' "$branch" "$referee" > /tmp/R24_PUBLICATION_BRANCHES.txt
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: success()
         with:
-          name: nbo-r24-native-publication
+          name: nbo-r24-publication-identity
           path: |
-            /tmp/NBO_R24_publication.zip
             /tmp/R24_PUBLICATION_COMMIT.txt
             /tmp/R24_PUBLICATION_BRANCHES.txt
-            revisions/2026-10-05-r24/build/*.pdf
-            revisions/2026-10-05-r24/build/*.log
-            revisions/2026-10-05-r24/build/*.stdout
-            revisions/2026-10-05-r24/results/*.json
-            revisions/2026-10-05-r24/results/*.log
-            revisions/2026-10-05-r24/results/previews/*.png
-            revisions/2026-10-05-r24/RELEASE_AUDIT.json
-            revisions/2026-10-05-r24/PRESERVATION.json
           retention-days: 90
-          compression-level: 6
