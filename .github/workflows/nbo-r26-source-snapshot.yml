@@ -1,0 +1,46 @@
+name: NBO R26 pinned source snapshot
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r26-2026-10-06']
+    paths: ['.github/workflows/nbo-r26-source-snapshot.yml']
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: e7cfba39ea548b295305ab39040d0ba84d791c74
+          sparse-checkout: |
+            .github/workflows
+            revisions/2026-10-05-r23/code
+            revisions/2026-10-05-r23/manuscript
+            revisions/2026-10-05-r23/protocols
+            revisions/2026-10-05-r23/results/generated
+            revisions/2026-10-05-r24/code
+            revisions/2026-10-05-r24/manuscript
+            revisions/2026-10-05-r24/protocols
+            revisions/2026-10-05-r24/results
+            revisions/2026-10-05-r25
+      - name: Package unmodified inherited sources
+        run: |
+          git rev-parse HEAD > PINNED_SOURCE.txt
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, json, zipfile
+          files = [p for p in Path('.').rglob('*') if p.is_file() and '.git' not in p.parts]
+          manifest = {p.as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
+          Path('SNAPSHOT_SHA256.json').write_text(json.dumps(manifest, indent=2)+'\n')
+          with zipfile.ZipFile('r26-inherited-source.zip', 'w', zipfile.ZIP_DEFLATED) as z:
+              for p in files + [Path('SNAPSHOT_SHA256.json')]:
+                  z.write(p, p.as_posix())
+          print(len(files), 'files', Path('r26-inherited-source.zip').stat().st_size, 'bytes')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r26-inherited-source
+          path: r26-inherited-source.zip
+          retention-days: 30
+          if-no-files-found: error
