@@ -1,0 +1,128 @@
+name: NBO R24 native Econometrica publication
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r24-source-2026-10-05']
+    paths: ['.github/workflows/nbo-r24-native-publication.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r24-native-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      R: revisions/2026-10-05-r24
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install numerical and native publication dependencies
+        run: |
+          python -m pip install numpy==2.3.5 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-science texlive-fonts-recommended texlive-publishers lmodern poppler-utils
+          git fetch --depth=1 origin 281e57b18a2d88de68d2219da1a7194e90570d13
+          git fetch --depth=1 origin c327e0f4f1d5c8c6381dfe0f2b6001fbd7bb7f96
+      - name: Import the completed source-bound R24 analysis
+        run: |
+          git fetch --depth=1 origin revision/econometrica-nbo-r24-evidence-2026-10-05
+          evidence=$(git rev-parse FETCH_HEAD)
+          git restore --source="$evidence" -- "$R/results"
+          printf '%s\n' "$evidence" > "$R/results/EVIDENCE_COMMIT.txt"
+          python - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          r=Path(os.environ['R'])
+          pins=json.loads((r/'results/ANALYSIS_SOURCE_SHA256.json').read_text())
+          for path,digest in pins.items():
+              assert hashlib.sha256(Path(path).read_bytes()).hexdigest()==digest,path
+          result=json.loads((r/'results/REFINEMENT.json').read_text())
+          assert result['attempts_replayed']==1088
+          assert result['original_failed_checks']==608
+          print('Evidence source', (r/'results/EVIDENCE_COMMIT.txt').read_text().strip())
+          print(json.dumps(result,indent=2))
+          PY
+      - name: Run all new and inherited tests without skips
+        run: |
+          python - <<'PY'
+          import json,os,re,subprocess,sys
+          from pathlib import Path
+          r=Path(os.environ['R']);out=r/'results'
+          suites=[('R24',r/'code'),('R23',Path('revisions/2026-10-05-r23/code')),('R21',Path('revisions/2026-10-05-r21/code')),('R19',Path('revisions/2026-10-05-r19-integrated/code'))]
+          records=[]
+          for name,path in suites:
+              p=subprocess.run([sys.executable,'-m','unittest','discover','-s',str(path),'-p','test*.py','-v'],text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+              (out/f'TESTS_{name}_PUBLICATION.log').write_text(p.stdout)
+              print(p.stdout,flush=True)
+              m=re.search(r'Ran (\d+) tests?',p.stdout);n=int(m[1]) if m else 0
+              s=re.search(r'skipped=(\d+)',p.stdout);skip=int(s[1]) if s else 0
+              rec={'suite':name,'tests':n,'skipped':skip,'returncode':p.returncode,'passed':n if p.returncode==0 and skip==0 else None}
+              records.append(rec)
+              (out/'TESTS_ALL.json').write_text(json.dumps(records,indent=2)+'\n')
+              assert p.returncode==0 and n>0 and skip==0,rec
+          PY
+      - name: Independently replay every original full-policy certificate
+        run: |
+          set -o pipefail
+          python revisions/2026-10-05-r23/code/replay_and_tables.py 2>&1 | tee "$R/results/INHERITED_REPLAY.log"
+      - name: Integrate the manuscript while preserving all inherited sources
+        run: python "$R/code/assemble.py" > "$R/results/ASSEMBLY.log" 2>&1
+      - name: Compile and verify all five native documents
+        run: |
+          set -o pipefail
+          python "$R/code/build_native.py" 2>&1 | tee "$R/results/BUILD_RUN.log"
+      - name: Recheck preservation and publication manifest
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,subprocess
+          from pathlib import Path
+          r=Path(os.environ['R'])
+          manifest=json.loads((r/'PUBLICATION_FILES_SHA256.json').read_text())
+          for path,digest in manifest.items():
+              assert hashlib.sha256(Path(path).read_bytes()).hexdigest()==digest,path
+          changed=subprocess.check_output(['git','diff','--name-only','--diff-filter=MDT','c327e0f4f1d5c8c6381dfe0f2b6001fbd7bb7f96','--'],text=True).splitlines()
+          assert not changed,changed
+          print('Publication hashes verified:',len(manifest))
+          PY
+      - name: Publish only on new revision and referee branches
+        run: |
+          branch=revision/econometrica-nbo-r24-2026-10-05
+          referee=revision/econometrica-nbo-r24-referee-2026-10-05
+          test -z "$(git ls-remote --heads origin "$branch")"
+          test -z "$(git ls-remote --heads origin "$referee")"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f "$R" CURRENT_REVISION.md
+          git commit -m 'R24: publish revised NBO paper, full proofs, all-candidate audit and native Econometrica PDFs'
+          git push --atomic origin "HEAD:refs/heads/$branch" "HEAD:refs/heads/$referee"
+          git rev-parse HEAD > /tmp/R24_PUBLICATION_COMMIT.txt
+          printf '%s\n%s\n' "$branch" "$referee" > /tmp/R24_PUBLICATION_BRANCHES.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r24-native-publication
+          path: |
+            /tmp/NBO_R24_publication.zip
+            /tmp/R24_PUBLICATION_COMMIT.txt
+            /tmp/R24_PUBLICATION_BRANCHES.txt
+            revisions/2026-10-05-r24/build/*.pdf
+            revisions/2026-10-05-r24/build/*.log
+            revisions/2026-10-05-r24/build/*.stdout
+            revisions/2026-10-05-r24/results/*.json
+            revisions/2026-10-05-r24/results/*.log
+            revisions/2026-10-05-r24/results/previews/*.png
+            revisions/2026-10-05-r24/RELEASE_AUDIT.json
+            revisions/2026-10-05-r24/PRESERVATION.json
+          retention-days: 90
+          compression-level: 6
