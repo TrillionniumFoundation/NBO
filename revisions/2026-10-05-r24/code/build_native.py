@@ -116,7 +116,8 @@ def build():
         'history': [
             {'run': 37312535231, 'result': 'R23 publication stopped because inherited R19 tests needed torch; original failure retained.'},
             {'run': 37313934492, 'result': 'R23 tests passed; publication stopped at BibTeX for the citation-free evidence document. R24 fixes the build without changing the journal class or primary evidence.'}],
-        'claims': 'New finite-step and residual-energy results; inherited fits and primary clocks are not replaced. No new neural cost-superiority trial is claimed.'}
+        'claims': 'New finite-step and residual-energy results; inherited fits and primary clocks are not replaced. No new neural cost-superiority trial is claimed.',
+        'manifest_scope': 'The live BUILD_RUN.log stream is excluded; stable per-document logs, PDFs, source and evidence are retained separately.'}
     (R / 'RELEASE_AUDIT.json').write_text(json.dumps(release, indent=2) + '\n')
     inputs = set()
     ignored = {'.aux', '.out', '.log', '.fls', '.toc', '.pfb', '.pfm', '.ttf', '.otf', '.tfm', '.afm', '.pk'}
@@ -128,10 +129,13 @@ def build():
             if p.is_relative_to(ROOT) and p.is_file() and p.suffix not in ignored:
                 inputs.add(p)
         inputs.add(B / f'{name}.pdf')
+        inputs.add(B / f'{name}.log')
     for sub in ('code', 'manuscript', 'archive'):
         for p in (R / sub).rglob('*'):
             if p.is_file() and '__pycache__' not in str(p): inputs.add(p)
     for p in (R / 'results').rglob('*'):
+        if p.name == 'BUILD_RUN.log':
+            continue  # tee is still appending the stdout of this process.
         if p.is_file() and p.suffix in ('.json', '.jsonl', '.tex', '.log', '.txt'):
             inputs.add(p)
     for p in R.iterdir():
