@@ -1,0 +1,132 @@
+\subsection{Finite training and a changing continuation}\label{sec:r24learning}
+A small gradient is useful only when its target is the future implemented by
+the returned policy. We now make both the training budget and this target
+condition explicit. The result concerns the trainable square-activation
+critic in Section~\ref{sec:r23policy}; it neither assumes a fixed feature
+regression nor asserts convergence for every neural architecture.
+
+Fix a symmetric matrix $M$ and numbers $0<m\leq L$ with
+$mI\preceq M\preceq LI$. For a possibly rectangular hidden-weight matrix
+$W\in\mathbb R^{k\times d}$, $k\geq d$, put
+\[
+ E(W)=W'W-M,\qquad f(W)=\tfrac14\|E(W)\|_F^2,
+ \qquad \nabla f(W)=WE(W).
+\]
+Every entry of $W$ is trainable. Consider the actual hidden-weight update
+\begin{equation}
+ W_{j+1}=W_j-\alpha W_jE(W_j),\qquad
+ 0<\alpha\leq[8(L+m)]^{-1}.
+ \label{eq:r24update}
+\end{equation}
+
+\begin{proposition}[Finite-step continuation learning]\label{prop:r24learning}
+If $e_0=\|E(W_0)\|_F\leq m/2$, then for every $j\geq0$,
+\begin{equation}
+ \|E(W_j)\|_F\leq (1-\alpha m)^{j/2}e_0,
+ \qquad \sigma_{\min}(W_j)\geq\sqrt{m/2}.
+ \label{eq:r24contraction}
+\end{equation}
+Consequently a strictly positive target $e_*$ is attained after at most
+\begin{equation}
+ N(e_*)=\begin{cases}
+ 0,&e_0\leq e_*,\\
+ \left\lceil\displaystyle\frac{2\log(e_0/e_*)}
+ {-\log(1-\alpha m)}\right\rceil,&e_0>e_*.
+ \end{cases}
+ \label{eq:r24budget}
+\end{equation}
+These statements do not require $M$ and $W_0'W_0$ to commute.
+\end{proposition}
+
+\begin{proof}
+In the region $\|E(W)\|_F\leq m/2$, one has
+$\sigma_{\min}(W)^2\geq m/2$ and $\|W\|_2^2\leq L+m/2$.
+On the line segment joining $W$ and $W-\alpha WE(W)$,
+$\|V\|_2\leq(3/2)\sqrt{L+m/2}$. Differentiating the gradient gives
+$\|\nabla^2 f(V)\|\leq3\|V\|_2^2+L\leq8(L+m)$, where the operator
+norm is induced by the Frobenius norm. The descent inequality therefore
+implies $f(W-\alpha\nabla f(W))\leq f(W)-\alpha\|\nabla f(W)\|_F^2/2$.
+Since $\|WE(W)\|_F^2\geq(m/2)\|E(W)\|_F^2=2mf(W)$, the loss contracts
+by $1-\alpha m$. This also preserves the region, so induction proves
+\eqref{eq:r24contraction}. Solving the resulting geometric inequality
+proves \eqref{eq:r24budget}.
+\end{proof}
+
+The basin is a checkable sufficient condition, not an assertion about an
+arbitrary random initialization. For reuse across targets, if the previous
+residual is at most $e_{\rm old}$ and the target change is at most
+$\Delta_M$ in Frobenius norm, then
+\begin{equation}
+ e_0\leq e_{\rm old}+\Delta_M.
+ \label{eq:r24warm}
+\end{equation}
+Thus the new target's rank basin and its inner training budget can be checked
+before applying \eqref{eq:r24update}. Failure of this test does not prove
+that reuse fails; it means that this sufficient learning bound is unavailable.
+
+\paragraph{Arithmetic in the training loop.}
+Write an implemented step as the right side of \eqref{eq:r24update} plus
+$\Delta_j$, with $\|\Delta_j\|_F\leq\omega_j$. Let
+$q=\sqrt{1-\alpha m}$ and $s=\sqrt{L+m/2}$. The certified scalar recursion
+\begin{equation}
+ b_{j+1}=q b_j+2s\omega_j+\omega_j^2,
+ \qquad b_0\geq\|E(W_0)\|_F,
+ \label{eq:r24arithmetic}
+\end{equation}
+continues to enclose the residual as long as every $b_j\leq m/2$.
+Indeed the exact step has residual at most $q b_j$ and spectral norm at
+most $s$; expanding the Gram matrix after adding $\Delta_j$ gives the two
+additional terms. Outward bounds are required for $m,L,b_0,q,s,\omega_j$
+and the displayed arithmetic. An ideal real-arithmetic update is recovered
+by setting $\omega_j=0$; zero rounding is not assumed for stored computations.
+
+\paragraph{Training error is not policy error.}
+At date $t+1$, let $S_{t+1}$ be the frozen evaluation target used for
+training and let $P_{t+1}^K$ be the value matrix of the ultimately returned
+policy. They need not coincide. Define
+\begin{equation}
+ M_{t+1}=dS_{t+1},\qquad
+ \delta_{t+1}=\|S_{t+1}-P_{t+1}^K\|_F,
+ \qquad a_{t+1}=b_{t+1}/d+\delta_{t+1},
+ \label{eq:r24drift}
+\end{equation}
+where $b_{t+1}$ encloses the trained Gram residual relative to $M_{t+1}$.
+At the terminal date set $a_T=0$. With $Z_t$ and $F_t$ as in
+Section~\ref{sec:r23policy}, the same subtraction used in
+Proposition~\ref{prop:r23factor} now gives
+\begin{equation}
+ \|D_t\|_F\leq \|Z_t\|_F+
+ \beta\|B_t\|_2\|F_t\|_2
+       \bigl(b_{t+1}/d+\delta_{t+1}\bigr).
+ \label{eq:r24learningpolicy}
+\end{equation}
+This is a bound against the returned policy's own future. A gradient against
+an earlier target cannot remove $\delta_{t+1}$.
+
+For example, suppose a verified allowance $\bar\eta$ is assigned to the
+relative policy certificate. If
+\[
+ z_t+c_t\delta_{t+1}<\sqrt{\bar\eta q_t r_t},\qquad
+ z_t\geq\|Z_t\|_F,\quad
+ c_t\geq\beta\|B_t\|_2\|F_t\|_2>0,
+\]
+then it suffices to train to
+\begin{equation}
+ b_{t+1}\leq d\left\{
+ \frac{\sqrt{\bar\eta q_t r_t}-z_t}{c_t}-\delta_{t+1}\right\}.
+ \label{eq:r24allocated}
+\end{equation}
+For $c_t=0$, only the actor residual matters. The realized actor and target
+drift must still be re-evaluated before this account is used. The formula
+is not a termination theorem for an arbitrary outer policy-iteration loop.
+It supplies a finite inner-loop budget under explicit premises, followed
+by an own-policy check. Policy-gradient convergence in structured control
+provides a complementary method-level analysis
+\citep{r24fazel2018}; the proposition here concerns the continuation learner,
+not a transfer of that global result to a different algorithm.
+
+The corresponding work account charges basin checks, target evaluation,
+all hidden-weight updates, actor solves, failed checks, and writes. A smaller
+sufficient number of updates is not by itself a total-work advantage over
+a conventional representation. The matched quadratic receives the same
+information and remains an essential comparator.
