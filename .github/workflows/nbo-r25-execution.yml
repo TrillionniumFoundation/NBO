@@ -1,0 +1,65 @@
+name: NBO R25 source-bound execution
+on:
+  push:
+    branches: [revision/econometrica-nbo-r25-2026-10-05]
+    paths: [.github/workflows/nbo-r25-execution.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 9bf608d5154dfb61ff0ab209c2b66d1f8dbcc148
+          sparse-checkout: |
+            revisions/2026-10-05-r23
+            revisions/2026-10-05-r24
+            revisions/2026-10-05-r25
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install numpy==2.3.5
+      - name: Record immutable execution identity
+        run: |
+          mkdir -p revisions/2026-10-05-r25/results
+          python - <<'PY'
+          import json, os, datetime
+          from pathlib import Path
+          p=Path('revisions/2026-10-05-r25/results/EXECUTION_IDENTITY.json')
+          p.write_text(json.dumps({'frozen_source_commit':'9bf608d5154dfb61ff0ab209c2b66d1f8dbcc148','workflow_commit':os.environ['GITHUB_SHA'],'run_id':os.environ['GITHUB_RUN_ID'],'execution_start_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'scope':'Remote source-bound validation execution. The earlier local execution is retained separately and is not an independent training-randomness sample.'},indent=2)+'\n')
+          PY
+      - name: Execute every frozen R25 case without changing budgets
+        run: |
+          set -o pipefail
+          python revisions/2026-10-05-r25/code/execute.py 2>&1 | tee revisions/2026-10-05-r25/results/PRIMARY_RUN.log
+      - name: Replay all inherited candidate and stopping records
+        run: |
+          set -o pipefail
+          python revisions/2026-10-05-r23/code/replay_and_tables.py 2>&1 | tee revisions/2026-10-05-r25/results/R23_REPLAY.log
+          python revisions/2026-10-05-r24/code/analyze.py 2>&1 | tee revisions/2026-10-05-r25/results/R24_REPLAY.log
+          cp -r revisions/2026-10-05-r23/results/generated revisions/2026-10-05-r25/results/inherited_r23
+          cp -r revisions/2026-10-05-r24/results revisions/2026-10-05-r25/results/inherited_r24
+      - name: Publish evidence to a new branch only
+        run: |
+          git config user.name 'NBO revision validation'
+          git config user.email 'actions@users.noreply.github.com'
+          git checkout -b revision/econometrica-nbo-r25-execution-2026-10-05
+          git add -f revisions/2026-10-05-r25/results
+          git commit -m 'R25: retain frozen full-policy construction and all inherited certificate replays'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r25-execution-2026-10-05
+          git rev-parse HEAD > R25_EXECUTION_COMMIT.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r25-execution
+          path: |
+            revisions/2026-10-05-r25/results
+            R25_EXECUTION_COMMIT.txt
+          retention-days: 30
