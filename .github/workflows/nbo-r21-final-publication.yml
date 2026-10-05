@@ -1,0 +1,130 @@
+name: NBO R21 final native publication
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r21-2026-10-05']
+    paths: ['.github/workflows/nbo-r21-final-publication.yml']
+permissions:
+  contents: write
+jobs:
+  publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      R: revisions/2026-10-05-r21
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            *.tex
+            *.bib
+            *.cls
+            *.cfg
+            *.bst
+            *.sty
+            *.py
+            *.md
+            /revisions/2026-10-05-r19-integrated/RESPONSE_MAP.json
+            /revisions/2026-10-05-r19-integrated/protocols/
+            /revisions/2026-10-05-r19-integrated/results/
+            /revisions/2026-10-05-r20/results/
+            /revisions/2026-10-05-r21/
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install reproducible numerical and native typesetting environment
+        run: |
+          set -euo pipefail
+          python -m pip install numpy==2.3.5
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
+      - name: Remove spurious zero-level numbering in response location notes
+        shell: python
+        run: |
+          import hashlib,json,os
+          from pathlib import Path
+          r=Path(os.environ['R']);p=r/'response.tex';before=p.read_bytes();s=before.decode()
+          old=r'\paragraph{Location.}'
+          assert s.count(old)==18
+          s=s.replace(old,r'\par\smallskip\noindent\emph{Location.}')
+          p.write_text(s)
+          (r/'results/TYPOGRAPHY.json').write_text(json.dumps(dict(file=str(p),before_sha256=hashlib.sha256(before).hexdigest(),after_sha256=hashlib.sha256(p.read_bytes()).hexdigest(),locators_corrected=18,scientific_text_changed=False),indent=2)+'\n')
+      - name: Recheck evidence, both test suites and full preservation
+        run: |
+          set -euo pipefail
+          python "$R/code/report_future.py" 2>&1 | tee "$R/results/TABLE_GENERATION.log"
+          python -m unittest discover -s "$R/code" -p 'test*.py' -v 2>&1 | tee "$R/results/UNIT_TESTS.log"
+          python -m unittest discover -s revisions/2026-10-05-r19-integrated/code -p 'test*.py' -v 2>&1 | tee "$R/results/INHERITED_TESTS.log"
+          python "$R/code/preservation.py" 2>&1 | tee "$R/results/PRESERVATION.log"
+      - name: Rebuild native PDFs and bind final source identities
+        run: |
+          set -euo pipefail
+          python "$R/code/build.py" 2>&1 | tee "$R/results/BUILD.log"
+          python "$R/code/release_audit.py" 2>&1 | tee "$R/results/RELEASE_AUDIT.log"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=Path(os.environ['R']);p=r/'results/CI.json';old=json.loads(p.read_text())
+          old['preceding_publication_run_id']=old['run_id'];old['source_commit']=os.environ['GITHUB_SHA'];old['run_id']=os.environ['GITHUB_RUN_ID']
+          old['run_url']='https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID']
+          old['final_typography']='18 response location notes are unnumbered; scientific text and all inherited components unchanged.'
+          p.write_text(json.dumps(old,indent=2)+'\n')
+          assert '0.0.0.' not in (r/'build/response.txt').read_text()
+          PY
+      - name: Publish final source-bound review documents
+        run: |
+          set -euo pipefail
+          git config user.name 'NBO Revision Bot'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          python - <<'PY'
+          from pathlib import Path
+          import os,subprocess
+          r=Path(os.environ['R']);ext={'.tex','.bib','.md','.py','.json','.csv','.log','.pdf','.stdout','.aux','.bbl','.blg','.out','.txt'}
+          files=[str(p) for p in r.rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix in ext]
+          subprocess.run(['git','add','--',*files],check=True)
+          subprocess.run(['git','commit','-m','publication(r21): finalize native manuscript and all 18 referee-response locators'],check=True)
+          PY
+          target=refs/heads/revision/econometrica-nbo-r21-2026-10-05
+          test "$(git ls-remote origin "$target" | cut -f1)" = "$GITHUB_SHA"
+          git push origin "HEAD:$target"
+      - name: Package final source-complete typesetting and review copy
+        shell: python
+        run: |
+          import json,os,zipfile,hashlib,subprocess
+          from pathlib import Path
+          r=Path(os.environ['R']);audit=json.loads((r/'results/RELEASE_AUDIT.json').read_text())
+          paths=set(audit['source_sha256'])|{'ECTA.tex','supp.tex','README.md','econsocart.cls','econsocart.cfg','ecta-fullname.bst','reference.bib','revision_reference.bib','appendix_reference.bib'}
+          for p in r.rglob('*'):
+              if p.is_file() and '__pycache__' not in p.parts and 'transport' not in p.parts and p.suffix in {'.tex','.bib','.md','.py','.json','.csv','.log','.pdf'}: paths.add(str(p))
+          for old in ['2026-10-05-r19-integrated','2026-10-05-r20']:
+              paths.update(str(p) for p in (Path('revisions')/old/'code').glob('*.py'))
+          paths.update(str(p) for p in Path('revisions/2026-10-05-r19-integrated/protocols').rglob('*') if p.is_file())
+          manifest={}
+          with zipfile.ZipFile('/tmp/NBO_R21_publication.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for name in sorted(paths):
+                  p=Path(name)
+                  if p.is_file(): z.write(p,name);manifest[name]=hashlib.sha256(p.read_bytes()).hexdigest()
+              z.writestr('PUBLICATION_FILES_SHA256.json',json.dumps(manifest,indent=2)+'\n')
+              z.writestr('REMOTE_COMMIT.txt',subprocess.check_output(['git','rev-parse','HEAD']).decode())
+              z.writestr('PACKAGE_SCOPE.txt','Source-complete typesetting and review copy. Large original R19/R20 raw experiment records remain at pinned commits in the repository; numerical replay uses that checkout. No historical evidence is deleted or replaced.\n')
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r21-final-native-publication
+          path: |
+            /tmp/NBO_R21_publication.zip
+            revisions/2026-10-05-r21/build/ECTA.pdf
+            revisions/2026-10-05-r21/build/supp.pdf
+            revisions/2026-10-05-r21/build/applications.pdf
+            revisions/2026-10-05-r21/build/response.pdf
+            revisions/2026-10-05-r21/results/*.json
+            revisions/2026-10-05-r21/results/*.log
+            revisions/2026-10-05-r21/build/*.stdout
+          retention-days: 30
