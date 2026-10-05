@@ -1,0 +1,46 @@
+name: NBO R20 inherited source snapshot
+on:
+  push:
+    branches: [revision/econometrica-nbo-r20-source-2026-10-05]
+    paths: [.github/workflows/nbo-r20-source-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            *.tex
+            *.bib
+            *.cls
+            *.cfg
+            *.bst
+            *.sty
+            *.aux
+            *.bbl
+      - name: Package tracked typesetting sources without changing the repository
+        shell: python
+        run: |
+          from pathlib import Path
+          import hashlib,json,subprocess,zipfile
+          paths=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          out=Path('/tmp/nbo-r20-source');out.mkdir()
+          manifest={}
+          with zipfile.ZipFile(out/'INHERITED_LATEX.zip','w',compression=zipfile.ZIP_DEFLATED) as z:
+              for name in paths:
+                  p=Path(name)
+                  if name and p.is_file() and p.suffix in {'.tex','.bib','.cls','.cfg','.bst','.sty','.aux','.bbl'}:
+                      z.write(p,name);manifest[name]=hashlib.sha256(p.read_bytes()).hexdigest()
+              z.writestr('INHERITED_LATEX_SHA256.json',json.dumps(manifest,indent=2)+'\n')
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r20-inherited-latex
+          path: /tmp/nbo-r20-source/INHERITED_LATEX.zip
+          if-no-files-found: error
+          retention-days: 30
