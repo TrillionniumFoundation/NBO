@@ -1,0 +1,152 @@
+\section{Decisions When the Evaluated Future Changes}\label{sec:r21future}
+The query-volume experiment in Section~\ref{sec:r19experiment} keeps the
+future reference policy fixed. We now change that future in the same capital
+economy. The question is whether a learned continuation continues to support
+accurate decisions, when a check requires refreshing it, and which economic
+comparative statics can be certified from the returned actions.
+
+\subsection{Economic design and frozen service rules}
+The current postdecision map, temporary charge, utility weight, adjustment
+term, and feasible withdrawal interval are held fixed across five future
+regimes. Relative to the anchor, subsequent withdrawal changes from $0.55$
+to $0.25$ or $0.85$, future production coupling changes from $0.08$ to $0.24$,
+or the weight on subsequent and terminal payoffs doubles. The current
+production coefficient remains $0.08$ in every regime. Thus the experiment
+changes future policy, technology, and valuation, not merely the labels on
+current tasks. The future policy remains specified in each regime; its
+endogenous reoptimization is not assumed.
+
+Each economy retains the sixteen-path stored innovation law, four dates, and
+continuous common scalar action interval of the preceding experiment. State
+dimensions are ten and fifty. There are $q\in\{1,16,256,1024\}$ prespecified task arguments per future and three new fixed fitting/cache
+streams, giving 168 complete services and 840 future-specific outcomes.
+``New'' distinguishes these declared streams from the preceding experiment;
+it does not assert random sampling from an estimated economic population.
+The task arguments and service code were frozen before the execution. The
+same tasks are used across procedures, futures, and fitting streams within
+each dimension--volume cell. Caches are reconstructed across streams.
+
+Seven services compare reuse-only NBO, NBO that checks and refreshes, NBO
+refitted for each future, check-and-refresh quadratic and radial-basis
+continuations, cached SAA, and full-support enumeration. All inherit the same
+fitting and action-selection routines. A reuse service first constructs the
+anchor at the lower fitting budget. The adaptive rule checks each changed
+future and, on failure, fits its continuation at the higher budget. The
+fresh-refit rule tries the lower and then, if necessary, the higher budget
+for each future. A service returns after its first successful check or
+records that its budget was exhausted. It does not switch retrospectively
+to the cheapest procedure. Every attempted fit, action query, verification,
+and charged record write is retained.
+
+The primary target is mean foregone transformed welfare at most $10^{-4}$
+relative to the \emph{full scalar interval} in each future. The stopping
+certificate evaluates the true finite-law objective and its curvature;
+it does not use the surrogate's Hessian as if it were the objective's.
+This certificate is deterministic, so no statistical confidence budget is
+spent by repeated checks. A service that exhausts its budget without a
+certificate is retained, even if its observed work is small. Diagnostic
+prediction risks are computed only after the service clock is closed and
+do not alter stopping.
+
+\subsection{Accuracy, refresh, and actual work}
+\input{revisions/2026-10-05-r21/results/generated/future_accuracy.tex}
+NBO with checking and refresh certifies all 120 future-specific outcomes.
+Its largest final mean loss bound is $5.288\times10^{-6}$, below the target
+by more than an order of magnitude. Refit NBO likewise certifies every
+future. Reuse-only NBO certifies the anchor and the two changes in future
+withdrawal, but does not certify either the production or the future-weight
+change in any of the 24 dimension--volume--stream cells. All 48 attempted
+neural refreshes succeed. These results directly support the economic
+use of a learned continuation under changing futures, while identifying
+when treating an old evaluated object as current is inadequate.
+
+The conventional adaptive surrogates, cached SAA, and enumeration also
+certify every future. Successful neural decisions therefore do not imply
+that their construction is uniquely necessary. Nor does the failure of a
+certificate prove that actual loss exceeds its tolerance. The complete
+record retains both distinctions.
+
+\input{revisions/2026-10-05-r21/results/generated/future_costs.tex}
+Table~\ref{tab:r21cost} measures the amortization axis using complete
+executed services rather than allocated prefixes. In every displayed cell,
+checking and refreshing NBO costs more than refitting NBO for each future.
+The former pays for its anchor and failed reuse checks and then, when
+required, a higher-budget fit. The latter succeeds at its lower budget in
+all five futures. This is an economically relevant cost of the registered
+refresh rule, not a reason to omit its failures from the frontier. Cached
+SAA and conventional surrogates remain serious alternatives; there is no
+observed uniform neural cost advantage or inferred break-even outside the
+measured query volumes.
+
+The original full comparative clock is 1,897.326 seconds. Accounted deployed
+services sum to 1,633.478 seconds and post-stop diagnostics to 256.996 seconds;
+the remainder contains common startup and unallocated comparison work,
+including metadata recording. The deployed clocks charge all stage checks
+and failed attempts, but they are not complete process-isolation benchmarks.
+The full comparison bill is reported rather than distributed into fictitious
+method-specific observations. Its costs cannot be reduced after execution
+by selecting a favorable row.
+
+\subsection{Which continuation errors matter for the decision?}
+The diagnostic action set is fixed exogenously at the lower endpoint,
+midpoint, and upper endpoint of each feasible interval. All predictors are
+assessed on that common set and, separately, at their own selected actions.
+The targets are exact finite-law continuation means. Absolute risk,
+action-centered risk, and decision loss are recorded separately, with no
+Monte Carlo noise term silently absorbed into the target.
+
+At 1,024 tasks, reusing the anchor after lowering future withdrawal gives
+absolute continuation risk about $0.07084$ in dimension ten and $0.07111$
+in dimension fifty. Yet centered risks are only $3.53\times10^{-8}$ and
+$8.01\times10^{-8}$, and three-action mean decision losses are
+$5.64\times10^{-7}$ and $2.50\times10^{-7}$ or smaller. A large continuation
+level shift can therefore coexist with accurate action comparisons. Under
+higher future production, the same unchanged neural continuation instead
+has three-action losses about $5.32\times10^{-4}$ and $5.04\times10^{-4}$;
+the registered check requires refreshing it. The common-action diagnostic
+explains these outcomes through action-relevant errors rather than a ranking
+of raw squared residuals. It is not itself the full-interval stopping
+certificate. The supplement reports every procedure and future, including
+the cases in which non-neural predictors are more accurate.
+
+\subsection{An economic conclusion certified from NBO actions}
+A resource charge reduces current withdrawals in the strictly concave
+one-step objective, as derived in the preceding capital analysis. Changing
+the future also changes the current optimum. We use each returned NBO
+action's derivative and curvature certificate to enclose that optimum,
+not merely its value. Section~\ref{app:r21proofs} proves
+$|a-a^*|\leq r(a)/\kappa$ and the resulting paired interval calculation.
+
+\input{revisions/2026-10-05-r21/results/generated/future_nbo_contrasts.tex}
+For the fixed 1,024 tasks, the bands in Table~\ref{tab:r21nbocontrasts}
+establish that stronger future production and a higher future-payoff weight
+both lower mean optimal current withdrawal in each dimension. For example,
+the fifty-dimensional production effect lies between approximately $-0.03712$
+and $-0.02655$ in the model's withdrawal units. These are bands for the true
+finite-law optimal response obtained from NBO's computed decisions. They
+are not bands for the training algorithm's average action over an unobserved
+stream population. Full-support enumeration supplies a sharper independent
+benchmark in Table~\ref{tab:r21economic}; it confirms the signs rather than
+being substituted for the neural certificate.
+
+The exercise is a counterfactual comparative-static calculation in the
+paper's specified capital economy, not an empirical estimate of an observed
+reform. The welfare tolerance is in the transformed objective's units; the
+external log-utility compensation account in the preceding section gives
+its economic interpretation task by task. A bound on \emph{mean} value loss
+must not be exponentiated and presented as a bound on mean compensation.
+The numerical method supports a certified economic conclusion here, while
+its comparative cost remains an empirical question answered by the full
+service table.
+
+\paragraph{Chronology and scope.}
+The future-change source and streams belong to the frozen R20 execution.
+This revision integrates that completed evidence, independently replays its
+arithmetic certificates, and derives the displayed NBO response bands from
+saved actions. The new reporting and interval contrasts are deterministic
+post-execution analyses; they are not a newly randomized or prospectively
+selected favorable experiment. All original 168 service records, 840 outcomes,
+failed checks, source identities, and clocks remain available. The theoretical
+composition result specifies the additional conditions for a full dynamic
+policy certificate; the finite current-decision experiment is not substituted
+for an uncomputed uniform or continuous-time error account.

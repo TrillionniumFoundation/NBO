@@ -4,10 +4,10 @@ This revision responds to all B1–B8 and M1–M10 items in the latest R18 advis
 
 ## Publication
 
-- [Main article, native Econometrica class](revisions/2026-10-05-r21/build/ECTA.pdf) — [source](revisions/2026-10-05-r21/ECTA.tex).
-- [Technical supplement, complete proofs and records](revisions/2026-10-05-r21/build/supp.pdf) — [source](revisions/2026-10-05-r21/supp.tex).
-- [Complete economic applications](revisions/2026-10-05-r21/build/applications.pdf) — [source](revisions/2026-10-05-r21/applications.tex).
-- [Point-by-point referee response](revisions/2026-10-05-r21/build/response.pdf) — [readable response](revisions/2026-10-05-r21/RESPONSE_TO_REFEREE.md).
+- [Main article, native Econometrica class](build/ECTA.pdf) — [source](ECTA.tex).
+- [Technical supplement, complete proofs and records](build/supp.pdf) — [source](supp.tex).
+- [Complete economic applications](build/applications.pdf) — [source](applications.tex).
+- [Point-by-point referee response](build/response.pdf) — [readable response](RESPONSE_TO_REFEREE.md).
 
 The original paper's 129 source components and 408 labels are retained. Six whole historical sections are relocated, not deleted. The article remains 51 pages; all applications remain 48 pages. New proofs and complete records are in the supplement. Original roots and expanded introduction/conclusion sources are archived.
 
@@ -21,7 +21,7 @@ NBO's saved actions and derivative/curvature certificates imply negative mean op
 
 ## Verification
 
-[Release audit](revisions/2026-10-05-r21/results/RELEASE_AUDIT.json), [all-certificate audit](revisions/2026-10-05-r21/results/FUTURE_AUDIT.json), [source preservation](revisions/2026-10-05-r21/results/PRESERVATION.json), [native compilation](revisions/2026-10-05-r21/results/COMPILATION.json), and [complete table data](revisions/2026-10-05-r21/results/FUTURE_TABLES.json) bind the publication to the saved source and evidence.
+[Release audit](results/RELEASE_AUDIT.json), [all-certificate audit](results/FUTURE_AUDIT.json), [source preservation](results/PRESERVATION.json), [native compilation](results/COMPILATION.json), and [complete table data](results/FUTURE_TABLES.json) bind the publication to the saved source and evidence.
 
 The full arithmetic audit recomputes all 984 attempted certificates covering 319,062 task actions, plus 120 zero-charge certificates, and compares every certificate field exactly with the original record. It verifies all 168 record digests and recorded timing decompositions. This replay generates no new fits or scientific observations and replaces none of the original clocks. The separate test logs contain 22 new tests and 34 inherited tests.
 
