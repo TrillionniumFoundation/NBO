@@ -1,0 +1,128 @@
+name: NBO R19 integrated native publication
+on:
+  push:
+    branches: [revision/econometrica-nbo-r19-integrated-2026-10-05]
+    paths: [.github/workflows/nbo-r19-integrated-publication.yml]
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r19-integrated-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      R: revisions/2026-10-05-r19-integrated
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            *.tex
+            *.bib
+            *.cls
+            *.cfg
+            *.bst
+            *.sty
+            *.py
+            *.md
+            *.txt
+            *.aux
+            *.bbl
+            /revisions/2026-10-05-r19-integrated/
+      - name: Verify complete transport and authoritative remote outcomes
+        shell: python
+        run: |
+          from pathlib import Path, PurePosixPath
+          import base64,hashlib,io,json,lzma,tarfile
+          r=Path('revisions/2026-10-05-r19-integrated');t=r/'publication_transport'
+          m=json.loads((t/'MANIFEST.json').read_text())
+          pieces=[]
+          for i,expected in enumerate(m['part_sha256']):
+              b=(t/f'part{i:02}.b64').read_bytes()
+              assert hashlib.sha256(b).hexdigest()==expected,('transport part',i)
+              pieces.append(b.strip())
+          assert len(pieces)==m['parts']==7
+          archive=base64.b64decode(b''.join(pieces),validate=True)
+          assert hashlib.sha256(archive).hexdigest()==m['archive_sha256']
+          raw=lzma.decompress(archive)
+          restored={}
+          with tarfile.open(fileobj=io.BytesIO(raw),mode='r:') as a:
+              for member in a.getmembers():
+                  assert member.isfile() and member.name in m['files']
+                  assert not PurePosixPath(member.name).is_absolute() and '..' not in PurePosixPath(member.name).parts
+                  assert member.name not in restored
+                  b=a.extractfile(member).read();h=hashlib.sha256(b).hexdigest()
+                  assert h==m['files'][member.name],member.name
+                  p=r/member.name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b);restored[member.name]=h
+          assert restored==m['files'] and len(restored)==21
+          s=r/'results/registered/SUMMARY.json';identity=json.loads((r/'results/EXECUTION_IDENTITY.json').read_text())
+          assert hashlib.sha256(s.read_bytes()).hexdigest()==identity['summary_sha256']=='6829a0aa6d6135f653e90043f555727e0a31186dbafa037c94d935954db95c96'
+          (r/'results/PUBLICATION_SOURCE_RECOVERY.json').write_text(json.dumps({'archive_complete':True,'archive_sha256':m['archive_sha256'],'source_files':restored,'remote_execution_identity':identity},indent=2)+'\n')
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install native typesetting and recorded numerical dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
+          python -m pip install numpy==2.3.5 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Generate complete tables and integrate original manuscript
+        run: |
+          set -euo pipefail
+          python "$R/code/report.py" | tee "$R/results/REPORT_EXECUTION.log"
+          python "$R/code/integrate.py" | tee "$R/results/INTEGRATION.log"
+      - name: Replay every saved true-objective certificate without refitting
+        run: |
+          set -o pipefail
+          python -u "$R/code/audit_certificates.py" 2>&1 | tee "$R/results/CERTIFICATE_REPLAY.log"
+      - name: Build all four native Econometrica documents
+        run: |
+          set -o pipefail
+          python "$R/code/build.py" 2>&1 | tee "$R/results/BUILD.log"
+      - name: Require complete evidence tests preservation and native references
+        run: |
+          set -o pipefail
+          python "$R/code/release_audit.py" 2>&1 | tee "$R/results/RELEASE.log"
+      - name: Bind release identity and construct referee download
+        shell: python
+        run: |
+          from pathlib import Path
+          import hashlib,json,os,zipfile
+          r=Path(os.environ['R']);a=json.loads((r/'results/RELEASE_AUDIT.json').read_text())
+          rec={'publication_source_commit':os.environ['GITHUB_SHA'],'publication_run':os.environ['GITHUB_RUN_ID'],'execution_run':'37267932023','execution_summary_sha256':a['summary_sha256'],'release_audit_sha256':hashlib.sha256((r/'results/RELEASE_AUDIT.json').read_bytes()).hexdigest(),'PDFs':a['native_compilation']['documents'],'visual_inspection':'Human-style page-image inspection is recorded separately, not inferred from compilation.'}
+          (r/'results/PUBLICATION_IDENTITY.json').write_text(json.dumps(rec,indent=2)+'\n')
+          out=Path('/tmp/nbo-r19-publication');out.mkdir()
+          with zipfile.ZipFile(out/'NBO_R19_referee_bundle.zip','w',compression=zipfile.ZIP_DEFLATED) as z:
+              for name in ['build/ECTA.pdf','build/supp.pdf','build/applications.pdf','build/response.pdf','README.md','RESPONSE_TO_REFEREE.md','RESPONSE_MAP.json','CHRONOLOGY.md','SOURCE_BASELINE.json','results/RELEASE_AUDIT.json','results/PUBLICATION_IDENTITY.json','results/EXECUTION_IDENTITY.json','results/CERTIFICATE_REPLAY.json','results/UNIT_TESTS.log']:
+                  z.write(r/name,name)
+      - name: Commit complete readable publication only to the independent revision
+        run: |
+          set -euo pipefail
+          BRANCH=revision/econometrica-nbo-r19-integrated-2026-10-05
+          test "$GITHUB_REF_NAME" = "$BRANCH"
+          CURRENT=$(git ls-remote origin "refs/heads/$BRANCH" | cut -f1)
+          test "$CURRENT" = "$GITHUB_SHA"
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          find "$R/code" -type d -name __pycache__ -prune -exec rm -rf {} +
+          git add -- ECTA.tex supp.tex README.md "$R"
+          git commit -m 'paper(r19): integrate full NBO revision with native PDFs, 18 responses and complete evidence'
+          git push origin "HEAD:refs/heads/$BRANCH"
+          git rev-parse HEAD > /tmp/nbo-r19-publication/PUBLISHED_COMMIT.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r19-integrated-native-publication
+          path: |
+            /tmp/nbo-r19-publication/
+            revisions/2026-10-05-r19-integrated/
+          if-no-files-found: error
+          retention-days: 30
