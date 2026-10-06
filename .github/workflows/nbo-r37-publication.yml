@@ -18,15 +18,23 @@ jobs:
           AUTHORING_SHA: ${{ github.sha }}
         run: |
           cat > /tmp/nbo_publish_ci.py <<'PY'
-          import base64,hashlib,io,json,os,pathlib,time,urllib.request,zipfile
+          import base64,hashlib,io,json,os,pathlib,time,urllib.request,urllib.parse,zipfile
           ROOT=pathlib.Path('/tmp/nbo-r37-publication');ROOT.mkdir(exist_ok=True)
           API='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          class SafeRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,req,fp,code,msg,headers,newurl):
+                  out=super().redirect_request(req,fp,code,msg,headers,newurl)
+                  if out is not None and urllib.parse.urlsplit(newurl).netloc!=urllib.parse.urlsplit(req.full_url).netloc:
+                      out.remove_header('Authorization')
+                      out.remove_header('Accept')
+                  return out
+          OPENER=urllib.request.build_opener(SafeRedirect())
           def api(path,data=None,method=None,binary=False):
               for attempt in range(4):
                   try:
                       req=urllib.request.Request(API+path,data=None if data is None else json.dumps(data).encode(),method=method,
-                          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
-                      with urllib.request.urlopen(req,timeout=120) as h:raw=h.read()
+                          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Cache-Control':'no-cache'})
+                      with OPENER.open(req,timeout=120) as h:raw=h.read()
                       return raw if binary else json.loads(raw)
                   except Exception:
                       if attempt==3 or data is not None:raise
@@ -39,7 +47,7 @@ jobs:
                   if name.endswith('/') or '__pycache__' in p.parts:continue
                   dst=ROOT/name;dst.parent.mkdir(parents=True,exist_ok=True);dst.write_bytes(z.read(name))
           def artifact(i,digest):
-              raw=api('actions/artifacts/'+str(i)+'/zip',binary=True)
+              raw=api('actions/artifacts/'+str(i)+'/zip?cache_bust='+str(time.time_ns()),binary=True)
               assert hashlib.sha256(raw).hexdigest()==digest
               return raw
           def file(path,ref):
@@ -72,10 +80,14 @@ jobs:
               ref=os.environ['AUTHORING_SHA'];r='revisions/2026-10-07-r37/'
               for directory in ('manuscript','publication'):walk(r+directory,ref)
               for name in ('response.md','references.bib'):file(r+name,ref)
+              p=ROOT/r/'manuscript/precision_refresh.tex';text=p.read_text()
+              old='For $0<\\tau<\\rho_0$, a sufficient number of updates is'
+              new='For a requested relative tolerance $0<\\tau<1$ with $\\tau<\\rho_0$, a sufficient number of updates is'
+              assert old in text;p.write_text(text.replace(old,new))
               review=base64.b64decode(api('git/blobs/947147612cc22f5e10ff15faf347fcb3de222656')['content'])
               assert hashlib.sha1(b'blob '+str(len(review)).encode()+b'\0'+review).hexdigest()=='947147612cc22f5e10ff15faf347fcb3de222656'
               (ROOT/r/'audit/REFEREE_REPORT_R21.md').write_bytes(review)
-              (ROOT/r/'audit/INPUT_ARTIFACTS.json').write_text(json.dumps({'authoring_commit':ref,'old_publication_artifact':11334475728,'inherited_source_artifact':11441758616,'new_science_artifact':11442488678,'all_archive_digests_verified':True,'inherited_file_hashes_verified':len(manifest['files'])},indent=2)+'\n')
+              (ROOT/r/'audit/INPUT_ARTIFACTS.json').write_text(json.dumps({'authoring_commit':ref,'old_publication_artifact':11334475728,'inherited_source_artifact':11441758616,'new_science_artifact':11442488678,'all_archive_digests_verified':True,'inherited_file_hashes_verified':len(manifest['files']),'current_precision_domain':'0 < tau < 1, with zero updates when the initial enclosure already meets tau.'},indent=2)+'\n')
           PY
           python /tmp/nbo_publish_ci.py
           cd /tmp/nbo-r37-publication
