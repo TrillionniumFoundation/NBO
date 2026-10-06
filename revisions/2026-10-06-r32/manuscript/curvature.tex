@@ -1,0 +1,150 @@
+\section{From Training Geometry to Policy Accuracy}\label{sec:r32geometry}
+The constructive schedule above controls a particular initialization. A returned
+factor need not have been trained from that initialization. We therefore give
+a second, a posteriori route which uses both first- and second-order information.
+It rules out a singular stationary factor without assuming that its rank has
+already been certified. Throughout this section $W\in\R^{d\times d}$ is the
+trainable hidden-weight matrix, not a fixed dictionary.
+
+For a symmetric target $M\succeq mI\succ0$, put
+\[
+ f_M(W)=\tfrac14\|W'W-M\|_F^2,\qquad G_M(W)=W(W'W-M).
+\]
+The Hessian is a self-adjoint operator on matrices equipped with the Frobenius
+inner product. Its lower bound below must hold in every matrix direction;
+a finite selection of curvature probes does not establish that premise.
+
+\begin{theorem}[Gradient--curvature certificate]\label{thm:r32geometry}
+Suppose $\nabla^2 f_M(W)\succeq-\kappa I$, where $0\leq\kappa<m$.
+Then
+\begin{equation}\label{eq:r32geometry}
+ \sigma_{\min}(W)^2\geq\frac{m-\kappa}{3},\qquad
+ \|W'W-M\|_F\leq
+       \sqrt{\frac{3}{m-\kappa}}\,\|G_M(W)\|_F.
+\end{equation}
+In particular, a zero-gradient factor satisfying this curvature condition
+represents the target exactly.
+\end{theorem}
+\begin{proof}
+For $E=W'W-M$ and an arbitrary direction $Z$, differentiation gives
+\[
+ D^2f_M(W)[Z,Z]
+   =\tfrac12\|W'Z+Z'W\|_F^2+\operatorname{tr}(E Z'Z).
+\]
+Let $s=\sigma_{\min}(W)$ and choose a corresponding pair of unit singular
+vectors $u,v$, so that $Wv=su$ and $W'u=sv$. These relations also hold at
+$s=0$, with left and right null vectors. Set $Z=uv'$. Then $\|Z\|_F=1$ and
+\[
+ -\kappa\leq D^2f_M(W)[Z,Z]=3s^2-v'Mv\leq3s^2-m.
+\]
+This proves the lower singular-value bound. Since $m>\kappa$, $W$ is
+invertible, and $E=W^{-1}G_M(W)$. The Frobenius norm inequality proves the
+second assertion.
+\end{proof}
+
+At $W=0$, the gradient vanishes for every target, although its approximation
+error is generally large. The Hessian has a direction with curvature at most
+$-m$. Thus the theorem excludes exactly the false implication from a small
+gradient alone that would arise at this stationary point. It does not assert
+that arbitrary nonconvex training attains the required second-order condition.
+The finite construction in Theorem~\ref{thm:r31constructive} and the
+certificate here are distinct results.
+
+\subsection{An inexact own-policy target}
+The policy evaluator may supply a symmetric approximation $\widetilde M$ rather
+than the exact target. Suppose an independent evaluation account establishes
+$\|M-\widetilde M\|_2\leq e$. Let
+\[
+ \|G_{\widetilde M}(W)\|_F\leq g,\qquad
+ \nabla^2 f_{\widetilde M}(W)\succeq-\widetilde\kappa I,
+ \qquad \|W\|_F\leq w.
+\]
+
+\begin{corollary}[Evaluation-aware factor error]\label{cor:r32inexact}
+If $M\succeq mI$ and $\widetilde\kappa+e<m$, then
+\begin{equation}\label{eq:r32inexact}
+ \|W'W-M\|_F\leq
+ (g+we)\sqrt{\frac{3}{m-\widetilde\kappa-e}}.
+\end{equation}
+A sufficient check for the target floor is
+$\widetilde M\succeq(m+e)I$.
+\end{corollary}
+\begin{proof}
+The gradient difference is $-W(M-\widetilde M)$, with Frobenius norm at most
+$\|W\|_F e$. The difference of the Hessian operators maps $Z$ to
+$-Z(M-\widetilde M)$ and has operator norm at most $e$. Hence the true
+Hessian is bounded below by $-(\widetilde\kappa+e)I$ and the true gradient
+norm by $g+we$. Apply Theorem~\ref{thm:r32geometry}. The sufficient target
+floor follows from the spectral error bound. Notice that a spectral error
+for the target multiplies the \emph{Frobenius} norm of $W$ here; replacing
+it by its spectral norm without a dimension allowance would be invalid.
+\end{proof}
+
+For the recursive economy the exact target at date $t$ is
+$M_t=d\Psi_\theta(P_{t+1}^{\pi})$, evaluated under the returned policy's
+own future. Proposition~\ref{prop:r31tube} supplies the sufficient radius
+$e_t^{M}=d e_{t+1}/\gamma_t^2$ around
+$\widetilde M_t=d\Psi_\theta(C_{t+1})$; the approximation of that transformed
+center, when numerical, contributes its own additional radius.
+Neither a target inherited from a different policy nor a nominal matrix
+inverse supplies this radius without its separate evaluation bound.
+
+Write $a_t$ for the right side of \eqref{eq:r32inexact} divided by $d$,
+$\widehat P_t=W_t'W_t/d$, and let
+\[
+ Z_t=R_tK_t-\beta B_t'\widehat P_t(A_t-B_tK_t)
+\]
+be the actor residual against the fitted continuation. The true full-action
+residual then satisfies
+\begin{equation}\label{eq:r32actor}
+ \|D_t\|_F\leq\|Z_t\|_F+
+   \beta\|B_t\|_2\|A_t-B_tK_t\|_2 a_t.
+\end{equation}
+Indeed, subtracting the two residuals leaves
+$\beta B_t'(\widehat P_t-\Psi_\theta(P_{t+1}^{\pi}))
+(A_t-B_tK_t)$. This identity proves the bound. Substitution in
+Theorem~\ref{thm:r27entropic} gives a full adapted-policy certificate whenever
+its domain, positivity, and implementation conditions also hold. The curvature
+check is consequently a training diagnostic with an explicit route to economic
+accuracy, not a replacement for the independent economic stopping rule.
+
+\subsection{The terminal boundary and the iteration account}
+The terminal coefficient is known, not learned. Under recursive risk
+preferences, the last actor must nevertheless transform that known coefficient:
+\begin{equation}\label{eq:r32terminal}
+ K_{T-1}=\{R_{T-1}+\beta B_{T-1}'\Psi_\theta(Q_f)B_{T-1}\}^{-1}
+              \beta B_{T-1}'\Psi_\theta(Q_f)A_{T-1}.
+\end{equation}
+This is the meaning of direct terminal evaluation. Substituting $Q_f$ for
+$\Psi_\theta(Q_f)$ in this formula is justified at $\theta=0$, or when the
+transform actually equals $Q_f$, but not in general. The scalar constant
+$h_\theta(Q_f)$ does not change this actor. The frozen implementation already
+uses \eqref{eq:r32terminal}; the current manuscript makes the boundary explicit.
+
+The isotropic factor construction also admits the sharper contraction
+\[
+ \|W_j'W_j-M\|_F\leq(1-2\alpha c)^j\sqrt d\,L,
+ \qquad 0<c\leq\lambda_{\min}(M),\quad
+ 0<\alpha\leq(4L)^{-1},\quad\|M\|_2\leq L.
+\]
+To see this, use the common eigenbasis in the constructive proof. With
+$c\leq x_j\leq\lambda$,
+\[
+ \lambda-x_{j+1}=(\lambda-x_j)
+   \{1-2\alpha x_j-\alpha^2x_j(\lambda-x_j)\}
+ \leq(1-2\alpha c)(\lambda-x_j).
+\]
+Nonnegativity follows from the previously proved upper bound
+$x_{j+1}\leq\lambda$, and $1-2\alpha c\geq1/2$. This sharper account
+justifies a cap based on $-\log(1-2\alpha c)$ as well as the looser published
+cap. It changes neither the frozen experimental budgets nor their interpretation
+in rounded arithmetic.
+
+For small matrices the replication code represents stored binary inputs as
+exact rational numbers and checks the whole Hessian by a rational
+positive-semidefiniteness elimination. Its certificates are conditional on the
+declared target-radius bound, which must come from evaluation rather than from
+this algebraic check. This implementation validates the new implication and
+its failure cases. It is not offered as a scalable replacement for the
+fifty-dimensional residual verifier, and its timing is not a primary economic
+comparison.
