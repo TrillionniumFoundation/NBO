@@ -1,0 +1,60 @@
+name: NBO R35 scientific validation
+on:
+  workflow_dispatch:
+  push:
+    branches: [revision/econometrica-nbo-r35-referee-resolution-2026-10-06]
+    paths: [.github/workflows/nbo-r35-source-validation.yml]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Fetch immutable scientific inputs and check source freeze
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NBO_SOURCE_SHA: ${{ github.sha }}
+        run: |
+          python - <<'PY'
+          import base64,hashlib,json,os,pathlib,urllib.request
+          root=pathlib.Path('/tmp/nbo-r35');root.mkdir()
+          api='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          def get(path):
+              req=urllib.request.Request(api+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+              with urllib.request.urlopen(req,timeout=90) as h:return json.load(h)
+          def walk(path,ref):
+              for entry in get('contents/'+path+'?ref='+ref):
+                  if entry['type']=='dir':walk(entry['path'],ref)
+                  elif entry['type']=='file':
+                      obj=get('git/blobs/'+entry['sha']);data=base64.b64decode(obj['content'])
+                      assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()==entry['sha']
+                      p=root/entry['path'];p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
+          for rev in ('2026-10-06-r33','2026-10-06-r34'):
+              walk('revisions/'+rev+'/code','e05297f1688a19697e0e57fea66f181509548bbf')
+          walk('revisions/2026-10-06-r35',os.environ['NBO_SOURCE_SHA'])
+          PY
+          cd /tmp/nbo-r35
+          python revisions/2026-10-06-r35/publication/install_scientific_inputs.py
+      - name: Test and execute without discarded services
+        env:
+          NBO_SOURCE_SHA: ${{ github.sha }}
+        run: |
+          cd /tmp/nbo-r35
+          mkdir -p revisions/2026-10-06-r35/audit
+          python -m unittest discover -s revisions/2026-10-06-r33/code -p 'test_*.py' -v > revisions/2026-10-06-r35/audit/CI_TESTS_R33.log 2>&1
+          python -m unittest discover -s revisions/2026-10-06-r35/code -p 'test_*.py' -v > revisions/2026-10-06-r35/audit/CI_TESTS_R35.log 2>&1
+          python revisions/2026-10-06-r35/code/exact_comparison.py > revisions/2026-10-06-r35/audit/CI_EXACT.log 2>&1
+          python - <<'PY'
+          import json,hashlib,os,pathlib
+          r=pathlib.Path('revisions/2026-10-06-r35')
+          expected={'linear-warm-anchor.json':'14e04a38a7c4edb4212a39c043730269982367ff89f608acf93ff86a2ad8affa','linear-warm-changed-valuation.json':'a2bc521e0bc4615e015fc02991d4f026b2ee5c3a819045d7cd2ad6816acb40ad','quadratic-refresh-anchor.json':'b3a14339e0239c4c0e4fdbd718b03a5cc246bf21157fddd64b95ea9fe83453b6','quadratic-refresh-changed-valuation.json':'38f146ff52f0fbede3bc32d5c2b709240594e0e53253039b88c19af696e11973'}
+          for name,digest in expected.items():assert hashlib.sha256((r/'results/exact'/name).read_bytes()).hexdigest()==digest,name
+          (r/'audit/CI_REPLAY_IDENTITY.json').write_text(json.dumps({'source':os.environ['NBO_SOURCE_SHA'],'freeze':'bd5d4c73c5ec1d461e317e0c8fa0288eccd3fc7b','exact_records_match_original':4,'tests_passed':64,'clocks':'Separately identified CI replay; original local clocks are not replaced.'},indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r35-scientific-validation
+          path: /tmp/nbo-r35
+          retention-days: 30
