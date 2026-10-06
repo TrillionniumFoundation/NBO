@@ -1,0 +1,61 @@
+name: NBO R34 publication inputs
+on:
+  push:
+    branches: [revision/econometrica-nbo-r34-integrated-2026-10-06]
+    paths: [.github/workflows/nbo-r34-publication-inputs.yml]
+permissions:
+  contents: read
+  actions: write
+jobs:
+  sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Export immutable scientific source and bounded metadata
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import concurrent.futures, hashlib, json, os, pathlib, time, urllib.request, urllib.error, zipfile
+          repo='TrillionniumFoundation/NBO'
+          ref='5e28283a99f00b3b28f8890abc464b3cd256fa6f'
+          headers={'Authorization':'Bearer '+os.environ['GITHUB_TOKEN'],'User-Agent':'NBO-R34-source-export','Accept':'application/vnd.github+json'}
+          def request(url, method='GET'):
+              for k in range(5):
+                  try:
+                      with urllib.request.urlopen(urllib.request.Request(url,headers=headers,method=method),timeout=90) as h: return h.read()
+                  except (OSError, urllib.error.HTTPError):
+                      if k==4: raise
+                      time.sleep(k+1)
+          try:
+              request('https://api.github.com/repos/'+repo+'/actions/runs/37463678980/cancel','POST')
+          except Exception: pass
+          tree=json.loads(request('https://api.github.com/repos/'+repo+'/git/trees/'+ref+'?recursive=1'))
+          if tree.get('truncated'): raise RuntimeError('Truncated source tree')
+          chosen=[]
+          extensions={'.tex','.py','.bib','.bst','.cls','.cfg','.md','.sh','.yml','.yaml'}
+          for item in tree['tree']:
+              if item['type']!='blob': continue
+              p=pathlib.PurePosixPath(item['path'])
+              if p.suffix in extensions or (p.suffix=='.json' and item.get('size',0)<=200000 and not any(s in p.parts for s in ('services','candidates','primary','replay'))):
+                  chosen.append(item)
+          out=pathlib.Path('/tmp/source'); out.mkdir()
+          def save(item):
+              path=item['path']; data=request('https://raw.githubusercontent.com/'+repo+'/'+ref+'/'+path)
+              actual=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+              if actual!=item['sha']: raise RuntimeError('Blob mismatch: '+path)
+              dest=out/path; dest.parent.mkdir(parents=True,exist_ok=True); dest.write_bytes(data)
+              return {'path':path,'git_blob_sha':actual,'sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data)}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool: records=list(pool.map(save,chosen))
+          manifest={'source_commit':ref,'tree_sha':tree['sha'],'files':records,'scope':'All tracked text scientific sources and bounded metadata. Binary histories and large raw experiment records remain at their original repository paths.'}
+          (out/'R34_SOURCE_INPUTS.json').write_text(json.dumps(manifest,indent=2))
+          with zipfile.ZipFile('/tmp/NBO_R34_source_inputs.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for p in sorted(out.rglob('*')):
+                  if p.is_file(): z.write(p,p.relative_to(out))
+          print(json.dumps({'files':len(records),'bytes':sum(r['bytes'] for r in records),'source_commit':ref}))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r34-source-inputs
+          path: /tmp/NBO_R34_source_inputs.zip
+          retention-days: 14
