@@ -1,0 +1,128 @@
+\section{A Verified Native Floating-Point Refresh}
+\label{sec:r38native}
+The storage schedule in Theorem~\ref{thm:r37precision} deliberately separates
+an exact-arithmetic construction from its implementation. We now supply an
+implementation that charges and verifies the target solve, input conversion,
+matrix products, and output storage. It uses binary32 or binary64 proposals
+and an outward binary64 verifier. Mixed-precision numerical linear algebra
+and residual-based verification are established techniques
+\citep{r38carson2018,r38rump2010}; the present application combines their
+error accounting with a trainable continuation and an economic stopping
+criterion. It is not a new claim of mixed-precision iterative refinement.
+
+For a fixed stored target $M$, let certified bounds satisfy
+$0<mI\preceq M\preceq LI$. The entries of the stored $M$ and $W$ are exact
+binary coefficients for this step. Write $G=W'W$ for their exact Gram
+matrix, and let $Z$ be any floating-point proposal for $M^{-1}G$.
+Suppose interval computations provide
+\[
+ r_Z\geq\|MZ-G\|_F,\qquad
+ e_P\geq\|\widehat W-\tfrac12W(3I-Z)\|_F,\qquad
+ w_+\geq\|W\|_2.
+\]
+Here $\widehat W$ is the stored output of the native-precision update.
+Residuals are evaluated against the original binary64 inputs, not their
+lower-precision conversions.
+
+\begin{proposition}[Complete-step floating-point enclosure]
+\label{prop:r38float}
+The perturbation in \eqref{eq:r37update} satisfies
+\begin{equation}\label{eq:r38float}
+ \|\Delta M^{-1/2}\|_2\leq
+ \nu:=\frac{e_P+w_+r_Z/(2m)}{\sqrt m}.
+\end{equation}
+If $\|E\|_2\leq\rho<1$, the next relative Gram error is at most
+\begin{equation}\label{eq:r38floatgram}
+ \|E^+\|_2\leq\frac{3+\rho}{4}\rho^2+2\nu+\nu^2.
+\end{equation}
+Thus the squared-radius rule remains valid throughout the certified basin
+$\rho<1$ whenever the complete-step noise is no larger than
+$(1-(3+\rho)/4)\rho^2$.
+\end{proposition}
+
+\begin{proof}
+$Z-M^{-1}G=M^{-1}(MZ-G)$, so its Frobenius norm is at most $r_Z/m$.
+Subtract the ideal update from the stored output, apply the triangle
+inequality, and then multiply by $M^{-1/2}$ to obtain
+\eqref{eq:r38float}. In whitened coordinates $X=WM^{-1/2}$, the ideal
+update is $X(3I-X'X)/2$, and its Gram error is
+$(-3E^2+E^3)/4$. For $\rho<1$, its singular values do not exceed one:
+the scalar map $s(3-s^2)/2$ is nonnegative and at most one for
+$0\leq s\leq\sqrt2$. The perturbation therefore changes the Gram matrix
+by at most $2\nu+\nu^2$. This proves \eqref{eq:r38floatgram}.
+\end{proof}
+
+An identity-scaled cold start is available without a target factorization.
+In exact arithmetic, take the first $d$ rows of $W_0$ to be
+$\sqrt{2mL/(m+L)}I$ and the remaining rows zero. Its relative radius is at
+most $(L-m)/(L+m)<1$. In the implementation, outward bounds on the stored
+scalar square verify this radius, including initialization roundoff. An
+old factor is used only after a new-target Gram test gives a radius below
+the declared gate $0.9$; otherwise the cold start is charged. The target is
+immutable during a fit. Its numerical inverse may be cached once for each
+of the two proposal precisions, but never carried unchanged across a target
+change.
+
+Near a machine precision floor, insisting on one more squared-radius step
+can reject a factor that already meets its requested accuracy. The algorithm
+therefore has two explicit acceptance tests. A proposal is accepted either
+by \eqref{eq:r38floatgram} with the squared-radius allowance, or by a direct
+outward terminal test
+\[
+ \|\widehat W'\widehat W-M\|_F/m\leq\tau_{\rm fit}.
+\]
+The latter is a terminal Gram certificate, not a claim of continued
+quadratic contraction. Failed binary32 proposals are charged before a
+binary64 attempt. If neither available precision passes either permitted
+test, the service reports failure. No floating-point inverse is assumed
+exact, no target Cholesky factor is supplied to the learner, and no exact
+rational intermediate products are hidden in the timing.
+
+The returned factor is not by itself a policy certificate. After every
+changed actor, the implementation evaluates the entire returned policy
+using the outward recursive comparison of
+Theorem~\ref{thm:r27entropic}. It stops at the first passing full-policy
+check, including a check of the initial policy. Thus actor solves and
+nominal continuation proposals need not be exact: their actual stored
+outputs are evaluated independently. This is an a posteriori executable
+route. It is distinct from the a priori envelope allocation in
+Corollary~\ref{cor:r37policy}, whose premises remain stated explicitly.
+The reported Gaussian policies are the mathematical feedbacks represented
+by their stored coefficients. A separate action-execution allowance is
+required for online rounding, measurement, or actuator error.
+
+\subsection{Work, storage, and the stopping target}
+Let $J$ be the number of proposed updates, including rejected precision
+attempts, and let $I$ count numerical inverse constructions. With dense
+classical matrix arithmetic, a fixed-target fit uses
+\begin{equation}\label{eq:r38floatcost}
+ O\{Id^3+J(pd^2+d^3)\}
+\end{equation}
+scalar work, including a constant number of matrix-ball products per
+proposal and direct Gram checks. Caching gives $I\leq2$ per nonempty fit
+for the declared native precision set; without caching, $I=J$.
+Applications of an already formed inverse still cost $O(d^3)$ here and
+are not treated as free. The proposal-only multiply--add proxy in the
+records is $2pd^2+d^3$ per attempt; it excludes the verifier and inverse
+construction and is never labeled total work.
+
+If a policy service performs $C$ complete-policy checks, evaluates $E$
+individual future dates for candidate construction, and solves $A$ actor
+equations, its dense work additionally includes
+$O\{(CT+E+A)d^3\}$. All failed checks and tuning trials enter these counts.
+At fixed native precision, a live fit uses $O(pd+d^2)$ storage; retaining
+all dated factors and gains uses $O\{T(pd+d^2)\}$, plus the audit trace and
+runtime working memory. Factors are stored as binary64 after a proposal,
+even when that proposal used binary32. Reduced proposal mantissas are
+therefore not reported as a reduction in returned-factor storage.
+
+Conditioning affects the cold radius, the residual factor $1/m$, and the
+number of successful and rejected updates. In the exact noise-budget
+regime, the update cap is \eqref{eq:r37cap} with the certified cold or warm
+radius. The Gaussian moment margin, horizon, target-evaluation allowance,
+and actor residual enter the policy tolerance through the earlier
+recursive comparison, not through an unstated equality between Gram error
+and economic loss. Consequently, \eqref{eq:r38floatcost} is a complete
+arithmetic-operation account for the specified native kernel, not a
+bit-complexity theorem for exact rational solves or a hardware-independent
+wall-clock speedup.
