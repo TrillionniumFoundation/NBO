@@ -1,0 +1,125 @@
+name: NBO R37 rendered publication check
+on:
+  push:
+    branches: [revision/econometrica-nbo-r37-referee-revision-2026-10-07]
+    paths: [.github/workflows/nbo-r37-review-ready.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          repository: TrillionniumFoundation/NBO
+          run-id: 37530860991
+          github-token: ${{ github.token }}
+          name: nbo-r37-final-native-publication
+          path: /tmp/nbo-r37
+      - name: Verify frozen publication bytes and correct only the current header override
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUTHORING_SHA: ${{ github.sha }}
+        run: |
+          cat > /tmp/review_release.py <<'PY'
+          import base64,hashlib,json,os,pathlib,urllib.request
+          ROOT=pathlib.Path('/tmp/nbo-r37');REL='revisions/2026-10-07-r37';R=ROOT/REL
+          def api(path,data=None):
+              req=urllib.request.Request('https://api.github.com/repos/TrillionniumFoundation/NBO/'+path,data=None if data is None else json.dumps(data).encode(),headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+              with urllib.request.urlopen(req,timeout=120) as h:return json.load(h)
+          def commit(paths,parent,branch,message):
+              tree=[]
+              for p in sorted(set(paths)):
+                  obj=api('git/blobs',{'encoding':'base64','content':base64.b64encode(p.read_bytes()).decode()})
+                  tree.append({'path':str(p.relative_to(ROOT)),'mode':'100644','type':'blob','sha':obj['sha']})
+              obj=api('git/trees',{'base_tree':api('git/commits/'+parent)['tree']['sha'],'tree':tree})
+              c=api('git/commits',{'tree':obj['sha'],'parents':[parent],'message':message})
+              api('git/refs',{'ref':'refs/heads/'+branch,'sha':c['sha']})
+              return c['sha']
+          if __name__=='__main__':
+              for p,h in json.loads((R/'PUBLICATION_FILES_SHA256.json').read_text()).items():assert hashlib.sha256((ROOT/p).read_bytes()).hexdigest()==h,p
+              old=r'\g@addto@macro\econsocart@fmadd{\def\copyright@text{Prepared for referee review}}'
+              new=r'\def\copyright@text{Prepared for referee review}'
+              paths=[R/(d+'.tex') for d in ('ECTA','supp','response')]+[R/'publication/publish.py',R/'publication/finalize.py']
+              for p in paths:
+                  s=p.read_text();assert old in s,p;p.write_text(s.replace(old,new))
+              source=commit(paths,os.environ['AUTHORING_SHA'],'revision/econometrica-nbo-r37-reviewed-source-2026-10-07','R37: apply the current review-status header after native class initialization')
+              with open(os.environ['GITHUB_ENV'],'a') as h:h.write('NBO_PUBLICATION_SHA='+source+'\n')
+              (ROOT/'PUBLICATION_SOURCE_COMMIT.txt').write_text(source+'\n')
+          PY
+          python /tmp/review_release.py
+      - name: Install native publication and PDF text dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
+      - name: Compile and check the actual rendered header
+        run: |
+          cd /tmp/nbo-r37
+          python revisions/2026-10-07-r37/publication/publish.py build
+          PYTHONPATH=/tmp python - <<'PY'
+          import hashlib,json,subprocess
+          from review_release import ROOT,R
+          reports=json.loads((R/'audit/COMPILATION.json').read_text())
+          for d in ('ECTA','supp','response'):
+              t=subprocess.check_output(['pdftotext','-f','1','-l','1',str(R/'build'/(d+'.pdf')),'-'],text=True)
+              assert 'Prepared for referee review' in t and 'Submitted to Econometrica' not in t,d
+              v=next(x for x in reports if x['document']==d)
+              assert not v['undefined_references'] and not v['overfull_hboxes'] and not v['overfull_vboxes'] and not v['multiply_defined_labels'],d
+          for p,h in json.loads((R/'protocols/SOURCE_FREEZE.json').read_text())['files'].items():assert hashlib.sha256((ROOT/p).read_bytes()).hexdigest()==h,p
+          s=json.loads((R/'results/SUMMARY.json').read_text())
+          for v in s['rows']:assert hashlib.sha256((R/'results/exact'/v['record']).read_bytes()).hexdigest()==v['record_sha256']
+          audit={'current_rendered_headers_verified':['ECTA','supp','response'],'header':'Prepared for referee review','historical_headers_unchanged':True,'scope':'Header and native build only. The frozen science and all eight detailed service records are unchanged. No claim of actual journal submission.'}
+          (R/'audit/RENDERED_HEADER.json').write_text(json.dumps(audit,indent=2)+'\n')
+          p=R/'audit/RELEASE_AUDIT.json';a=json.loads(p.read_text());a['rendered_header']=audit;p.write_text(json.dumps(a,indent=2)+'\n')
+          m=R/'PUBLICATION_FILES_SHA256.json';v=json.loads(m.read_text())
+          for path in (R/'audit/RENDERED_HEADER.json',p):v[str(path.relative_to(ROOT))]=hashlib.sha256(path.read_bytes()).hexdigest()
+          m.write_text(json.dumps(v,indent=2,sort_keys=True)+'\n')
+          PY
+      - name: Publish the review-ready revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PYTHONPATH=/tmp python - <<'PY'
+          import hashlib,json,os
+          from review_release import ROOT,R,commit
+          body='''# NBO R37 — review-ready manuscript
+
+The current paper remains **Neural Bellman Operators**. The revision answers all B1–B9 and M1–M10 items in the independent R21 advisory report. It is not an editorial decision or a claim of journal acceptance.
+
+## Reading entry points
+
+- [Main article, 45 pages](build/ECTA.pdf), [LaTeX](ECTA.tex).
+- [Active technical supplement, 35 pages](build/supp.pdf).
+- [Point-by-point response, 9 pages](build/response.pdf), [Markdown](response.md).
+- [Complete economic applications, 48 pages](build/applications.pdf).
+- [Complete previous article, 51 pages](build/historical_article.pdf), and [complete previous supplement, 232 pages](build/historical_supplement.pdf).
+
+## Revision and verification
+
+The current article integrates the original economic model and NBO method with own-policy, all-action full-policy bounds, constructive hidden-weight learning, and the new precision-adaptive refresh theorem. The theorem has complete noncommuting proofs, an explicit whole-step precision budget, a fixed-target inverse account, and a full-policy implication. Classical matrix polar iteration is credited.
+
+All eight source-frozen exact construction services satisfy the common policy tolerance of 1e-4. Adaptive precision improves stored precision and the observed complete clocks relative to the two inherited neural implementations in both specified regimes. The structural solution remains faster. These deterministic services are not population samples or evidence of universal neural superiority.
+
+The 138 original source components and 428 labels remain preserved. Thirty distinct new algebra tests pass; the inherited suites also pass and overlap, so their counts are not independent scientific observations. Eighteen exact post-execution target-bound checks pass without changing the frozen services or their clocks.
+
+The current main article, active supplement and response compile with no undefined references or citations, no duplicate labels, and no overfull boxes. Their actual rendered first-page headers say “Prepared for referee review.” The complete historical supplement retains its recorded minor vertical-box warning; historical content is not deleted to remove that warning.
+
+See [release audit](audit/RELEASE_AUDIT.json), [compilation](audit/COMPILATION.json), [preservation](audit/PRESERVATION.json), [science audit](audit/SCIENCE_AUDIT.json), [protocol](protocols/PROTOCOL.json), [all services](results/SUMMARY.json), and [source and publication hashes](PUBLICATION_FILES_SHA256.json).
+'''
+          ready=R/'REVIEW_READY.md';ready.write_text(body)
+          m=R/'PUBLICATION_FILES_SHA256.json';v=json.loads(m.read_text());v[str(ready.relative_to(ROOT))]=hashlib.sha256(ready.read_bytes()).hexdigest();m.write_text(json.dumps(v,indent=2,sort_keys=True)+'\n')
+          paths=[p for p in R.rglob('*') if p.is_file() and '__pycache__' not in p.parts and (p.suffix=='.pdf' or 'audit' in p.parts or p.name in ('PUBLICATION_FILES_SHA256.json','REVIEW_READY.md'))]
+          branch='revision/econometrica-nbo-r37-review-ready-2026-10-07'
+          sha=commit(paths,os.environ['NBO_PUBLICATION_SHA'],branch,'R37: publish rendered-header-verified review-ready paper and complete evidence')
+          identity={'branch':branch,'commit':sha,'source_commit':os.environ['NBO_PUBLICATION_SHA'],'workflow_run':os.environ['GITHUB_RUN_ID']}
+          (ROOT/'FINAL_REVISION.json').write_text(json.dumps(identity,indent=2)+'\n');print(json.dumps(identity,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r37-review-ready-publication
+          path: /tmp/nbo-r37
+          retention-days: 90
