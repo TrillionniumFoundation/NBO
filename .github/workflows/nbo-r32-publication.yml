@@ -1,0 +1,58 @@
+name: NBO R32 integrated revision
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r32-integrated-2026-10-06
+    paths:
+      - revisions/2026-10-06-r32/**
+      - .github/workflows/nbo-r32-publication.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  native-publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      NBO_SOURCE_SHA: ${{ github.sha }}
+      NBO_WORKSPACE: ${{ github.workspace }}/work
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve the pinned R32 publication driver
+        run: |
+          python - <<'PY'
+          import os, pathlib, urllib.request
+          root = pathlib.Path(os.environ['NBO_WORKSPACE'])
+          root.mkdir(parents=True, exist_ok=True)
+          for name in ('assemble.py', 'publish.py'):
+              url = 'https://raw.githubusercontent.com/TrillionniumFoundation/NBO/' + os.environ['NBO_SOURCE_SHA'] + '/revisions/2026-10-06-r32/publication/' + name
+              pathlib.Path(name).write_bytes(urllib.request.urlopen(url, timeout=60).read())
+          PY
+          python -m pip install numpy==2.3.5
+      - name: Check immutable inputs and run inherited and new tests
+        run: python assemble.py prepare
+      - name: Replay all 72 unchanged recursive-policy services and assemble the manuscript
+        run: python assemble.py execute
+      - name: Install the native publication toolchain
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Compile the article, current supplement, applications, historical documents, and response
+        run: python assemble.py build
+      - name: Publish the verified R32 release on a new referee revision branch
+        run: python publish.py
+      - name: Preserve complete logs and publication even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r32-native-publication-${{ github.sha }}
+          path: |
+            work/revisions/2026-10-06-r32
+            work/REMOTE_PUBLICATION.json
+          retention-days: 14
