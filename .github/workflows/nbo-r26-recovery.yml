@@ -1,0 +1,77 @@
+name: NBO R26 immutable execution recovery
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r26-2026-10-06']
+    paths: ['.github/workflows/nbo-r26-recovery.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: e7cfba39ea548b295305ab39040d0ba84d791c74
+          sparse-checkout: |
+            revisions/2026-10-05-r23/code
+            revisions/2026-10-05-r23/manuscript
+            revisions/2026-10-05-r23/protocols
+            revisions/2026-10-05-r24/code
+            revisions/2026-10-05-r24/manuscript
+            revisions/2026-10-05-r24/protocols
+            revisions/2026-10-05-r25
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install numpy==2.3.5
+      - name: Recover exact artifact and required original metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import os, urllib.request, hashlib, zipfile, io, subprocess, json
+          from pathlib import Path
+          u='https://api.github.com/repos/TrillionniumFoundation/NBO/actions/artifacts/11359269970/zip'
+          req=urllib.request.Request(u,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+          b=urllib.request.urlopen(req,timeout=120).read()
+          expected='9fa53a7eefc33ddb7270e490de910d135e3d89940dfd7064f2254a3c9c9c211e'
+          assert hashlib.sha256(b).hexdigest()==expected
+          with zipfile.ZipFile(io.BytesIO(b)) as z:
+              for p in z.namelist():
+                  assert p.startswith('revisions/2026-10-05-r25/results/') and '..' not in Path(p).parts,p
+              z.extractall('.')
+          for name in ['SUMMARY.json','services.jsonl']:
+              p=Path('revisions/2026-10-05-r23/results/primary')/name
+              p.parent.mkdir(parents=True,exist_ok=True)
+              p.write_bytes(subprocess.check_output(['git','show','HEAD:'+str(p)]))
+          p=Path('revisions/2026-10-05-r25/results/RECOVERY.json')
+          p.write_text(json.dumps({'artifact_id':11359269970,'artifact_sha256':expected,'run_id':37339128420,'scope':'Recovery of the complete original successful scientific execution from its surviving artifact; no fitting rerun and no clock replacement.'},indent=2)+'\n')
+          PY
+      - name: Independently replay all 24 construction certificates
+        run: |
+          set -o pipefail
+          python revisions/2026-10-05-r25/code/audit.py | tee revisions/2026-10-05-r25/results/RECOVERY_AUDIT.log
+      - name: Package source-bound recovery
+        if: always()
+        run: |
+          python - <<'PY'
+          import zipfile, hashlib, json
+          from pathlib import Path
+          files=[p for p in Path('revisions').rglob('*') if p.is_file() and '__pycache__' not in p.parts]
+          Path('RECOVERY_SHA256.json').write_text(json.dumps({str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in files},indent=2)+'\n')
+          with zipfile.ZipFile('r26-recovered-execution.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for p in files+[Path('RECOVERY_SHA256.json')]:z.write(p,p.as_posix())
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r26-recovered-execution
+          path: r26-recovered-execution.zip
+          retention-days: 90
+          if-no-files-found: error
