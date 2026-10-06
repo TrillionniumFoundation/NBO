@@ -1,0 +1,73 @@
+name: NBO R38 source-frozen science
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r38-referee-revision-2026-10-07
+    paths:
+      - .github/workflows/nbo-r38-science.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  science:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned numerical runtime
+        run: |
+          python -m pip install numpy==2.3.5 mpmath==1.3.0
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Materialize inherited arithmetic without changing its body
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json,re
+          root=Path('.')
+          destination=root/'revisions/2026-10-07-r38/code/vendor'
+          destination.mkdir(parents=True,exist_ok=True)
+          sources=['revisions/2026-10-06-r27/code/entropic_certificate.py','revisions/2026-10-05-r23/code/policy_certificate.py','revisions/2026-10-05-r25/code/constructive.py']
+          manifest={}
+          for name in sources:
+              p=root/name
+              text=re.sub(r"ROOT = Path\(__file__\).resolve\(\).parents\[3\]\n(?:sys.path.insert[^\n]*\n)+",'',p.read_text())
+              (destination/p.name).write_text(text)
+              manifest[p.name]={'source':name,'source_sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'change':'Remove historical sys.path routing only; arithmetic and certificate bodies unchanged'}
+          (destination/'PROVENANCE.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          PY
+          mkdir -p revisions/2026-10-07-r38/protocols revisions/2026-10-07-r38/audit
+          python revisions/2026-10-07-r38/code/run_study.py protocol > revisions/2026-10-07-r38/protocols/PROTOCOL.json
+          git config user.name 'NBO revision automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git checkout -b revision/econometrica-nbo-r38-science-freeze-2026-10-07-${GITHUB_RUN_ID}
+          git add revisions/2026-10-07-r38/code/vendor revisions/2026-10-07-r38/protocols
+          git commit -m 'R38: freeze executable sources and all confirmatory specifications'
+          git push origin HEAD
+          echo "NBO_SCIENCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Run all isolated services and preserve failures
+        run: |
+          set -o pipefail
+          GITHUB_SHA="$NBO_SCIENCE_SHA" python revisions/2026-10-07-r38/code/run_study.py revisions/2026-10-07-r38/results/run-1 | tee revisions/2026-10-07-r38/audit/STUDY_LOG.txt
+      - name: Publish immutable evidence branch
+        run: |
+          git add revisions/2026-10-07-r38/results revisions/2026-10-07-r38/audit
+          git commit -m 'R38: retain every factorial and nonlinear service, certificate, failed check and repeated clock'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r38-evidence-2026-10-07
+          echo "NBO_EVIDENCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r38-source-and-evidence
+          path: revisions/2026-10-07-r38/
+          if-no-files-found: error
+          retention-days: 90
