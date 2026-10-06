@@ -45,7 +45,15 @@ jobs:
               new=r'\def\copyright@text{Prepared for referee review}'
               paths=[R/(d+'.tex') for d in ('ECTA','supp','response')]+[R/'publication/publish.py',R/'publication/finalize.py']
               for p in paths:
-                  s=p.read_text();assert old in s,p;p.write_text(s.replace(old,new))
+                  s=p.read_text()
+                  if old in s:s=s.replace(old,new)
+                  else:
+                      escaped_old=old.replace(chr(92),chr(92)*2)
+                      escaped_new=new.replace(chr(92),chr(92)*2)
+                      assert escaped_old in s,p
+                      s=s.replace(escaped_old,escaped_new)
+                  p.write_text(s)
+                  if p.suffix=='.py':compile(s,str(p),'exec')
               source=commit(paths,os.environ['AUTHORING_SHA'],'revision/econometrica-nbo-r37-reviewed-source-2026-10-07','R37: apply the current review-status header after native class initialization')
               with open(os.environ['GITHUB_ENV'],'a') as h:h.write('NBO_PUBLICATION_SHA='+source+'\n')
               (ROOT/'PUBLICATION_SOURCE_COMMIT.txt').write_text(source+'\n')
