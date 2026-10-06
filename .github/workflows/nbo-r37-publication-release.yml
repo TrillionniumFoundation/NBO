@@ -1,0 +1,124 @@
+name: NBO R37 final native publication
+on:
+  push:
+    branches: [revision/econometrica-nbo-r37-manuscript-2026-10-07]
+    paths: [.github/workflows/nbo-r37-publication-release.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      AUTHORING_SHA: ${{ github.sha }}
+    steps:
+      - name: Restore the immutable materialized publication workspace
+        uses: actions/download-artifact@v4
+        with:
+          repository: TrillionniumFoundation/NBO
+          run-id: 37529905858
+          github-token: ${{ github.token }}
+          name: nbo-r37-native-referee-revision
+          path: /tmp/nbo-r37-publication
+      - name: Verify source identities and materialize final native sources
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > /tmp/nbo_release_ci.py <<'PY'
+          import base64,hashlib,json,os,pathlib,urllib.request
+          ROOT=pathlib.Path('/tmp/nbo-r37-publication')
+          API='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          REL='revisions/2026-10-07-r37'
+          def api(path,data=None):
+              req=urllib.request.Request(API+path,data=None if data is None else json.dumps(data).encode(),
+                  headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+              with urllib.request.urlopen(req,timeout=120) as h:return json.load(h)
+          def commit(paths,parent,branch,message):
+              elements=[]
+              for p in sorted(set(paths)):
+                  blob=api('git/blobs',{'content':base64.b64encode(p.read_bytes()).decode(),'encoding':'base64'})
+                  elements.append({'path':str(p.relative_to(ROOT)),'mode':'100644','type':'blob','sha':blob['sha']})
+              t=api('git/trees',{'base_tree':api('git/commits/'+parent)['tree']['sha'],'tree':elements})
+              c=api('git/commits',{'message':message,'tree':t['sha'],'parents':[parent]})
+              api('git/refs',{'ref':'refs/heads/'+branch,'sha':c['sha']})
+              return c['sha']
+          if __name__=='__main__':
+              source='aae05e68ca9b18c09af644082a10c85449f01399'
+              tree=api('git/trees/'+source)['tree']
+              for name in ('revisions','2026-10-07-r37'):
+                  node=next(e for e in tree if e['path']==name)
+                  tree=api('git/trees/'+node['sha'])['tree']
+              out=api('git/trees/'+node['sha']+'?recursive=1')
+              assert not out.get('truncated')
+              checked=[]
+              for e in out['tree']:
+                  if e['type']!='blob':continue
+                  p=ROOT/REL/e['path']
+                  if not p.exists():continue
+                  raw=p.read_bytes()
+                  assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()==e['sha'],str(p)
+                  checked.append(e['path'])
+              assert len(checked)>30
+              p=REL+'/publication/finalize.py'
+              obj=api('contents/'+p+'?ref='+os.environ['AUTHORING_SHA'])
+              raw=base64.b64decode(api('git/blobs/'+obj['sha'])['content'])
+              assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()==obj['sha']
+              (ROOT/p).write_bytes(raw)
+              (ROOT/REL/'audit/RESTORED_SOURCE.json').write_text(json.dumps({'materialized_commit':source,'matched_files':checked,'scope':'Artifact bytes checked against immutable Git blob identities before publication migration.'},indent=2)+'\n')
+          PY
+          python /tmp/nbo_release_ci.py
+          cd /tmp/nbo-r37-publication
+          python revisions/2026-10-07-r37/publication/finalize.py
+          PYTHONPATH=/tmp python - <<'PY'
+          import os
+          from nbo_release_ci import ROOT,REL,commit
+          r=ROOT/REL
+          paths=[ROOT/'README.md',ROOT/'ECTA.tex',ROOT/'supp.tex']
+          paths += [p for p in r.rglob('*') if p.is_file() and '__pycache__' not in p.parts and ('build' not in p.parts) and (p.suffix in ('.tex','.bib','.md') or 'publication' in p.parts or p.name in ('PRESERVATION.json','TARGET_BOUNDS.json','INPUT_ARTIFACTS.json','PUBLICATION_PREFLIGHT.json','RESTORED_SOURCE.json'))]
+          branch='revision/econometrica-nbo-r37-final-source-2026-10-07-'+os.environ['GITHUB_RUN_ID']
+          sha=commit(paths,os.environ['AUTHORING_SHA'],branch,'R37: finalize native source, preserve all old components and remove formula overflow')
+          (ROOT/'PUBLICATION_SOURCE_COMMIT.txt').write_text(sha+'\n')
+          with open(os.environ['GITHUB_ENV'],'a') as h:h.write('NBO_PUBLICATION_SHA='+sha+'\n')
+          print(branch,sha)
+          PY
+      - name: Install native class dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Compile and validate the complete native publication
+        run: |
+          cd /tmp/nbo-r37-publication
+          python revisions/2026-10-07-r37/publication/publish.py build
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=Path('revisions/2026-10-07-r37')
+          reports=json.loads((r/'audit/COMPILATION.json').read_text())
+          for v in reports:
+              if v['document'] in ('ECTA','supp','response'):
+                  assert v['overfull_hboxes']==0 and v['overfull_vboxes']==0,v
+          print('Current article, active supplement and response have zero overfull boxes.')
+          PY
+      - name: Publish the final referee revision on its own branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PYTHONPATH=/tmp python - <<'PY'
+          import os,json
+          from nbo_release_ci import ROOT,REL,commit
+          r=ROOT/REL
+          paths=[p for p in r.rglob('*') if p.is_file() and '__pycache__' not in p.parts and (p.suffix=='.pdf' or 'audit' in p.parts or p.name=='PUBLICATION_FILES_SHA256.json')]
+          branch='revision/econometrica-nbo-r37-referee-revision-2026-10-07'
+          sha=commit(paths,os.environ['NBO_PUBLICATION_SHA'],branch,'R37: publish revised NBO paper, complete proofs, referee response and preserved applications')
+          identity={'branch':branch,'commit':sha,'source_commit':os.environ['NBO_PUBLICATION_SHA'],'workflow_run':os.environ['GITHUB_RUN_ID']}
+          (ROOT/'FINAL_REVISION.json').write_text(json.dumps(identity,indent=2)+'\n')
+          print(json.dumps(identity,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r37-final-native-publication
+          path: /tmp/nbo-r37-publication
+          retention-days: 90
