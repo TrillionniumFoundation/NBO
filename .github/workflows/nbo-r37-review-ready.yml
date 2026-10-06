@@ -19,7 +19,7 @@ jobs:
           github-token: ${{ github.token }}
           name: nbo-r37-final-native-publication
           path: /tmp/nbo-r37
-      - name: Verify frozen publication bytes and correct only the current header override
+      - name: Verify publication bytes and correct only the current header
         env:
           GH_TOKEN: ${{ github.token }}
           AUTHORING_SHA: ${{ github.sha }}
@@ -48,22 +48,20 @@ jobs:
                   s=p.read_text()
                   if old in s:s=s.replace(old,new)
                   else:
-                      escaped_old=old.replace(chr(92),chr(92)*2)
-                      escaped_new=new.replace(chr(92),chr(92)*2)
-                      assert escaped_old in s,p
-                      s=s.replace(escaped_old,escaped_new)
+                      a=old.replace(chr(92),chr(92)*2);b=new.replace(chr(92),chr(92)*2)
+                      assert a in s,p;s=s.replace(a,b)
                   p.write_text(s)
                   if p.suffix=='.py':compile(s,str(p),'exec')
-              source=commit(paths,os.environ['AUTHORING_SHA'],'revision/econometrica-nbo-r37-reviewed-source-2026-10-07','R37: apply the current review-status header after native class initialization')
+              source=commit(paths,os.environ['AUTHORING_SHA'],'revision/econometrica-nbo-r37-reviewed-source-2026-10-07','R37: apply review-status header after native class initialization')
               with open(os.environ['GITHUB_ENV'],'a') as h:h.write('NBO_PUBLICATION_SHA='+source+'\n')
               (ROOT/'PUBLICATION_SOURCE_COMMIT.txt').write_text(source+'\n')
           PY
           python /tmp/review_release.py
-      - name: Install native publication and PDF text dependencies
+      - name: Install native publication dependencies
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
-      - name: Compile and check the actual rendered header
+      - name: Compile and verify the actual rendered header
         run: |
           cd /tmp/nbo-r37
           python revisions/2026-10-07-r37/publication/publish.py build
@@ -79,11 +77,11 @@ jobs:
           for p,h in json.loads((R/'protocols/SOURCE_FREEZE.json').read_text())['files'].items():assert hashlib.sha256((ROOT/p).read_bytes()).hexdigest()==h,p
           s=json.loads((R/'results/SUMMARY.json').read_text())
           for v in s['rows']:assert hashlib.sha256((R/'results/exact'/v['record']).read_bytes()).hexdigest()==v['record_sha256']
-          audit={'current_rendered_headers_verified':['ECTA','supp','response'],'header':'Prepared for referee review','historical_headers_unchanged':True,'scope':'Header and native build only. The frozen science and all eight detailed service records are unchanged. No claim of actual journal submission.'}
+          audit={'current_rendered_headers_verified':['ECTA','supp','response'],'header':'Prepared for referee review','historical_headers_unchanged':True,'scope':'Header and native build only. All frozen science and eight detailed service records remain unchanged. No claim of actual journal submission.'}
           (R/'audit/RENDERED_HEADER.json').write_text(json.dumps(audit,indent=2)+'\n')
           p=R/'audit/RELEASE_AUDIT.json';a=json.loads(p.read_text());a['rendered_header']=audit;p.write_text(json.dumps(a,indent=2)+'\n')
           m=R/'PUBLICATION_FILES_SHA256.json';v=json.loads(m.read_text())
-          for path in (R/'audit/RENDERED_HEADER.json',p):v[str(path.relative_to(ROOT))]=hashlib.sha256(path.read_bytes()).hexdigest()
+          for p in (R/'audit/RENDERED_HEADER.json',p):v[str(p.relative_to(ROOT))]=hashlib.sha256(p.read_bytes()).hexdigest()
           m.write_text(json.dumps(v,indent=2,sort_keys=True)+'\n')
           PY
       - name: Publish the review-ready revision
@@ -93,31 +91,23 @@ jobs:
           PYTHONPATH=/tmp python - <<'PY'
           import hashlib,json,os
           from review_release import ROOT,R,commit
-          body='''# NBO R37 — review-ready manuscript
-
-The current paper remains **Neural Bellman Operators**. The revision answers all B1–B9 and M1–M10 items in the independent R21 advisory report. It is not an editorial decision or a claim of journal acceptance.
-
-## Reading entry points
-
-- [Main article, 45 pages](build/ECTA.pdf), [LaTeX](ECTA.tex).
-- [Active technical supplement, 35 pages](build/supp.pdf).
-- [Point-by-point response, 9 pages](build/response.pdf), [Markdown](response.md).
-- [Complete economic applications, 48 pages](build/applications.pdf).
-- [Complete previous article, 51 pages](build/historical_article.pdf), and [complete previous supplement, 232 pages](build/historical_supplement.pdf).
-
-## Revision and verification
-
-The current article integrates the original economic model and NBO method with own-policy, all-action full-policy bounds, constructive hidden-weight learning, and the new precision-adaptive refresh theorem. The theorem has complete noncommuting proofs, an explicit whole-step precision budget, a fixed-target inverse account, and a full-policy implication. Classical matrix polar iteration is credited.
-
-All eight source-frozen exact construction services satisfy the common policy tolerance of 1e-4. Adaptive precision improves stored precision and the observed complete clocks relative to the two inherited neural implementations in both specified regimes. The structural solution remains faster. These deterministic services are not population samples or evidence of universal neural superiority.
-
-The 138 original source components and 428 labels remain preserved. Thirty distinct new algebra tests pass; the inherited suites also pass and overlap, so their counts are not independent scientific observations. Eighteen exact post-execution target-bound checks pass without changing the frozen services or their clocks.
-
-The current main article, active supplement and response compile with no undefined references or citations, no duplicate labels, and no overfull boxes. Their actual rendered first-page headers say “Prepared for referee review.” The complete historical supplement retains its recorded minor vertical-box warning; historical content is not deleted to remove that warning.
-
-See [release audit](audit/RELEASE_AUDIT.json), [compilation](audit/COMPILATION.json), [preservation](audit/PRESERVATION.json), [science audit](audit/SCIENCE_AUDIT.json), [protocol](protocols/PROTOCOL.json), [all services](results/SUMMARY.json), and [source and publication hashes](PUBLICATION_FILES_SHA256.json).
-'''
-          ready=R/'REVIEW_READY.md';ready.write_text(body)
+          paragraphs=[
+              '# NBO R37 - review-ready manuscript',
+              'The current paper remains Neural Bellman Operators. The revision answers all B1-B9 and M1-M10 items in the independent R21 advisory report. This is not an editorial decision or a claim of journal acceptance.',
+              '## Reading entry points',
+              '[Main article, 45 pages](build/ECTA.pdf) - [LaTeX](ECTA.tex).',
+              '[Active technical supplement, 35 pages](build/supp.pdf).',
+              '[Point-by-point response, 9 pages](build/response.pdf) - [Markdown](response.md).',
+              '[Complete economic applications, 48 pages](build/applications.pdf).',
+              '[Complete previous article, 51 pages](build/historical_article.pdf) and [complete previous supplement, 232 pages](build/historical_supplement.pdf).',
+              '## Revision and verification',
+              'The current article integrates the original economic model and NBO method with own-policy, all-action full-policy bounds, constructive hidden-weight learning, and the new precision-adaptive refresh theorem. The theorem has complete noncommuting proofs, a whole-step precision budget, a fixed-target inverse account, and a full-policy implication. Classical matrix polar iteration is credited.',
+              'All eight source-frozen exact construction services satisfy the common policy tolerance 1e-4. Adaptive precision improves stored precision and observed complete clocks relative to the two inherited neural implementations in both specified regimes. The structural solution remains faster. These deterministic objects are not population samples or universal neural-superiority evidence.',
+              'All 138 original source components and 428 labels remain preserved. Thirty distinct new algebra tests pass; inherited suites also pass and overlap, so aggregate executions are not independent observations. Eighteen exact target-bound replay checks pass without changing frozen services or clocks.',
+              'The current article, active supplement and response have no undefined references or citations, duplicate labels, or overfull boxes. Their actual rendered headers say Prepared for referee review. The complete historical supplement retains its recorded minor vertical-box warning; its content is not deleted to remove the warning.',
+              '[Release audit](audit/RELEASE_AUDIT.json), [compilation](audit/COMPILATION.json), [preservation](audit/PRESERVATION.json), [science audit](audit/SCIENCE_AUDIT.json), [protocol](protocols/PROTOCOL.json), [all services](results/SUMMARY.json), and [publication hashes](PUBLICATION_FILES_SHA256.json).'
+          ]
+          ready=R/'REVIEW_READY.md';ready.write_text('\n\n'.join(paragraphs)+'\n')
           m=R/'PUBLICATION_FILES_SHA256.json';v=json.loads(m.read_text());v[str(ready.relative_to(ROOT))]=hashlib.sha256(ready.read_bytes()).hexdigest();m.write_text(json.dumps(v,indent=2,sort_keys=True)+'\n')
           paths=[p for p in R.rglob('*') if p.is_file() and '__pycache__' not in p.parts and (p.suffix=='.pdf' or 'audit' in p.parts or p.name in ('PUBLICATION_FILES_SHA256.json','REVIEW_READY.md'))]
           branch='revision/econometrica-nbo-r37-review-ready-2026-10-07'
