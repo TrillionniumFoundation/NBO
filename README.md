@@ -1,43 +1,23 @@
-# Neural Bellman Operators — R21
+# Neural Bellman Operators — R37
 
-This revision responds to all B1–B8 and M1–M10 items in the latest R18 advisory report while retaining the original title, controlled-economy problem, and complete economic applications. It integrates the R20 future-change evidence into the R19 publication rather than replacing the paper with a different topic.
+Current revision: original NBO economic framework, constructive neural full-policy theory, and precision-adaptive continuation refresh.
 
-## Publication
+## Read the current paper
 
-- [Main article, native Econometrica class](revisions/2026-10-05-r21/build/ECTA.pdf) — [source](revisions/2026-10-05-r21/ECTA.tex).
-- [Technical supplement, complete proofs and records](revisions/2026-10-05-r21/build/supp.pdf) — [source](revisions/2026-10-05-r21/supp.tex).
-- [Complete economic applications](revisions/2026-10-05-r21/build/applications.pdf) — [source](revisions/2026-10-05-r21/applications.tex).
-- [Point-by-point referee response](revisions/2026-10-05-r21/build/response.pdf) — [readable response](revisions/2026-10-05-r21/RESPONSE_TO_REFEREE.md).
+- [Main article](revisions/2026-10-07-r37/build/ECTA.pdf) — [LaTeX](revisions/2026-10-07-r37/ECTA.tex).
+- [Active technical supplement](revisions/2026-10-07-r37/build/supp.pdf).
+- [Point-by-point referee response](revisions/2026-10-07-r37/response.md) — [PDF](revisions/2026-10-07-r37/build/response.pdf).
+- [Complete economic applications](revisions/2026-10-07-r37/build/applications.pdf).
+- [Retained previous article](revisions/2026-10-07-r37/build/historical_article.pdf) and [complete previous supplement](revisions/2026-10-07-r37/build/historical_supplement.pdf).
 
-The original paper's 129 source components and 408 labels are retained. Six whole historical sections are relocated, not deleted. The article remains 51 pages; all applications remain 48 pages. New proofs and complete records are in the supplement. Original roots and expanded introduction/conclusion sources are archived.
+The original source components, labels, applications and adverse comparisons are preserved. Current root entry points no longer silently refer to R21. This revision addresses the independent advisory R21 report; it is not a journal editorial acceptance.
 
-## Substantive additions
+## New science and evidence
 
-The policy-composition theorem connects verified full-action advantages against a policy's own continuation to multiperiod economic accuracy under explicit order, domain, and Lipschitz conditions. An additive state envelope and a continuous-economy class/value-transfer bridge identify the additional coverage and approximation premises. A sufficient-cost allocation result distributes error allowances across dates. Standard Bellman stability and convex allocation arguments are credited as such.
+The precision-adaptive theorem supplies a finite hidden-weight cap and fractional-storage account, with whole-step error control, rectangular factors, noncommuting starts, fixed-target caching, and a full-policy implication. Classical polar iteration theory is credited.
 
-The previously frozen R20 study contains 168 complete services and 840 future-specific outcomes across changing future policy, technology, and valuation. Check-and-refresh NBO certifies 120/120 outcomes with 48 successful refreshes; unchanged reuse leaves 48 outcomes uncertified. All conventional-surrogate and simulation outcomes remain. The recorded adaptive neural rule is more expensive than fresh neural refitting in every displayed dimension-volume cell; no favorable cost frontier is manufactured.
+Eight source-frozen services all certify the same full-policy tolerance. Adaptive precision improves on the two inherited neural implementations in both specified complete service clocks; the structural comparator remains faster. These are deterministic construction cases, not population samples or universal neural-superiority evidence.
 
-NBO's saved actions and derivative/curvature certificates imply negative mean optimal current-withdrawal responses to stronger future production and higher future valuation in both state dimensions. These are economic bands derived from neural decisions, not enumeration results relabeled as neural results. The common-action and own-action risk diagnostics preserve the distinction between level error, action-centered error, and decision loss.
+See [protocol](revisions/2026-10-07-r37/protocols/PROTOCOL.json), [source hashes](revisions/2026-10-07-r37/protocols/SOURCE_FREEZE.json), [all outcomes](revisions/2026-10-07-r37/results/SUMMARY.json), [science audit](revisions/2026-10-07-r37/audit/SCIENCE_AUDIT.json), [preservation](revisions/2026-10-07-r37/audit/PRESERVATION.json), and [release audit](revisions/2026-10-07-r37/audit/RELEASE_AUDIT.json).
 
-## Verification
-
-[Release audit](revisions/2026-10-05-r21/results/RELEASE_AUDIT.json), [all-certificate audit](revisions/2026-10-05-r21/results/FUTURE_AUDIT.json), [source preservation](revisions/2026-10-05-r21/results/PRESERVATION.json), [native compilation](revisions/2026-10-05-r21/results/COMPILATION.json), and [complete table data](revisions/2026-10-05-r21/results/FUTURE_TABLES.json) bind the publication to the saved source and evidence.
-
-The full arithmetic audit recomputes all 984 attempted certificates covering 319,062 task actions, plus 120 zero-charge certificates, and compares every certificate field exactly with the original record. It verifies all 168 record digests and recorded timing decompositions. This replay generates no new fits or scientific observations and replaces none of the original clocks. The separate test logs contain 22 new tests and 34 inherited tests.
-
-## Replication
-
-Run from the repository root in the documented NumPy/CPU-PyTorch/LaTeX environment:
-
-```sh
-python revisions/2026-10-05-r21/code/report_future.py
-python -m unittest discover -s revisions/2026-10-05-r21/code -p 'test*.py' -v
-python -m unittest discover -s revisions/2026-10-05-r19-integrated/code -p 'test*.py' -v
-python revisions/2026-10-05-r21/code/preservation.py
-python revisions/2026-10-05-r21/code/audit_future.py
-python revisions/2026-10-05-r21/code/build.py
-```
-
-The full certificate replay is CPU-intensive but performs no fitting. The publication workflow rechecks record hashes, regeneration, both test suites, preservation, and native compilation; its release audit also binds the completed full arithmetic replay stored here. Test logs must be saved at the paths read by `release_audit.py` when rebuilding that audit. Do not overwrite the historical R19 or R20 execution directories. A fresh scientific execution must have a new, explicitly labeled output directory and must not silently replace an old measured clock.
-
-The new tables and optimal-response bands are deterministic post-execution analyses of previously frozen data. They are not a new prospective experiment or a general continuous-time HJB certificate. The general theorem's uniform coverage and transfer conditions are stated mathematical premises, not inferred from the finite catalogue. Journal suitability remains a scientific judgment for the next referee.
+Rebuild the native publication with `python revisions/2026-10-07-r37/publication/publish.py build` from the repository root, with the documented source-bound inputs and a TeX installation supporting the repository's Econometrica class. The publication workflow restores the immutable historical input artifacts and materializes every current source before compilation. It never reruns or replaces the scientific clocks. A new scientific execution requires a clean, separately identified results directory.

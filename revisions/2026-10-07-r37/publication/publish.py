@@ -100,6 +100,7 @@ def assemble():
     original=(ROOT/OLD/'ECTA.tex').read_text()
     pre=re.sub(r'(?m)^\\externaldocument[^\n]*\n','',original.split(r'\begin{document}')[0])
     pre+='\n'+r'\setlength{\emergencystretch}{2em}'+'\n'
+    pre += '\n\\makeatletter\n\\g@addto@macro\\econsocart@fmadd{\\def\\copyright@text{Prepared for referee review}}\n\\makeatother\n'
     matter=original.split(r'\begin{document}',1)[1].split(r'\end{frontmatter}',1)[0]+r'\end{frontmatter}'+'\n'
     abstract='''This paper develops Neural Bellman Operators for policy evaluation and feasible
 improvement in controlled economies. Centered continuation errors determine
@@ -127,10 +128,10 @@ and keep model-specific economic and implementation conditions explicit.'''
     s=(ROOT/p).read_text();old='The capital economy studied above provides a setting in which policy-specific verification can be carried through to a high-dimensional diffusion.'
     assert old in s
     write('manuscript/economic_scope.tex',s.replace(old,'The original diffusion applications and the directly specified recursive capital economy have distinct verification accounts. The latter provides the constructive full-policy instance studied above; it is not an unverified discretization certificate for the former.'))
-    main=[REL+'/manuscript/introduction.tex','revisions/2026-10-04-r16/manuscript/literature.tex','revisions/2026-10-05-r19-integrated/manuscript/literature_addition.tex','revisions/2026-10-04-r16/retained/manuscript/model.tex','revisions/2026-10-04-r16/retained/manuscript/method.tex','revisions/2026-10-04-r16/retained/manuscript/algorithm.tex','revisions/2026-10-05-r19-integrated/manuscript/targets.tex','revisions/2026-10-05-r19-integrated/manuscript/decision_main.tex','revisions/2026-10-05-r23/manuscript/full_policy.tex','revisions/2026-10-06-r27/manuscript/entropic_main.tex',REL+'/manuscript/constructive_risk.tex','revisions/2026-10-06-r34/manuscript/robust_policy.tex',REL+'/manuscript/precision_refresh.tex',REL+'/manuscript/evidence.tex',REL+'/manuscript/economic_scope.tex',REL+'/manuscript/conclusion.tex']
+    main=[REL+'/manuscript/introduction.tex','revisions/2026-10-04-r16/manuscript/literature.tex','revisions/2026-10-05-r19-integrated/manuscript/literature_addition.tex','revisions/2026-10-04-r16/retained/manuscript/model.tex','revisions/2026-10-04-r16/retained/manuscript/method.tex','revisions/2026-10-04-r16/retained/manuscript/algorithm.tex','revisions/2026-10-05-r19-integrated/manuscript/targets.tex','revisions/2026-10-05-r19-integrated/manuscript/decision_main.tex','revisions/2026-10-05-r23/manuscript/full_policy.tex',REL+'/manuscript/entropic_main.tex',REL+'/manuscript/constructive_risk.tex','revisions/2026-10-06-r34/manuscript/robust_policy.tex',REL+'/manuscript/precision_refresh.tex',REL+'/manuscript/evidence.tex',REL+'/manuscript/economic_scope.tex',REL+'/manuscript/conclusion.tex']
     write('ECTA.tex',external(pre+r'\begin{document}'+matter+inputs(main)+ending,'ECTA'))
     supppre=pre.replace(r'\newtheorem{theorem}{Theorem}',r'\newtheorem{theorem}{Theorem}'+'\n'+r'\renewcommand{\thetheorem}{S.\arabic{theorem}}'+'\n'+r'\renewcommand{\theequation}{S.\arabic{equation}}'+'\n'+r'\renewcommand{\thesection}{S.\arabic{section}}')
-    proof=['revisions/2026-10-05-r19-integrated/manuscript/decision_proofs.tex','revisions/2026-10-05-r21/manuscript/composition_main.tex','revisions/2026-10-05-r21/manuscript/composition_proofs.tex','revisions/2026-10-05-r23/manuscript/full_policy_proofs.tex','revisions/2026-10-06-r27/manuscript/entropic_proofs.tex','revisions/2026-10-06-r31/manuscript/constructive_proofs.tex','revisions/2026-10-06-r32/manuscript/curvature.tex','revisions/2026-10-06-r33/manuscript/warm_start.tex','revisions/2026-10-06-r33/manuscript/warm_start_proofs.tex','revisions/2026-10-06-r34/manuscript/robust_policy_proofs.tex',REL+'/manuscript/precision_proofs.tex']
+    proof=['revisions/2026-10-05-r19-integrated/manuscript/decision_proofs.tex','revisions/2026-10-05-r21/manuscript/composition_main.tex','revisions/2026-10-05-r21/manuscript/composition_proofs.tex','revisions/2026-10-05-r23/manuscript/full_policy_proofs.tex','revisions/2026-10-06-r27/manuscript/entropic_proofs.tex','revisions/2026-10-06-r31/manuscript/constructive_proofs.tex',REL+'/manuscript/curvature.tex','revisions/2026-10-06-r33/manuscript/warm_start.tex','revisions/2026-10-06-r33/manuscript/warm_start_proofs.tex','revisions/2026-10-06-r34/manuscript/robust_policy_proofs.tex',REL+'/manuscript/precision_proofs.tex']
     write('supp.tex',external(supppre+front('Technical Supplement to Neural Bellman Operators')+inputs(proof)+ending,'supp'))
     for new,old in [('historical_article','ECTA'),('historical_supplement','supp'),('applications','applications')]:
         write(new+'.tex',external((ROOT/OLD/(old+'.tex')).read_text(),new))
@@ -200,7 +201,7 @@ def build():
             if p.returncode:raise RuntimeError('Native compilation failed: '+doc)
             if iteration==0 and '\\bibdata' in (R/'build'/(doc+'.aux')).read_text():
                 with (R/'audit'/f'BIB_{doc}.log').open('w') as h:
-                    p=subprocess.run(['bibtex',str(R/'build'/doc)],cwd=ROOT,env=env,stdout=h,stderr=subprocess.STDOUT)
+                    p=subprocess.run(['bibtex',str((R/'build'/doc).relative_to(ROOT))],cwd=ROOT,env=env,stdout=h,stderr=subprocess.STDOUT)
                 if p.returncode:raise RuntimeError('Bibliography failed: '+doc)
     reports=[]
     for doc in DOCS:
