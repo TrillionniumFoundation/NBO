@@ -1,0 +1,75 @@
+name: NBO R32 independent algebra checks
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r32-manuscript-2026-10-06
+    paths:
+      - .github/workflows/nbo-r32-exact-checks.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  exact-checks:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run the immutable policy and geometry tests
+        run: |
+          python -m pip install numpy==2.3.5
+          python - <<'PY'
+          import os, json, hashlib, pathlib, urllib.request, subprocess, sys, platform, base64
+          repo='TrillionniumFoundation/NBO'
+          source=os.environ['GITHUB_SHA']
+          base='2bbd8900080a009e806f8d9d0f27fb9f0eefe9e1'
+          root=pathlib.Path('work').resolve(); root.mkdir(exist_ok=True)
+          def api(path,data=None):
+              req=urllib.request.Request('https://api.github.com/repos/'+repo+'/'+path,
+                  data=None if data is None else json.dumps(data).encode(),
+                  headers={'Authorization':'Bearer '+os.environ['GITHUB_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'},
+                  method='GET' if data is None else 'POST')
+              return json.load(urllib.request.urlopen(req,timeout=60))
+          hashes={}
+          def get(path,ref):
+              data=urllib.request.urlopen('https://raw.githubusercontent.com/'+repo+'/'+ref+'/'+path,timeout=60).read()
+              p=root/path;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
+              hashes[path]=hashlib.sha256(data).hexdigest()
+              return p
+          freeze=get('revisions/2026-10-06-r30/protocols/SOURCE_FREEZE.json',base)
+          for name,digest in json.loads(freeze.read_text())['files'].items():
+              get(name,base)
+              assert hashes[name]==digest,name
+          get('revisions/2026-10-06-r29/code/test_entropic_budget.py',base)
+          for name in ('curvature_certificate.py','test_geometry.py'):
+              get('revisions/2026-10-06-r32/code/'+name,source)
+          out=root/'revisions/2026-10-06-r32/audit/arm';out.mkdir(parents=True,exist_ok=True)
+          results=[]
+          for rev,pattern in (('2026-10-06-r29','test_entropic_budget.py'),('2026-10-06-r32','test_geometry.py')):
+              proc=subprocess.run([sys.executable,'-m','unittest','discover','-s','revisions/'+rev+'/code','-p',pattern,'-v'],cwd=root,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
+              (out/(rev+'.log')).write_text(proc.stdout)
+              print(proc.stdout,flush=True)
+              results.append({'suite':rev,'returncode':proc.returncode})
+          record={'source_commit':source,'scientific_base':base,'run_id':os.environ['GITHUB_RUN_ID'],'python':platform.python_version(),'platform':platform.platform(),'machine':platform.machine(),'input_sha256':hashes,'suites':results,'scope':'Independent small-instance and exact algebra checks; not a primary economic replay or PDF validation'}
+          (out/'TEST_IDENTITY.json').write_text(json.dumps(record,indent=2)+'\n')
+          assert all(x['returncode']==0 for x in results),'Tests failed; logs retained'
+          entries=[{'path':str(p.relative_to(root)),'mode':'100644','type':'blob','content':p.read_text()} for p in sorted(out.iterdir())]
+          parent=api('git/commits/'+source)
+          tree=api('git/trees',{'base_tree':parent['tree']['sha'],'tree':entries})
+          commit=api('git/commits',{'message':'R32: preserve independently executed exact geometry and inherited policy test results','tree':tree['sha'],'parents':[source]})
+          branch='revision/econometrica-nbo-r32-algebra-evidence-2026-10-06'
+          api('git/refs',{'ref':'refs/heads/'+branch,'sha':commit['sha']})
+          print(json.dumps({'branch':branch,'commit':commit['sha']},indent=2),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r32-independent-algebra
+          path: work/revisions/2026-10-06-r32/audit/arm
+          retention-days: 14
