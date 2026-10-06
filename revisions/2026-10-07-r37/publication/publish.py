@@ -100,7 +100,7 @@ def assemble():
     original=(ROOT/OLD/'ECTA.tex').read_text()
     pre=re.sub(r'(?m)^\\externaldocument[^\n]*\n','',original.split(r'\begin{document}')[0])
     pre+='\n'+r'\setlength{\emergencystretch}{2em}'+'\n'
-    pre += '\n\\makeatletter\n\\g@addto@macro\\econsocart@fmadd{\\def\\copyright@text{Prepared for referee review}}\n\\makeatother\n'
+    pre += '\n\\makeatletter\n\\def\\copyright@text{Prepared for referee review}\n\\makeatother\n'
     matter=original.split(r'\begin{document}',1)[1].split(r'\end{frontmatter}',1)[0]+r'\end{frontmatter}'+'\n'
     abstract='''This paper develops Neural Bellman Operators for policy evaluation and feasible
 improvement in controlled economies. Centered continuation errors determine

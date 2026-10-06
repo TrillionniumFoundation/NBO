@@ -46,7 +46,7 @@ new=r'''\begin{gather*}
 \end{gather*}'''
 (R/'manuscript/curvature.tex').write_text(replace(s,old,new))
 header='\n'+r'''\makeatletter
-\g@addto@macro\econsocart@fmadd{\def\copyright@text{Prepared for referee review}}
+\def\copyright@text{Prepared for referee review}
 \makeatother
 '''
 for doc in ('ECTA','supp','response'):
