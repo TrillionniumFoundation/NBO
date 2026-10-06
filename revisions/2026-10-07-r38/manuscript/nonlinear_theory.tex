@@ -1,0 +1,202 @@
+\section{Nonquadratic Continuations and Full-Policy Accuracy}
+\label{sec:r38nonlinear}
+The square-factor construction is one realization of a Neural Bellman
+Operator, not a restriction on the economic object. We now give a second
+construction in which the transition is nonlinear, the action set is
+constrained, and the continuation is not quadratic. The argument separates a
+candidate network from the objects used to verify its policy. This separation
+permits jointly trained hidden weights without identifying a fitting loss
+with a policy loss or assuming that a nonconvex optimizer has found a global
+minimum.
+
+\subsection{A centered comparison for an arbitrary continuation}
+Consider dates $t=0,\ldots,T$, compact metric state spaces $\mathsf X_t$, and
+a common compact action space $\mathsf A$. The action chosen at date $t$ may
+depend on the entire observed history. The controlled transition is Markov,
+its law is known, and stage costs $\ell_t$ and terminal cost $h$ are bounded.
+For each state and action, let $\mathcal R_t^{x,a}$ be a monotone,
+constant-preserving, cash-equivariant functional on bounded future costs.
+Thus $\mathcal R(v+c)=\mathcal R(v)+c$. Fix $0<\beta\leq1$ and write
+\begin{equation}\label{eq:r38bellman}
+ Q_t^f(x,a)=\ell_t(x,a)+\beta\mathcal R_t^{x,a}(f_{t+1}),\qquad
+ (\mathcal T_t f_{t+1})(x)=\inf_{a\in\mathsf A}Q_t^f(x,a).
+\end{equation}
+We assume continuity sufficient for a measurable minimizing selector and for
+the finite-horizon Bellman recursion to represent the optimum over all
+adapted feasible policies. Finite innovations with continuous transitions,
+continuous costs, and either expectation or entropic evaluation satisfy
+these conditions. This is a directly specified recursive economy. A
+continuous-time application must additionally supply its discretization and
+boundary comparison; those errors are not silently set to zero.
+
+Let $f_0,\ldots,f_T$ be bounded continuous candidate continuations. They may
+be neural networks, including networks with trained hidden weights. Define
+\[
+ d_t(x)=f_t(x)-\mathcal T_t f_{t+1}(x),\qquad
+ A_t^f(x,a)=Q_t^f(x,a)-\mathcal T_t f_{t+1}(x).
+\]
+Suppose a verifier establishes, on the entire state space,
+\begin{equation}\label{eq:r38residual}
+ \underline d_t\leq d_t(x)\leq\overline d_t,\quad
+ 0\leq A_t^f(x,\pi_t(x))\leq\delta_t,\quad
+ \underline d_T\leq f_T(x)-h(x)\leq\overline d_T.
+\end{equation}
+The actor in this display is the rule actually returned by the algorithm;
+it need not be the mathematical minimizer of a numerically evaluated
+network. Set $\operatorname{sp}(d_t)=\overline d_t-\underline d_t$.
+
+\begin{theorem}[Centered nonlinear policy comparison]\label{thm:r38span}
+Under the preceding conditions, every state $x\in\mathsf X_0$ satisfies
+\begin{equation}\label{eq:r38span}
+ 0\leq J_0^\pi(x)-J_0^*(x)
+ \leq\sum_{t=0}^{T-1}\beta^t\{\delta_t+\operatorname{sp}(d_t)\}
+       +\beta^T(\overline d_T-\underline d_T).
+\end{equation}
+The comparator includes all adapted feasible policies, not only neural,
+grid-based, or Markov policies. The bound is invariant to replacing each
+$f_t$ by $f_t+c_t$ and translating its verified residual interval accordingly.
+In particular, $f_t$ need not equal the continuation of $\pi$.
+\end{theorem}
+
+\begin{proof}
+Set $U_T=-\underline d_T$, $L_T=-\overline d_T$, and recursively set
+$U_t=\delta_t-\underline d_t+\beta U_{t+1}$ and
+$L_t=-\overline d_t+\beta L_{t+1}$. Monotonicity and cash equivariance give
+$J_t^\pi-f_t\leq U_t$ and $J_t^*-f_t\geq L_t$ by backward induction.
+Subtracting gives \eqref{eq:r38span}. Adding $c_t$ to $f_t$ adds
+$c_t-\beta c_{t+1}$ to $d_t$, leaves $A_t^f$ unchanged, and does not change a
+residual interval's width. At the terminal date the same conclusion holds.
+\end{proof}
+
+The comparison is related to Bellman-residual bounds in approximate dynamic
+programming, including \citet{r38petrik2011}. Its role here is to give a
+complete verification route when a nonlinear candidate cannot be certified
+by the coefficient identities of Section~\ref{sec:r27entropic}. It does not
+replace the paper's own-policy evaluation theory: that theory obtains
+sharper, economically weighted bounds when the returned future is evaluated
+directly. Nor is the elementary monotone comparison asserted to be a new
+principle of dynamic programming. The construction below supplies its
+otherwise missing all-state residual and continuous-action premises.
+
+\subsection{The residual economy under entropic preferences}
+For entropic evaluation with parameter $\theta>0$, a candidate continuation
+defines a probability kernel
+\begin{equation}\label{eq:r38tilt}
+ P_t^f(dy\mid x,a)=
+ \frac{\exp\{\theta f_{t+1}(y)\}P_t(dy\mid x,a)}
+ {\int\exp\{\theta f_{t+1}(z)\}P_t(dz\mid x,a)}.
+\end{equation}
+The denominator is positive and finite on the bounded domain. Let
+$\mathcal R_t^{f,x,a}$ denote entropic evaluation under this kernel. When
+$\theta=0$, use the original transition and expectation. The identity
+\[
+ \mathcal R_t^{x,a}(f_{t+1}+v)-\mathcal R_t^{x,a}(f_{t+1})
+       =\mathcal R_t^{f,x,a}(v)
+\]
+gives a state-dependent version of the comparison.
+
+\begin{proposition}[Residual Bellman representation]\label{prop:r38tilt}
+Put $w_t^\pi=J_t^\pi-f_t$ and $w_t^*=J_t^*-f_t$. Then
+\begin{align}
+ w_t^\pi(x)&=-d_t(x)+A_t^f(x,\pi_t(x))
+       +\beta\mathcal R_t^{f,x,\pi_t(x)}(w_{t+1}^\pi),\label{eq:r38residualpi}\\
+ w_t^*(x)&=-d_t(x)+\inf_{a\in\mathsf A}
+       \{A_t^f(x,a)+\beta\mathcal R_t^{f,x,a}(w_{t+1}^*)\},\label{eq:r38residualopt}
+\end{align}
+with terminal value $h-f_T$. Any verified supersolution $U$ of
+\eqref{eq:r38residualpi} and subsolution $L$ of
+\eqref{eq:r38residualopt}, with the corresponding terminal inequalities,
+yield $J_0^\pi-J_0^*\leq U_0-L_0$ pointwise. Both tilted kernels and action
+advantages are invariant to continuation level shifts.
+\end{proposition}
+
+The proof follows by substitution into the two Bellman recursions and
+backward monotone comparison. The scalar intervals in
+Theorem~\ref{thm:r38span} are a readily implemented choice of $U$ and $L$.
+The proposition also identifies a route to more localized certificates:
+residuals are transported under a known, candidate-dependent risk tilt,
+rather than through an unknown optimal policy. The numerical implementation
+below uses the scalar bound; it does not report an unexecuted improvement
+from solving this auxiliary residual problem.
+
+\subsection{A finite nonquadratic neural construction}
+For a constructive statement, take $\mathsf X_t=[0,1]$ and
+$\mathsf A=[0,\bar a]$. Innovations have known finite support of size $s$.
+The transition maps the state-action domain into $[0,1]$ and has uniform
+Lipschitz constants $F_x,F_a$. Stage costs have constants $C_x,C_a$, and the
+terminal cost has constant $H$. Risk evaluation is expectation or entropic
+evaluation. Assume certified evaluation oracles whose error can be reduced
+to any specified positive tolerance; the cost of doing so is counted below.
+Let $\Delta_x=1/N$, $\Delta_a=\bar a/M$. Given a piecewise linear
+continuation $f_{t+1}$ with verified Lipschitz constant $L_{t+1}$, define
+\[
+ D_t=C_x+\beta F_xL_{t+1},\qquad
+ B_t=C_a+\beta F_aL_{t+1},\qquad e_t^a=B_t\Delta_a/2.
+\]
+At each state knot, evaluate every action knot in an interval of width at
+most $2\eta_t$. Fit the nodal value at the midpoint of the enclosing minimum
+interval and interpolate linearly. At a state knot, select the action with
+the smallest upper endpoint; elsewhere use the action at the nearest state
+knot. All returned actions remain feasible.
+
+\begin{theorem}[Constructive nonlinear Neural Bellman Operator]
+\label{thm:r38construct}
+The described construction admits the verified bounds
+\begin{align}
+ -\eta_t-D_t\Delta_x/2\ &\leq d_t(x)
+        \leq\eta_t+e_t^a+D_t\Delta_x/2,\label{eq:r38meshres}\\
+ A_t^f(x,\pi_t(x))\ &\leq2\eta_t+e_t^a+D_t\Delta_x.\label{eq:r38meshactor}
+\end{align}
+Consequently,
+\begin{equation}\label{eq:r38meshpolicy}
+ J_0^\pi-J_0^*\leq
+ \sum_{t<T}\beta^t\{4\eta_t+B_t\Delta_a+2D_t\Delta_x\}
+       +\beta^T(H\Delta_x+2\eta_T).
+\end{equation}
+For fixed finite $T$ and the stated computable primitives, every positive
+policy tolerance can be attained by finite mesh refinement and sufficiently
+accurate evaluation. Every fitted continuation has the exact representation
+\begin{equation}\label{eq:r38relu}
+ f_t(x)=v_{t,0}+s_{t,0}x+
+     \sum_{i=1}^{N-1}(s_{t,i}-s_{t,i-1})(x-x_i)_+,
+ \qquad s_{t,i}=\frac{v_{t,i+1}-v_{t,i}}{\Delta_x}.
+\end{equation}
+Thus this is a nonquadratic neural construction with an explicit finite
+width, not a quadratic matrix factorization.
+\end{theorem}
+
+The proof, including the control of $L_t$ under refinement, is in
+Section~\ref{sec:r38constructproof}. Identity \eqref{eq:r38relu} is the
+standard spline--ReLU correspondence; related finite-element
+representations in higher dimensions are developed by
+\citet{r38he2018}. We do not claim that relabeling an interpolant as a
+network creates a computational advantage. The conventional spline solver
+is therefore a required comparator. The construction instead establishes
+finite completion of a nonlinear policy certificate and supplies a
+checkable fallback for a more parsimonious trained network.
+
+The distinction between a representation theorem and training remains
+important. The knots in \eqref{eq:r38relu} are prescribed. In a separate
+candidate step, the numerical study trains all affine hidden weights and
+output coefficients of
+\[
+ g_t(x)=b_t+q_tx+\sum_{j=1}^{31}c_{tj}(w_{tj}x+b_{tj})_+.
+\]
+The actual grid actions selected using $g_{t+1}$ are checked against the
+independent interval Bellman bracket generated above. Their measured nodal
+advantages, extended to off-knot states and all continuous actions, replace
+\eqref{eq:r38meshactor}. Thus all fitting, hidden-weight, and floating
+selection errors enter the returned policy's bound. An additional uniform
+network-to-spline enclosure is retained, but a training loss is never used
+as a substitute for that enclosure. Reference construction, training,
+verification, and failed candidate work are all charged. The theory makes
+no global convergence assertion about the hidden-weight optimizer.
+
+A complete finite algorithm may run any specified candidate learner for a
+finite budget, accept only a verified policy, and otherwise perform the
+constructive refinement of Theorem~\ref{thm:r38construct}. Its work is the
+candidate budget plus verification and, when needed, the fallback cost.
+With a bounded native precision set or a fixed maximum mesh, the executable
+version can report that its budget was exhausted. Such a report is not an
+uncertified policy and is not the arbitrary-precision existence conclusion
+of the theorem.
