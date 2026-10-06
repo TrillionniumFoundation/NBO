@@ -17,7 +17,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: e7cfba39ea548b295305ab39040d0ba84d791c74
           sparse-checkout: |
             revisions/2026-10-05-r23/code
             revisions/2026-10-05-r23/manuscript
@@ -26,6 +25,7 @@ jobs:
             revisions/2026-10-05-r24/manuscript
             revisions/2026-10-05-r24/protocols
             revisions/2026-10-05-r25
+            revisions/2026-10-06-r26
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -34,29 +34,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          python - <<'PY'
-          import os, urllib.request, hashlib, zipfile, io, subprocess, json
-          from pathlib import Path
-          u='https://api.github.com/repos/TrillionniumFoundation/NBO/actions/artifacts/11359269970/zip'
-          req=urllib.request.Request(u,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
-          b=urllib.request.urlopen(req,timeout=120).read()
-          expected='9fa53a7eefc33ddb7270e490de910d135e3d89940dfd7064f2254a3c9c9c211e'
-          assert hashlib.sha256(b).hexdigest()==expected
-          with zipfile.ZipFile(io.BytesIO(b)) as z:
-              for p in z.namelist():
-                  assert p.startswith('revisions/2026-10-05-r25/results/') and '..' not in Path(p).parts,p
-              z.extractall('.')
-          for name in ['SUMMARY.json','services.jsonl']:
-              p=Path('revisions/2026-10-05-r23/results/primary')/name
-              p.parent.mkdir(parents=True,exist_ok=True)
-              p.write_bytes(subprocess.check_output(['git','show','HEAD:'+str(p)]))
-          p=Path('revisions/2026-10-05-r25/results/RECOVERY.json')
-          p.write_text(json.dumps({'artifact_id':11359269970,'artifact_sha256':expected,'run_id':37339128420,'scope':'Recovery of the complete original successful scientific execution from its surviving artifact; no fitting rerun and no clock replacement.'},indent=2)+'\n')
-          PY
+          git fetch --no-tags --depth=1 origin e7cfba39ea548b295305ab39040d0ba84d791c74
+          python revisions/2026-10-06-r26/code/recover.py
       - name: Independently replay all 24 construction certificates
         run: |
           set -o pipefail
-          python revisions/2026-10-05-r25/code/audit.py | tee revisions/2026-10-05-r25/results/RECOVERY_AUDIT.log
+          python revisions/2026-10-05-r25/code/audit.py | tee revisions/2026-10-06-r26/results/RECOVERY_AUDIT.log
       - name: Package source-bound recovery
         if: always()
         run: |
