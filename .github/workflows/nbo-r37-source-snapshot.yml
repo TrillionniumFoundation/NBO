@@ -1,0 +1,56 @@
+name: NBO R37 immutable source snapshot
+on:
+  push:
+    branches: [revision/econometrica-nbo-r37-source-2026-10-07]
+    paths: [.github/workflows/nbo-r37-source-snapshot.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Materialize hash-checked inherited text sources
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import base64, concurrent.futures, hashlib, json, os, pathlib, time, urllib.request
+          root=pathlib.Path('/tmp/nbo-r37-inherited'); root.mkdir()
+          api='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          base='b274a8326915960c04697d181238908f0f6a261f'
+          def get(path):
+              for attempt in range(4):
+                  try:
+                      req=urllib.request.Request(api+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+                      with urllib.request.urlopen(req,timeout=90) as h: return json.load(h)
+                  except Exception:
+                      if attempt==3: raise
+                      time.sleep(2**attempt)
+          tree=get('git/trees/'+base+'?recursive=1')
+          assert not tree.get('truncated'), 'Tree must be complete'
+          later=tuple('revisions/2026-10-'+('05' if i<=25 else '06')+'-r'+str(i)+'/' for i in range(23,36))
+          text={'.tex','.bib','.cls','.cfg','.bst','.md','.py'}
+          def wanted(e):
+              p=e['path']; suffix=pathlib.Path(p).suffix
+              if e['type']!='blob': return False
+              if suffix in text and e.get('size',0)<2000000: return True
+              if p.startswith(later) and suffix in {'.json','.csv','.log'} and e.get('size',0)<2000000: return True
+              return False
+          selected=[e for e in tree['tree'] if wanted(e)]
+          def fetch(e):
+              data=base64.b64decode(get('git/blobs/'+e['sha'])['content'])
+              assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()==e['sha']
+              p=root/e['path']; p.parent.mkdir(parents=True,exist_ok=True); p.write_bytes(data)
+              return (e['path'], {'git_blob':e['sha'],'sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data)})
+          with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+              records=dict(pool.map(fetch,selected))
+          (root/'INHERITED_SOURCE_MANIFEST.json').write_text(json.dumps({'base_commit':base,'files':records},indent=2)+'\n')
+          print('Materialized',len(records),'hash-checked text sources; no scientific execution performed.')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r37-inherited-sources
+          path: /tmp/nbo-r37-inherited
+          retention-days: 30
