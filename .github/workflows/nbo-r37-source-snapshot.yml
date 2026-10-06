@@ -28,28 +28,37 @@ jobs:
                   except Exception:
                       if attempt==3: raise
                       time.sleep(2**attempt)
-          tree=get('git/trees/'+base+'?recursive=1')
-          assert not tree.get('truncated'), 'Tree must be complete'
-          later=tuple('revisions/2026-10-'+('05' if i<=25 else '06')+'-r'+str(i)+'/' for i in range(23,36))
-          text={'.tex','.bib','.cls','.cfg','.bst','.md','.py'}
-          def wanted(e):
-              p=e['path']; suffix=pathlib.Path(p).suffix
-              if e['type']!='blob': return False
-              if suffix in text and e.get('size',0)<2000000: return True
-              if p.startswith(later) and suffix in {'.json','.csv','.log'} and e.get('size',0)<2000000: return True
-              return False
-          selected=[e for e in tree['tree'] if wanted(e)]
+          top=get('git/trees/'+base)['tree']
+          revisions=next(x for x in top if x['path']=='revisions')
+          later={'2026-10-'+('05' if i<=25 else '06')+'-r'+str(i) for i in range(23,36)}
+          entries=[e for e in top if e['type']=='blob']
+          def walk(sha,prefix):
+              out=get('git/trees/'+sha+'?recursive=1')
+              if not out.get('truncated'):
+                  return [dict(e,path=prefix+e['path']) for e in out['tree'] if e['type']=='blob']
+              result=[]
+              for e in get('git/trees/'+sha)['tree']:
+                  if e['type']=='tree': result.extend(walk(e['sha'],prefix+e['path']+'/'))
+                  else: result.append(dict(e,path=prefix+e['path']))
+              return result
+          for rev in get('git/trees/'+revisions['sha'])['tree']:
+              if rev['path'] in later:
+                  entries.extend(walk(rev['sha'],'revisions/'+rev['path']+'/'))
+          text={'.tex','.bib','.cls','.cfg','.bst','.md','.py','.json','.csv','.log'}
+          selected=[e for e in entries if pathlib.Path(e['path']).suffix in text and e.get('size',0)<2000000]
+          print('Selected',len(selected),'bounded revision text files',flush=True)
           def fetch(e):
               data=base64.b64decode(get('git/blobs/'+e['sha'])['content'])
               assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()==e['sha']
               p=root/e['path']; p.parent.mkdir(parents=True,exist_ok=True); p.write_bytes(data)
               return (e['path'], {'git_blob':e['sha'],'sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data)})
-          with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
               records=dict(pool.map(fetch,selected))
           (root/'INHERITED_SOURCE_MANIFEST.json').write_text(json.dumps({'base_commit':base,'files':records},indent=2)+'\n')
           print('Materialized',len(records),'hash-checked text sources; no scientific execution performed.')
           PY
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: nbo-r37-inherited-sources
           path: /tmp/nbo-r37-inherited
