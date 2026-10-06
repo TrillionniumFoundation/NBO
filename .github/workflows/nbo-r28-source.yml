@@ -1,0 +1,34 @@
+name: NBO R28 source snapshot
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r28-2026-10-06']
+    paths: ['.github/workflows/nbo-r28-source.yml']
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Preserve tracked scientific source at this commit
+        shell: bash
+        run: |
+          python - <<'PY'
+          import pathlib, subprocess, zipfile
+          allowed={'.tex','.bib','.cls','.sty','.bst','.py','.json','.jsonl','.csv','.md','.txt','.sh','.toml','.yml','.yaml','.b64','.lock'}
+          paths=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          with zipfile.ZipFile('/tmp/NBO_R28_source.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for p in paths:
+                  f=pathlib.Path(p)
+                  if f.is_file() and (f.suffix in allowed or f.name in {'Makefile','Dockerfile'}):
+                      z.write(f,p)
+              z.writestr('SOURCE_COMMIT.txt',subprocess.check_output(['git','rev-parse','HEAD']))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r28-source
+          path: /tmp/NBO_R28_source.zip
+          if-no-files-found: error
