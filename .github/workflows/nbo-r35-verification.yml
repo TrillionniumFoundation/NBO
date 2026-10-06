@@ -1,0 +1,52 @@
+name: NBO R35 verification
+on:
+  workflow_dispatch:
+  push:
+    branches: [revision/econometrica-nbo-r35-referee-resolution-2026-10-06]
+    paths: [.github/workflows/nbo-r35-verification.yml]
+permissions:
+  contents: read
+jobs:
+  source-snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Export immutable R34 and controlling review sources
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import base64, hashlib, json, os, pathlib, urllib.request, zipfile
+          api='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          base='e05297f1688a19697e0e57fea66f181509548bbf'
+          review='281e57b18a2d88de68d2219da1a7194e90570d13'
+          root=pathlib.Path('/tmp/nbo-r35-inputs'); root.mkdir()
+          def get(path):
+              req=urllib.request.Request(api+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+              with urllib.request.urlopen(req,timeout=90) as response: return json.load(response)
+          files=[]
+          def store(path,obj):
+              data=base64.b64decode(obj['content'])
+              digest=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+              assert digest==obj['sha'],path
+              dest=root/path; dest.parent.mkdir(parents=True,exist_ok=True); dest.write_bytes(data)
+              files.append({'path':path,'git_blob':digest,'sha256':hashlib.sha256(data).hexdigest()})
+          def walk(path):
+              for entry in get('contents/'+path+'?ref='+base):
+                  if entry['type']=='dir': walk(entry['path'])
+                  elif entry['type']=='file': store(entry['path'],get('git/blobs/'+entry['sha']))
+                  else: raise RuntimeError('Unexpected source type')
+          walk('revisions/2026-10-06-r34')
+          report='reviews/2026-10-05-econometrica-numerical-methods-r21/referee_report.md'
+          store(report,get('contents/'+report+'?ref='+review))
+          (root/'SOURCE_IDENTITY.json').write_text(json.dumps({'base':base,'review':review,'files':files},indent=2)+'\n')
+          with zipfile.ZipFile('/tmp/NBO_R35_immutable_inputs.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for path in sorted(root.rglob('*')):
+                  if path.is_file(): z.write(path,path.relative_to(root))
+          print(json.dumps({'files':len(files),'base':base,'review':review}))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r35-immutable-inputs
+          path: /tmp/NBO_R35_immutable_inputs.zip
+          retention-days: 30
