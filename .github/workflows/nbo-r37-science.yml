@@ -1,0 +1,99 @@
+name: NBO R37 frozen science
+on:
+  push:
+    branches: [revision/econometrica-nbo-r37-source-2026-10-07]
+    paths: [.github/workflows/nbo-r37-science.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  science:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Fetch immutable inputs, materialize and commit the source freeze
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TRIGGER_SHA: ${{ github.sha }}
+        run: |
+          cat > /tmp/nbo_ci.py <<'PY'
+          import base64,hashlib,json,os,pathlib,urllib.request
+          ROOT=pathlib.Path('/tmp/nbo-r37'); ROOT.mkdir(exist_ok=True)
+          API='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          def api(path,data=None,method=None):
+              req=urllib.request.Request(API+path,data=None if data is None else json.dumps(data).encode(),method=method,
+                  headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+              with urllib.request.urlopen(req,timeout=90) as h:return json.load(h)
+          def walk(path,ref):
+              for e in api('contents/'+path+'?ref='+ref):
+                  if e['type']=='dir':walk(e['path'],ref)
+                  elif e['type']=='file':
+                      data=base64.b64decode(api('git/blobs/'+e['sha'])['content'])
+                      assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()==e['sha']
+                      p=ROOT/e['path'];p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
+          def commit(paths,parent,branch,message):
+              tree=[]
+              for p in paths:
+                  data=p.read_bytes();blob=api('git/blobs',{'content':base64.b64encode(data).decode(),'encoding':'base64'})
+                  tree.append({'path':str(p.relative_to(ROOT)),'mode':'100644','type':'blob','sha':blob['sha']})
+              base=api('git/commits/'+parent)['tree']['sha']
+              t=api('git/trees',{'base_tree':base,'tree':tree})
+              c=api('git/commits',{'message':message,'tree':t['sha'],'parents':[parent]})
+              api('git/refs',{'ref':'refs/heads/'+branch,'sha':c['sha']})
+              return c['sha']
+          if __name__=='__main__':
+              old='b274a8326915960c04697d181238908f0f6a261f'
+              for rev in ('2026-10-06-r33','2026-10-06-r34'):walk('revisions/'+rev+'/code',old)
+              walk('revisions/2026-10-06-r35',old)
+              walk('revisions/2026-10-07-r37/code',os.environ['TRIGGER_SHA'])
+          PY
+          python /tmp/nbo_ci.py
+          cd /tmp/nbo-r37
+          python revisions/2026-10-07-r37/code/prepare_science.py
+          PYTHONPATH=/tmp python - <<'PY'
+          import os,pathlib,json,hashlib
+          from nbo_ci import ROOT,commit
+          r=ROOT/'revisions/2026-10-07-r37'
+          paths=sorted(p for p in r.rglob('*') if p.is_file() and '__pycache__' not in str(p))
+          sha=commit(paths,os.environ['TRIGGER_SHA'],'revision/econometrica-nbo-r37-science-freeze-2026-10-07','R37: freeze materialized precision-adaptive comparison before observations')
+          (ROOT/'SCIENCE_FREEZE_COMMIT.txt').write_text(sha+'\n')
+          with open(os.environ['GITHUB_ENV'],'a') as h:h.write('NBO_SOURCE_SHA='+sha+'\n')
+          m=json.loads((r/'protocols/SOURCE_FREEZE.json').read_text())
+          for p,d in m['files'].items():assert hashlib.sha256((ROOT/p).read_bytes()).hexdigest()==d
+          print('Science freeze committed:',sha)
+          PY
+      - name: Execute tests and the prespecified complete comparison
+        run: |
+          cd /tmp/nbo-r37
+          mkdir -p revisions/2026-10-07-r37/audit
+          python -m unittest discover -s revisions/2026-10-06-r33/code -p 'test*.py' -v > revisions/2026-10-07-r37/audit/TESTS_R33.log 2>&1
+          python -m unittest discover -s revisions/2026-10-06-r35/code -p 'test*.py' -v > revisions/2026-10-07-r37/audit/TESTS_R35.log 2>&1
+          python -m unittest discover -s revisions/2026-10-07-r37/code -p 'test*.py' -v > revisions/2026-10-07-r37/audit/TESTS_R37.log 2>&1
+          python revisions/2026-10-07-r37/code/experiment.py > revisions/2026-10-07-r37/audit/EXECUTION.log 2>&1
+      - name: Publish complete evidence on a new branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PYTHONPATH=/tmp python - <<'PY'
+          import os,json,hashlib,re
+          from nbo_ci import ROOT,commit
+          r=ROOT/'revisions/2026-10-07-r37'
+          summary=json.loads((r/'results/SUMMARY.json').read_text())
+          assert summary['services']==8 and summary['certified']==8
+          counts={}
+          for p in (r/'audit').glob('TESTS*.log'):
+              t=p.read_text();assert t.rstrip().endswith('OK');counts[p.name]=int(re.search(r'Ran (\d+) tests',t)[1])
+          audit={'source_freeze_commit':os.environ['NBO_SOURCE_SHA'],'run_id':os.environ['GITHUB_RUN_ID'],
+                 'test_counts':counts,'distinct_new_algebra_tests':30,'services':8,
+                 'interpretation':'Inherited test suites overlap; do not interpret aggregate executions as independent tests or economic samples.'}
+          (r/'audit/SCIENCE_AUDIT.json').write_text(json.dumps(audit,indent=2)+'\n')
+          paths=[p for p in r.rglob('*') if p.is_file() and p.parts[-2]!='__pycache__' and ('results' in p.parts or 'audit' in p.parts)]
+          sha=commit(paths,os.environ['NBO_SOURCE_SHA'],'revision/econometrica-nbo-r37-evidence-2026-10-07','R37: publish all eight frozen policy services and exact verification logs')
+          (ROOT/'EVIDENCE_COMMIT.txt').write_text(sha+'\n');print('Evidence committed:',sha)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r37-scientific-execution
+          path: /tmp/nbo-r37
+          retention-days: 30
