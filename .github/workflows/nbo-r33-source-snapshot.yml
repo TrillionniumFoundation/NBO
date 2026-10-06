@@ -7,15 +7,15 @@ permissions:
   contents: read
 jobs:
   snapshot:
-    runs-on: ubuntu-24.04-arm
-    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Export immutable scientific source and compact evidence
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import concurrent.futures, hashlib, json, os, pathlib, time, urllib.request
+          import concurrent.futures, hashlib, json, os, pathlib, time, urllib.request, urllib.parse
           base='8bf5336be4abad0c06698d6f7e8c413f20641e67'
           repo='TrillionniumFoundation/NBO'
           root=pathlib.Path('snapshot'); root.mkdir()
@@ -28,19 +28,28 @@ jobs:
                   except Exception:
                       if attempt==4: raise
                       time.sleep(attempt+1)
-          tree=json.loads(get('https://api.github.com/repos/'+repo+'/git/trees/'+base+'?recursive=1', True))
-          if tree.get('truncated'): raise RuntimeError('Incomplete source tree')
-          (root/'PINNED_TREE.json').write_text(json.dumps(tree,indent=2))
-          selected=[]
-          for row in tree['tree']:
-              if row['type']!='blob': continue
-              p=pathlib.PurePosixPath(row['path']); size=row.get('size',0)
-              source=p.suffix in ('.tex','.bib','.cls','.cfg','.bst','.sty','.py','.md','.yml')
-              evidence=(p.suffix in ('.json','.csv','.log') and size<2000000 and ('2026-10-06-r' in str(p) or '2026-10-05-r21' in str(p)))
-              image=(str(p).startswith('img/') and size<10000000)
-              if (source and size<4000000) or evidence or image: selected.append(row)
+          def tree(sha):
+              result=json.loads(get('https://api.github.com/repos/'+repo+'/git/trees/'+sha, True))
+              if result.get('truncated'): raise RuntimeError('Incomplete nonrecursive subtree '+sha)
+              return result['tree']
+          top=tree(base)
+          revisions=tree(next(r['sha'] for r in top if r['path']=='revisions'))
+          wanted={'2026-10-05-r23','2026-10-05-r25','2026-10-06-r27','2026-10-06-r28','2026-10-06-r29','2026-10-06-r30','2026-10-06-r31','2026-10-06-r32'}
+          selected=[]; trees={}
+          def visit(sha,prefix):
+              rows=tree(sha); trees[prefix]={'sha':sha,'entries':rows}
+              for row in rows:
+                  path=prefix+'/'+row['path']
+                  if row['type']=='tree':
+                      if row['path'] not in ('build','archive','__pycache__','transport'): visit(row['sha'],path)
+                  else:
+                      p=pathlib.PurePosixPath(path);size=row.get('size',0)
+                      if p.suffix in ('.tex','.bib','.py','.md','.json','.jsonl','.csv','.log') and size<6000000:
+                          selected.append(dict(row,path=path))
+          for row in revisions:
+              if row['path'] in wanted: visit(row['sha'],'revisions/'+row['path'])
           def fetch(row):
-              name=row['path']; data=get('https://raw.githubusercontent.com/'+repo+'/'+base+'/'+name)
+              name=row['path']; data=get('https://raw.githubusercontent.com/'+repo+'/'+base+'/'+urllib.parse.quote(name,safe='/'))
               digest=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
               if digest!=row['sha']: raise RuntimeError('Blob mismatch: '+name)
               p=root/name; p.parent.mkdir(parents=True,exist_ok=True); p.write_bytes(data)
@@ -48,11 +57,13 @@ jobs:
           with concurrent.futures.ThreadPoolExecutor(max_workers=10) as ex: manifest=dict(ex.map(fetch,selected))
           review='reviews/2026-10-05-econometrica-numerical-methods-r21/referee_report.md'
           data=get('https://raw.githubusercontent.com/'+repo+'/281e57b18a2d88de68d2219da1a7194e90570d13/'+review)
-          p=root/review; p.parent.mkdir(parents=True,exist_ok=True); p.write_bytes(data)
-          (root/'SNAPSHOT_MANIFEST.json').write_text(json.dumps({'base':base,'files':manifest,'referee_commit':'281e57b18a2d88de68d2219da1a7194e90570d13','referee_sha256':hashlib.sha256(data).hexdigest()},indent=2))
+          p=root/review;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
+          (root/'PINNED_SUBTREES.json').write_text(json.dumps(trees,indent=2))
+          (root/'SNAPSHOT_MANIFEST.json').write_text(json.dumps({'base':base,'files':manifest,'referee_commit':'281e57b18a2d88de68d2219da1a7194e90570d13','referee_sha256':hashlib.sha256(data).hexdigest(),'scope':'Selected R23-R32 source and compact evidence; all listed blobs verified, not a full repository export'},indent=2))
           print('Pinned files:',len(manifest),'total bytes:',sum(x['bytes'] for x in manifest.values()))
           PY
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: nbo-r33-pinned-source
           path: snapshot
