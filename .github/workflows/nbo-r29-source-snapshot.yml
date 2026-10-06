@@ -1,0 +1,41 @@
+name: NBO R29 source snapshot
+on:
+  push:
+    branches: [revision/econometrica-nbo-r29-2026-10-06]
+    paths: [.github/workflows/nbo-r29-source-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Archive pinned tracked source and evidence
+        run: |
+          python - <<'PY'
+          import subprocess, pathlib, zipfile, json, hashlib
+          root=pathlib.Path('.')
+          names=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          selected=[]; omitted=[]
+          with zipfile.ZipFile('/tmp/NBO_R29_BASE.zip','w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+              for name in names:
+                  if not name: continue
+                  p=root/name
+                  if p.is_file():
+                      if p.stat().st_size > 30000000:
+                          omitted.append({'path':name,'size':p.stat().st_size})
+                      else:
+                          z.write(p,name); selected.append(name)
+              z.writestr('R29_SNAPSHOT_IDENTITY.json',json.dumps({'commit':subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),'revision_base':'a73b890f98312beb41f87d288c7c19dc6330625f','included_files':len(selected),'omitted_large_files':omitted},indent=2))
+          print('Included',len(selected),'omitted',len(omitted))
+          print(hashlib.sha256(pathlib.Path('/tmp/NBO_R29_BASE.zip').read_bytes()).hexdigest())
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r29-pinned-base
+          path: /tmp/NBO_R29_BASE.zip
+          retention-days: 30
+          if-no-files-found: error
