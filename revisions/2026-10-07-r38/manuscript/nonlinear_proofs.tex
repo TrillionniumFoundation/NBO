@@ -1,0 +1,198 @@
+\section{Nonlinear Construction, Verification, and Resource Bounds}
+\label{sec:r38constructproof}
+
+\subsection{Measurability, comparison, and constant shifts}
+A monotone cash-equivariant functional on bounded functions is
+nonexpansive in the supremum norm. Indeed, $v-\|v-w\|_\infty\leq w\leq
+v+\|v-w\|_\infty$, and applying the two properties proves the claim. For a
+finite innovation law and continuous transition, expectation and entropic
+evaluation preserve continuity of $Q_t^f$. Compact actions give a minimum
+and a Borel minimizing selector. Backward induction establishes the Bellman
+value against every history-dependent feasible strategy: conditional on
+any history ending at $x$, no choice of the current action followed by an
+adapted continuation can improve the continuation optimum. Monotonicity
+preserves this order through the recursive preference. The nearest-knot
+actor used in the implementation is Borel measurable; its finitely many
+ties are resolved by choosing the lower state knot.
+
+The induction in Theorem~\ref{thm:r38span} compares two different futures.
+For the returned future,
+\[
+ J_t^\pi-f_t\leq -d_t+A_t^f(\cdot,\pi_t)+\beta U_{t+1};
+\]
+for the optimal future,
+\[
+ J_t^*-f_t\geq -d_t+\beta L_{t+1}.
+\]
+Neither step assumes $f_t=J_t^\pi$, and the second does not evaluate an
+unknown optimal gain. Under $f_t\mapsto f_t+c_t$, the residual interval
+translates by $c_t-\beta c_{t+1}$, the terminal interval translates by $c_T$,
+and its width is unchanged. In Proposition~\ref{prop:r38tilt}, the factor
+$\exp(\theta c_{t+1})$ cancels from both numerator and denominator of the
+tilted kernel. The residual value functions translate by $-c_t$, so the
+state-dependent loss bound is also invariant. These observations justify
+centering without removing any action-dependent error.
+
+\subsection{Proof of Theorem~\ref{thm:r38construct}}
+For each fixed action, coupling the same innovation at two initial states
+and using nonexpansiveness gives
+\[
+ |Q_t^f(x,a)-Q_t^f(z,a)|\leq D_t|x-z|.
+\]
+The same argument for two actions gives the constant $B_t$. Taking a minimum
+over any common action set preserves the first Lipschitz bound. Let $G_t$
+be the minimum over continuous actions and $H_t$ the minimum over action
+knots. Compactness and the covering radius $\Delta_a/2$ imply
+$0\leq H_t(x)-G_t(x)\leq e_t^a$.
+
+At state knot $x_i$, the minimum of the lower interval endpoints is a lower
+bound for $H_t(x_i)$, and the minimum of the upper endpoints is an upper
+bound. The width of this minimum interval is at most $2\eta_t$. Its midpoint
+$v_i$ therefore satisfies $|v_i-H_t(x_i)|\leq\eta_t$, whence
+$-\eta_t\leq v_i-G_t(x_i)\leq\eta_t+e_t^a$.
+For a $D_t$-Lipschitz function $G_t$ on a cell of length $\Delta_x$, write
+$x=(1-\lambda)x_i+\lambda x_{i+1}$. The error of endpoint interpolation is
+bounded by
+\[
+ (1-\lambda)D_t|x-x_i|+\lambda D_t|x_{i+1}-x|
+ =2\lambda(1-\lambda)D_t\Delta_x\leq D_t\Delta_x/2.
+\]
+Combining the nodal and interpolation bounds proves
+\eqref{eq:r38meshres}. At a knot, the action selected by its smallest upper
+endpoint is within $2\eta_t$ of $H_t$ and within $2\eta_t+e_t^a$ of $G_t$.
+Moving to the nearest state knot changes the value of the chosen action and
+the optimum by at most $D_t\Delta_x/2$ each. This proves
+\eqref{eq:r38meshactor}. Applying Theorem~\ref{thm:r38span}, with terminal
+interpolation error at most $H\Delta_x/2+\eta_T$, gives
+\eqref{eq:r38meshpolicy}.
+
+To justify finite refinement, rather than presume bounded slopes, choose
+$\eta_t\leq q\Delta_x$ for a fixed $q>0$. The discrete-action minimum
+$H_t$ is $D_t$-Lipschitz independently of the action mesh. Adjacent stored
+nodal values consequently differ by at most
+$D_t\Delta_x+2\eta_t$. Thus
+\[
+ L_T\leq H+2q,\qquad
+ L_t\leq C_x+2q+\beta F_xL_{t+1}.
+\]
+This recursion gives a finite, mesh-independent upper bound $\bar L_t$ for
+each fixed date. In particular, with $r=\beta F_x$,
+\[
+ \bar L_t\leq (C_x+2q)\sum_{j=0}^{T-t-1}r^j+r^{T-t}(H+2q).
+\]
+The expression is interpreted as a finite sum when $r=1$; no stability
+assumption $r<1$ is needed for a finite horizon. Replacing $D_t,B_t$ in
+\eqref{eq:r38meshpolicy} by their bounds based on $\bar L_{t+1}$ makes the
+right side an explicit linear function of $\Delta_x$ and $\Delta_a$.
+Choose finite $N,M$ to put it below the target and request the corresponding
+finite oracle precision. Identity \eqref{eq:r38relu} follows by comparing
+slopes on successive intervals and the value at zero. This completes the
+construction proof.
+
+\subsection{A jointly trained candidate and its actual actor}
+Let $g_t$ be any continuous neural candidate with a verified Lipschitz
+constant $L_t^g$. If its verified discrepancy from the reference interpolant
+at the state knots is at most $e_t^{\rm node}$, then
+\begin{equation}\label{eq:r38netbound}
+ \|g_t-f_t\|_\infty\leq e_t^{\rm node}
+                 +(L_t^g+L_t)\Delta_x/2.
+\end{equation}
+For a one-hidden-layer network, the conservative bound
+$L_t^g\leq|q_t|+\sum_j|c_{tj}w_{tj}|$ follows from the Lipschitz constant of
+ReLU. Interval evaluation encloses all stored binary coefficients and every
+addition and multiplication in this bound. A policy selected approximately
+from $g_{t+1}$ can be analyzed using twice its uniform continuation error,
+but the implementation obtains a sharper diagnostic directly: for the
+selected action index $j_i$, record
+\[
+ \gamma_{ti}=\overline Q_t^f(x_i,a_{j_i})-
+                    \min_j\underline Q_t^f(x_i,a_j).
+\]
+For the returned nearest-knot policy,
+$\delta_t\leq\max_i\gamma_{ti}+e_t^a+D_t\Delta_x$. This statement remains
+true even when the floating-point network selector is inaccurate. There is
+no requirement that its arithmetic be exact: its output is a feasible
+index whose true advantage is subsequently enclosed. The value function
+used for verification is explicitly the independent reference $f$, not the
+trained $g$ or an unobserved optimal continuation.
+
+\subsection{Certified elementary functions and a continuous-state economy}
+The implementation uses binary64 endpoint intervals, with one outward
+\texttt{nextafter} step after each scalar arithmetic operation and a failure
+on a nonfinite bound or an interval containing zero in a denominator.
+Correct rounding of the elementary arithmetic operations is an explicit
+machine assumption. We do not assume correctly rounded library exponential
+or logarithm functions. For $|x|\leq16$, reduce $y=x/256$ and evaluate the
+order-14 exponential polynomial with enclosed rational coefficients. The
+absolute Taylor remainder is bounded by
+$2(1/16)^{15}/15!$. Eight interval squarings give an enclosure of $e^x$.
+For logarithms, exact binary exponent extraction gives $x=2^e m$ with
+$1\leq m<2$. For $y=(m-1)/(m+1)$,
+\[
+ \log m=2\sum_{k=0}^{n-1}\frac{y^{2k+1}}{2k+1}+R_n,
+ \qquad |R_n|\leq
+ \frac{2|y|^{2n+1}}{(2n+1)(1-|y|^2)}.
+\]
+The code checks $|y|<0.334$, uses $n=24$, and encloses $\log2$ with $n=32$.
+Domain checks are premises of the calculation, not silent clipping of the
+risk functional. Basic finite-precision verification follows the approach
+surveyed by \citet{r38rump2010}.
+
+The capital economy in the article has $x\in[0,1]$, $a\in[0,1/4]$, and
+innovations $z\in\{-1/16,0,1/16\}$ with probabilities $(1/4,1/2,1/4)$.
+The transition is
+\[
+ F(x,a,z)=\operatorname{clip}_{[0,1]}
+       \{13x/16+a+x(1-x)/16+z\}.
+\]
+Its state and action Lipschitz constants are $7/8$ and $1$. For stage cost
+\[
+ \ell_p(x,a)=(x-11/16)^2+p a^2+4a^4+2(3/8-x)_+^2
+\]
+and terminal cost
+$h(x)=2(x-11/16)^2+2(3/8-x)_+^2$, valid constants are
+$C_x=23/8$, $C_a=p/2+1/4$, and $H=17/4$. These bounds follow by
+differentiating on the smooth pieces and using continuity at the joins.
+Clipping is a primitive capacity constraint, not truncation of an unbounded
+innovation distribution. The construction is nonlinear even at $\theta=0$;
+at $\theta>0$ the continuation also enters a nonlinear log-sum-exp map.
+
+The reported own-policy values are obtained by enclosing the full $3^T$
+innovation tree. If a state interval meets a nearest-knot switching
+boundary, all actions in the intersected cells are enclosed, including ties.
+The resulting value interval may widen; it is not replaced by the value at
+a nominal state. A counterfactual improvement interval is formed by outward
+subtraction of the new rule's cost from the old rule's cost under the same
+new primitives. It is a comparison between two fully specified policies,
+not an asserted estimate of the difference between two exact optima.
+
+\subsection{Resource accounting and higher-dimensional verification}
+With $N+1$ state knots, $M+1$ action knots and $s$ innovations, one backward
+pass evaluates $T(N+1)(M+1)s$ transitions. A spline value requires a knot
+search and constant work on its cell. If $C_{\rm prim}(b)$ bounds one
+primitive and risk evaluation at certified precision $b$, the work is
+\begin{equation}\label{eq:r38nonlinearcost}
+ O\!\left(T(N+1)(M+1)s
+       [\log(N+1)+C_{\rm prim}(b)]\right).
+\end{equation}
+Retaining all nodal continuations and actors uses $O(TN)$ numbers; batched
+quadrature adds its declared temporary working set. The dense ReLU
+representation does not inherit the logarithmic evaluation cost without an
+appropriate compiled evaluator. A trained width-$w$ candidate adds its
+training cost, $O(w)$ work per one-dimensional dense evaluation, reference
+data construction, and all verification work. An optional full-tree
+own-policy diagnostic costs $O(s^T)$ and is separately included in the
+executed service clock. It is not needed for the uniform policy theorem.
+
+Theorem~\ref{thm:r38span} itself has no one-dimensional restriction. For
+compact higher-dimensional domains, a verified covering or triangulation
+can enclose its premises, and piecewise affine constructions admit ReLU
+representations. Such a construction pays for all state and action covering
+cells; with mesh size $\Delta$ in state dimension $d$ and action dimension
+$m$, the number of state-action pairs is generally of order
+$\Delta^{-(d+m)}$. The one-dimensional constructive cap above is the one
+proved and executed in this revision. Neither the representation identity
+nor the measured experiment is evidence of dimension-free approximation,
+training, or certification. The paper retains its separate vector Gaussian
+construction precisely because economic structure can give a different
+resource law.
