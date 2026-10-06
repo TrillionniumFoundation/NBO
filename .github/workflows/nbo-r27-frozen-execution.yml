@@ -1,0 +1,38 @@
+name: NBO R27 frozen execution
+on:
+  push:
+    branches: [revision/econometrica-nbo-r27-2026-10-06]
+    paths: [.github/workflows/nbo-r27-frozen-execution.yml]
+permissions:
+  contents: write
+jobs:
+  execute:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned numeric dependency
+        run: python -m pip install --disable-pip-version-check numpy==2.3.5
+      - name: Read this commit's execution bootstrap without cloning historical arrays
+        run: |
+          python - <<'PY'
+          import base64,json,os,pathlib,urllib.request
+          url='https://api.github.com/repos/TrillionniumFoundation/NBO/contents/revisions/2026-10-06-r27/delivery/execute_frozen.py?ref='+os.environ['GITHUB_SHA']
+          req=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+          with urllib.request.urlopen(req,timeout=120) as response: body=json.load(response)
+          pathlib.Path('/tmp/nbo_r27_execute.py').write_bytes(base64.b64decode(body['content']))
+          PY
+          python /tmp/nbo_r27_execute.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r27-frozen-execution
+          path: /tmp/NBO_R27_execution.zip
+          if-no-files-found: error
