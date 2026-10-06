@@ -1,0 +1,29 @@
+name: NBO R31 source snapshot
+on:
+  push:
+    branches: [revision/econometrica-nbo-r31-integrated-2026-10-06]
+    paths: [.github/workflows/nbo-r31-source-snapshot.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Export tracked source without credentials
+        run: |
+          git archive --format=tar.gz --output="$RUNNER_TEMP/nbo-r31-inherited-source.tar.gz" HEAD
+          git rev-parse HEAD > "$RUNNER_TEMP/SOURCE_COMMIT.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r31-inherited-source
+          path: |
+            ${{ runner.temp }}/nbo-r31-inherited-source.tar.gz
+            ${{ runner.temp }}/SOURCE_COMMIT.txt
+          retention-days: 7
+          if-no-files-found: error
