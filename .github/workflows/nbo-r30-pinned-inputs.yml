@@ -1,0 +1,54 @@
+name: NBO R30 pinned scientific inputs
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r30-policy-accuracy-2026-10-06']
+    paths: ['.github/workflows/nbo-r30-pinned-inputs.yml']
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Retrieve and verify bounded scientific source trees
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import base64, hashlib, json, os, pathlib, urllib.request
+          root = pathlib.Path('pinned_inputs')
+          trees = {
+              'revisions/2026-10-06-r28': '6451faf2dfd94552f2e103313eadc0acb4ce344c',
+              'revisions/2026-10-06-r29': 'd932ff35f9a86eaa00f7fac366e48d0a8fbadce3',
+          }
+          def get(endpoint):
+              req = urllib.request.Request('https://api.github.com/repos/TrillionniumFoundation/NBO/' + endpoint,
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'})
+              with urllib.request.urlopen(req, timeout=60) as response:
+                  return json.load(response)
+          manifest = {}
+          for prefix, tree_sha in trees.items():
+              tree = get('git/trees/' + tree_sha + '?recursive=1')
+              assert not tree['truncated']
+              for item in tree['tree']:
+                  if item['type'] != 'blob':
+                      continue
+                  name = prefix + '/' + item['path']
+                  assert '..' not in pathlib.PurePosixPath(name).parts and item['size'] < 100000
+                  blob = get('git/blobs/' + item['sha'])
+                  assert blob['encoding'] == 'base64'
+                  data = base64.b64decode(blob['content'])
+                  actual = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+                  assert actual == item['sha']
+                  target = root / name
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_bytes(data)
+                  manifest[name] = {'git_blob': actual, 'sha256': hashlib.sha256(data).hexdigest()}
+          (root / 'PINNED_INPUTS.json').write_text(json.dumps({'base_commit': '8b36866d1f2a21c2a3c97df964d2e48e02e1ca1d', 'trees': trees, 'files': manifest}, indent=2) + '\n')
+          print('Verified', len(manifest), 'scientific inputs')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r30-pinned-inputs
+          path: pinned_inputs/
+          if-no-files-found: error
