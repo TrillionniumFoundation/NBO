@@ -1,0 +1,26 @@
+name: NBO R27 pinned source snapshot
+on:
+  push:
+    branches: [revision/econometrica-nbo-r27-2026-10-06]
+    paths: [.github/workflows/nbo-r27-source-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: f5a54d5a04fd2851cc096ab4cd75106ea4d8fda2
+      - name: Archive immutable base without changing scientific records
+        run: |
+          mkdir -p /tmp/nbo-r27-snapshot
+          git rev-parse HEAD > /tmp/nbo-r27-snapshot/SOURCE_COMMIT.txt
+          git archive --format=tar.gz HEAD > /tmp/nbo-r27-snapshot/NBO_base.tar.gz
+          sha256sum /tmp/nbo-r27-snapshot/NBO_base.tar.gz > /tmp/nbo-r27-snapshot/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r27-pinned-source
+          path: /tmp/nbo-r27-snapshot/
+          if-no-files-found: error
