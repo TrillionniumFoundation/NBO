@@ -1,0 +1,81 @@
+name: NBO R31 frozen recursive execution
+on:
+  push:
+    branches: [revision/econometrica-nbo-r31-evidence-2026-10-06]
+    paths: [.github/workflows/nbo-r31-frozen-execution.yml]
+permissions:
+  contents: write
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - name: Install declared numerical dependency
+        run: python -m pip install numpy==2.3.5
+      - name: Fetch immutable scientific inputs and execute complete catalogue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import os,json,pathlib,urllib.request,hashlib,subprocess,sys,time
+          repo='TrillionniumFoundation/NBO';base='01d627862b2c6fbc00c49c0c61968fc8a76e3363'
+          root=pathlib.Path('source');root.mkdir()
+          def raw(path):
+              return urllib.request.urlopen(f'https://raw.githubusercontent.com/{repo}/{base}/{path}',timeout=90).read()
+          freeze='revisions/2026-10-06-r30/protocols/SOURCE_FREEZE.json'
+          manifest=json.loads(raw(freeze))
+          for path,expected in manifest['files'].items():
+              data=raw(path);assert hashlib.sha256(data).hexdigest()==expected,path
+              p=root/path;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
+          p=root/freeze;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(raw(freeze))
+          out=root/'revisions/2026-10-06-r31/results';out.mkdir(parents=True)
+          identity=dict(scientific_source_commit=base,execution_workflow_commit=os.environ['GITHUB_SHA'],run_id=os.environ['GITHUB_RUN_ID'],actual_execution_location='GitHub Actions ubuntu-latest',inherited_identity_field_note='The unchanged frozen R30 harness uses the literal local research container in execution_location. This record supplies the actual runner; no primary field is silently rewritten.',catalogue='All 72 registered R30 services, unchanged tolerances, budgets, seeds and ordering',started_ns=time.time_ns())
+          (out/'REMOTE_EXECUTION_IDENTITY.json').write_text(json.dumps(identity,indent=2)+'\n')
+          env=dict(os.environ,NBO_SOURCE_COMMIT=base)
+          with (out/'FROZEN_EXECUTION.log').open('w') as log:
+              result=subprocess.run([sys.executable,'revisions/2026-10-06-r30/code/execute.py'],cwd=root,env=env,stdout=log,stderr=subprocess.STDOUT,timeout=1500)
+          print((out/'FROZEN_EXECUTION.log').read_text()[-20000:])
+          if result.returncode:raise RuntimeError('Frozen execution failed; preserve partial evidence')
+          summary=json.loads((root/'revisions/2026-10-06-r30/results/primary/SUMMARY.json').read_text())
+          assert summary['services']==72
+          (out/'EXECUTION_COMPLETE.json').write_text(json.dumps({'services':72,'summary':summary,'workflow_identity':identity},indent=2)+'\n')
+          PY
+      - name: Publish exact evidence on this new branch only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import os,json,pathlib,urllib.request,base64,hashlib,concurrent.futures
+          repo='TrillionniumFoundation/NBO';branch='revision/econometrica-nbo-r31-evidence-2026-10-06'
+          token=os.environ['GH_TOKEN'];source=os.environ['GITHUB_SHA'];root=pathlib.Path('source')
+          def api(path,data=None,method=None):
+              req=urllib.request.Request('https://api.github.com/repos/'+repo+'/'+path,data=None if data is None else json.dumps(data).encode(),headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','Content-Type':'application/json'},method=method)
+              return json.load(urllib.request.urlopen(req,timeout=120))
+          head=api('git/ref/heads/'+branch)['object']['sha'];assert head==source,'Branch moved; no overwrite'
+          tree=api('git/commits/'+head)['tree']['sha']
+          paths=[p for prefix in ('revisions/2026-10-06-r30/results','revisions/2026-10-06-r31/results') for p in (root/prefix).rglob('*') if p.is_file()]
+          hashes={str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
+          m=root/'revisions/2026-10-06-r31/results/EXECUTION_FILES_SHA256.json';m.write_text(json.dumps(hashes,indent=2)+'\n');paths.append(m)
+          def blob(p):
+              data=p.read_bytes();b=api('git/blobs',{'content':base64.b64encode(data).decode(),'encoding':'base64'})
+              return {'path':str(p.relative_to(root)),'mode':'100644','type':'blob','sha':b['sha']}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:entries=list(pool.map(blob,paths))
+          newtree=api('git/trees',{'base_tree':tree,'tree':entries})['sha']
+          commit=api('git/commits',{'message':'R31: preserve complete unchanged R30 recursive-policy execution and original measured work','tree':newtree,'parents':[head]})['sha']
+          assert api('git/ref/heads/'+branch)['object']['sha']==head,'Branch changed during publication'
+          api('git/refs/heads/'+branch,{'sha':commit,'force':False},'PATCH')
+          print('Evidence commit',commit,'files',len(entries))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r31-frozen-recursive-evidence
+          path: |
+            source/revisions/2026-10-06-r30/results
+            source/revisions/2026-10-06-r31/results
+          retention-days: 30
+          if-no-files-found: error
