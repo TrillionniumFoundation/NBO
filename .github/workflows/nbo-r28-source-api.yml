@@ -1,0 +1,54 @@
+name: NBO R28 scientific source
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r28-2026-10-06']
+    paths: ['.github/workflows/nbo-r28-source-api.yml']
+permissions:
+  contents: read
+  actions: write
+jobs:
+  source:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Retrieve immutable scientific sources
+        run: |
+          python - <<'PY'
+          import os,json,base64,pathlib,urllib.request,zipfile,concurrent.futures,time
+          root='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'}
+          def request(path,method='GET'):
+              for i in range(4):
+                  try:
+                      with urllib.request.urlopen(urllib.request.Request(root+path,headers=headers,method=method),timeout=90) as r:
+                          b=r.read()
+                          return json.loads(b) if b else None
+                  except Exception:
+                      if i==3: raise
+                      time.sleep(2**i)
+          # Stop only this revision's earlier, binary-heavy snapshot run.
+          try: request('actions/runs/37419532402/cancel','POST')
+          except Exception as e: print('Earlier snapshot cancellation:',type(e).__name__)
+          tree=request('git/trees/'+os.environ['GITHUB_SHA']+'?recursive=1')
+          if tree.get('truncated'): raise RuntimeError('Truncated source tree')
+          allowed={'.tex','.bib','.cls','.sty','.bst','.py','.md','.json','.csv','.txt','.sh','.toml','.yml','.yaml','.b64'}
+          rows=[r for r in tree['tree'] if r['type']=='blob' and pathlib.Path(r['path']).suffix in allowed and r.get('size',0)<2000000]
+          bysha={r['sha']:r for r in rows}
+          def load(sha):
+              b=request('git/blobs/'+sha)
+              return sha,base64.b64decode(b['content'])
+          with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+              data=dict(pool.map(load,bysha))
+          with zipfile.ZipFile('/tmp/NBO_R28_source.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for r in rows: z.writestr(r['path'],data[r['sha']])
+              z.writestr('SOURCE_COMMIT.txt',os.environ['GITHUB_SHA'])
+              z.writestr('SOURCE_TREE.json',json.dumps(tree))
+          print('Preserved',len(rows),'paths;',len(data),'unique blobs')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r28-source
+          path: /tmp/NBO_R28_source.zip
+          if-no-files-found: error
