@@ -1,0 +1,45 @@
+name: NBO R31 recent source
+on:
+  push:
+    branches: [revision/econometrica-nbo-r31-integrated-2026-10-06]
+    paths: [.github/workflows/nbo-r31-light-source.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download pinned recent derivations
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import os,json,pathlib,urllib.request,concurrent.futures,hashlib,zipfile
+          sha='01d627862b2c6fbc00c49c0c61968fc8a76e3363'
+          repo='TrillionniumFoundation/NBO'
+          req=urllib.request.Request(f'https://api.github.com/repos/{repo}/git/trees/{sha}?recursive=1',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+          tree=json.load(urllib.request.urlopen(req,timeout=90))
+          assert not tree['truncated']
+          prefixes=tuple('revisions/'+x for x in ['2026-10-05-r23/','2026-10-05-r24/','2026-10-05-r25/','2026-10-06-r26/','2026-10-06-r27/','2026-10-06-r28/','2026-10-06-r29/','2026-10-06-r30/'])
+          entries=[x for x in tree['tree'] if x['type']=='blob' and x['path'].startswith(prefixes) and (x['path'].endswith(('.py','.tex','.json','.jsonl','.md','.b64','.bib','.yml','.log')))]
+          out=pathlib.Path('source');out.mkdir()
+          def get(e):
+              p=out/e['path'];p.parent.mkdir(parents=True,exist_ok=True)
+              req=urllib.request.Request(f'https://raw.githubusercontent.com/{repo}/{sha}/'+e['path'])
+              data=urllib.request.urlopen(req,timeout=90).read()
+              assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()==e['sha'],e['path']
+              p.write_bytes(data)
+          with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:list(pool.map(get,entries))
+          (out/'SOURCE_MANIFEST.json').write_text(json.dumps({'commit':sha,'entries':entries},indent=2))
+          with zipfile.ZipFile('nbo-r31-recent-source.zip','w',compression=zipfile.ZIP_DEFLATED) as z:
+              for p in out.rglob('*'):
+                  if p.is_file():z.write(p,p.relative_to(out))
+          print('Verified files:',len(entries))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r31-recent-source
+          path: nbo-r31-recent-source.zip
+          retention-days: 7
+          if-no-files-found: error
