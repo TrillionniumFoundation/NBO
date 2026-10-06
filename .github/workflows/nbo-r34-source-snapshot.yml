@@ -1,0 +1,29 @@
+name: NBO R34 source snapshot
+on:
+  push:
+    branches: [revision/econometrica-nbo-r34-integrated-2026-10-06]
+    paths: [.github/workflows/nbo-r34-source-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Archive tracked source at the checked-out commit
+        run: |
+          git rev-parse HEAD > /tmp/REMOTE_COMMIT.txt
+          git archive --format=zip --output=/tmp/NBO_R34_inherited_source.zip HEAD
+          sha256sum /tmp/NBO_R34_inherited_source.zip > /tmp/SOURCE_SHA256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r34-inherited-source
+          path: |
+            /tmp/NBO_R34_inherited_source.zip
+            /tmp/REMOTE_COMMIT.txt
+            /tmp/SOURCE_SHA256.txt
+          retention-days: 14
