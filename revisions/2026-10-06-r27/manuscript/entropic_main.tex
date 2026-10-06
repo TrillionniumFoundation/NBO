@@ -1,0 +1,83 @@
+\section{A full-policy certificate for recursive risk preferences}
+\label{sec:r27entropic}
+The order-preserving composition argument does not by itself supply a useful
+uniform Lipschitz constant for an exponential aggregator on unbounded states.
+We give a separate, executable bridge for that case. Keep the capital dynamics
+and vector actions in \eqref{eq:r23dynamics}, but evaluate a policy recursively by
+\begin{equation}\label{eq:r27entropicbellman}
+ U_t(x)=\ell_t(x,-K_tx)+\beta\mathcal R_\theta U_{t+1}(F_tx),
+ \qquad \mathcal R_\theta v(y)=\theta^{-1}\log\E e^{\theta v(y+\xi)},
+\end{equation}
+where $F_t=A_t-B_tK_t$, $\theta>0$, and $\xi\sim N(0,\Sigma)$.
+The limit at $\theta=0$ is conditional expectation. This is a recursive
+entropic criterion with discounting outside the certainty equivalent, not an
+assertion that it equals every exponential-of-total-cost convention.
+Exponential-quadratic control and its structural solutions are classical
+\citep{r27jacobson1973,r27cui2023}. We use that structure to verify a returned
+neural policy without using an optimal value as a training label or certificate.
+
+For a quadratic continuation $x'Px+c$, Gaussian integration gives
+\begin{equation}\label{eq:r27gaussian}
+ \mathcal R_\theta v(y)=y'\Psi_\theta(P)y+c+h_\theta(P),\quad
+ \Psi_\theta(P)=P(I-2\theta\Sigma P)^{-1},\quad
+ h_\theta(P)=-\frac{\log\det(I-2\theta\Sigma P)}{2\theta}.
+\end{equation}
+The sufficient domain condition $2\theta\|\Sigma\|_2\|P\|_2<1$
+is checked at every date; a failed domain check is not silently truncated.
+Own-policy evaluation yields $U_t(x)=x'P_tx+c_t$. Define
+\[
+ H_t=R_t+\beta B_t'\Psi_\theta(P_{t+1})B_t,\qquad
+ D_t=H_tK_t-\beta B_t'\Psi_\theta(P_{t+1})A_t.
+\]
+Choose bounds $\zeta_t\geq\|D_t\|_F$, $f_t\geq\|F_t\|_2$,
+$b_t\geq\|B_t\|_2$, $p_{t+1}\geq\|P_{t+1}\|_2$,
+$\sigma\geq\|\Sigma\|_2$, and $\tau\geq\tr\Sigma$.
+With $\delta_T=\kappa_T=0$, compute backward
+\begin{align}
+ \gamma_t&=1-2\theta\sigma p_{t+1},&
+ w_t&=\delta_{t+1}/\gamma_t^2,\notag\\
+ \bar f_t&=f_t+\frac{b_t}{r_t}
+             (\zeta_t+\beta b_tf_tw_t),\notag\\
+ \delta_t&=\frac{\zeta_t^2}{r_t}+\beta\bar f_t^2w_t,&
+ \kappa_t&=\beta\left(\kappa_{t+1}+
+                   \frac{\tau\delta_{t+1}}{\gamma_t}\right).
+ \label{eq:r27riskenvelope}
+\end{align}
+
+\begin{theorem}[Recursive full-policy comparison]\label{thm:r27entropic}
+Suppose $Q_t\succeq q_tI\succ0$, $R_t\succeq r_tI\succ0$, $Q_f\succeq0$,
+and $\Sigma\succeq0$. If every $\gamma_t$ is positive and
+$\delta_t\leq q_t$ for $1\leq t<T$, then
+\begin{equation}\label{eq:r27riskgap}
+ 0\leq U_0(x)-J_0^*(x)\leq\delta_0\|x\|^2+\kappa_0
+ \qquad(x\in\R^d).
+\end{equation}
+Here $J^*$ compares all adapted policies with finite recursive cost, not only
+linear policies, and the controls range over all of $\R^d$.
+\end{theorem}
+
+The certificate is a Bellman subsolution: subtract
+$\delta_t\|x\|^2+\kappa_t$ from the policy's own value. The matrix and constant
+allowances are different because the Gaussian log determinant contributes a
+state-independent cost. The derivative of $\Psi_\theta$ supplies
+$\gamma_t^{-2}$, while that of $h_\theta$ supplies $\gamma_t^{-1}$.
+These checked quantities replace an uninstantiated global utility Lipschitz
+constant. The proof and the separately computed execution allowance are in
+Section~\ref{sec:r27riskproof}.
+
+The verifier encloses own-policy matrices with outward matrix balls. Inverses
+are proposed numerically and accepted only after a Neumann-residual test.
+It does not require evaluation of an optimal policy, an enumeration of the
+Gaussian law, or a state catalogue. In the declared discrete model, class
+approximation and value-transfer allowances are zero because the comparison
+is direct; this does not set those allowances to zero for a discretized
+continuous economy or for the separate strategic models.
+
+For the neural construction, a square-activation critic learns
+$d\Psi_\theta(P_{t+1})$ after the future policy has been finalized. A separately
+run structural recursion uses the same analytic information without the
+factor fit. The comparison therefore isolates the additional neural training
+cost rather than concealing the structural solution. Neither Gaussian
+integration nor the classical structural optimum is claimed as a new method.
+The new conclusion concerns the verified propagation of a returned critic's
+and policy's errors through a nonlinear recursive preference map.

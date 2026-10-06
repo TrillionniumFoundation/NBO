@@ -1,0 +1,64 @@
+\section{Training budgets determined by economic primitives}
+\label{sec:r27primitive}
+The finite construction in Theorem~\ref{thm:r25finitepolicy} uses a bound on each
+own-policy continuation once that continuation has been evaluated. We now
+bound every such target before the first fit. This distinction matters for a
+method-level statement: the input to the guarantee is an economy and a welfare
+tolerance, not a favorable terminal training event.
+
+Consider the additive capital economy of Section~\ref{sec:r23policy}.
+Let $J^{\rm ref}>0$ bound the zero-control policy's value on
+$\|x_0\|^2\leq b$, and set $\eta=\epsilon_0/J^{\rm ref}$. Define, using only
+primitives,
+\begin{equation}\label{eq:r27envelope}
+ \overline P_T=Q_f,\qquad
+ \overline P_t=(1+\eta)Q_t+\beta A_t'\overline P_{t+1}A_t.
+\end{equation}
+For $j<T$, choose $q_jI\preceq Q_j$, $r_tI\preceq R_t$, and
+$L_j\geq d\|\overline P_j\|_2$, and write $m_j=dq_j$.
+For a decision at $t=j-1$, let $a_t\geq\|A_t\|_2$,
+$b_t\geq\|B_t\|_2$, and put
+\begin{equation}\label{eq:r27threshold}
+ \chi_t=\beta b_ta_t\left(1+\frac{\beta b_t^2L_j}{dr_t}\right),
+ \qquad e_j=\frac{d\sqrt{\eta q_tr_t}}{\chi_t}.
+\end{equation}
+When $\chi_t=0$, the corresponding action is independent of the continuation;
+no learning accuracy is required for that decision. The terminal continuation
+is known exactly.
+
+\begin{theorem}[A primitive-only finite NBO schedule]\label{thm:r27primitive}
+Suppose the reference value is finite and the stage coercivity bounds are
+positive. At each nonterminal continuation date $j$, initialize
+$W_{j,0}=\sqrt{c_j}O_j$, where $O_j'O_j=I$ and $0<c_j\leq m_j$, and use
+$\alpha_j=1/(4L_j)$. All hidden entries are updated by gradient descent on
+$\frac14\|W'W-dP_j\|_F^2$, where $P_j$ evaluates the already finalized future
+policy. It is sufficient to allow
+\begin{equation}\label{eq:r27cap}
+ N_j=\left\lceil
+ \frac{\log^+(\sqrt d\,L_j/e_j)}{-\log(1-2\alpha_jc_j)}
+ \right\rceil
+\end{equation}
+updates, then construct the current action as in
+Theorem~\ref{thm:r25finitepolicy}. The returned policy satisfies
+$J^\pi(x_0)-J^*(x_0)\leq\epsilon_0$ throughout $\|x_0\|^2\leq b$,
+against every adapted finite-cost policy. Every target obeys
+$m_jI\preceq dP_j\preceq d\overline P_j\preceq L_jI$.
+For square factors and dense algebra, a sufficient real-arithmetic work account
+is $O(d^3[T+\sum_{j=1}^{T-1}N_j])$, with $O(Td^2)$ stored matrix entries.
+\end{theorem}
+
+The proof is a backward induction, not a uniform-convergence assertion for an
+unspecified optimizer. A local defect at most $\eta x'Q_tx$ implies
+$P_t\preceq(1+\eta)Q_t+\beta A_t'P_{t+1}A_t$ by testing zero current control.
+This closes the envelope induction while the isotropic contraction closes the
+training induction. Both inductions refer to the same implemented future.
+The full proof is in Section~\ref{sec:r27primitiveproof}.
+
+The work statement counts real arithmetic. It is not a bit-complexity theorem
+and does not remove finite-precision verification, memory traffic, or the cost
+of evaluating a different economy. Conventional quadratic dynamic programming
+can exploit the same primitives without training a factor. Thus this theorem
+establishes a deterministic finite-work property of a specified trainable NBO,
+not a lower bound on competing methods. It replaces a condition on a successful
+training run by a condition on the economic input, without turning the
+observed conventional advantage into a neural one.
