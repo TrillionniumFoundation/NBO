@@ -1,0 +1,92 @@
+name: NBO R45 manuscript publication
+on:
+  push:
+    branches: [revision/econometrica-nbo-r45-constructive-service-2026-10-07]
+    paths:
+      - 'revisions/2026-10-07-r45/publication/paper*'
+      - '.github/workflows/nbo-r45-publication.yml'
+permissions:
+  contents: write
+jobs:
+  publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            revisions/2026-10-07-r44
+            revisions/2026-10-07-r45
+            reviews/2026-10-07-econometrica-numerical-methods-r44
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Decode hash-bound manuscript source
+        run: |
+          python - <<'PY'
+          import base64,hashlib,io,json,zipfile
+          from pathlib import Path
+          p=Path('revisions/2026-10-07-r45')
+          parts=sorted((p/'publication').glob('paper.[0-9][0-9].b64'))
+          assert len(parts)==4
+          s=''.join(f.read_text().strip() for f in parts)
+          repair=p/'publication/paper-transport-repair.json'
+          if repair.exists():
+              for c in sorted(json.loads(repair.read_text()),key=lambda c:c['start'],reverse=True):
+                  assert s[c['start']:c['end']]==c['old']
+                  s=s[:c['start']]+c['new']+s[c['end']:]
+          raw=base64.b64decode(s,validate=True)
+          assert hashlib.sha256(raw).hexdigest()=='9788879ac7b1649fb0d942d09a770b746abadd37c0a027b5f8232e01afb14e36','Publication transport integrity failed; source not modified'
+          z=zipfile.ZipFile(io.BytesIO(raw))
+          assert all(not n.startswith('/') and '..' not in Path(n).parts for n in z.namelist())
+          z.extractall(p)
+          for name,digest in json.loads((p/'publication/PAPER_SOURCE_SHA256.json').read_text())['sha256'].items():
+              assert hashlib.sha256((p/name).read_bytes()).hexdigest()==digest,name
+          PY
+      - name: Install publication dependencies
+        run: |
+          python -m pip install numpy==2.1.3 scipy==1.14.1
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended texlive-science pandoc
+      - name: Preserve review and former root entry point
+        run: |
+          mkdir -p revisions/2026-10-07-r45/audit
+          cp README.md revisions/2026-10-07-r45/audit/ROOT_README_R44.md
+          cp reviews/2026-10-07-econometrica-numerical-methods-r44/referee_report.md revisions/2026-10-07-r45/audit/REVIEWED_R44_REPORT.md
+      - name: Assemble, audit records, rerun tests and compile
+        run: python revisions/2026-10-07-r45/code/build.py
+      - name: Verify canonical assembled sources and select R45
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          p=Path('revisions/2026-10-07-r45')
+          for n,d in json.loads((p/'publication/PAPER_SOURCE_SHA256.json').read_text())['assembled_sources'].items():
+              assert hashlib.sha256((p/n).read_bytes()).hexdigest()==d,n
+          Path('ECTA.tex').write_text('\\input{revisions/2026-10-07-r45/ECTA.tex}\n')
+          Path('supp.tex').write_text('\\input{revisions/2026-10-07-r45/supp.tex}\n')
+          Path('README.md').write_text('# Neural Bellman Operators\n\n## Current revision: R45\n\n[Authoritative revision and reproduction instructions](revisions/2026-10-07-r45/README.md).\n\n[Main article](revisions/2026-10-07-r45/build/ECTA.pdf) | [Technical supplement](revisions/2026-10-07-r45/build/supp.pdf) | [Response to referee](revisions/2026-10-07-r45/build/response.pdf).\n\nThe R45 construction theorem and predeclared full matched catalogue extend the existing NBO paper. All prior revisions, reviews, applications, and unfavorable experimental findings are retained. The complete R44 article is the baseline, not a replacement topic.\n\nThe publication audit distinguishes executed results from mathematical assumptions and does not assert neural superiority or an editorial decision.\n\n[Release audit](revisions/2026-10-07-r45/audit/RELEASE_AUDIT.json) | [Preservation audit](revisions/2026-10-07-r45/audit/PRESERVATION.json) | [Reviewed R44 report](reviews/2026-10-07-econometrica-numerical-methods-r44/referee_report.md).\n')
+          PY
+      - name: Publish fresh review-ready branch
+        run: |
+          git config user.name 'NBO revision automation'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          target=revision/econometrica-nbo-r45-review-ready-2026-10-07
+          if git ls-remote --exit-code --heads origin "$target"; then
+            echo 'Refusing to replace an existing review-ready revision'; exit 1
+          fi
+          git switch -c "$target"
+          git add revisions/2026-10-07-r45 ECTA.tex supp.tex README.md
+          git commit -m "R45: complete Econometrica revision, constructive proofs, full study and referee response"
+          git push origin "HEAD:refs/heads/$target"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r45-publication
+          path: revisions/2026-10-07-r45
+          retention-days: 30
