@@ -1,0 +1,58 @@
+name: NBO R47 comparison evidence delivery
+on:
+  push:
+    branches: [revision/econometrica-nbo-r47-executed-comparisons-2026-10-08]
+    paths: ['.github/workflows/nbo-r47-comparison-evidence.yml']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: revisions/2026-10-08-r47
+      - name: Verify and materialize completed scientific observation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/TrillionniumFoundation/NBO/actions/runs/37701989313/jobs > "$RUNNER_TEMP/jobs.json"
+          gh api repos/TrillionniumFoundation/NBO/actions/artifacts/11517677897/zip > "$RUNNER_TEMP/study.zip"
+          python - <<'PY'
+          import os,hashlib,json,zipfile
+          from pathlib import Path
+          temp=Path(os.environ['RUNNER_TEMP']);p=Path('revisions/2026-10-08-r47')
+          jobs=json.loads((temp/'jobs.json').read_text())['jobs']
+          steps={s['name']:s['conclusion'] for j in jobs for s in j['steps']}
+          for gate in ('Verify exact tested scientific sources','Exact arithmetic and adversarial tests','Execute all declared services and direct comparisons'):
+              assert steps[gate]=='success',gate
+          raw=(temp/'study.zip').read_bytes()
+          assert hashlib.sha256(raw).hexdigest()=='9ef9bb39be0cb7291cf467e47e5af5f2e8adf27e4f09ac2b74879d5e6a6759e2'
+          with zipfile.ZipFile(temp/'study.zip') as z:
+              for n in z.namelist():
+                  q=Path(n);assert not q.is_absolute() and '..' not in q.parts
+                  if (p/q).exists() and not n.startswith('audit/'):
+                      assert (p/q).read_bytes()==z.read(n),n
+              z.extractall(p)
+          frozen=json.loads((p/'audit/EXECUTION_FREEZE.json').read_text())
+          assert frozen['source_commit']=='0cbc5138373923eb282114532fc5624daeb863ba'
+          for n,h in frozen['sources'].items():assert hashlib.sha256((p/'code'/n).read_bytes()).hexdigest()==h,n
+          complete=json.loads((p/'audit/EXECUTION_COMPLETE.json').read_text())
+          assert complete['services']==48 and complete['rungs']==144
+          assert complete['scalar_comparisons']==30 and complete['multidimensional_comparisons']==8
+          delivery={'study_run':37701989313,'artifact_id':11517677897,'artifact_sha256':hashlib.sha256(raw).hexdigest(),'scientific_execution_succeeded':True,'original_overall_run':'failure','reason':'The generic r47-evidence branch already held a different execution (4da0b2c286793f75a56ad6d8228cb0da82aabc60); its fail-closed no-overwrite check correctly refused replacement. This delivery creates a distinct comparison-evidence branch and preserves those other results unchanged. No scientific rerun or result substitution.'}
+          (p/'audit/EVIDENCE_DELIVERY.json').write_text(json.dumps(delivery,indent=2)+'\n')
+          PY
+      - name: Push distinct immutable evidence branch
+        run: |
+          target=revision/econometrica-nbo-r47-comparison-evidence-2026-10-08
+          if git ls-remote --exit-code --heads origin "$target"; then exit 1; fi
+          git switch -c "$target"
+          git config user.name 'NBO revision automation'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-08-r47/results revisions/2026-10-08-r47/audit
+          git commit -m 'R47: immutable source-bound 48-service and 38-comparison evidence'
+          git push origin "HEAD:refs/heads/$target"
