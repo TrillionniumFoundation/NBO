@@ -1,0 +1,56 @@
+name: NBO R46 verified delivery
+on:
+  push:
+    branches: [revision/econometrica-nbo-r46-integrated-source-2026-10-08]
+    paths: ['.github/workflows/nbo-r46-verified-delivery.yml', 'revisions/2026-10-07-r46/code/deliver_verified.py']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  delivery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            revisions/2026-10-07-r44
+            revisions/2026-10-07-r45
+            revisions/2026-10-07-r46
+            reviews
+      - name: Verify exact artifact bytes and completed scientific and clean-build gates
+        run: python revisions/2026-10-07-r46/code/deliver_verified.py
+      - name: Publish verified new revision with guarded transport retries
+        run: |
+          git config user.name 'NBO revision automation'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          target=revision/econometrica-nbo-r46-review-ready-2026-10-08
+          if git ls-remote --exit-code --heads origin "$target"; then
+            echo 'Refusing to replace an existing review branch'; exit 1
+          fi
+          git switch -c "$target"
+          git add -f revisions/2026-10-07-r46 reviews/2026-10-07-econometrica-numerical-methods-r43
+          git add README.md ECTA.tex supp.tex
+          if test -n "$(git diff --cached --name-only --diff-filter=D)"; then exit 1; fi
+          git diff --exit-code -- revisions/2026-10-07-r44 revisions/2026-10-07-r45
+          git commit -m 'R46: deliver complete constrained-witness revision and verified clean rebuild'
+          expected=$(git rev-parse HEAD)
+          for attempt in 1 2 3 4; do
+            actual=$(git ls-remote --heads origin "refs/heads/$target" | cut -f1)
+            if test "$actual" = "$expected"; then exit 0; fi
+            if test -n "$actual"; then echo 'Concurrent publication; refusing replacement'; exit 1; fi
+            git push origin "HEAD:refs/heads/$target" || true
+            actual=$(git ls-remote --heads origin "refs/heads/$target" | cut -f1)
+            if test "$actual" = "$expected"; then echo "Verified remote: $expected"; exit 0; fi
+            sleep 10
+          done
+          echo 'Remote publication not verified'; exit 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r46-final-review-package
+          path: revisions/2026-10-07-r46
+          retention-days: 30
