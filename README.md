@@ -1,23 +1,14 @@
-# Neural Bellman Operators — R37
+# Neural Bellman Operators — R39
 
-Current revision: original NBO economic framework, constructive neural full-policy theory, and precision-adaptive continuation refresh.
+Current integrated revision responding to the R37 advisory report. Original topic and complete economic applications retained.
 
-## Read the current paper
+- [Main paper](revisions/2026-10-07-r39/build/ECTA.pdf), [self-contained TeX](revisions/2026-10-07-r39/ECTA.tex).
+- [Technical supplement](revisions/2026-10-07-r39/build/supp.pdf).
+- [Response](revisions/2026-10-07-r39/response.md), [PDF](revisions/2026-10-07-r39/build/response.pdf).
+- [Complete applications](revisions/2026-10-07-r39/build/applications.pdf).
+- [Retained historical article](revisions/2026-10-07-r39/build/historical_article.pdf) and [historical supplement](revisions/2026-10-07-r39/build/historical_supplement.pdf).
+- [Release audit](revisions/2026-10-07-r39/audit/RELEASE_AUDIT.json) and [new endpoint/source audit](revisions/2026-10-07-r39/audit/R39_AUDIT.json).
 
-- [Main article](revisions/2026-10-07-r37/build/ECTA.pdf) — [LaTeX](revisions/2026-10-07-r37/ECTA.tex).
-- [Active technical supplement](revisions/2026-10-07-r37/build/supp.pdf).
-- [Point-by-point referee response](revisions/2026-10-07-r37/response.md) — [PDF](revisions/2026-10-07-r37/build/response.pdf).
-- [Complete economic applications](revisions/2026-10-07-r37/build/applications.pdf).
-- [Retained previous article](revisions/2026-10-07-r37/build/historical_article.pdf) and [complete previous supplement](revisions/2026-10-07-r37/build/historical_supplement.pdf).
+R39 adds nonlinear full-policy construction, all-state trained-ReLU verification, native complete-step residual bounds, complete-work accounting and nonlinear investment-price policy comparisons. The 315 R38 economic services are re-audited, not rerun or retimed. The structural and spline baselines remain faster in the stated comparisons. No universal neural work advantage or journal acceptance is claimed.
 
-The original source components, labels, applications and adverse comparisons are preserved. Current root entry points no longer silently refer to R21. This revision addresses the independent advisory R21 report; it is not a journal editorial acceptance.
-
-## New science and evidence
-
-The precision-adaptive theorem supplies a finite hidden-weight cap and fractional-storage account, with whole-step error control, rectangular factors, noncommuting starts, fixed-target caching, and a full-policy implication. Classical polar iteration theory is credited.
-
-Eight source-frozen services all certify the same full-policy tolerance. Adaptive precision improves on the two inherited neural implementations in both specified complete service clocks; the structural comparator remains faster. These are deterministic construction cases, not population samples or universal neural-superiority evidence.
-
-See [protocol](revisions/2026-10-07-r37/protocols/PROTOCOL.json), [source hashes](revisions/2026-10-07-r37/protocols/SOURCE_FREEZE.json), [all outcomes](revisions/2026-10-07-r37/results/SUMMARY.json), [science audit](revisions/2026-10-07-r37/audit/SCIENCE_AUDIT.json), [preservation](revisions/2026-10-07-r37/audit/PRESERVATION.json), and [release audit](revisions/2026-10-07-r37/audit/RELEASE_AUDIT.json).
-
-Rebuild the native publication with `python revisions/2026-10-07-r37/publication/publish.py build` from the repository root, with the documented source-bound inputs and a TeX installation supporting the repository's Econometrica class. The publication workflow restores the immutable historical input artifacts and materializes every current source before compilation. It never reruns or replaces the scientific clocks. A new scientific execution requires a clean, separately identified results directory.
+Build from the repository root with `python revisions/2026-10-07-r39/publication/publish.py build`. Materialized active sources require no historical input expansion. The publication workflow restores pinned artifact dependencies when needed; hashes and source identities are recorded.
