@@ -1,0 +1,65 @@
+name: NBO R39 native publication
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r39-integrated-source-2026-10-07
+    paths:
+      - 'revisions/2026-10-07-r39/manuscript/**'
+      - 'revisions/2026-10-07-r39/code/**'
+      - 'revisions/2026-10-07-r39/publication/**'
+      - 'revisions/2026-10-07-r39/references_new.bib'
+      - 'revisions/2026-10-07-r39/response.md'
+      - '.github/workflows/nbo-r39-publication.yml'
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: nbo-r39-native-publication
+  cancel-in-progress: false
+jobs:
+  publication:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Native publication dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends texlive-latex-extra texlive-fonts-recommended texlive-science texlive-pictures lmodern pandoc
+          python -m pip install numpy requests
+      - name: Load the source-pinned publication driver
+        run: |
+          python - <<'PY'
+          import os,base64,hashlib,urllib.request,pathlib,ast
+          path='revisions/2026-10-07-r39/publication/remote.py'
+          url='https://api.github.com/repos/TrillionniumFoundation/NBO/contents/'+path+'?ref='+os.environ['GITHUB_SHA']
+          req=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['GITHUB_TOKEN'],'Accept':'application/vnd.github+json'})
+          import json
+          with urllib.request.urlopen(req) as response:obj=json.load(response)
+          data=base64.b64decode(obj['content'])
+          assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()==obj['sha']
+          ast.parse(data)
+          pathlib.Path('r39_remote.py').write_bytes(data)
+          PY
+      - name: Restore, audit, compile and push the new revision
+        run: python r39_remote.py all
+      - name: Retain native publication and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r39-native-review-publication
+          path: |
+            work/revisions/2026-10-07-r39/
+            work/ECTA.tex
+            work/supp.tex
+            work/README.md
+            work/REMOTE_COMMIT.txt
+          if-no-files-found: warn
+          retention-days: 90
