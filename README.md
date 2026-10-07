@@ -1,11 +1,13 @@
-# Neural Bellman Operators
+# Neural Bellman Operators — R46
 
-## Current revision: R45
+## Integrated revision, 8 October 2026
 
-[Authoritative revision and reproduction instructions](revisions/2026-10-07-r45/README.md).
+[Authoritative manuscript, response and reproduction instructions](revisions/2026-10-07-r46/README.md).
 
-[Main article](revisions/2026-10-07-r45/build/ECTA.pdf) | [Technical supplement](revisions/2026-10-07-r45/build/supp.pdf) | [Response to referee](revisions/2026-10-07-r45/build/response.pdf).
+[Main article](revisions/2026-10-07-r46/build/ECTA.pdf) | [Technical supplement](revisions/2026-10-07-r46/build/supp.pdf) | [Referee response](revisions/2026-10-07-r46/build/response.pdf).
 
-The R45 constructive theorem, complete proofs and predeclared matched study extend the original NBO paper. Prior revisions, reviews, applications and unfavorable results are retained.
+The original NBO paper is extended by witness-preserving neural construction and feasible-witness transport under state-dependent constraints. All prior manuscripts, applications, reviews and adverse evidence remain preserved.
 
-[Final delivery verification](revisions/2026-10-07-r45/audit/FINAL_DELIVERY.json) | [Release audit](revisions/2026-10-07-r45/audit/RELEASE_AUDIT.json) | [Preservation audit](revisions/2026-10-07-r45/audit/PRESERVATION.json).
+[Release audit](revisions/2026-10-07-r46/audit/RELEASE_AUDIT.json) | [Clean rebuild](revisions/2026-10-07-r46/audit/CLEAN_REBUILD.json) | [Final delivery](revisions/2026-10-07-r46/audit/FINAL_DELIVERY.json).
+
+Canonical review branch: revision/econometrica-nbo-r46-review-ready-2026-10-08.

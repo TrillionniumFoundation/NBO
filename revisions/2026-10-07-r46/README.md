@@ -1,8 +1,8 @@
 # Neural Bellman Operators — R46
 
-**Author:** Qian QI. **Date:** 7 October 2026.
+**Author:** Qian QI. **Date:** 8 October 2026.
 
-The authoritative referee object is the complete `revision/econometrica-nbo-r46-review-ready-2026-10-07` branch at its final publication commit. The witness-source branch is staging, not a submitted manuscript. The publication workflow refuses to replace an existing review-ready branch.
+The authoritative referee object is the complete `revision/econometrica-nbo-r46-review-ready-2026-10-08` branch at its final publication commit. The witness-source branch is staging, not a submitted manuscript. The publication workflow refuses to replace an existing review-ready branch.
 
 ## Manuscript and response
 
@@ -47,3 +47,7 @@ python revisions/2026-10-07-r46/code/build.py
 Dependencies: Python, NumPy 2.1.3, SciPy 1.14.1, Pandoc, PDFLaTeX, BibTeX and pdfinfo, with the committed Econometric Society LaTeX inputs. On a minimal Ubuntu installation, the publication workflow installs texlive-latex-extra, texlive-fonts-recommended, texlive-science, pandoc and poppler-utils.
 
 The build reads ordinary committed sources and frozen results. It requires no capsule decoding, expiring artifact download or retraining. A new study execution is a new observation and must use a clean result directory; `code/execute.py` refuses to overwrite a completed catalogue. Internal clocks include failed rungs through checkpoint fsync, while process clocks additionally include startup and warm-up. CPU frequency is uncontrolled. Rational storage, comparison counts and primitive evaluations are not complete FLOP or bit-operation counts.
+
+## Integrated state-dependent construction
+
+The feasible-witness transport theorem extends the same neural construction to nonempty compact Hausdorff-Lipschitz action correspondences. Feasible node nets and measurable repair maps have explicit work and displacement allowances. A capacity-constrained two-state example and eight independent rational tests supplement the proof; they are not a new performance catalogue. The original 36 services and all prior evidence remain unchanged. The complete build now runs 49 tests.

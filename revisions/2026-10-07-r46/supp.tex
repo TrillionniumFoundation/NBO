@@ -1,0 +1,170 @@
+\documentclass[ecta,nameyear,draft]{econsocart}
+\input{preamble}
+\begin{document}
+\begin{frontmatter}
+\title{Supplement to ``Neural Bellman Operators''}
+\runtitle{Neural Bellman Operators: Supplement}
+\begin{aug}
+\author[id=au1,addressref={add1}]{\fnms{Qian}~\snm{QI}}
+\address[id=add1]{Peking University}
+\end{aug}
+\begin{abstract}
+This supplement supplies proofs and implementation details for the R46 revision, retaining the R44 and R45 results: centered economic transport, direct full-policy certification, retained-policy recertification, and coupled policy-cost comparisons. It reports all new comparison intervals and separates mathematical, numerical, and statistical guarantees. The constructive neural backend has its own complete primitive-budget proof below. Complete earlier proofs and economic applications are materialized unchanged in the current source tree.
+\end{abstract}
+\end{frontmatter}
+\section{Notation and economic domains}
+Dates are $0,\ldots,T$; $B_0=1$ and $B_t=\prod_{j<t}\beta_j$ with $\beta_j>0$. The state domain is invariant under all admissible actions and the declared innovation law. The fixed-policy operator is
+$\mathcal T_t^\pi v(x)=c_t(x,\pi_t(x))+\beta_t\rho_t(v(F_t(x,\pi_t(x),Z)))$.
+The Bellman operator is its infimum over feasible current actions. Every cash-invariance and monotonicity statement is restricted to a common domain containing the values, fitted functions, and constant translates used in the comparison. This requirement is substantive for recursive utility.
+
+For compact continuous expected-cost problems with continuous feasible correspondences, continuous integrals, and measurable minimizers, backward induction produces the Bellman optimum. An adapted policy cannot lower its conditional continuation cost below the Bellman value at any date. Induction therefore proves optimality against history-dependent admissible controls, rather than only Markov grid policies. The same reasoning applies to the stipulated monotone recursive evaluation when its conditional recursion and measurable selection conditions hold. The Gaussian entropic construction in the original article uses separate moment margins rather than compactness.
+
+\section{Centered decision and transport proofs}
+Write $H(a)=r_\theta(s,a)+S_\theta(T_\theta(s,a))$ and
+$\widehat H(a)=r_\theta(s,a)+\widehat S_0(T_\theta(s,a))$.
+Then $\widehat H-H=e\circ T_\theta-\Delta_\theta\circ T_\theta$.
+For an arbitrarily near-optimal true action $a^*$,
+\[
+ H(a^*)-H(\widehat a)
+ \leq\delta+(H-\widehat H)(a^*)-(H-\widehat H)(\widehat a).
+\]
+Bounding the two oscillations and letting the approximation to $a^*$ vanish proves the centered bound, even if a supremum is not attained. For the finite menu let $\bar e=\sum_jp_je_j$. For distinct $i,j$, weighted Cauchy--Schwarz gives
+\[
+ |e_i-e_j|^2
+ =\left|\sum_kp_k(e_k-\bar e)
+       \left(\frac{\mathbf1_{k=i}}{p_i}-\frac{\mathbf1_{k=j}}{p_j}\right)\right|^2
+ \leq R_p(p_i^{-1}+p_j^{-1}).
+\]
+Maximizing over $i,j$ and bounding the continuation perturbation by $2b_\theta$ proves the menu statement. It is a statement about a common menu; a method-specific pair of actions cannot substitute for the full set.
+
+For transport, couple the future economies with the same innovations, starting from the same postdecision state. The assumed transition bounds imply pathwise
+$\|X_{k+1}^\theta-X_{k+1}^0\|\leq L_k\|X_k^\theta-X_k^0\|+\epsilon_{\theta,k}$.
+Thus $\|X_k^\theta-X_k^0\|\leq d_k$ by induction. Each future reward differs by at most $\eta_{\theta,k}+H_kd_k$. Summation with nonnegative weights and expectation prove the transport bound. If the recursion is nonlinear but sup-norm Lipschitz on a common utility domain, add and subtract the anchor map at the changed continuation to obtain $b_k\leq\nu_k+\beta_kb_{k+1}$; unwind this inequality backward.
+
+These proofs depend only on the declared economic perturbation class. They do not assert that all policy changes, altered constraints, or opponent deviations preserve the same domain or constants.
+
+\section{Signed full-policy certificate and retained actors}
+Suppose $\ell_t\leq f_t-\mathcal T_tf_{t+1}\leq u_t$ and
+$\mathcal T_t^\pi f_{t+1}-\mathcal T_tf_{t+1}\leq\eta_t$ for $t<T$, with terminal enclosure $\ell_T\leq f_T-g\leq u_T$.
+For each date let $B_{t,k}=\prod_{j=t}^{k-1}\beta_j$ and set
+\[
+ a_t=\sum_{k=t}^{T-1}B_{t,k}u_k+B_{t,T}u_T,
+ \qquad
+ b_t=\sum_{k=t}^{T-1}B_{t,k}(\eta_k-\ell_k)-B_{t,T}\ell_T.
+\]
+We prove $V_t^*\geq f_t-a_t$ and $J_t^\pi\leq f_t+b_t$ simultaneously. The terminal claim is the terminal enclosure. For the lower induction,
+\[
+ V_t^*=\mathcal T_tV_{t+1}^*
+ \geq\mathcal T_t(f_{t+1}-a_{t+1})
+ \geq f_t-u_t-\beta_ta_{t+1}=f_t-a_t.
+\]
+For the upper induction,
+\[
+ J_t^\pi=\mathcal T_t^\pi J_{t+1}^\pi
+ \leq\mathcal T_t^\pi(f_{t+1}+b_{t+1})
+ \leq f_t-\ell_t+\eta_t+\beta_tb_{t+1}=f_t+b_t.
+\]
+Subtraction yields the theorem. Additive shifts $d_t$ change each residual by $d_t-\beta_td_{t+1}$ and the terminal residual by $d_T$; widths and action gaps are unchanged. This proves the invariance without assuming a contraction factor less than one.
+
+For retained-policy recertification, new residual enclosures are substituted in exactly the same induction. The old actor allowance remains valid because its hypothesis is a uniform statement about the original actor and the unchanged functions. It has no dependence on the mesh on which the new residual happens to be validated. The terminal allowance can also be retained. Intersecting two valid residual intervals preserves validity and cannot increase width. In the executed diagnostics the new residuals are used directly, with the old actor and terminal enclosures; the record contains every component needed to reconstruct the bound.
+
+The zero-shift case does not imply that constant residuals disappear from all value brackets. They disappear from the policy-loss bound through upper-minus-lower cancellation. Keeping signed endpoints is consequently important for direct cost scores as well as for sharp policy bounds.
+
+\section{Verification geometry and numerical enclosures}
+\subsection{The scalar primitive economy}
+The scalar state is $x\in[0,1]$, action $a\in[0,1/4]$, horizon four, and discount $15/16$. The transition is
+\[
+ F(x,a,z)=\operatorname{clip}_{[0,1]}
+       \{(13/16)x+a+(1/16)x(1-x)+z\},
+\]
+with $z\in\{-1/16,0,1/16\}$ and probabilities $(1/4,1/2,1/4)$. The cost is
+\[
+ c(x,a)=(x-11/16)^2+pa^2+4a^4+2(3/8-x)_+^2,
+\]
+and terminal cost is $g(x)=2(x-11/16)^2+2(3/8-x)_+^2$. The two evaluations are expectation and the entropic certainty equivalent $\rho_\theta(v)=\theta^{-1}\log\E e^{\theta v}$ with $\theta=1$; expectation is $\theta=0$. The discrete law here is an economic primitive, unlike the continuous uniform law of the coupled experiment.
+
+For a scalar ReLU network, exact dyadic coefficients permit rational breakpoints and slopes. The largest absolute slope bounds its Lipschitz constant $L_t$. The Bellman state and action constants used by the verifier are
+\[
+ L_t^x=2.875+(15/16)(0.875)L_{t+1},\qquad
+ L_t^a=p/2+1/4+(15/16)L_{t+1}.
+\]
+For $N+1$ state nodes and $A+1$ action nodes, the action cover allowance is $L_t^a/(8A)$ and the residual state allowance is $(L_t+L_t^x)/(2N)$. Each residual endpoint includes the state allowance; the nodal Bellman lower bound includes the action cover. The nearest-node actor allowance adds the selected nodal action gap, action cover, and $L_t^x/N$. All operations are outward enclosed.
+
+The terminal residual is piecewise quadratic. Its extrema occur at exact network breakpoints, the cost kink, endpoints, or stationary points in each piece. The implementation enumerates these candidates using rational arithmetic and rounds the extrema outward. It therefore does not replace an exact terminal calculation with an uncharged sampled check.
+
+\subsection{The coupled action and state certificates}
+For fixed $x$, the coupled action objective $q(a)$ is $\mu$-strongly convex on the simplex, with $\mu=2p-1/2$. For any feasible proposal $a$ and nonnegative multiplier $\nu$, the global quadratic lower model yields
+\begin{align*}
+ \inf_{b\geq0,\,\mathbf1'b\leq h}q(b)
+ &\geq q(a)-\nabla q(a)'a+\tfrac\mu2\|a\|^2-\nu h\\
+ &\quad-\frac1{2\mu}\sum_j
+          \bigl(\min\{\nabla_jq(a)-\mu a_j+\nu,0\}\bigr)^2,
+ \qquad h=1/8.
+\end{align*}
+Indeed, strong convexity gives a quadratic lower model; adding $\nu(\mathbf1'b-h)$ gives a lower bound on the constrained infimum, and minimizing the separable quadratic over $b\geq0$ gives the displayed expression. Any nonnegative multiplier is valid. Interval lower evaluation and the feasible proposal's upper value enclose the continuous-action infimum without trusting numerical first-order convergence.
+
+Let $\delta$ bound the nodal primal--dual gap, and let $L_{xa}$ bound the change of the action gradient with state. A node action with gap $\delta$ is within $\sqrt{2\delta/\mu}$ of the node optimizer. At a state distance $r$, the gradient perturbation is at most $L_{xa}r$. The loss of retaining the node action is bounded by
+\[
+ \eta=\delta+(L_{xa}r)\sqrt{2\delta/\mu}
+                 +\frac{(L_{xa}r)^2}{2\mu}.
+\]
+This follows by combining strong convexity at the node with the cross-state change of objective differences and maximizing the resulting linear-minus-quadratic expression in the distance to the node optimizer. On the square tensor grid, $r=\sqrt2/(2N)$. Rounded acquisition adds its own state-distance allowance before applying the formula. The ideal policy and rounded-state policy bounds are separately named in the original records.
+
+If the gradient of the fitted current continuation has Lipschitz constant $M_t$ and the Bellman envelope has gradient Lipschitz constant $H_{t+1}$, bilinear interpolation on cells of side $1/N$ has residual error at most $(M_t+H_{t+1})/(4N^2)$. To see this, condition successively on a coordinate and use the one-dimensional linear-interpolation error $Lh^2/8$ for a function with Lipschitz derivative. Summing two coordinate errors gives $Lh^2/4$. The source-bound derivative envelopes, rather than empirical finite differences, supply these constants. The terminal allowance uses $(M_T+18)/(4N^2)$.
+
+In the retained-policy diagnostic, these residual terms are refined at $N=256$, but the actor term remains the one certified for $N=128$. The record may also contain the fine-grid proposed actor's allowance as part of the inherited verifier output. That allowance is not used to claim an unchanged-policy result.
+
+\subsection{Arithmetic assumptions and implementation boundary}
+The inherited interval implementation applies outward rounding to elementary binary operations and encloses its exponential and logarithm approximations by explicit series remainders. Stored network and actor coefficients are interpreted as exact dyadics. Analytic innovation moments are enclosed using interval arithmetic, including cancellation. Exact rational breakpoint calculations and independently checked square roots are used where specified.
+
+The resulting certificates concern the defined policies, with numerical enclosures around their evaluation. The original rounded-state and execution accounts remain separate. The new retained-policy bound does not silently assert that an arbitrary hardware implementation with different state acquisition, optimizer, or clipping conventions inherits the same target. A deployed implementation must satisfy the execution assumptions or add its own allowance.
+
+\section{Paired policy costs: probability and numerical error}
+\subsection{An unbiased score with certificate-derived range}
+Under expectation and a fixed policy, the cost score is
+\[
+ Z_m=f_0^m(x_0)+\sum_{t<T}B_t(Q_t(f_{t+1}^m;X_t^m,\pi_t^m)-f_t^m(X_t^m))
+            +B_T(g(X_T^m)-f_T^m(X_T^m)).
+\]
+Taking expectations cancels the fitted values at every date, including both endpoints. The score has expected value equal to actual policy cost even if the networks are poor approximations. To obtain bounded support, write the centered summand as the nonnegative selected-action gap minus the signed Bellman residual. It lies in $[-u_t,\eta_t-\ell_t]$. The terminal term lies in $[-u_T,-\ell_T]$. Thus the score interval has width precisely the corresponding ideal policy bound. Subtracting two scores has a support width equal to the sum of their policy bounds, but its expectation is the direct difference of policy costs. The distinction is that the scores are evaluated along the policies' trajectories; two regret upper bounds are never used as a surrogate observation of the cost difference.
+
+\subsection{Continuous innovations through uniform bins}
+For each comparison, draw independent integer arrays $K_{itj}$ uniformly in $\{0,\ldots,2^{40}-1\}$. A bin represents the continuous interval
+\[
+ \left[\frac1{32}\left(\frac{2K_{itj}}{2^{40}}-1\right),
+       \frac1{32}\left(\frac{2(K_{itj}+1)}{2^{40}}-1\right)\right].
+\]
+The exact uniform innovation law can be represented by a uniform bin followed by a uniform draw inside it. The implementation encloses every draw in that bin and needs no additional within-bin random number. Both policies use the same innovation bins but propagate their own states and choose their own actions.
+
+At each date and in each coordinate, the actor is the half-up nearest-node rule. If a state interval meets more than one cell, the implementation includes all eligible node actions and propagates their componentwise hull. Such a hull need not itself be a feasible action, but interval evaluation over the hull still encloses every feasible action actually selected; it is used for enclosure, not as a new policy. The bounding arithmetic covers network values, analytic expectations, transition, stage cost, and terminal cost. Intersecting sample score enclosures with the deterministic support is valid for every bin.
+
+For a bin $K_i$, the computed endpoints $A_i,D_i$ are deterministic functions with $A_i\leq Z_i\leq D_i$ for every within-bin realization. Hence $\E A_i\leq\E Z_i\leq\E D_i$. Independence of bin draws makes each endpoint sequence independent and identically distributed, conditional on the frozen policies. Endpoint widening changes numerical precision, not the underlying innovation law.
+
+\subsection{Simultaneous coverage}
+Let $q=24$, $\alpha=0.01$, and $n=65536$. Scale each endpoint sequence to its deterministic support of width $B$. Apply the one-sided empirical Bernstein inequality of \citet{maurer2009}, Theorem 4, to the lower sequence with reversed sign and to the upper sequence in its usual direction, each at tail probability $\alpha/(2q)$. Rescaling gives the radius in the main article with logarithm $\log(4q/\alpha)=\log(9600)$. The union bound over all 48 tails yields simultaneous coverage at least $0.99$. Dependence between comparisons is not excluded or required to vanish; only within-comparison trajectory independence enters this argument.
+
+The code computes means by outward pairwise summation. If $[\underline m,\overline m]$ contains the true sample mean, interval squares of $x_i-[\underline m,\overline m]$ bound every squared deviation from that mean. Their outward sum divided by $n-1$ therefore bounds sample variance above. The logarithm uses the inherited interval series. A proposed floating square root is checked by exact rational squaring and enlarged until it is an upper bound. Since the radius is increasing in variance, range, and logarithm, these substitutions preserve coverage.
+
+This is a probability theorem for the stipulated independent simulation model. The fixed PCG64 seed identifies the reproducible realization; it is not a mathematical proof that a deterministic sequence is independent. The comparison states, policies, sample count, and multiplicity are fixed before the new simulations. No optional stopping or policy selection is performed. All 24 intervals contain zero, so no sign or equivalence conclusion is made.
+
+\input{tables/paired_full.tex}
+
+\section{Work accounts, component diagnostics, and reproduction}
+\input{tables/diagnostic_work.tex}
+The additional verification clocks include computations of fine-grid action proposals even though those proposals are not deployed. They do not repeat training or reconstruct the original service clock. Jobs were scheduled concurrently on a resource-limited local host; these clocks describe those diagnostics and cannot be read as isolated cross-method speed measurements.
+
+The original records expose state coverage, action coverage, nodal gaps, and terminal bounds. A representation/optimizer decomposition is not identifiable from them: different parameter errors and fitting trajectories can produce the same signed Bellman residual. We report the available components as an error account, not a causal identification of each source of approximation error. Training residuals are available as separate diagnostics and are not added twice to a certificate that already evaluates the trained functions.
+
+A fresh reproduction obtains the two pinned input artifacts, verifies their archive digests, and uses a clean result directory. The study commands deliberately refuse to overwrite completed records. The deterministic audit reconstructs target counts and signed comparisons from all original records, checks retained network and actor hashes, and reconstructs every new confidence endpoint from stored moments and support. Regression tests exercise interval arithmetic, exact finite-state policy inequalities, offset invariance, and source identities. The release manifest binds every active source, table, result, and compiled document.
+
+\section{Relationship to the retained theory}
+The full controlled-diffusion and viscosity analysis, economic boundary and transversality conditions, recursive utility and endogenous-preference models, temporal selves, games, quadratic hidden-factor construction, numerical acceptance theorems, and historical experiments remain in their unchanged source files and compiled companions. The new main article does not purport to re-prove them by citing the nonlinear experiment. The preservation map records file hashes and LaTeX labels, and the response gives the location of each current answer to the referee.
+
+The current revision supplies an integrated paper and new proofs and evidence. The new constructive catalogue supplies a separate horizon/price study and repeated isolated timings for its declared backend. An adaptive-grid comparator, a nonlinear dimension frontier, and repeated isolated comparisons for the original optimizers remain distinct evidence requirements; retained-policy and paired-cost results are not substitutes for them.
+\input{sections/constructive-proof}
+\input{tables/frontier45}
+\input{sections/witness-proof}
+\input{sections/feasible-proof}
+\bibliographystyle{ecta-fullname}
+\bibliography{references}
+\end{document}

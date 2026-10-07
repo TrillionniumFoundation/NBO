@@ -1,6 +1,6 @@
 # Response to the Referee: Neural Bellman Operators
 
-**Revision:** R46, 7 October 2026. **Author:** Qian QI.
+**Revision:** R46, 8 October 2026. **Author:** Qian QI.
 
 We thank the referee for identifying the difference between an intended revision and an actually reviewable source tree. The newest report by repository commit time is the supplemental review of R43 at `9a1ce0502a2cb8f57c697d1df9ba796da0403474`, committed at 12:27:38 UTC on 7 October 2026. It reviews the incomplete R43 snapshot `3c9ad7a969bddf3c79ec5dc07e4b74704fed8615`, not the completed R45 manuscript. The R44 substantive review at `5d4eca82b5477c4f0305f0f90bf9adc1635ec5de` was committed earlier that day, at 10:42:23 UTC. R46 responds to both without treating the numbering of revisions as the chronology of reports.
 
@@ -121,3 +121,9 @@ We retain *Neural Bellman Operators* as the central paper. The organizing object
 The publication build reruns 14 new exact regressions, 13 inherited constructive regressions and 14 inherited R44 regressions, without modifying historical result files. It reconstructs 216 new checkpoints, all exact bounds and first crossings, identical repetition objects, and identical critics in the two neural actor variants. It compiles all three documents with the retained Econometric Society class and rejects unresolved references, duplicate labels, missing characters and overfull boxes. These checks are reproducibility evidence, not mathematical peer approval or an editorial decision.
 
 Read the new main section *Neural continuation with an action witness*, its complete proof section in the supplement, the full frontier and timing tables, `audit/PUBLICATION_SUMMARY.json`, `audit/RESULT_AUDIT.json`, and `audit/RELEASE_AUDIT.json`. The final branch and commit bind those objects. No earlier review or revision is overwritten.
+
+## V. State-dependent feasibility and final integration
+
+The added main section, *State-dependent constraints and feasible witnesses*, and its proof supplement address the constructive gap between the original feasible correspondence and the common-action backend. Under a Hausdorff-Lipschitz modulus, feasible-pair primitive moduli, effective node-specific action nets and feasible Borel repairs, the theorem constructs the same min-plus ReLU continuation and a repaired feasible policy. The policy loss charges action-net error, query error, state coverage and repair displacement. It reduces to the common-action witness theorem when constraint variation and repair error vanish. A capacity-constrained two-state example has an exact clipping repair. Eight independent exact rational tests check its admissibility and bound formulas; the analytic proof establishes the all-state result. This is additional mathematical scope, not evidence of high-dimensional comparative speed or a calibrated application.
+
+The inherited R46 publication attempt 37626921466 stopped because its label-preservation traversal preceded generation of the tables it traversed. We generate and audit the actual tables first; no missing input, test, or label check is waived. A separate source branch holds the integration, and only a successful complete build is promoted to the new review-ready branch dated 8 October 2026. The final build runs 49 tests, preserves the old 36-service/216-rung catalogue and all earlier result paths, and includes the complete latest R43 report. The former failed run remains a failed run.
