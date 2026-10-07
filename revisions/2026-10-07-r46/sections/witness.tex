@@ -1,0 +1,83 @@
+\section{Neural continuation with an action witness}\label{sec:witness46}
+A constructed continuation contains information about the action that produced each Bellman label. Discarding that information and subsequently controlling an unrelated actor can charge the same approximation twice. We now retain the label's feasible action through the minimum circuit. This changes the returned policy, not merely the description of an old certificate. The construction continues to use the original economic primitives and its own fitted future.
+
+\subsection{A one-sided policy sandwich}
+Write $\mathcal T_t^\pi f_{t+1}(x)=Q_t(f_{t+1};x,\pi_t(x))$. Suppose that, uniformly on the invariant domain,
+\begin{equation}\label{eq:onesided46}
+ f_t-\mathcal T_tf_{t+1}\le u_t,\qquad
+ \mathcal T_t^\pi f_{t+1}-f_t\le d_t,
+ \qquad \ell_T\le f_T-g\le u_T.
+\end{equation}
+The quantities $u_t$ and $d_t$ are signed upper bounds. Their separate absolute values need not enter a policy-loss account.
+
+\begin{proposition}[One-sided policy sandwich]\label{prop:onesided46}
+Under the monotonicity, cash-invariance and Bellman comparison conditions of Section~\ref{sec:economy}, inequalities~\eqref{eq:onesided46} imply
+\begin{equation}\label{eq:jointgap46}
+ 0\le J_0^\pi(x)-V_0^*(x)
+ \le \sum_{t<T}B_t(u_t+d_t)+B_T(u_T-\ell_T).
+\end{equation}
+The bound is invariant to additive date-specific shifts of the continuation. It holds for the stated recursive evaluations as well as expectation; no simulation identity is required.
+\end{proposition}
+\begin{proof}
+Backward order comparison gives $V_0^*\ge f_0-\sum_{t<T}B_tu_t-B_Tu_T$ and $J_0^\pi\le f_0+\sum_{t<T}B_td_t-B_T\ell_T$. Subtraction proves the result. A shift $f_t\mapsto f_t+b_t$ adds $b_t-\beta_tb_{t+1}$ to $u_t$ and subtracts it from $d_t$, leaving their sum unchanged.
+\end{proof}
+The centered theorem remains valid: its choice $d_t=\eta_t-\ell_t$ recovers~\eqref{eq:gap}. The new proposition avoids that indirect bound when the selected-policy residual can be certified jointly with the continuation. It is an order comparison, not a new claim of neural superiority.
+
+\subsection{Retaining the minimizing cone's action}
+Use the primitive conditions, grids, query tolerances and labels of Section~\ref{sec:constructive45}. Let $a_{t,i}$ denote the action whose numerical query attains $y_{t,i}$. In place of the nearest-node actor, return
+\begin{equation}\label{eq:witnessactor46}
+ i_t(x)\in\arg\min_i\{y_{t,i}+L_t\|x-x_{t,i}\|_1\},
+ \qquad \pi_t^{\rm w}(x)=a_{t,i_t(x)}.
+\end{equation}
+A fixed tie convention makes this finite selector measurable. The common action set makes each selected action feasible, even when the attaining cone is not centered at a nearest node. The critic remains the exact affine--ReLU circuit. The actor additionally uses the circuit's comparison index; a discontinuous selector is not asserted to be a continuous ReLU output.
+
+\begin{theorem}[Witness-preserving neural construction]\label{thm:witness46}
+Under the conditions of Theorem~\ref{thm:constructive45}, the policy~\eqref{eq:witnessactor46} satisfies
+\begin{equation}\label{eq:witnessres46}
+ Q_t(f_{t+1};x,\pi_t^{\rm w}(x))-f_t(x)\le e_t.
+\end{equation}
+Consequently its all-state loss relative to the optimum over all admissible adapted policies is at most
+\begin{equation}\label{eq:witnessgap46}
+ \mathcal G_{\rm w}=
+ \sum_{t<T}B_t\{L_t^ak_t+2e_t+2L_th_t\}
+       +B_T\{2e_T+2L_gh_T\}.
+\end{equation}
+The nonterminal allowance is half the separated sufficient allowance in~\eqref{eq:gap45}; the terminal account is unchanged. This comparison of certified bounds does not assert that the two policies have ordered realized costs.
+\end{theorem}
+\begin{proof}
+For the attaining index $i=i_t(x)$, the numerical label and its action obey $Q_t(f_{t+1};x_{t,i},a_{t,i})\le y_{t,i}+e_t$. Transporting this same action to $x$ costs at most $L_t\|x-x_{t,i}\|_1$. Hence its objective is at most $f_t(x)+e_t$. The unchanged optimal-residual upper bound is $u_t=L_t^ak_t+e_t+2L_th_t$. Apply Proposition~\ref{prop:onesided46} with $d_t=e_t$ and the unchanged terminal enclosure.
+\end{proof}
+The label, the cone and the selected action are one mathematical object in this argument. Retaining only a Lipschitz-regularized label value without an attaining original action index would not justify~\eqref{eq:witnessres46}. The supplement proves that the scalar compiler preserves precisely this information, including dominated labels, rational intersections and ties.
+
+\begin{corollary}[Resource and execution allowances]\label{cor:witness46}
+Let $s=\varepsilon/\sum_{t=0}^TB_t$. At nonterminal dates it suffices to choose
+\[
+ e_t\le s/4,\qquad L_t^ak_t\le s/4,\qquad L_th_t\le s/8,
+\]
+and retain the terminal allocation of Corollary~\ref{cor:termination45}. Under the same effective-computability hypotheses the construction terminates with loss at most $\varepsilon$.
+
+If the chosen cone exceeds the minimum by at most $\nu_t$, state acquisition error is at most $r_t$ in the stated norm, and a feasible executed action is within $\alpha_t$ of that cone's action, replace $e_t$ in~\eqref{eq:witnessres46} by
+\[
+ e_t+\nu_t+2L_tr_t+L_t^a\alpha_t.
+\]
+Add the discounted execution terms to~\eqref{eq:witnessgap46}.
+\end{corollary}
+The relaxed allocation is a sufficient-budget improvement relative to the earlier proof, not a complexity lower bound for conventional methods. A tensor cover still incurs its dimension factors. Exact state acquisition is the reference experiment; unchecked lookup using rounded switchpoints does not inherit an exact-index guarantee.
+
+\subsection{A strengthened conventional comparison}
+For either the original nearest-node cone actor or the spline actor, let $C_i$ be the node's closed nearest-neighbor cell and let $f_t$ be that method's own continuation. The same selected-label argument gives the computable bound
+\begin{equation}\label{eq:nearest46}
+ d_t=e_t+D_t,\qquad
+ D_t=\max_i\sup_{x\in C_i}
+       \{y_{t,i}+L_t\|x-x_{t,i}\|_1-f_t(x)\}.
+\end{equation}
+On the scalar domain, all terms are piecewise affine. Their maximum is attained among the continuation knots, state nodes and cell boundaries; both adjacent actors are included at a boundary. The exact rational maximum supplies a valid all-state allowance without an additional verification mesh. Both conventional interpolation and the nearest-node neural ablation receive this improved account. Thus the experiment does not contrast the new bound only against a deliberately loose baseline. The old separated bound remains recorded, and the smaller of two bounds for the same returned policy may be used.
+
+\subsection{Matched construction, policy and certificate frontiers}\label{sec:study46}
+The new design was fixed in the repository before execution. It retains the nonlinear continuous-innovation economy~\eqref{eq:economy45}, horizons $2,4$, prices $1,4$, and all six resolutions $16,32,64,128,256,512$. Three methods and three isolated timing repetitions produce 36 services and 216 rungs. Each rung restarts from primitives. The two cone methods have identical critics and node-action arrays; their deployed selectors differ. The spline constructs its own labels. All methods receive the same exact integration and outward numerical arithmetic.
+
+The declared targets are $1/4$, $1/8$ and $1/16$. Every unsuccessful rung and every capped failure is retained. Internal prefix clocks include target construction, witness or nearest-cell compilation, certificates and durable checkpoints; process clocks additionally include imports and the common non-economic warm-up. Runs use one selected CPU and one numerical-library thread, with method order rotated across repetitions and economic cells. Frequency is not controlled. These are local measurements, not a hardware-independent work theorem. Primitive counts and rational storage are recorded separately from clocks, and are not called complete floating-point or bit-operation counts.
+
+\input{tables/witness-summary}
+\input{tables/witness-outcomes}
+The comparisons isolate the effect of carrying the action witness and of using a joint policy certificate. They do not reclassify earlier capped services or claim that the new selector was previously deployed. In particular, an improvement shared by the strengthened nearest-node ablation cannot be attributed solely to witness selection. A tighter regret certificate does not identify the sign of a direct policy-cost contrast. The existing direct expected-cost intervals and adverse precision findings remain unchanged.
