@@ -1,0 +1,139 @@
+\section{Full-Policy Verification Details}\label{sec:r23proofs}
+This section supplies the arithmetic and implementation accounts for
+Section~\ref{sec:r23policy}. All numerical coefficients are the exact values
+of their stored binary64 representations. The stochastic law remains
+Gaussian with those coefficients; no finite shock catalogue is substituted.
+
+\subsection{The quadratic local advantage}
+For a fixed supplied future policy, substitute
+$U_{t+1}(z)=z'P_{t+1}z+c_{t+1}$ into its one-step cost. The action-dependent
+terms are
+\[
+ u'H_tu+2\beta u'B_t'P_{t+1}A_tx.
+\]
+Since $H_t\succ0$, the minimum over the entire space $\R^d$ occurs at
+$u_t^g=-H_t^{-1}\beta B_t'P_{t+1}A_tx$. Evaluating at $-K_tx$ and subtracting
+this minimum yields
+\[
+ (-K_tx-u_t^g)'H_t(-K_tx-u_t^g)=x'D_t'H_t^{-1}D_tx.
+\]
+There is no approximation in this identity and no reference to the optimal
+future policy. The possibly loose Frobenius bound in
+\eqref{eq:r23eta} is chosen to make the implementation independent of an
+uncertified spectral decomposition. A failed bound need not indicate that
+the actual policy loss exceeds the tolerance.
+
+\subsection{Outward matrix balls}
+A matrix ball $(C,R)$ denotes every matrix $M$ with
+$|M-C|\leq R$ entrywise, where $R\geq0$. Exact input balls have zero radius.
+For conformable balls $(C,R)$ and $(D,S)$, let $k$ be the inner dimension.
+The exact product is enclosed about the computed product $\operatorname{fl}(CD)$
+by the radius
+\begin{equation}
+ \gamma_{2k}|C||D|+|C|S+R|D|+RS+2k\tau\mathbf1,
+ \label{eq:r23ballproduct}
+\end{equation}
+with every nonnegative calculation rounded upward. Here
+$\gamma_n=nu/(1-nu)$, $u$ is the binary64 unit roundoff, and $\tau$ is the
+smallest positive normal binary64 number. The underflow allowance deliberately
+exceeds the corresponding subnormal absolute-error allowance. The factor
+$2k$ permits separate multiplication and addition rounding in classical
+binary64 products. Fused operations only reduce this particular account.
+Overflow and nonfinite values are rejected rather than certified.
+
+To calculate a nonnegative product upper bound, the implementation divides
+the computed product by a downward bound for $1-\gamma_{2k}$, adds the
+underflow allowance, and rounds upward. Addition, scalar multiplication,
+traces, squared Frobenius norms, and maximum absolute row sums have analogous
+outward bounds. These operations enclose the actual recursion, not merely
+a rounded residual evaluated without error bars. Positivity of $P_t$ follows
+from the exact evaluation equation and positive stage costs, not from an
+unverified numerical eigenvalue. In the executed model the positive diagonal
+entries of $Q_t,R_t$ give the coercivity lower bounds directly. Covariance
+validity is checked by symmetry and strict diagonal dominance.
+
+The tests compare matrix operations with rational arithmetic on the exact
+binary input values, including signed products and cancellation. Separate
+tests compare policy losses with a separately computed optimal comparator,
+check the coercive bound at states far outside an ordinary training range,
+perturb policies within the declared execution class, and verify that the
+certificate still runs when the Riccati comparator is disabled. These tests
+complement, rather than replace, the enclosure argument.
+
+\subsection{A robust action-implementation envelope}
+Suppose the implemented action is $-K_tx+e_t$, with
+$\|e_t\|_2\leq e\|x\|_2$, possibly depending on the past and current state.
+Put $\overline P_T=Q_T$ and $\overline c_T=0$. For $F_t=A_t-B_tK_t$, set
+\begin{align}
+ h_t={}&2\|R_tK_t\|_F e+\|R_t\|_\infty e^2\nonumber\\
+ &+\beta\{2\|\overline P_{t+1}F_t\|_F\|B_t\|_F e
+             +\|\overline P_{t+1}\|_\infty\|B_t\|_F^2e^2\},
+ \label{eq:r23implh}\\
+ \overline P_t={}&Q_t+K_t'R_tK_t+
+                    \beta F_t'\overline P_{t+1}F_t+h_tI,\nonumber\\
+ \overline c_t={}&\beta\{\overline c_{t+1}+\tr(\overline P_{t+1}\Sigma)\}.
+ \label{eq:r23implrec}
+\end{align}
+All displayed coefficients are replaced by their outward upper enclosures
+in the numerical calculation.
+
+\begin{proposition}[Implementation allowance]\label{prop:r23implementation}
+For every execution satisfying the relative action-error bound, its remaining
+cost is at most $x'\overline P_tx+\overline c_t$. On the initial ball
+$\|x\|_2^2\leq b$, its excess over the ideal stored policy is at most
+\begin{equation}
+ \varepsilon_{\rm impl}
+ =\max\{0,b\|\overline P_0-P_0\|_\infty+
+                         \overline c_0-c_0\}.
+ \label{eq:r23implallow}
+\end{equation}
+\end{proposition}
+\begin{proof}
+Expanding the current action cost around $-K_tx$ bounds its increase by
+$\{2\|R_tK_t\|_F e+\|R_t\|_\infty e^2\}\|x\|_2^2$.
+Expanding the next-state quadratic envelope around $F_tx$ bounds its
+increase by the second line of \eqref{eq:r23implh}, times $\|x\|_2^2$.
+The mean-zero innovation contributes its trace term and has no cross term
+with a nonanticipating action. Backward induction proves the value envelope.
+Subtract the exact stored-policy quadratic value, use symmetry and the
+maximum-row-sum bound, and maximize over the initial ball. This proves
+\eqref{eq:r23implallow} even when the execution errors are history dependent.
+\end{proof}
+
+The error budget is explicit. Certification of arbitrary machine executions
+without an error contract would be a different claim. The experiment neither
+removes this term nor infers it from agreement on sampled states.
+
+\subsection{Reoptimized comparative statics}
+Let $K^{(r)}$ be a certified complete policy in regime $r$, and let its
+reported total loss bound on the initial ball be $b_r$. At a fixed initial
+state, the first-action objective with the \emph{optimal} future is a strictly
+convex quadratic with Hessian at least $2R_0$. The cost difference between
+using the candidate's first action and the optimal first action, both followed
+by the optimal future, is no larger than the candidate's full policy loss.
+Thus, with $r_0\leq\lambda_{\min}(R_0)$,
+\begin{equation}
+ \|u_0^{(r)}-u_0^{*,(r)}\|_2\leq\sqrt{b_r/r_0}.
+ \label{eq:r23actionradius}
+\end{equation}
+At $x_0=-\mathbf1$, define mean investment
+$m_r=d^{-1}\mathbf1'K_0^{(r)}\mathbf1$. Its distance from the optimal mean
+is at most $\sqrt{b_r/(r_0d)}$. The reported radius also includes the
+relative-execution and summation allowances. Subtracting the interval for
+the anchor from that for the changed regime gives a valid optimum-response
+interval. It is an enclosure in a specified model, not a confidence interval
+for an estimated economic population. Strong competitors are evaluated by
+the same construction.
+
+\subsection{Trainable continuation factors}
+For the square-activation critic, write
+$L(W;P)=\frac14\|W'W-dP\|_F^2$, with symmetric own-policy target $P$.
+Differentiation gives $\nabla_W L=W(W'W-dP)$. If $X\sim N(0,I)$, the mean
+squared error between the gradients of $\|WX\|^2/d$ and $X'PX$ equals
+$4\|W'W-dP\|_F^2/d^2$. The target is obtained by evaluating the current
+candidate policy; it is not the Riccati value matrix. The experiment trains
+all hidden weights for a fixed number of gradient updates and then solves
+the actor's full vector-action problem. A conventional quadratic receives
+the identical population target and is allowed its exact minimizer. This
+matched-information comparison isolates the cost of the neural factorization.
+No advantage over conventional quadratics is built into the target oracle.

@@ -1,0 +1,127 @@
+\section{Certified Warm Starts under Changing Continuations}\label{sec:r33warm}
+A continuation fitted to one economic future can be useful for another without
+being accurate enough to reuse unchanged. The relevant distinction is between
+an admissible initial factor and an admissible final policy. This section gives
+a finite training account for the former and retains the independent economic
+certificate for the latter. In contrast to the isotropic construction in
+Section~\ref{sec:r31constructive}, the starting Gram matrix need not commute
+with the new target. The result also allows explicitly bounded errors in each
+hidden-weight update.
+
+Let $M$ be a symmetric continuation target satisfying
+$mI\preceq M\preceq LI$, where $0<m\leq L$. The target is fixed during
+one fit, after the candidate's future policy has been finalized. A factor
+$W\in\R^{p\times d}$, with $p\geq d$, represents the scalar continuation
+$\|Wx\|^2/d$; every entry of $W$ is trainable. Write
+$H_j=W_j'W_j$ and consider the implemented update
+\begin{equation}\label{eq:r33update}
+ W_{j+1}=W_j\{I-\alpha(H_j-M)\}+\Delta_j,
+ \qquad \|\Delta_j\|_F\leq\nu.
+\end{equation}
+The perturbation account must cover the whole computed step, including
+products and subtraction, not only the final storage conversion. The theorem
+is a deterministic implication for all errors satisfying this account.
+
+\begin{theorem}[Perturbation-stable warm-start training]\label{thm:r33warm}
+Choose $0<r\leq m/2$ and $0<\alpha\leq\{2(L+r)\}^{-1}$, and set
+\begin{align}
+ b&=L+r, & q&=1-3\alpha m/4,\notag\\
+ z&=2\sqrt b(1+\alpha r)\nu+\nu^2,&
+ f&=z/(1-q).\label{eq:r33noise}
+\end{align}
+Suppose $\|H_0-M\|_F\leq e_0\leq r$ and $f\leq r$. Then every iterate
+in \eqref{eq:r33update} satisfies
+\begin{equation}\label{eq:r33envelope}
+ \|H_j-M\|_F\leq f+q^j(e_0-f)\leq r.
+\end{equation}
+In particular, if $f<a<e_0$, it suffices to take
+\begin{equation}\label{eq:r33cap}
+ k=\left\lceil\frac{\log\{(e_0-f)/(a-f)\}}{-\log q}\right\rceil
+\end{equation}
+updates to achieve Gram error at most $a$. If $e_0\leq a$, no update is
+required. No simultaneous diagonalization of $H_0$ and $M$ is assumed.
+\end{theorem}
+
+The proof in Section~\ref{sec:r33proofs} uses a Frobenius-norm contraction
+for a Sylvester operator, rather than the common eigenbasis used by the cold
+construction. It therefore covers rotated and overparameterized factors and
+warm starts whose Gram matrices lie on either side of the target. The positive
+noise floor is economically relevant: a requested continuation tolerance at
+or below that floor is not certified by the finite-cap formula. More accurate
+arithmetic or a different verified construction is then required; increasing
+the iteration count alone does not justify acceptance.
+
+\subsection{Transport and own-policy evaluation}
+Suppose the old factor is accompanied by
+$\|W_0'W_0-M_{\rm old}\|_F\leq e_{\rm old}$ and the newly evaluated target
+by $\|M-M_{\rm old}\|_F\leq h$. The computable gate
+\begin{equation}\label{eq:r33gate}
+ e_{\rm old}+h\leq r
+\end{equation}
+certifies an admissible warm start with $e_0=e_{\rm old}+h$. A direct enclosure
+of $\|W_0'W_0-M\|_F$ is an alternative, potentially sharper gate. Neither gate
+certifies the old action as accurate in the changed economy. If the gate
+fails, the controlled cold construction remains available; the failed gate
+and all subsequent work are charged. A target obtained from the previous
+regime's policy cannot replace the new policy's own continuation without a
+separate transport bound.
+
+A numerical evaluator may return a symmetric center $\widetilde M$ and an
+independently verified spectral radius $e^M$ for the exact own-policy target
+$M^\pi$. Apply Theorem~\ref{thm:r33warm} to $\widetilde M$, using certified
+bounds on that center. If its final Gram error is at most $a$, then
+\begin{equation}\label{eq:r33eval}
+ \|W'W-M^\pi\|_2\leq a+e^M.
+\end{equation}
+In the recursive capital economy, $M_t^\pi=d\Psi_\theta(P_{t+1}^\pi)$.
+The residual-centered evaluation in Proposition~\ref{prop:r31tube} supplies
+$e_t^M=d e_{t+1}/\gamma_t^2$, with an additional allowance for evaluating the
+transformed center when needed. This is a statement about the returned
+policy, not the policy used to produce an old warm start.
+
+For a returned actor $K_t$, put $F_t=A_t-B_tK_t$,
+$\widehat P_t=W_t'W_t/d$, and
+$Z_t=R_tK_t-\beta B_t'\widehat P_tF_t$. Its exact full-action residual obeys
+\begin{equation}\label{eq:r33policy}
+ \|D_t\|_F\leq\|Z_t\|_F+
+ \frac{\beta\|B_t\|_2\|F_t\|_F}{d}(a_t+e_t^M).
+\end{equation}
+The Frobenius norm of $F_t$, rather than its spectral norm without a dimension
+allowance, is essential when $e_t^M$ is only a spectral radius.
+Substituting these residuals in Theorem~\ref{thm:r27entropic}, with its moment,
+positivity, and implementation conditions, gives the same full adapted-policy
+comparison as before. The training theorem changes the construction of the
+candidate, not the economic target or the acceptance rule.
+
+\subsection{Reliability and complete work}
+The reliability statement is uniform over the class of initial factors and
+update perturbations just specified. It is not a confidence interval inferred
+from two or three training seeds. A randomized implementation supported
+entirely in this verified class inherits the deterministic cap. Whether a
+rounded evaluator, update routine, and returned policy satisfy the premises
+is checked separately. Failed domain, transport, precision, or final-policy
+checks remain failures to certify.
+
+For a sequence of changed futures, the warm-start service account is
+\begin{equation}\label{eq:r33work}
+ C_{\rm warm}=C_{\rm initial}+\sum_\ell
+ \{C_{\rm evaluate,\ell}+C_{\rm gate,\ell}
+   +C_{\rm fit,\ell}+C_{\rm actor,\ell}
+   +C_{\rm verify,\ell}+C_{\rm write,\ell}\}.
+\end{equation}
+Failed gates, cold fallbacks, and failed final checks enter this same sum.
+The cap gives an upper bound on the number of factor updates in an admissible
+warm fit. Comparing two upper bounds on training iterations does not establish
+a lower realized cost than a competitor that stops early. An economic work
+advantage requires complete measured costs, or an upper bound for the warm
+procedure below an independently justified lower bound for its comparator.
+In particular, the analytic structural solution in the quadratic economy
+remains a legitimate comparator. This distinction preserves the adverse
+frontiers of the earlier experiments while giving a positive, checkable
+criterion for when an old neural continuation can be retrained safely.
+
+The additional validation exercises below concern this training implication,
+including noncommuting starts, rectangular factors, bounded perturbations,
+transport failure, and unattainable precision requests. They are algebraic
+and implementation checks, not additional independent economic experiments
+and not a replacement for the previously frozen services.
