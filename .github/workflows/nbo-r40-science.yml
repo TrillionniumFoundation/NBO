@@ -1,0 +1,53 @@
+name: NBO R40 direct neural evidence
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r40-neural-residual-source-2026-10-07
+    paths:
+      - '.github/workflows/nbo-r40-science.yml'
+      - 'revisions/2026-10-07-r40/publication/science_source*.b64'
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: nbo-r40-direct-neural-evidence
+  cancel-in-progress: false
+jobs:
+  science:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Scientific dependencies
+        run: python -m pip install numpy requests mpmath
+      - name: Load immutable source driver
+        run: |
+          python - <<'PY'
+          import os,base64,hashlib,urllib.request,pathlib,json,ast
+          path='revisions/2026-10-07-r40/publication/science_remote.py'
+          url='https://api.github.com/repos/TrillionniumFoundation/NBO/contents/'+path+'?ref='+os.environ['GITHUB_SHA']
+          req=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['GITHUB_TOKEN'],'Accept':'application/vnd.github+json'})
+          with urllib.request.urlopen(req) as response: obj=json.load(response)
+          data=base64.b64decode(obj['content'])
+          assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()==obj['sha']
+          ast.parse(data);pathlib.Path('r40_remote.py').write_bytes(data)
+          PY
+      - name: Verify, execute and deposit all results
+        run: python r40_remote.py
+      - name: Retain evidence and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r40-direct-neural-evidence
+          path: |
+            work/revisions/2026-10-07-r40/
+            work/R40_SCIENCE_COMMIT.txt
+          if-no-files-found: warn
+          retention-days: 90
