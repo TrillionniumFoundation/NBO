@@ -1,0 +1,68 @@
+name: NBO R45 constructive study
+on:
+  push:
+    branches: [revision/econometrica-nbo-r45-constructive-service-2026-10-07]
+    paths:
+      - 'revisions/2026-10-07-r45/publication/science*'
+      - '.github/workflows/nbo-r45-study.yml'
+permissions:
+  contents: write
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            revisions/2026-10-07-r45
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Decode source and verify byte identity
+        run: |
+          python - <<'PY'
+          import base64,hashlib,io,json,zipfile
+          from pathlib import Path
+          p=Path('revisions/2026-10-07-r45')
+          s=(p/'publication/science.zip.b64').read_text().strip()
+          repair=p/'publication/science-transport-repair.json'
+          if repair.exists():
+              changes=json.loads(repair.read_text())
+              for c in sorted(changes,key=lambda c:c['start'],reverse=True):
+                  assert s[c['start']:c['end']]==c['old']
+                  s=s[:c['start']]+c['new']+s[c['end']:]
+          raw=base64.b64decode(s,validate=True)
+          assert hashlib.sha256(raw).hexdigest()=='7aff853aa1256607d35ddc494eef6bfc43d908a90b2f452bcb9f1507ea2787ac','Source transport integrity failed; no experiment executed'
+          z=zipfile.ZipFile(io.BytesIO(raw))
+          assert all(not n.startswith('/') and '..' not in Path(n).parts for n in z.namelist())
+          z.extractall(p)
+          PY
+      - run: python -m pip install numpy==2.1.3
+      - name: Exact arithmetic tests
+        run: python revisions/2026-10-07-r45/code/tests.py
+      - name: Full isolated catalogue
+        run: python revisions/2026-10-07-r45/code/execute.py
+      - name: Publish fresh evidence branch
+        run: |
+          git config user.name 'NBO revision automation'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          target=revision/econometrica-nbo-r45-evidence-2026-10-07
+          if git ls-remote --exit-code --heads origin "$target"; then
+            echo 'Refusing to replace existing evidence branch'; exit 1
+          fi
+          git switch -c "$target"
+          git add revisions/2026-10-07-r45
+          git commit -m "R45: materialize frozen source, 24 services and full certificate frontiers"
+          git push origin "HEAD:refs/heads/$target"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r45-study
+          path: revisions/2026-10-07-r45
+          retention-days: 30
