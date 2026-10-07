@@ -1,0 +1,137 @@
+name: NBO R47 manuscript publication
+on:
+  push:
+    branches: [revision/econometrica-nbo-r47-integrated-source-2026-10-08]
+    paths:
+      - 'revisions/2026-10-08-r47/publication/SOURCE_BINDINGS.json'
+      - '.github/workflows/nbo-r47-publication.yml'
+permissions:
+  contents: write
+jobs:
+  publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            revisions/2026-10-07-r44
+            revisions/2026-10-07-r45
+            revisions/2026-10-07-r46
+            revisions/2026-10-08-r47
+            reviews/2026-10-08-econometrica-numerical-methods-r46
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify frozen science and manuscript source identities
+        run: |
+          python - <<'PY'
+          import hashlib,json,shutil
+          from pathlib import Path
+          p=Path('revisions/2026-10-08-r47')
+          j=json.loads((p/'publication/SOURCE_BINDINGS.json').read_text())
+          for n,h in {**j['source_sha256'],**json.loads((p/'SOURCE_SHA256.json').read_text())}.items():
+              actual=hashlib.sha256((p/n).read_bytes()).hexdigest()
+              assert actual==h,(n,actual,h)
+          report=Path('reviews/2026-10-08-econometrica-numerical-methods-r46/referee_report.md')
+          raw=report.read_bytes()
+          assert hashlib.sha1(f'blob {len(raw)}\0'.encode()+raw).hexdigest()=='1a37eb553a853b490aba256d6ef431c83727e8a4'
+          (p/'audit').mkdir(exist_ok=True)
+          shutil.copy2(report,p/'audit/REVIEWED_R46_REPORT.md')
+          shutil.copy2('README.md',p/'audit/ROOT_README_BEFORE_R47.md')
+          print('Verified all 17 source files and latest referee report.')
+          PY
+      - name: Install publication dependencies
+        run: |
+          python -m pip install numpy==2.1.3 scipy==1.14.1
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended texlive-science pandoc
+      - name: Reconstruct results, run all 69 tests and compile the article
+        run: python revisions/2026-10-08-r47/code/build47.py
+      - name: Verify assembled manuscript, retain history and select R47
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,platform,subprocess
+          from pathlib import Path
+          p=Path('revisions/2026-10-08-r47')
+          j=json.loads((p/'publication/SOURCE_BINDINGS.json').read_text())
+          for n,h in {**j['source_sha256'],**j['assembled_source_sha256']}.items():
+              assert hashlib.sha256((p/n).read_bytes()).hexdigest()==h,n
+          audit=json.loads((p/'audit/RELEASE_AUDIT.json').read_text())
+          assert audit['total_tests']==69
+          assert audit['results']['direct']['contrasts']==120
+          assert audit['results']['constrained']['rungs']==72
+          assert audit['results']['deployment']['acquisition_cases']==72
+          for c in audit['compilation']:
+              assert all(c[k]==0 for k in ('undefined_references','duplicate_labels','missing_characters','overfull_boxes'))
+          fonts={'.ttf','.otf','.woff','.woff2','.pfb','.pfa','.afm','.tfm'}
+          assert not [str(f) for f in p.rglob('*') if f.is_file() and f.suffix.lower() in fonts]
+          tools={cmd:subprocess.check_output([cmd,'--version'],text=True).splitlines()[0] for cmd in ('pandoc','pdflatex','bibtex','git')}
+          tools.update(python=platform.python_version(),platform=platform.platform())
+          (p/'audit/PUBLICATION_ENVIRONMENT.json').write_text(json.dumps(tools,indent=2)+'\n')
+          Path('ECTA.tex').write_text('\\input{revisions/2026-10-08-r47/ECTA.tex}\n')
+          Path('supp.tex').write_text('\\input{revisions/2026-10-08-r47/supp.tex}\n')
+          Path('README.md').write_text('# Neural Bellman Operators\n\n## Current revision: R47\n\n[Authoritative manuscript and reproduction instructions](revisions/2026-10-08-r47/README.md).\n\n[Main article](revisions/2026-10-08-r47/build/ECTA.pdf) | [Technical supplement](revisions/2026-10-08-r47/build/supp.pdf) | [Response to the R46 referee](revisions/2026-10-08-r47/build/response.pdf).\n\nThis revision extends the original NBO paper with acquired-state feasible realization, an explicit constrained construction, and direct policy-cost comparisons. Every earlier revision, review, application and adverse result is retained.\n\n[Release audit](revisions/2026-10-08-r47/audit/RELEASE_AUDIT.json) | [Clean Git rebuild](revisions/2026-10-08-r47/audit/CLEAN_REBUILD.json) | [Final delivery](revisions/2026-10-08-r47/audit/FINAL_DELIVERY.json) | [Preservation audit](revisions/2026-10-08-r47/audit/PRESERVATION.json).\n')
+          PY
+          git diff --exit-code -- revisions/2026-10-07-r44 revisions/2026-10-07-r45 revisions/2026-10-07-r46 reviews/2026-10-08-econometrica-numerical-methods-r46
+      - name: Commit candidate without deleting historical or tracked files
+        run: |
+          git config user.name 'NBO revision automation'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          target=revision/econometrica-nbo-r47-review-ready-2026-10-08
+          if git ls-remote --exit-code --heads origin "$target"; then
+            echo 'Refusing to replace an existing review-ready branch'; exit 1
+          fi
+          git switch -c "$target"
+          git add -f revisions/2026-10-08-r47
+          git add ECTA.tex supp.tex README.md
+          if git diff --cached --name-only --diff-filter=D | grep -q .; then
+            echo 'Unexpected tracked-file deletion'; exit 1
+          fi
+          git commit -m 'R47: integrated Econometrica manuscript, proofs, direct value and acquired-state evidence'
+      - name: Rebuild from a clean committed Git archive
+        run: python revisions/2026-10-08-r47/code/clean47.py
+      - name: Bind final delivery and push the new review-ready branch
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,subprocess
+          from pathlib import Path
+          p=Path('revisions/2026-10-08-r47')
+          audit=json.loads((p/'audit/RELEASE_AUDIT.json').read_text())
+          clean=json.loads((p/'audit/CLEAN_REBUILD.json').read_text())
+          assert clean['successful'] and clean['tests']==69 and not clean['study_reexecuted']
+          assert not clean['network_or_expiring_artifact_required']
+          delivery={'revision':'R47','source_commit':os.environ['GITHUB_SHA'],'publication_run':os.environ['GITHUB_RUN_ID'],
+                    'candidate_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+                    'review_commit':'0bf1ff6060bb9211762f191b6ead306ae4725beb',
+                    'reviewed_manuscript_commit':'c3930399e3b8267451096d0e70ea67f49510065e',
+                    'study_source_commit':'04d0638169ae7adbdd8bb21f9d1fea5b1ef68de2',
+                    'study_evidence_commit':'4da0b2c286793f75a56ad6d8228cb0da82aabc60',
+                    'tests':69,'clean_rebuild':clean,'pdfs':audit['compilation'],
+                    'ordinary_utf8_sources_materialized':True,'historical_files_modified':False,'scientific_execution_repeated':False,
+                    'editorial_or_peer_approval':False}
+          final=p/'audit/FINAL_DELIVERY.json'
+          final.write_text(json.dumps(delivery,indent=2,sort_keys=True)+'\n')
+          files=[f for f in sorted(p.rglob('*')) if f.is_file() and '__pycache__' not in f.parts and f.name!='FILES_SHA256.json']
+          delivery['verified_manifest_files']=len(files)
+          final.write_text(json.dumps(delivery,indent=2,sort_keys=True)+'\n')
+          manifest={str(f.relative_to(p)):hashlib.sha256(f.read_bytes()).hexdigest() for f in files}
+          (p/'audit/FILES_SHA256.json').write_text(json.dumps(manifest,indent=2,sort_keys=True)+'\n')
+          for n,h in manifest.items():assert hashlib.sha256((p/n).read_bytes()).hexdigest()==h,n
+          print(json.dumps(delivery,indent=2))
+          PY
+          git add -f revisions/2026-10-08-r47/audit
+          git commit -m 'R47: verified clean rebuild and source-bound final review package'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r47-review-ready-2026-10-08
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r47-publication
+          path: revisions/2026-10-08-r47
+          retention-days: 30
