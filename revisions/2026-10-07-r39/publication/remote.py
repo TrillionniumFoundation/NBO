@@ -4,7 +4,7 @@ No repository checkout, old-source replacement, experiment rerun, force push,
 or credential logging is performed. The branch-head lease must still match.
 """
 from __future__ import annotations
-import os,sys,json,hashlib,base64,io,zipfile,subprocess,time
+import os,sys,json,hashlib,base64,io,zipfile,subprocess
 from pathlib import Path
 import requests
 REPO='TrillionniumFoundation/NBO'
@@ -14,7 +14,7 @@ SOURCE=os.environ['GITHUB_SHA']
 WORK=Path(os.environ.get('GITHUB_WORKSPACE','.')).resolve()/'work'
 API='https://api.github.com/repos/'+REPO
 SESSION=requests.Session()
-SESSION.headers.update(Authorization='Bearer '+os.environ['GITHUB_TOKEN'],Accept='application/vnd.github+json','X-GitHub-Api-Version'='2022-11-28')
+SESSION.headers.update({'Authorization':'Bearer '+os.environ['GITHUB_TOKEN'],'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'})
 
 def request(method,path,**kwargs):
     response=SESSION.request(method,API+path,timeout=120,**kwargs)
