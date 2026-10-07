@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/nbo-r42-science.yml
       - revisions/2026-10-07-r42/publication/science-code.b64
+      - revisions/2026-10-07-r42/publication/stability_fix.py
   workflow_dispatch:
 permissions:
   contents: read
@@ -27,10 +28,10 @@ jobs:
         run: |
           python -m pip install numpy==2.3.5 scipy==1.17.0 mpmath==1.3.0 requests==2.34.2
           python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
-      - name: Restore pinned inherited verifier and frozen R42 source
+      - name: Restore pinned inherited verifier and corrected R42 source
         run: |
           python - <<'PY'
-          import os,requests,base64,hashlib,json,zipfile,tarfile,io,pathlib
+          import os,requests,base64,hashlib,json,zipfile,tarfile,io,pathlib,subprocess,sys
           root=pathlib.Path('work');root.mkdir()
           api='https://api.github.com/repos/TrillionniumFoundation/NBO'
           sess=requests.Session();sess.headers.update({'Authorization':'Bearer '+os.environ['GITHUB_TOKEN'],'Accept':'application/vnd.github+json'})
@@ -54,8 +55,11 @@ jobs:
                   p=pathlib.PurePosixPath(info.name);assert info.isfile() and not p.is_absolute() and '..' not in p.parts and str(p).startswith(rel+'/code/')
               archive.extractall(root,filter='data')
           for name in ['STUDY_PROTOCOL.md','PROTOCOL_ADDENDUM.md']:(dest/name).write_bytes(fetch(rel+'/'+name))
+          (dest/'publication').mkdir(exist_ok=True)
+          fix=dest/'publication/stability_fix.py';fix.write_bytes(fetch(rel+'/publication/stability_fix.py'))
+          subprocess.run([sys.executable,str(fix)],check=True)
           (dest/'audit').mkdir(exist_ok=True)
-          provenance=dict(source_commit=os.environ['GITHUB_SHA'],run_id=os.environ['GITHUB_RUN_ID'],review_commit='d97959d6347464749111599a88a5f790f7aecc4c',reviewed_manuscript_commit='06a104a8db06b76464165899d817b303cb2aaa01',inherited_artifact_id=11460768113,inherited_artifact_sha256='b5dc1a9fdcedc3279dbd7e9c190425f7e856f1fbcd67083e7452c2febc06aac6',verified_inherited_hashes=len(ledger),historical_clock_replacements=0)
+          provenance=dict(source_commit=os.environ['GITHUB_SHA'],run_id=os.environ['GITHUB_RUN_ID'],review_commit='d97959d6347464749111599a88a5f790f7aecc4c',reviewed_manuscript_commit='06a104a8db06b76464165899d817b303cb2aaa01',inherited_artifact_id=11460768113,inherited_artifact_sha256='b5dc1a9fdcedc3279dbd7e9c190425f7e856f1fbcd67083e7452c2febc06aac6',verified_inherited_hashes=len(ledger),historical_clock_replacements=0,first_run_artifact_id=11464572607,first_run_artifact_sha256='ab6b0147aebf8191a68022ce64d4787145859ae8413cc2bcc4c7ff8b3fa53587',first_run_software_exceptions=4,correction='Algebraically equivalent stable inverse-softplus; unchanged primitives, seeds, targets, training budgets and comparison methods')
           (dest/'audit/SCIENCE_PROVENANCE.json').write_text(json.dumps(provenance,indent=2,sort_keys=True)+'\n')
           PY
       - name: Exact rational and dependency tests
