@@ -1,0 +1,74 @@
+\section{Compiled witnesses and implementable policies}\label{sec:operational47}
+A constructive continuation is economically useful only if the same action witness can be selected and implemented with a stated resource and information budget. This section supplies that connection. The continuation remains the Neural Bellman Operator of Sections~\ref{sec:constructive45}--\ref{sec:feasible46}; neither the objective nor the admissible policy class is changed. We distinguish the mathematical circuit, an equivalent conventional representation, and the computation needed to implement either one.
+
+\subsection{An exact tensor compiler}
+Let the state nodes form a Cartesian grid $\mathcal G$, with $K=(N+1)^d$ nodes on $[0,1]^d$. Labels $y_i$ may be arbitrary and inexact. Each label retains its original feasible action $a_i$. For a nonnegative slope $L$, define
+\begin{equation}\label{eq:closure47}
+ z(v)=\min_i\{y_i+L\|v-x_i\|_1\},\qquad
+ s(v)\in\arg\min_i\{y_i+L\|v-x_i\|_1\},\quad v\in\mathcal G.
+\end{equation}
+The index $s(v)$ refers to an original label and action, not to a newly averaged action. Coordinatewise forward and backward minimum sweeps evaluate this discrete $\ell^1$ transform. Separable distance transforms and min-convolution are classical computational tools \citep{felzenszwalb2012}; we use their exact arithmetic form to preserve the policy witness.
+
+\begin{proposition}[Off-grid witness compilation]\label{prop:compiler47}
+Two sweeps along every grid axis compute \eqref{eq:closure47} in $O(dK)$ additions and comparisons, retaining an attaining original index. For a cell $C$ containing $x$, let $\mathcal V(C)$ be its vertices. Then
+\begin{equation}\label{eq:corner47}
+ \min_i\{y_i+L\|x-x_i\|_1\}
+ =\min_{v\in\mathcal V(C)}
+       \{y_{s(v)}+L\|x-x_{s(v)}\|_1\}.
+\end{equation}
+Any index attaining the right side is a valid witness for the original continuation. Thus an off-grid continuation and witness query uses at most $2^d$ original cones after cell location, without approximation error. The assertion includes noisy labels, dominated cones, ties and cell boundaries.
+\end{proposition}
+\begin{proof}
+Each coordinate sweep computes the one-dimensional minimum with cost $L|j-k|/N$ and carries the attaining index. Separability and the commutativity of finite minima give \eqref{eq:closure47}. Fix an original minimizing node $x_i$ for $x$. There is a vertex $v$ of $C$ on a coordinatewise shortest path from $x$ to $x_i$. Consequently
+\[
+ y_{s(v)}+L\|x-x_{s(v)}\|_1
+ \le z(v)+L\|x-v\|_1
+ \le y_i+L\|x-x_i\|_1.
+\]
+The left member cannot lie below the minimum over all original nodes. Equality follows. This argument applies to any choice of an attaining index at each vertex.
+\end{proof}
+
+Both the native minimum-plus implementation and the ReLU implementation receive this compiler. The circuit identity $\min\{a,b\}=a-\operatorname{ReLU}(a-b)$ represents the same minimum. Cell location and the action-index selector remain comparison operations; they are not a learned smooth actor. The executed ReLU backend applies these minimum gates to the same outward cone scores as the conventional backend. It shares distance preprocessing and does not constitute a separate neural-training experiment. This distinction isolates a genuine query acceleration without attributing a classical shared compiler to neural representation alone.
+
+\subsection{State acquisition and robust feasibility}
+Let $U$ be the set of true states compatible with an acquired observation, with representative $\widehat x\in U$, radius $r=\sup_{x\in U}\|x-\widehat x\|_1$ and diameter $\operatorname{diam}_1 U$. Suppose the selected original index satisfies
+\[
+ y_i+L_t\|\widehat x-x_i\|_1\le f_t(\widehat x)+\nu_t.
+\]
+For each index, require an implemented action $\Gamma^U_{t,i}$ that is feasible throughout $U$ and, for every $x\in U$, satisfies
+\begin{equation}\label{eq:robustrepair47}
+ \|\Gamma^U_{t,i}-a_{t,i}\|_1
+ \le K_t^A\|x-x_{t,i}\|_1+\zeta_t^U.
+\end{equation}
+This is a robust feasibility obligation. A small objective error is not a substitute for it.
+
+\begin{theorem}[Acquired-state witness policy]\label{thm:acquired47}
+Under Theorem~\ref{thm:feasible46}, a measurable acquisition rule, the stated index allowance, and \eqref{eq:robustrepair47}, the implemented policy is feasible at the true state and obeys
+\begin{align}\label{eq:acquired47}
+ \mathcal T_t^{\pi^{\rm acq}}f_{t+1}-f_t
+ &\le e_t+\nu_t+2L_tr_t+D_t^Q\zeta_t^U,\\
+ J_0^{\pi^{\rm acq}}-V_0^*
+ &\le\sum_{t<T}B_t
+       \{D_t^Qk_t+2e_t+2L_th_t+\nu_t+2L_tr_t+D_t^Q\zeta_t^U\}
+       +B_T(u_T-\ell_T).\notag
+\end{align}
+The terminal term is zero when the terminal primitive is used exactly. The comparison is with all admissible adapted policies, not only grid policies.
+\end{theorem}
+\begin{proof}
+Transporting the original feasible node pair to $(x,\Gamma^U_{t,i})$ gives an objective at most $y_i+e_t+L_t\|x-x_i\|_1+D_t^Q\zeta_t^U$. Moving its cone from $x$ to $\widehat x$ costs at most $L_tr_t$; the index allowance costs $\nu_t$; moving $f_t$ back costs at most $L_tr_t$. Apply the one-sided policy sandwich, Proposition~\ref{prop:onesided46}, and the original residual upper bound.
+\end{proof}
+
+For the capacity interval $A(x)=[0,b(x)]$ with $K^A$-Lipschitz $b$, a particularly simple implementation rounds $\min\{a_i,\inf_{x\in U}b(x)\}$ downward to an action lattice of spacing $2^{-a}$. It satisfies \eqref{eq:robustrepair47} with $\zeta^U=K^A\operatorname{diam}_1U+2^{-a}$. This term accounts for both conservative capacity and action rounding. Exact-state repair, robust repair and action quantization are therefore different policies with related, explicitly charged guarantees.
+
+An outward interval $[\underline\phi_i,\overline\phi_i]$ for every candidate cone makes the numerical index contract executable: select the least upper endpoint and charge
+$\overline\phi_i-\min_j\underline\phi_j$. A uniform upper bound for that quantity supplies $\nu_t$. In the experiments, state acquisition uses 12 or 20 binary fractional bits, and capacity repair is calculated by integer division before producing a 20-bit dyadic action. Ambiguous simulated acquisition cells are enclosed rather than assigned an unverified midpoint action. The supplement specifies the finite-arithmetic contract and its adversarial tests.
+
+\subsection{A primitive total-work account}
+Write $J_t$ for node action count, $M_t$ for integration count, and $B$ for the bit length of the exact label/slope arithmetic. The compiled witness backend requires
+\begin{equation}\label{eq:work47}
+ O\!\left(\sum_{t<T}\left[dK_t\,C_{\rm rat}(B)
+       +K_tJ_tM_t\{d2^d+C_{\rm prim}\}\right]\right)
+\end{equation}
+operations under bounded-cost floating arithmetic, in addition to certified numerical precision control, serialization and any nonconstant-cost primitive evaluations. Here $C_{\rm rat}(B)$ is the cost of an exact rational addition/comparison, not an assumed constant. A deployed query adds cell acquisition, at most $d2^d$ cone work, selection, and repair. A direct comparison of $n$ paths costs $O(nTd2^d)$ such query work plus primitive transitions and exact endpoint-moment arithmetic. Storage includes all original labels and actions, $K_t$ witness indices per date, arithmetic bit lengths, and the largest live quadrature batch. The supplement separates these terms, including the strengthened fitted-value verifier.
+
+The benefit relative to a flat cone query is removal of a second factor $K_t$ from repeated continuation evaluation. The state cover $K_t=(N+1)^d$ remains. Equation~\eqref{eq:work47} is not dimension-free, and the identical non-neural compiled envelope has the same asymptotic account. The original learned-hidden-location methods have their own training costs; this construction is not a convergence theorem for their optimizers.
