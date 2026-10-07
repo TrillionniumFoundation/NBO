@@ -1,0 +1,66 @@
+name: NBO R44 complete referee publication
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r44-referee-revision-2026-10-07
+    paths:
+      - .github/workflows/nbo-r44-publication.yml
+      - revisions/2026-10-07-r44/publication/**
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: nbo-r44-complete-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install publication dependencies
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends texlive-latex-extra texlive-fonts-recommended cm-super pandoc
+      - name: Materialize hash-pinned source and complete evidence
+        run: python revisions/2026-10-07-r44/publication/materialize.py
+      - name: Audit all original records and compile current manuscript
+        run: python revisions/2026-10-07-r44/code/build.py
+      - name: Publish a new review-ready branch without rewriting history
+        run: |
+          set -euo pipefail
+          R=revisions/2026-10-07-r44
+          rm -rf "$R/code/__pycache__"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c revision/econometrica-nbo-r44-review-ready-2026-10-07
+          git add -f "$R" README.md
+          git diff --cached --name-only | python -c 'import sys; p=sys.stdin.read().splitlines(); assert p and all(x=="README.md" or x.startswith("revisions/2026-10-07-r44/") for x in p), p'
+          git commit -m 'R44: publish coherent NBO article, proofs, retained-policy diagnostics and direct paired costs'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r44-review-ready-2026-10-07
+          echo "PUBLISHED_COMMIT=$(git rev-parse HEAD)" | tee "$RUNNER_TEMP/nbo-r44-published.txt"
+      - name: Archive the complete current publication
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r44-complete-review-publication
+          path: |
+            revisions/2026-10-07-r44
+            revisions/2026-10-07-r41/ECTA.tex
+            revisions/2026-10-07-r41/supp.tex
+            revisions/2026-10-07-r41/applications.tex
+            revisions/2026-10-07-r41/build/*.pdf
+          retention-days: 90
+          if-no-files-found: error
