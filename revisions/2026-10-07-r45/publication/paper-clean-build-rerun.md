@@ -1,0 +1,5 @@
+# Clean-checkout publication rerun
+
+The preceding runs identified missing retained R41 template inputs and a missing inherited-test import path, before any final revision branch was published. The pinned publication capsule and scientific source remain unchanged. `code/prepare_publication.py` now materializes the byte-identical retained companions, records the non-scientific assembly/build corrections, and uses the retained code only for inherited regressions. The original capsule hashes, updated build-source hashes, and complete correction audit are retained separately.
+
+All fourteen inherited regressions passed in a local test with the former R41 evidence directory unavailable and the explicit retained-source import path. The remote build must rerun these tests, all thirteen new tests, all numerical audits and all manuscript compilations; no skipped gate is accepted as publication success. The final branch must materialize all inputs and PDFs rather than depend on expiring build artifacts.
