@@ -1,0 +1,149 @@
+name: NBO R46 integrated revision
+on:
+  push:
+    branches: [revision/econometrica-nbo-r46-integrated-source-2026-10-08]
+    paths: ['.github/workflows/nbo-r46-integrated-publication.yml', 'revisions/2026-10-07-r46/code/integrate_revision.py', 'revisions/2026-10-07-r46/sections/feasible*', 'revisions/2026-10-07-r46/code/test_feasible.py']
+permissions:
+  contents: write
+jobs:
+  publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            revisions/2026-10-07-r44
+            revisions/2026-10-07-r45
+            revisions/2026-10-07-r46
+            reviews
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify inherited and additional source identities
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          p=Path('revisions/2026-10-07-r46')
+          old=json.loads((p/'audit/PUBLICATION_SOURCE_SHA256.json').read_text())
+          for n,h in old.items():
+              assert hashlib.sha256((p/n).read_bytes()).hexdigest()==''.join(h.split()),n
+          extra={
+            'sections/feasible-witness.tex':'6ab47d4790ba979d04c9d9bb0f9acc8303297baa309249fcdf5e4d6226184d33',
+            'sections/feasible-proof.tex':'fcc1487b0aecff6adfdc88ba29fc468c539af2db7ff4b4945bbbde772fcbaa62',
+            'code/test_feasible.py':'2c9a8822a752d28fa316e95aad78364f8319922325b9cca25630c40ef44a8fc8',
+            'code/integrate_revision.py':'fbddb3a6d5b63839194e10d75f7a34aa5b2e209c18206430282d827bdc09053c'}
+          for n,h in extra.items():
+              assert hashlib.sha256((p/n).read_bytes()).hexdigest()==h,n
+          (p/'audit/INTEGRATION_SOURCE_SHA256.json').write_text(json.dumps(extra,indent=2)+'\n')
+          PY
+      - name: Materialize the exact latest review without changing its text
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import base64,hashlib,json,subprocess
+          from pathlib import Path
+          p=Path('reviews/2026-10-07-econometrica-numerical-methods-r43');p.mkdir(parents=True,exist_ok=True)
+          blobs={'referee_report.md':'bb6b050e1ac3feea091f8800e874e9f858281108','review_manifest.json':'4b1643babb93354e5b47a5361e7df9703b5040f3','verification_results.json':'085101f703d4843afe79aa7dc31ac1513d5a1133','verify_r43_review.py':'71a199e370f4dc1713fd7de6f11134ae8adb8663'}
+          for n,h in blobs.items():
+              payload=json.loads(subprocess.check_output(['gh','api','repos/TrillionniumFoundation/NBO/git/blobs/'+h]))
+              data=base64.b64decode(payload['content'])
+              assert hashlib.sha1(('blob '+str(len(data))+'\0').encode()+data).hexdigest()==h,n
+              q=p/n
+              if q.exists(): assert q.read_bytes()==data,n
+              else: q.write_bytes(data)
+          PY
+      - name: Install the pinned numerical and publication dependencies
+        run: |
+          python -m pip install numpy==2.1.3 scipy==1.14.1
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended texlive-science pandoc poppler-utils
+      - name: Integrate the new theorem and select the complete manuscript
+        run: |
+          python revisions/2026-10-07-r46/code/integrate_revision.py
+          python - <<'PY'
+          import hashlib,json,shutil
+          from pathlib import Path
+          p=Path('revisions/2026-10-07-r46')
+          shutil.copy2('README.md',p/'audit/ROOT_README_BEFORE_INTEGRATION.md')
+          f=p/'audit/PUBLICATION_SOURCE_SHA256.json'
+          shutil.copy2(f,p/'audit/INHERITED_PUBLICATION_SOURCE_SHA256.json')
+          names=set(json.loads(f.read_text())) | set(json.loads((p/'audit/INTEGRATION_SOURCE_SHA256.json').read_text()))
+          f.write_text(json.dumps({n:hashlib.sha256((p/n).read_bytes()).hexdigest() for n in sorted(names)},indent=2)+'\n')
+          for n in ('ECTA.tex','supp.tex'):
+              Path(n).write_text(chr(92)+'input{revisions/2026-10-07-r46/'+n+'}\n')
+          Path('README.md').write_text('# Neural Bellman Operators — R46\n\n## Integrated revision, 8 October 2026\n\n[Authoritative revision and reproduction instructions](revisions/2026-10-07-r46/README.md).\n\n[Main article](revisions/2026-10-07-r46/build/ECTA.pdf) | [Technical supplement](revisions/2026-10-07-r46/build/supp.pdf) | [Response to referee](revisions/2026-10-07-r46/build/response.pdf).\n\nThe original paper is extended by witness-preserving neural construction and feasible-witness transport for state-dependent constraints. The 36-service study, all historical outcomes, theory, applications and reviews remain preserved. The latest R43 report concerns a historical incomplete snapshot; the response also addresses the substantive R44 report.\n\n[Release audit](revisions/2026-10-07-r46/audit/RELEASE_AUDIT.json) | [Complete numerical summary](revisions/2026-10-07-r46/audit/PUBLICATION_SUMMARY.json) | [Preservation](revisions/2026-10-07-r46/audit/PRESERVATION.json) | [Clean rebuild](revisions/2026-10-07-r46/audit/CLEAN_REBUILD.json).\n\nThe canonical review object is revision/econometrica-nbo-r46-review-ready-2026-10-08 at its final publication commit, not the source branch.\n')
+          PY
+      - name: Reconstruct all records, run 49 tests and compile all documents
+        run: python revisions/2026-10-07-r46/code/build.py --release
+      - name: Commit candidate without deleting historical files
+        run: |
+          git config user.name 'NBO revision automation'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          target=revision/econometrica-nbo-r46-review-ready-2026-10-08
+          if git ls-remote --exit-code --heads origin "$target"; then
+            echo 'Refusing to replace an existing review branch'; exit 1
+          fi
+          git switch -c "$target"
+          git add -f revisions/2026-10-07-r46 reviews/2026-10-07-econometrica-numerical-methods-r43
+          git add README.md ECTA.tex supp.tex
+          if test -n "$(git diff --cached --name-only --diff-filter=D)"; then
+            echo 'Unexpected deletion'; exit 1
+          fi
+          git diff --exit-code -- revisions/2026-10-07-r44 revisions/2026-10-07-r45
+          git commit -m 'R46: complete constrained-witness revision, 49 checks and referee response'
+      - name: Clean committed-source rebuild with no generated R46 tables or PDFs
+        run: |
+          clean="$RUNNER_TEMP/nbo-clean-rebuild"
+          mkdir -p "$clean"
+          git archive HEAD ECTA.tex supp.tex README.md revisions/2026-10-07-r44 revisions/2026-10-07-r45 revisions/2026-10-07-r46 reviews | tar -x -C "$clean"
+          rm -rf "$clean/revisions/2026-10-07-r46/build"
+          rm -f "$clean/revisions/2026-10-07-r46/tables/witness-"*.tex
+          python "$clean/revisions/2026-10-07-r46/code/build.py" > "$RUNNER_TEMP/nbo-clean-rebuild.log" 2>&1
+          NBO_CLEAN="$clean" python - <<'PY'
+          import hashlib,json,os,subprocess
+          from pathlib import Path
+          p=Path('revisions/2026-10-07-r46');q=Path(os.environ['NBO_CLEAN'])/p
+          a=json.loads((q/'audit/RELEASE_AUDIT.json').read_text());assert a['total_tests']==49
+          checked=['ECTA.tex','supp.tex','response.tex','code/build.py','sections/feasible-witness.tex','sections/feasible-proof.tex']+[str(f.relative_to(p)) for f in (p/'tables').glob('*.tex')]
+          for n in checked: assert (p/n).read_bytes()==(q/n).read_bytes(),n
+          result={'successful':True,'candidate_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'tests':49,'regenerated_source_files':checked,'compilation':a['compilation'],'network_or_expiring_artifact_required_for_rebuild':False,'study_reexecuted':False,'scope':'Rebuild from git archive after removing generated R46 PDF directory and witness tables; all sources and frozen records retained. PDF binary hashes may vary with timestamps.'}
+          (p/'audit/CLEAN_REBUILD.json').write_text(json.dumps(result,indent=2)+'\n')
+          (p/'audit/clean-rebuild.log').write_bytes((Path(os.environ['RUNNER_TEMP'])/'nbo-clean-rebuild.log').read_bytes())
+          release=p/'audit/RELEASE_AUDIT.json';j=json.loads(release.read_text());j['clean_committed_rebuild']='audit/CLEAN_REBUILD.json';release.write_text(json.dumps(j,indent=2,sort_keys=True)+'\n')
+          manifest={str(f.relative_to(p)):hashlib.sha256(f.read_bytes()).hexdigest() for f in sorted(p.rglob('*')) if f.is_file() and '__pycache__' not in f.parts and f.name!='FILES_SHA256.json'}
+          (p/'audit/FILES_SHA256.json').write_text(json.dumps(manifest,indent=2,sort_keys=True)+'\n')
+          PY
+      - name: Verify final bytes and publish the immutable review object
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          p=Path('revisions/2026-10-07-r46')
+          for n,h in json.loads((p/'audit/FILES_SHA256.json').read_text()).items():
+              assert hashlib.sha256((p/n).read_bytes()).hexdigest()==h,n
+              assert Path(n).suffix.lower() not in {'.ttf','.otf','.woff','.woff2','.pfb','.pfa','.afm','.tfm'},n
+          a=json.loads((p/'audit/RELEASE_AUDIT.json').read_text())
+          assert a['total_tests']==49 and a['release_entry_and_review_checks']
+          assert a['results']['services']==36 and a['results']['rungs']==216
+          assert json.loads((p/'audit/CLEAN_REBUILD.json').read_text())['successful']
+          for c in a['compilation']:
+              assert not any(c[k] for k in ('undefined_references','duplicate_labels','overfull_boxes','missing_characters'))
+          PY
+          git add -f revisions/2026-10-07-r46/audit
+          git commit -m 'R46: bind successful clean rebuild and final release manifest'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r46-review-ready-2026-10-08
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r46-integrated-publication
+          path: revisions/2026-10-07-r46
+          retention-days: 30
