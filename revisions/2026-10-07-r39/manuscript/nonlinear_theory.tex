@@ -1,0 +1,251 @@
+\section{Constructive Neural Bellman Operators beyond quadratic continuations}
+\label{sec:r39nonlinear}
+
+A continuation method has an economic use when its approximation can be
+translated into a decision guarantee without assuming that the approximation
+class contains the value function. We now give this translation for nonlinear
+recursive economies. The comparison is with all feasible adapted policies.
+The construction uses compact state and action sets, not a Gaussian coefficient
+identity. The preceding diffusion framework and unbounded-state results remain
+in force under their respective assumptions; compactness is imposed only in
+this additional realization.
+
+\subsection{A residual-oscillation theorem}
+Let $X$ and $A$ be compact metric spaces, let $F_t:X\times A\times Z\to X$
+and $c_t:X\times A\to\R$ be continuous, and let $Z$ have a finite distribution
+with fixed probabilities $q_z$. Write $\beta_t>0$ for the date-$t$ continuation
+weight, $B_0=1$, and $B_t=\prod_{j<t}\beta_j$. The conditional continuation
+functional $\rho_t$ is monotone and cash invariant:
+$\rho_t(Y+a)=\rho_t(Y)+a$. It is continuous on finite vectors. In particular,
+these conditions hold for
+\begin{equation}\label{eq:r39risk}
+ \rho_\theta(Y)=\theta^{-1}\log\sum_zq_z e^{\theta Y(z)},\qquad
+ \rho_0(Y)=\sum_zq_zY(z),\qquad \theta\geq0.
+\end{equation}
+Boundedness makes the exponential moment finite. Define
+\[
+ Q_t(v;x,a)=c_t(x,a)+\beta_t\rho_t(v(F_t(x,a,Z))),\qquad
+ T_tv(x)=\min_{a\in A}Q_t(v;x,a).
+\]
+Continuity gives measurable minimizers. Recursive costs for arbitrary adapted
+policies use the same conditional functional at every realized history. Let
+$V_T^*=g$ and $V_t^*=T_tV_{t+1}^*$.
+
+\begin{theorem}[Nonlinear full-policy comparison]\label{thm:r39comparison}
+Let $v_t$ be continuous functions and let $\pi_t(x)\in A$ be measurable.
+Suppose that, at every state,
+\begin{align}
+ \ell_t\leq v_t-T_tv_{t+1}\leq u_t,&\qquad t<T,\label{eq:r39residual}\\
+ Q_t(v_{t+1};x,\pi_t(x))-T_tv_{t+1}(x)&\leq\eta_t,\label{eq:r39actor}\\
+ \ell_T\leq v_T-g&\leq u_T.\nonumber
+\end{align}
+Then, for every initial state and against all feasible adapted policies,
+\begin{equation}\label{eq:r39loss}
+ 0\leq J_0^\pi-V_0^*
+ \leq\sum_{t<T} B_t(u_t-\ell_t+\eta_t)+B_T(u_T-\ell_T).
+\end{equation}
+Moreover, $v_0-\sum_{t\leq T}B_tu_t$ is a lower bound on $V_0^*$.
+Neither membership of $V^*$ in a neural class nor convergence of a training
+optimizer is required for this comparison.
+\end{theorem}
+
+\begin{proof}
+Monotonicity and cash invariance imply
+$\|T_tv-T_tw\|_\infty\leq\beta_t\|v-w\|_\infty$; the same statement holds
+for the operator of any fixed feasible action. Backward induction applied to
+\eqref{eq:r39residual} yields
+\[
+ v_t-\sum_{s=t}^T(B_s/B_t)u_s\leq V_t^*
+ \leq v_t-\sum_{s=t}^T(B_s/B_t)\ell_s.
+\]
+The terminal equality is immediate. For the induction step, shift the next
+function by the corresponding deterministic constant, apply $T_t$, and use
+$T_tv_{t+1}\in[v_t-u_t,v_t-\ell_t]$.
+For the returned policy, \eqref{eq:r39actor} instead gives
+\[
+ J_t^\pi\leq v_t+\sum_{s=t}^{T-1}(B_s/B_t)(\eta_s-\ell_s)
+                    -(B_T/B_t)\ell_T.
+\]
+Subtract the lower bound on $V_t^*$. At an arbitrary history, each realized
+action has continuation cost at least the Bellman minimum, and induction
+compares its future cost with $V_{t+1}^*$. Thus the Bellman value is a lower
+bound for every adapted policy, not only for the Markov or neural class.
+A measurable minimizing Markov policy attains it. This proves both claims.
+\end{proof}
+
+The economically relevant residual is its oscillation $u_t-\ell_t$.
+A common additive valuation error cancels from the loss comparison. This is
+the nonlinear counterpart of centered continuation error in the earlier
+operator analysis, rather than an assumption that a critic learns absolute
+value levels accurately.
+
+\subsection{A finite construction and a trained-network check}
+Take $X=[0,1]$ and $A=[0,\bar a]$. Suppose $c_t$ and $F_t$ have known
+Lipschitz constants separately in state and action. If $v_{t+1}$ has
+Lipschitz constant $L_{t+1}$, admissible constants for $Q_t$ are
+\begin{equation}\label{eq:r39lipschitz}
+ L_{x,t}=L_{c,x,t}+\beta_t L_{F,x,t}L_{t+1},\qquad
+ L_{a,t}=L_{c,a,t}+\beta_t L_{F,a,t}L_{t+1}.
+\end{equation}
+The same $L_{x,t}$ bounds the state variation of $T_tv_{t+1}$.
+Use a uniform state partition $x_i=ih$ and an action grid of mesh $\Delta$,
+including both endpoints. At every pair, verified arithmetic supplies
+$\underline q_{ij}\leq Q_t(v_{t+1};x_i,a_j)\leq\overline q_{ij}$.
+Set $L_i=\min_j\underline q_{ij}$, $U_i=\min_j\overline q_{ij}$ and
+$\delta_t=L_{a,t}\Delta/2$. Let $v_t$ be the linear interpolant of stored
+nodal values $y_i$, with no requirement that these equal an exact minimizer.
+Then valid residual constants are
+\begin{align}\label{eq:r39mesh}
+ \ell_t&=\min_i(y_i-U_i)-L_{x,t}h/2,\\
+ u_t&=\max_i(y_i-L_i+\delta_t)+L_{x,t}h/2.\nonumber
+\end{align}
+If the action $a_{j_i}$ is stored at node $i$ and extended by the
+nearest-node rule, a valid actor allowance is
+\begin{equation}\label{eq:r39meshactor}
+ \eta_t=\max_i(\overline q_{i j_i}-L_i)+\delta_t+L_{x,t}h.
+\end{equation}
+All expressions are enclosed outward in the implementation.
+
+\begin{proposition}[Constructive nonquadratic continuation]\label{prop:r39construction}
+Under the preceding conditions, \eqref{eq:r39mesh}--\eqref{eq:r39meshactor}
+and a certified terminal interpolation error imply
+Theorem~\ref{thm:r39comparison}. Every such $v_t$ has the exact representation
+\begin{equation}\label{eq:r39relu}
+ v_t(x)=y_0+s_0x+\sum_{i=1}^{N-1}(s_i-s_{i-1})(x-x_i)_+,
+ \qquad s_i=(y_{i+1}-y_i)/h.
+\end{equation}
+For each fixed finite horizon, a feasible neural policy with any prescribed
+positive loss tolerance can be constructed in finitely many operations if
+arithmetic precision can be increased to deliver the required interval widths.
+This assertion concerns the constructive mesh algorithm, not unrestricted
+stochastic-gradient training.
+\end{proposition}
+
+\begin{proof}
+The continuous action minimum at a node lies in $[L_i-\delta_t,U_i]$:
+a grid point is within $\Delta/2$ of any minimizing action. On a state cell,
+linear interpolation of nodal Bellman values differs from the Bellman function
+by at most $L_{x,t}h/2$, since the interpolation-weighted distance to the two
+endpoints is $2r(h-r)/h\leq h/2$. This proves \eqref{eq:r39mesh}.
+Moving from a state to its nearest node changes both its chosen-action value
+and the Bellman minimum by at most $L_{x,t}h/2$ each, proving
+\eqref{eq:r39meshactor}. Slope changes prove \eqref{eq:r39relu}.
+
+For finiteness, choose nodal midpoints of $[L_i,U_i]$ and the action minimizing
+$\overline q_{ij}$. Suppose each $Q$ interval has width at most $\omega$ and
+each stored midpoint has an additional rounding error at most $\zeta$.
+Then $U_i-L_i\leq\omega$. Residual oscillation plus actor allowance is at most
+\[
+ 2\omega+2\zeta+2\delta_t+2L_{x,t}h.
+\]
+For the Lipschitz recursion, each nodal midpoint is within
+$\delta_t+\omega+\zeta$ of the exact Bellman value. Consequently the next
+interpolant has Lipschitz constant at most
+$L_{x,t}+2(\delta_t+\omega+\zeta)/h$.
+Choose $\Delta\leq h^2$ and $\omega+\zeta\leq h^2$ at every date.
+Equations~\eqref{eq:r39lipschitz} then give, by finite backward induction,
+a bound on all interpolant Lipschitz constants uniform over $0<h\leq1$.
+Terminal interpolation contributes at most $L_g h/2+\zeta$ in absolute error.
+The right-hand side of \eqref{eq:r39loss} therefore tends to zero with $h$.
+A sufficiently fine finite grid and sufficiently precise finite arithmetic
+attain any positive target. This proof does not assert that fixed binary64
+arithmetic suffices for every target.
+\end{proof}
+
+A conventional spline routine and \eqref{eq:r39relu} represent the same
+constructed function; relabeling it alone is not a neural work advantage.
+The second implementation trains all affine hidden weights in
+$f_t(x)=a_t+b_tx+\sum_{j=1}^p c_{tj}(w_{tj}x+d_{tj})_+$.
+It uses the certified nodal values as deterministic training data and selects
+actions from its own continuation predictions. Its selected actions are then
+checked by \eqref{eq:r39meshactor} against the independent interval brackets.
+The full cost of the reference construction, training and verification is
+charged. Acceptance certifies the returned policy even when the optimizer has
+no convergence guarantee. A rejected proposal can be replaced by the
+constructive policy above; this gives a terminating certified procedure without
+asserting that every trained proposal must be accepted.
+
+\begin{proposition}[All-state verification of trained ReLU continuations]
+\label{prop:r39breakpoints}
+Let $f$ be the preceding one-hidden-layer scalar ReLU network and $v$ a linear
+spline. The maximum of $|f-v|$ on $[0,1]$ occurs at an endpoint, a spline knot,
+or a neural root $-d_j/w_j$ in that interval, with $w_j\ne0$. Enclosing each
+root by outward division and evaluating both functions over its interval gives
+a certified uniform bound, including nondyadic roots. Direct evaluation costs
+$O((N+p)(p+\log N))$ arithmetic operations; sorting the breakpoints, when used,
+costs $O((N+p)\log(N+p))$.
+\end{proposition}
+\begin{proof}
+Between consecutive points in the specified set, $f-v$ is affine. The absolute
+value of an affine function is convex and is bounded by its endpoint maximum.
+Continuity includes the endpoints of adjacent pieces. Zero hidden slopes
+produce no breakpoint. Every exact breakpoint belongs to its outward root
+interval, so interval evaluation bounds its value even when a root cannot be
+stored exactly. A direct network evaluation uses $O(p)$ operations and a
+binary-search spline evaluation $O(\log N)$. There are at most $N+p+1$ points.
+\end{proof}
+
+This certificate removes the mesh-Lipschitz remainder used in the earlier
+network-to-spline check. It does not retroactively change the earlier policy
+bounds or execution clocks. The new endpoint audit uses exact rational
+arithmetic only as an independent check of the verifier, not as the production
+method used in the floating-point economic services.
+
+\subsection{Nonlinear investment and the value of reoptimization}
+\label{sec:r39economy}
+The economic realization has bounded capital, irreversible investment and a
+shortfall penalty. Its primitives are
+\begin{align}
+ F(x,a,z)&=\operatorname{clip}_{[0,1]}
+       \{13x/16+a+x(1-x)/16+z\},\label{eq:r39capital}\\
+ c_P(x,a)&=(x-11/16)^2+Pa^2+4a^4+2(3/8-x)_+^2,\nonumber\\
+ g(x)&=2(x-11/16)^2+2(3/8-x)_+^2,\qquad \beta=15/16,\nonumber
+\end{align}
+where $a\in[0,1/4]$ and the shocks $(-1/16,0,1/16)$ have probabilities
+$(1/4,1/2,1/4)$. The price $P$ measures the quadratic investment burden;
+$\theta$ in \eqref{eq:r39risk} measures aversion to high future costs.
+A low-capital household faces both a distance-to-target loss and a shortfall
+penalty. Investment is capped and cannot be negative. The quartic adjustment
+cost, nonlinear accumulation and clipping prevent a Riccati reduction.
+This is a theoretical counterfactual economy, not an estimated calibration.
+
+Valid primitive constants are $L_{c,x}=23/8$, $L_{F,x}=7/8$,
+$L_{c,a}=P/2+1/4$, $L_{F,a}=1$, and $L_g=17/4$.
+They follow by differentiation on smooth pieces and continuity at the kinks;
+clipping is nonexpansive. Hence Proposition~\ref{prop:r39construction}
+verifies its assumptions directly from the primitives.
+
+\begin{proposition}[Fixed-rule investment exposure]\label{prop:r39exposure}
+For a fixed feasible policy rule $\pi$ in \eqref{eq:r39capital}, independent of
+$P$, the derivative $D_t^\pi=\partial J_t^\pi/\partial P$ exists along each
+finite shock tree and satisfies $D_T^\pi=0$ and
+\begin{equation}\label{eq:r39exposure}
+ D_t^\pi=a_t^2+\beta\sum_z\widetilde q_{t,z}D_{t+1}^\pi(F_t),\qquad
+ \widetilde q_{t,z}=
+ \frac{q_z\exp(\theta J_{t+1}^\pi(F_t))}
+      {\sum_yq_y\exp(\theta J_{t+1}^\pi(F_t))}.
+\end{equation}
+At $\theta=0$, $\widetilde q=q$. In particular $D_t^\pi\geq0$.
+For old and new rules, the total cost change decomposes exactly as
+\begin{align}\label{eq:r39decomposition}
+ J_0^{\pi^{\rm new}}(4)-J_0^{\pi^{\rm old}}(1)
+ ={}&\{J_0^{\pi^{\rm old}}(4)-J_0^{\pi^{\rm old}}(1)\}\\
+ &-\{J_0^{\pi^{\rm old}}(4)-J_0^{\pi^{\rm new}}(4)\}.\nonumber
+\end{align}
+The first bracket is mechanical repricing; the second is the cost saved by
+reoptimization at the new price.
+\end{proposition}
+\begin{proof}
+For a fixed rule, the states and selected actions on the finite shock tree do
+not depend on $P$, even if the rule is discontinuous in state. Each stage cost
+is affine in $P$. Differentiate the finite log-sum-exp recursion; its derivative
+is the probability-weighted derivative in \eqref{eq:r39exposure}. Backward
+induction proves existence and nonnegativity. Add and subtract
+$J_0^{\pi^{\rm old}}(4)$ to obtain \eqref{eq:r39decomposition}.
+\end{proof}
+
+No global monotonicity of the optimal investment rule is inferred from this
+fixed-rule statement. The numerical counterfactual below instead reports the
+actual policy changes and an independent lower bound on the second bracket.
+A strictly positive lower bound establishes an economic gain from the returned
+policy even when its optimality certificate is conservative.

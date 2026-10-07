@@ -1,0 +1,114 @@
+\section{Verified floating-point implementation and complete work}
+\label{sec:r39floating}
+
+The factor iteration is useful only if its whole-step allowance can be
+obtained for the operations actually performed. The next result supplies such
+an allowance without exact matrix products, exact solves, or a claim that a
+small computed residual is automatically rigorous. The residuals themselves
+must be enclosed.
+
+\begin{proposition}[Residual verification of a native update]
+\label{prop:r39floating}
+Let $M$ be the fixed stored symmetric target with a proved bound $M\succeq mI$,
+$m>0$, and let $W\in\R^{p\times d}$. Let $Z$ and $V$ be arbitrary stored
+floating-point proposals. Define their exact-real residuals by
+\[
+ R=MZ-W^\top W,\qquad D=V-\tfrac12W(3I-Z).
+\]
+If outward arithmetic proves $\|R\|_F\leq r_R$, $\|D\|_F\leq r_D$, and
+$\|W\|_2\leq w$, then the ideal update
+$\overline W=\tfrac12W(3I-M^{-1}W^\top W)$ satisfies
+\begin{equation}\label{eq:r39step}
+ \|(V-\overline W)M^{-1/2}\|_2
+ \leq \nu:=\{r_D+wr_R/(2m)\}/\sqrt m.
+\end{equation}
+Writing $E=M^{-1/2}W^\top WM^{-1/2}-I$, if $\|E\|_2\leq r<1$, then
+\begin{equation}\label{eq:r39envelope}
+ \|M^{-1/2}V^\top VM^{-1/2}-I\|_2
+ \leq (3+r)r^2/4+2\nu+\nu^2.
+\end{equation}
+Thus $2\nu+\nu^2\leq(1-r)r^2/4$ certifies a squared-radius update.
+Alternatively, a direct Gram enclosure can certify a terminal target without
+certifying this contraction.
+\end{proposition}
+\begin{proof}
+$Z-M^{-1}W^\top W=M^{-1}R$, so
+$V-\overline W=D-\tfrac12WM^{-1}R$. Submultiplicativity gives
+\eqref{eq:r39step}. Put $Y=WM^{-1/2}$ and $\overline Y=\overline WM^{-1/2}$.
+Then $\overline Y=\tfrac12Y(3I-Y^\top Y)$ and
+$\overline Y^\top\overline Y-I=(-3E^2+E^3)/4$.
+For each eigenvalue $e\in[-r,r]\subset(-1,1)$, this polynomial is nonpositive,
+and $(1+e)(1-e/2)^2\leq1$. Hence $\|\overline Y\|_2\leq1$.
+The implemented perturbation adds at most $2\nu+\nu^2$ to the Gram error,
+proving \eqref{eq:r39envelope}. The argument works for every $r<1$; it does
+not apply the earlier $r\leq1/2$ budget outside its stated range.
+\end{proof}
+
+The implementation forms proposals in binary32 or binary64 and verifies them
+with outward binary64 matrix balls. A cached approximate inverse is permitted
+only for the identical fixed target and precision. Residual $R$ is evaluated
+against the original stored target and factor, so conversion and solve errors,
+including those of the cached inverse, enter the enclosure. A failed binary32
+proposal can be retried in binary64. Exhausting the available native types is
+reported as a failure, not as a proof that higher precision would fail.
+Positive spectral bounds are certified by sufficient Gershgorin inequalities;
+matrices failing this sufficient check are not silently accepted on the basis
+of a computed eigenvalue. The experiments concern exact-real feedback rules
+with stored binary coefficients. Floating-point execution of the actor needs
+the separate execution allowance already present in the policy theorem.
+
+\subsection{Work and storage accounting}
+Let $n_b$ be the number of target-inverse constructions, $n_a$ the number of
+proposed factor updates including rejected proposals, $n_e$ the number of
+complete own-policy evaluations, $n_c$ the number of complete policy checks,
+and $n_h$ the number of actor linear solves. For dense matrices, a sufficient
+arithmetic-operation account for this implementation is
+\begin{equation}\label{eq:r39work}
+ O\!\left(n_bd^3+n_a(pd^2+d^3)
+              +(n_e+n_c)Td^3+n_hd^3+\mathcal W_{\rm io}\right).
+\end{equation}
+Here $\mathcal W_{\rm io}$ includes recorded serialization and output work.
+The ball products and residual checks have the same dense-operation order as
+the proposed update, but their constants are not those of a single BLAS call.
+A working storage bound, excluding the accumulated audit log, is
+$O(T(pd+d^2)+pd+d^2)$ words. The stored factor remains binary64 even when its
+proposal was calculated in binary32. Reduced proposal precision therefore does
+not imply reduced persistent factor storage in this implementation.
+
+For an accepted fixed-target contraction path, a sufficient update cap is
+$K=\lceil\log_2(\log(1/\tau)/\log(1/r_0))\rceil_+$.
+An ideal harmonic scalar initialization has
+$r_0=(\kappa-1)/(\kappa+1)$, where $\kappa=L/m$; the implemented initial
+radius includes rounding and is checked separately. At most two native
+proposal attempts are made per accepted step when both types are available.
+Conditioning also enters \eqref{eq:r39step} through $m^{-1}$ and $m^{-1/2}$.
+The economic target determines $\tau$ through the previously derived actor,
+evaluation and Gram allowances; the entropic moment margin enters those
+allowances rather than disappearing into an iteration count. If a gate fails,
+the realized counters, not $K$ alone, determine complete work.
+Equation~\eqref{eq:r39work} is an arithmetic-operation bound at the stated
+native precisions, not a total arbitrary-precision bit-complexity theorem.
+
+For the scalar nonlinear construction, $N+1$ states, $A+1$ actions and $s$
+shocks require $O(TNAs\log N)$ operations with binary-search spline evaluation,
+in addition to the cost of certified transcendental evaluation. A sweep over
+sorted successor states can change this bound but is not presumed here.
+All fixed-rule shock-tree evaluations are also charged; their worst-case size
+is $O(s^T)$. Neither this finite construction nor the endpoint verifier asserts
+dimension-independent approximation complexity.
+
+\subsection{Relation to numerical methods}
+Classical polar and matrix-function iterations supply the algebraic update,
+not its economic interpretation. Mixed-precision iterative refinement separates
+working, correction and residual precision; \citet{CarsonHigham2018R39} provides
+a systematic analysis of that separation. Verified numerical computation, as
+surveyed by \citet{Rump2010R39}, makes the additional distinction between a
+computed residual and an enclosing bound. Our residual construction uses both
+ideas, while requiring neither to imply an economic policy guarantee by
+itself. That guarantee comes from the Bellman comparison and its allocation
+of evaluation, actor and continuation error. Likewise, the recursive-risk
+quadratic comparator exploits the structural control solution, whereas
+Section~\ref{sec:r39nonlinear} does not use a quadratic closure. The new
+contribution is the connection between certified numerical work and a returned
+policy in the original NBO framework, not a claim to have invented polar
+iteration, spline approximation, or residual verification.
