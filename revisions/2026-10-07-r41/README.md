@@ -4,11 +4,11 @@ Revision of the existing NBO paper responding to the R39 advisory referee report
 
 ## Read the revision
 
-- [Main article](revisions/2026-10-07-r41/build/ECTA.pdf) and [self-contained source](revisions/2026-10-07-r41/ECTA.tex).
-- [Technical supplement](revisions/2026-10-07-r41/build/supp.pdf), including arithmetic and dimension/continuous-innovation work proofs.
-- [Point-by-point response](revisions/2026-10-07-r41/response.md) and [response PDF](revisions/2026-10-07-r41/build/response.pdf).
-- [Complete applications](revisions/2026-10-07-r41/build/applications.pdf), [historical article](revisions/2026-10-07-r41/build/historical_article.pdf), and [historical supplement](revisions/2026-10-07-r41/build/historical_supplement.pdf).
-- [Executed study](revisions/2026-10-07-r41/results/R41_STUDY.json), [deterministic audit](revisions/2026-10-07-r41/audit/RESULT_AUDIT.json), [release audit](revisions/2026-10-07-r41/audit/RELEASE_AUDIT.json), and [file hashes](revisions/2026-10-07-r41/audit/FILES_SHA256.json).
+- [Main article](build/ECTA.pdf) and [self-contained source](ECTA.tex).
+- [Technical supplement](build/supp.pdf), including arithmetic and dimension/continuous-innovation work proofs.
+- [Point-by-point response](response.md) and [response PDF](build/response.pdf).
+- [Complete applications](build/applications.pdf), [historical article](build/historical_article.pdf), and [historical supplement](build/historical_supplement.pdf).
+- [Executed study](results/R41_STUDY.json), [deterministic audit](audit/RESULT_AUDIT.json), [release audit](audit/RELEASE_AUDIT.json), and [file hashes](audit/FILES_SHA256.json).
 
 The learned current and future networks are now directly Bellman-certified. The new four-economy study passes a 0.02 query-state policy target; all-state bounds are reported separately. Binary32 rejection and binary64 escalation are executed and charged. Numerical execution has a nonzero error account. A contemporaneously reoptimized spline remains a strong competitor; no unobserved neural speed or cost superiority is claimed. The multidimensional continuous-innovation theorem is not misreported as an executed nonlinear scaling benchmark.
 

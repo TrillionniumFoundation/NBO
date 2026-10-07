@@ -1,0 +1,132 @@
+\section{From Current Decisions to Policy Accuracy}\label{sec:r21composition}
+A continuation certificate is useful for a dynamic economy only if the
+certified object is the future of the policy under assessment. This section
+states the conditions under which the local decision accounts compose.
+They apply to additive and order-preserving recursive evaluation, while
+keeping the utility domains and admissible deviations of the economic model.
+
+At dates $t=0,\ldots,T-1$, let $\mathcal D_t$ be an invariant state domain
+and $A_t(s)$ the full admissible current action set. Write
+\[
+ (T_t v)(s)=\sup_{a\in A_t(s)}G_t(s,a,v),\qquad
+ (T_t^\pi v)(s)=G_t(s,\pi_t(s),v).
+\]
+Assume the dynamic programming principle on these domains, measurable
+admissible policies, and finite values. Each $G_t$ is order preserving in its
+continuation argument and is sup-norm Lipschitz, uniformly in $(s,a)$, with
+constant $\beta_t\geq0$ on a common invariant value domain. Let
+$V_T^*=V_T^\pi$ and define $V_t^*=T_tV_{t+1}^*$ and
+$V_t^\pi=T_t^\pi V_{t+1}^\pi$. The relevant local advantage is
+\begin{equation}
+ g_t^\pi(s)=T_tV_{t+1}^\pi(s)-T_t^\pi V_{t+1}^\pi(s).
+ \label{eq:r21advantage}
+\end{equation}
+It evaluates all current deviations against the \emph{same implemented
+future policy}; it is neither a training residual nor an advantage computed
+against an unrelated anchor continuation.
+
+\begin{theorem}[Composition of economic certificates]\label{thm:r21composition}
+Under the preceding assumptions, suppose that on a common event
+\begin{equation}
+ 0\leq g_t^\pi(s)\leq\varepsilon_t
+ \quad\text{for every }s\in\mathcal D_t,
+ \qquad t=0,\ldots,T-1.
+ \label{eq:r21uniform}
+\end{equation}
+Then, on that event, at every initial state,
+\begin{equation}
+ 0\leq V_0^*-V_0^\pi\leq
+ \sum_{t=0}^{T-1}w_t\varepsilon_t,
+ \qquad w_t=\prod_{j=0}^{t-1}\beta_j.
+ \label{eq:r21composition}
+\end{equation}
+For additive Markov evaluation
+$G_t(s,a,v)=r_t(s,a)+\beta_tP_t^av(s)$, a state-dependent refinement is
+$V_t^*-V_t^\pi\leq B_t$, where
+\begin{equation}
+ B_T=0,\qquad
+ B_t(s)=u_t(s)+\beta_t\sup_{a\in A_t(s)}P_t^aB_{t+1}(s)
+ \label{eq:r21envelope}
+\end{equation}
+whenever $u_t(s)\geq g_t^\pi(s)$ and the displayed quantities are finite.
+\end{theorem}
+
+Section~\ref{app:r21proofs} proves the result. Centered continuation-error
+and transport bounds from Proposition~\ref{prop:r19decision} can supply
+\eqref{eq:r21uniform} when established uniformly on the required state and
+action domains. Alternatively, an interval certificate for the true
+one-step objective can supply it directly. In either case, the continuation
+must be $V_{t+1}^\pi$, or its discrepancy must be charged. The verification
+may be deterministic. With random certificates, all domain and date bounds
+must hold on one event, for example by a prespecified summable conditional
+error allocation. Selecting a stopping time does not remove this requirement.
+
+This theorem identifies a positive route from reusable policy evaluation to
+full policy accuracy. It also identifies precisely what the computational
+evidence below supplies. A mean certificate on a finite state catalogue
+establishes the declared current-decision experiment; it does not establish
+\eqref{eq:r21uniform} outside that catalogue. Sampling only states visited by
+$\pi$ is insufficient because a profitable deviation may reach other states.
+The state envelope in \eqref{eq:r21envelope} deliberately takes a supremum
+over admissible transitions, not only the transitions of the fitted policy.
+
+\paragraph{Relation to the continuous economy and strategic applications.}
+Let $\Pi_h$ be a specified implementable policy class in the original economy.
+If its class-approximation gap is at most $\eta_{\rm class}$, and
+$|J(\pi)-J_h(\pi)|\leq\eta_{\rm value}$ uniformly for $\pi\in\Pi_h$, then a
+policy satisfying \eqref{eq:r21composition} in the approximating model has
+\begin{equation}
+ \sup_{\pi}J(\pi)-J(\widehat\pi)
+ \leq\eta_{\rm class}+2\eta_{\rm value}
+       +\sum_t w_t\varepsilon_t+\eta_{\rm impl},
+ \label{eq:r21bridge}
+\end{equation}
+where $\eta_{\rm impl}$ bounds any additional payoff loss in implementation.
+The class and value-transfer allowances are separate mathematical inputs,
+not numbers inferred from the finite experiments. For recursive utility,
+order and Lipschitz bounds are imposed on the actual common utility domain;
+actionwise centering is applied to the evaluated action payoff, not through
+an arbitrary nonlinear aggregator. For a dynamic game, apply the same
+account to each player's full deviation problem against the same opponents'
+profile. Bounds $\epsilon_i$ for all players imply an $\epsilon_i$-best-response
+profile under the specified equilibrium concept. A single local deviation
+or a single player's calculation does not supply those premises. The original
+information, boundary, transversality, and deviation requirements remain in
+the Economic Applications companion.
+
+\subsection{Allocating computation across dates}
+The policy target suggests how to distribute a verified approximation budget.
+Suppose the local account at date $t$ is $b_t+e_t$, where $b_t$ contains
+fixed optimization, representation, and transport allowances. Suppose further
+that a declared procedure attains approximation allowance $e_t>0$ using
+$n_t\geq A_t/e_t^2$ fitting observations at charged marginal cost $c_t>0$.
+Here $A_t>0$ includes its confidence allocation and design constants. The
+full-rank and coverage conditions underlying such a rate must hold at the
+selected budgets; Corollary~\ref{cor:r19amortization} is one finite-query
+example, not a license to assume uniform coverage of an infinite state space.
+
+\begin{proposition}[Allocation for a policy target]\label{prop:r21allocation}
+Assume $w_t>0$ and let
+$E=\varepsilon-\sum_t w_tb_t>0$, $a_t=c_tA_t$, and
+$H=\sum_ta_t^{1/3}w_t^{2/3}$. Among positive allowances satisfying
+$\sum_tw_te_t\leq E$, the minimum continuous fitting bill is
+\begin{equation}
+ \min\sum_t\frac{a_t}{e_t^2}=\frac{H^3}{E^2},\qquad
+ e_t=\frac{E}{H}\left(\frac{a_t}{w_t}\right)^{1/3}.
+ \label{eq:r21allocation}
+\end{equation}
+Rounding each observation count up adds at most $\sum_tc_t$ to this bill.
+All fixed construction, reusable-cache, query, and verification costs must
+be added. The statement minimizes the displayed sufficient-cost account,
+not the work of all possible numerical methods.
+\end{proposition}
+
+The propagation and allocation arguments use standard dynamic-programming
+stability and convex optimization. Their role here is to connect the paper's
+centered, transported, and true-objective certificates to a specified dynamic
+economic target. They do not replace approximation or coverage assumptions.
+Finite-time fitted-value analysis, including the distinction between sampling
+norms and policy loss, provides an important antecedent
+\citep{MunosSzepesvari2008}. The empirical contribution below remains a
+measured comparison of complete procedures, rather than a claim of a new
+principle of optimality.
