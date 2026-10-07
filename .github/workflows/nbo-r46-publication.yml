@@ -1,0 +1,132 @@
+name: NBO R46 complete manuscript publication
+on:
+  push:
+    branches: [revision/econometrica-nbo-r46-witness-source-2026-10-07]
+    paths: ['.github/workflows/nbo-r46-publication.yml']
+permissions:
+  contents: write
+jobs:
+  publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            revisions/2026-10-07-r44
+            revisions/2026-10-07-r45
+            revisions/2026-10-07-r46
+            reviews
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify the complete materialized source
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          p=Path('revisions/2026-10-07-r46')
+          expected={
+            'sections/witness.tex':'4cfbe0e0729c781066ab66c314e44c55432baada149828f91705a04e14b7a5be',
+            'sections/witness-proof.tex':'1ba12bf55026461e995e4fd9f04d6e4a060bba50bc83e1482d0c2184e0b39f56',
+            'code/audit.py':'54caa3229b1c6e6caf88db1a0f3217c5152d7552a193226955f6dac2893556de',
+            'code/build.py':'46fef8e9a142180cafc57226293839c5f44d56b41398b089ff40b474eb2353b5',
+            'response.md':'8ee346a6c06c8a7c051e6a8d559ee73920feab395fbb4728c3fca0515f879d15',
+            'code/witness.py':'3c56bbb6fd3f7612b3f089fd0351c6a8af12a55b0bfaaf856e0aef4af6ecae65',
+            'code/tests.py':'8e9ce06f193c4260c3faab26a86495018358998161f63f80cf73c7f5073d49f7',
+            'code/execute.py':'0d96bf3974e676574d11b8e8755a538b7c785abe44b7e8b000e44f76067eb444'
+          }
+          for n,d in expected.items():
+              actual=hashlib.sha256((p/n).read_bytes()).hexdigest()
+              assert actual==d,(n,actual,d)
+          (p/'audit/PUBLICATION_SOURCE_SHA256.json').write_text(json.dumps(expected,indent=2)+'\n')
+          PY
+      - name: Materialize the latest supplemental review from pinned blobs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import base64,hashlib,json,subprocess
+          from pathlib import Path
+          ref='9a1ce0502a2cb8f57c697d1df9ba796da0403474'
+          directory='reviews/2026-10-07-econometrica-numerical-methods-r43'
+          expected={
+            'referee_report.md':'bb6b050e1ac3feea091f8800e874e9f858281108',
+            'review_manifest.json':'4b1643babb93354e5b47a5361e7df9703b5040f3',
+            'verification_results.json':'085101f703d4843afe79aa7dc31ac1513d5a1133',
+            'verify_r43_review.py':'71a199e370f4dc1713fd7de6f11134ae8adb8663'
+          }
+          for name,digest in expected.items():
+              path=Path(directory)/name
+              j=json.loads(subprocess.check_output(['gh','api',f'repos/TrillionniumFoundation/NBO/contents/{path}?ref={ref}']))
+              data=base64.b64decode(j['content'])
+              assert hashlib.sha1(f'blob {len(data)}\0'.encode()+data).hexdigest()==digest
+              if path.exists():assert path.read_bytes()==data
+              else:
+                  path.parent.mkdir(parents=True,exist_ok=True)
+                  path.write_bytes(data)
+          Path('revisions/2026-10-07-r46/audit/REVIEW_IMPORT.json').write_text(json.dumps({'commit':ref,'git_blobs':expected},indent=2)+'\n')
+          PY
+      - name: Install publication dependencies
+        run: |
+          python -m pip install numpy==2.1.3 scipy==1.14.1
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended texlive-science pandoc poppler-utils
+      - name: Assemble, reconstruct evidence, rerun all tests and compile
+        run: python revisions/2026-10-07-r46/code/build.py
+      - name: Select the complete revision and check release entry points
+        run: |
+          python - <<'PY'
+          import shutil
+          from pathlib import Path
+          p=Path('revisions/2026-10-07-r46')
+          for name in ('README.md','ECTA.tex','supp.tex'):
+              shutil.copy2(name,p/'audit'/('ROOT_BEFORE_R46-'+name))
+          Path('ECTA.tex').write_text('\\input{revisions/2026-10-07-r46/ECTA.tex}\n')
+          Path('supp.tex').write_text('\\input{revisions/2026-10-07-r46/supp.tex}\n')
+          Path('README.md').write_text('# Neural Bellman Operators — R46\n\n[Authoritative revision and reproduction instructions](revisions/2026-10-07-r46/README.md).\n\n[Main article](revisions/2026-10-07-r46/build/ECTA.pdf) | [Technical supplement](revisions/2026-10-07-r46/build/supp.pdf) | [Point-by-point referee response](revisions/2026-10-07-r46/build/response.pdf).\n\nThe action-witness construction, full proofs and predeclared 36-service study extend the completed R45 NBO manuscript. The latest supplemental R43 report and the substantive R44 report are addressed with their correct snapshot identities. Historical manuscripts, applications, reviews and all adverse evidence are preserved.\n\n[Release audit](revisions/2026-10-07-r46/audit/RELEASE_AUDIT.json) | [Numerical summary](revisions/2026-10-07-r46/audit/PUBLICATION_SUMMARY.json) | [Preservation audit](revisions/2026-10-07-r46/audit/PRESERVATION.json) | [Latest supplemental review](reviews/2026-10-07-econometrica-numerical-methods-r43/referee_report.md).\n\nThe canonical referee object is revision/econometrica-nbo-r46-review-ready-2026-10-07 at its final publication commit, not an intermediate source branch.\n')
+          PY
+          python revisions/2026-10-07-r46/code/build.py --release
+      - name: Verify all release bytes and push a fresh review-ready branch
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          p=Path('revisions/2026-10-07-r46')
+          audit=json.loads((p/'audit/RELEASE_AUDIT.json').read_text())
+          assert audit['release_entry_and_review_checks'] and audit['total_tests']==41
+          assert audit['results']['services']==36 and audit['results']['rungs']==216
+          assert all(v['success'] for v in audit['tests'].values())
+          for n,d in json.loads((p/'audit/FILES_SHA256.json').read_text()).items():
+              assert hashlib.sha256((p/n).read_bytes()).hexdigest()==d,n
+          assert not any(f.suffix.lower() in {'.ttf','.otf','.woff','.woff2','.pfb','.pfa','.afm','.tfm'} for f in p.rglob('*') if f.is_file())
+          print(json.dumps(audit,indent=2))
+          PY
+          git config user.name 'NBO revision automation'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          target=revision/econometrica-nbo-r46-review-ready-2026-10-07
+          if git ls-remote --exit-code --heads origin "$target"; then
+            echo 'Refusing to replace an existing review-ready branch'; exit 1
+          fi
+          git switch -c "$target"
+          git add -f revisions/2026-10-07-r46
+          git add README.md ECTA.tex supp.tex reviews/2026-10-07-econometrica-numerical-methods-r43
+          if test -n "$(git diff --cached --name-only --diff-filter=D)"; then
+            echo 'Refusing any historical deletion'; exit 1
+          fi
+          git diff --exit-code -- revisions/2026-10-07-r44 revisions/2026-10-07-r45
+          git commit -m 'R46: complete Econometrica revision with witness proofs, all matched evidence and referee response'
+          git push origin "HEAD:refs/heads/$target"
+          git rev-parse HEAD
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r46-publication
+          path: revisions/2026-10-07-r46
+          retention-days: 30
