@@ -12,7 +12,7 @@ permissions:
   actions: read
 concurrency:
   group: nbo-r44-complete-publication
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   publish:
     runs-on: ubuntu-24.04
@@ -37,7 +37,9 @@ jobs:
       - name: Materialize hash-pinned source and complete evidence
         run: python revisions/2026-10-07-r44/publication/materialize.py
       - name: Audit all original records and compile current manuscript
-        run: python revisions/2026-10-07-r44/code/build.py
+        run: |
+          mkdir -p revisions/2026-10-07-r44/tables
+          python revisions/2026-10-07-r44/code/build.py
       - name: Publish a new review-ready branch without rewriting history
         run: |
           set -euo pipefail
