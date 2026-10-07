@@ -1,0 +1,84 @@
+name: NBO R45 verified manuscript delivery
+on:
+  push:
+    branches: [revision/econometrica-nbo-r45-constructive-service-2026-10-07]
+    paths: ['.github/workflows/nbo-r45-finalize.yml']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            revisions/2026-10-07-r44
+            revisions/2026-10-07-r45
+            reviews/2026-10-07-econometrica-numerical-methods-r44
+      - name: Retrieve the completed build and verify its gates
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/TrillionniumFoundation/NBO/actions/runs/37616931422/jobs > "$RUNNER_TEMP/validated-jobs.json"
+          gh api repos/TrillionniumFoundation/NBO/actions/artifacts/11481055980/zip > "$RUNNER_TEMP/validated-r45.zip"
+          python - <<'PY'
+          import hashlib,json,os,zipfile
+          from pathlib import Path
+          temp=Path(os.environ['RUNNER_TEMP'])
+          jobs=json.loads((temp/'validated-jobs.json').read_text())['jobs']
+          steps={s['name']:s.get('conclusion') for j in jobs for s in j['steps']}
+          for gate in ('Assemble, audit records, rerun tests and compile','Verify canonical assembled sources and select R45'):
+              assert steps.get(gate)=='success',gate
+          raw=(temp/'validated-r45.zip').read_bytes()
+          assert hashlib.sha256(raw).hexdigest()=='9bbe46d1d365d619062a1f13aba0fa72c7cf09c46c28f8a7cd047e34041f5d47'
+          p=Path('revisions/2026-10-07-r45')
+          with zipfile.ZipFile(temp/'validated-r45.zip') as z:
+              for n in z.namelist():
+                  q=Path(n)
+                  assert not q.is_absolute() and '..' not in q.parts
+                  assert q.suffix.lower() not in {'.ttf','.otf','.woff','.woff2','.pfb','.pfa','.afm','.tfm'}
+              z.extractall(p)
+          hashes=json.loads((p/'audit/FILES_SHA256.json').read_text())
+          for n,d in hashes.items():
+              assert hashlib.sha256((p/n).read_bytes()).hexdigest()==d,n
+          j=json.loads((p/'publication/PAPER_SOURCE_SHA256.json').read_text())
+          for n,d in {**j['sha256'],**j['assembled_sources']}.items():
+              assert hashlib.sha256((p/n).read_bytes()).hexdigest()==d,n
+          audit=json.loads((p/'audit/RELEASE_AUDIT.json').read_text())
+          assert audit['new_tests']['successful'] and audit['new_tests']['tests']==13
+          assert audit['inherited_tests']['passed'] and audit['inherited_tests']['tests_run']==14
+          assert audit['publication_summary']['services']==24 and audit['publication_summary']['rungs']==144
+          for c in audit['compilation']:
+              assert not c['undefined_references'] and not c['duplicate_labels'] and not c['overfull_boxes']
+              assert hashlib.sha256((p/'build'/f"{c['document']}.pdf").read_bytes()).hexdigest()==c['pdf_sha256']
+          delivery={'validated_build_run':37616931422,'validated_source_commit':'a1eddbdcb2e15b78d5985b67706d898d82897b1e','artifact_id':11481055980,'artifact_sha256':hashlib.sha256(raw).hexdigest(),'verified_manifest_files':len(hashes),'publication_only':True,'reason':'All scientific, manuscript and compilation gates passed. The preceding publication step refused removal of two already tracked Python bytecode caches. This delivery keeps every pre-existing file and publishes the exact validated manuscript artifact. No tests or scientific gates are skipped or relabeled.','pdfs':audit['compilation']}
+          (p/'audit/FINAL_DELIVERY.json').write_text(json.dumps(delivery,indent=2)+'\n')
+          Path('ECTA.tex').write_text('\\input{revisions/2026-10-07-r45/ECTA.tex}\n')
+          Path('supp.tex').write_text('\\input{revisions/2026-10-07-r45/supp.tex}\n')
+          Path('README.md').write_text('# Neural Bellman Operators\n\n## Current revision: R45\n\n[Authoritative revision and reproduction instructions](revisions/2026-10-07-r45/README.md).\n\n[Main article](revisions/2026-10-07-r45/build/ECTA.pdf) | [Technical supplement](revisions/2026-10-07-r45/build/supp.pdf) | [Response to referee](revisions/2026-10-07-r45/build/response.pdf).\n\nThe R45 constructive theorem, complete proofs and predeclared matched study extend the original NBO paper. Prior revisions, reviews, applications and unfavorable results are retained.\n\n[Final delivery verification](revisions/2026-10-07-r45/audit/FINAL_DELIVERY.json) | [Release audit](revisions/2026-10-07-r45/audit/RELEASE_AUDIT.json) | [Preservation audit](revisions/2026-10-07-r45/audit/PRESERVATION.json).\n')
+          print(json.dumps(delivery,indent=2))
+          PY
+      - name: Commit and push the complete new revision
+        run: |
+          git config user.name 'NBO revision automation'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          target=revision/econometrica-nbo-r45-review-ready-2026-10-07
+          if git ls-remote --exit-code --heads origin "$target"; then
+            echo 'Refusing to overwrite an existing revision'; exit 1
+          fi
+          git switch -c "$target"
+          git add -f revisions/2026-10-07-r45
+          git add ECTA.tex supp.tex README.md
+          test -z "$(git diff --cached --name-only --diff-filter=D)"
+          git commit -m "R45: publish validated Econometrica revision, complete proofs and referee response"
+          git push origin "HEAD:refs/heads/$target"
+          git rev-parse HEAD
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r45-final-review-package
+          path: revisions/2026-10-07-r45
+          retention-days: 30
