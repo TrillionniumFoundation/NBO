@@ -1,4 +1,4 @@
-"""Source-pinned R40 scientific execution and append-only scoped publication."""
+"""Source-pinned R40 execution, hash verification, and scoped publication."""
 from __future__ import annotations
 import os,sys,json,hashlib,base64,io,zipfile,gzip,subprocess
 from pathlib import Path
@@ -32,6 +32,7 @@ def restore():
  if WORK.exists():raise RuntimeError('Fresh workspace required')
  extract(11454277229,'d295c8593277373b4d016d17cd6268bf960d6e3936ba49c70ec9e1c1f83f1844',WORK)
  extract(11447232117,'e567df2b3ff1efb39139e1ec5c5cfbfcbabac3ebb0f2c889f896c6dc5a0849ad',WORK/'revisions/2026-10-07-r38')
+ extract(11458062470,'2003a36b8f016ef1413bc46c51968d1f57f540c9765655043a73751400758aae',WORK/REL/'retained/diagnostic-run-37564378154')
  parts=['science_source.b64']+[f'science_source.part{i}.b64' for i in range(1,4)]
  data=base64.b64decode(b''.join(source_file(REL+'/publication/'+p) for p in parts))
  assert hashlib.sha256(data).hexdigest()=='02b9be056ec2229b4998e29fd76ef6a59026ae3d0a6ae70ea826e974e50457ba','Science transport hash'
@@ -40,12 +41,12 @@ def restore():
   p=(WORK/REL/name).resolve()
   if not p.is_relative_to((WORK/REL).resolve()):raise RuntimeError('Unsafe source path')
   p.parent.mkdir(parents=True,exist_ok=True);p.write_text(text);ids[name]=hashlib.sha256(text.encode()).hexdigest()
- for name in ['STUDY_PROTOCOL.md','publication/science_remote.py']:
-  p=WORK/REL/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(source_file(REL+'/'+name))
+ for name in ['STUDY_PROTOCOL.md','publication/science_remote.py','code/study.py']:
+  data=source_file(REL+'/'+name);p=WORK/REL/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data);ids[name]=hashlib.sha256(data).hexdigest()
  report=source_file('reviews/2026-10-07-econometrica-numerical-methods-r39/referee_report.md','review/econometrica-numerical-methods-r39-2026-10-07-f472a7c')
  if blobsha(report)!='1889b7f8afb63b8d8b548f4932368cc44fc22601':raise RuntimeError('Referee report changed')
  p=WORK/REL/'retained/referee_report_R39.md';p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(report)
- p=WORK/REL/'audit/SCIENCE_SOURCE.json';p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(dict(commit=SOURCE,run_id=os.environ['GITHUB_RUN_ID'],files=ids),indent=2)+'\n')
+ p=WORK/REL/'audit/SCIENCE_SOURCE.json';p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(dict(commit=SOURCE,run_id=os.environ['GITHUB_RUN_ID'],files=ids,prior_diagnostic_run=37564378154,prior_failure='JSON serialization of a NumPy boolean after first refinement; no mathematical gate changed'),indent=2)+'\n')
  for name in ['seed.py','tests.py','deployment.py','study.py']:
   subprocess.run([sys.executable,str(WORK/REL/'code'/name)],cwd=WORK,check=True)
 def publish():
@@ -60,7 +61,7 @@ def publish():
    b=request('POST','/git/blobs',json=dict(content=base64.b64encode(data).decode(),encoding='base64')).json();assert b['sha']==blobsha(data);entry['sha']=b['sha']
   entries.append(entry)
  tree=request('POST','/git/trees',json=dict(base_tree=tree0,tree=entries)).json()['sha']
- commit=request('POST','/git/commits',json=dict(message='R40: deposit direct-neural residual chains, nonzero deployment certificates and all native precision stress records',tree=tree,parents=[SOURCE])).json()['sha']
+ commit=request('POST','/git/commits',json=dict(message='R40: deposit direct-neural residual chains, nonzero deployment certificates and every precision stress record',tree=tree,parents=[SOURCE])).json()['sha']
  if get(ref)['object']['sha']!=SOURCE:raise RuntimeError('Publication lease lost')
  request('PATCH',ref,json=dict(sha=commit,force=False));assert get(ref)['object']['sha']==commit
  (WORK/'R40_SCIENCE_COMMIT.txt').write_text(commit+'\n');print(json.dumps(dict(science_commit=commit,tree=tree,files=len(entries))))
