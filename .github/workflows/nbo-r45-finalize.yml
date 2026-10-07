@@ -50,11 +50,11 @@ jobs:
           audit=json.loads((p/'audit/RELEASE_AUDIT.json').read_text())
           assert audit['new_tests']['successful'] and audit['new_tests']['tests']==13
           assert audit['inherited_tests']['passed'] and audit['inherited_tests']['tests_run']==14
-          assert audit['publication_summary']['services']==24 and audit['publication_summary']['rungs']==144
+          assert audit['results']['services']==24 and audit['results']['rungs']==144
           for c in audit['compilation']:
               assert not c['undefined_references'] and not c['duplicate_labels'] and not c['overfull_boxes']
               assert hashlib.sha256((p/'build'/f"{c['document']}.pdf").read_bytes()).hexdigest()==c['pdf_sha256']
-          delivery={'validated_build_run':37616931422,'validated_source_commit':'a1eddbdcb2e15b78d5985b67706d898d82897b1e','artifact_id':11481055980,'artifact_sha256':hashlib.sha256(raw).hexdigest(),'verified_manifest_files':len(hashes),'publication_only':True,'reason':'All scientific, manuscript and compilation gates passed. The preceding publication step refused removal of two already tracked Python bytecode caches. This delivery keeps every pre-existing file and publishes the exact validated manuscript artifact. No tests or scientific gates are skipped or relabeled.','pdfs':audit['compilation']}
+          delivery={'validated_build_run':37616931422,'validated_source_commit':'a1eddbdcb2e15b78d5985b67706d898d82897b1e','artifact_id':11481055980,'artifact_sha256':hashlib.sha256(raw).hexdigest(),'verified_manifest_files':len(hashes),'publication_only':True,'reason':'All scientific, manuscript and compilation gates passed. The preceding publication step refused removal of two already tracked Python bytecode caches. This delivery keeps every pre-existing file and publishes the exact validated manuscript artifact. No tests or scientific gates are skipped or relabeled.','delivery_schema_correction':'Run 37617356224 stopped before publication because its validator used publication_summary instead of the actual results field. The corrected validator was tested against every audit assertion locally before rerunning.','pdfs':audit['compilation']}
           (p/'audit/FINAL_DELIVERY.json').write_text(json.dumps(delivery,indent=2)+'\n')
           Path('ECTA.tex').write_text('\\input{revisions/2026-10-07-r45/ECTA.tex}\n')
           Path('supp.tex').write_text('\\input{revisions/2026-10-07-r45/supp.tex}\n')
