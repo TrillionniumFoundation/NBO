@@ -1,0 +1,144 @@
+\section{Compiled witnesses, acquisition and complete error budgets}\label{supp:proofs47}
+This section proves the implementation and statistical statements added in the main article's sections on compiled witnesses and constrained execution. All formulas needed below are restated here. The prior results in this supplement remain unchanged.
+
+\subsection{Exact closure and preservation of original indices}
+For a one-dimensional line of labels $y_j$, the forward recurrence
+$z_j^+=\min\{y_j,z_{j-1}^++L/N\}$ computes
+$\min_{i\le j}(y_i+L(j-i)/N)$. A reverse recurrence applied to these values includes $i\ge j$ and returns the full minimum. Induction proves the statement and preserves a stored attaining original index at every update. Equality may be resolved lexicographically. With $L=0$, any originally minimizing label is a valid witness.
+
+On a tensor grid, apply the line transform independently along each axis. After $r$ axes, a grid entry is the minimum over the first $r$ original coordinates of the original label plus the sum of their coordinate distances. Minimization over the next coordinate commutes with the preceding finite minima. After all $d$ axes, the stored value and index satisfy the full discrete closure. The two passes use $2dN(N+1)^{d-1}$ rational additions and the same number of comparisons.
+
+The off-grid identity follows from a shortest-path vertex. For any original grid node $x_i$ and any $x$ in a grid cell, choose each coordinate of a vertex $v$ on the segment between $x_j$ and $(x_i)_j$. Such a cell endpoint exists because $(x_i)_j$ is a grid coordinate. Then
+$\|x-x_i\|_1=\|x-v\|_1+\|v-x_i\|_1$. If $i$ minimizes at $x$ and $s(v)$ minimizes at $v$, the triangle inequality gives
+\[
+ y_{s(v)}+L\|x-x_{s(v)}\|_1
+ \le y_{s(v)}+L\|v-x_{s(v)}\|_1+L\|x-v\|_1
+ \le y_i+L\|x-x_i\|_1.
+\]
+The opposite inequality follows because $s(v)$ is an original node. In particular, the returned action is the action attached to a minimizing original cone. A value-only interpolation of the closed labels would not supply this identity and need not preserve the witness.
+
+The exact ReLU identities $|u|=\operatorname{ReLU}(u)+\operatorname{ReLU}(-u)$ and $\min(a,b)=a-\operatorname{ReLU}(a-b)$ give the mathematical circuit. The implemented comparison backend uses shared outward distance scores and explicit ReLU minimum gates. The numerical action selector and cell lookup are charged separately. The classical distance transform is credited to \citet{felzenszwalb2012}; neither this identity nor its conventional realization is presented as exclusively neural.
+
+\subsection{Robust acquisition and feasible repair}
+Let $\phi_i(x)=y_i+L\|x-x_i\|_1$ and let $f=\min_i\phi_i$. At an acquired representative $\widehat x$, choose an index with $\phi_i(\widehat x)\le f(\widehat x)+\nu$. For any compatible true state $x$, both $\phi_i$ and $f$ are $L$-Lipschitz, and hence
+\[
+ \phi_i(x)-f(x)\le\nu+2L\|x-\widehat x\|_1.
+\]
+Let the primitive state and action objective moduli be $A^Q,D^Q$, and let $L=A^Q+D^QK^A$. A repair satisfying
+$\|\Gamma_i^U-a_i\|_1\le K^A\|x-x_i\|_1+\zeta^U$ yields
+\[
+ Q(f^+;x,\Gamma_i^U)\le y_i+e+L\|x-x_i\|_1+D^Q\zeta^U
+ \le f(x)+e+\nu+2Lr+D^Q\zeta^U.
+\]
+Together with $f-\mathcal Tf^+\le D^Qk+e+2Lh$, the one-sided policy induction gives the main article's acquired-state loss bound. Measurable dyadic acquisition cells, deterministic finite tie rules and measurable feasible repair make the implemented policy admissible. At the terminal date the unchanged terminal interval is added; it vanishes when the terminal primitive is exactly the defining continuation.
+
+For $A(x)=[0,b(x)]$, set $b_U=\inf_U b$ and let $\Gamma_i^U$ be $\min(a_i,b_U)$ rounded downward to spacing $\gamma=2^{-a}$. Feasibility follows from $0\le\Gamma_i^U\le b_U\le b(x)$. If repair changes the action, the displacement is bounded by
+\[
+ a_i-b_U+\gamma
+ \le |b(x_i)-b(x)|+b(x)-b_U+\gamma
+ \le K^A\|x-x_i\|_1+K^A\operatorname{diam}_1U+\gamma.
+\]
+The same upper bound is valid when no repair occurs. For the executed capacity $b(x)=1/4+\sum x_i/(4d)$ and a $b$-bit acquisition index $q$, the lower capacity is
+$1/4+\sum q_i/(4d2^b)$. Its downward action-lattice integer is computed exactly as
+\[
+ \left\lfloor\frac{2^a(d2^b+\sum_iq_i)}{4d2^b}\right\rfloor.
+\]
+With $d\le3$, $a=20$ and $b\le20$, these integers and products lie below $2^{63}$. Thus the proof concerns ordinary integer arithmetic and binary64 dyadic output, not an exact-state oracle. Clipping the acquisition index at the upper endpoint includes the true state $1$ in the last cell.
+
+For a conventional nearest-node policy with its own continuation modulus $L_f$, let
+\[
+ E=\sup_x\{y_{n(x)}+L_Q\|x-x_{n(x)}\|_1-f(x)\}.
+\]
+The selected-policy residual at an exactly acquired state is at most $e+E$ after the original state-dependent repair. Under acquired-state selection it becomes at most
+$e+E+(L_Q+L_f)r+D^Q\zeta^U$.
+For the multilinear continuation, the expression defining $E$ is multi-affine on each half-grid cell with a fixed nearest node and fixed signs of coordinate distances. Its extrema occur at vertices, by repeatedly taking the extremum of an affine function in one coordinate. Enumerating the entire half-grid and every tied nearest node therefore bounds the true supremum, not only a sampled residual. The comparator is given this strengthened account in every rung.
+
+\subsection{Finite arithmetic for value and selector queries}
+All scientific enclosures use IEEE binary64 round-to-nearest arithmetic followed by outward \texttt{nextafter} on the computed elementary endpoints. Addition, subtraction, multiplication, reciprocal division away from zero, squares and clipping are implemented explicitly. A nonfinite result or reversed interval raises an error; it is not accepted as a certificate. Pairwise interval reductions enclose all sums. Label midpoints become the exact binary64 coefficients of the returned model; their errors are computed relative to the full outward query interval, not relative to an unverified floating target.
+
+A witness point query forms $\phi_i$ for the compiled candidates. If their scores lie in intervals $[l_i,u_i]$, selection by the least $u_i$ has excess at most $u_i-\min_jl_j$. The code checks this quantity at every deployed witness query. A uniform bound, used in the all-state certificate, is
+\[
+ \nu=2^{-36}\left(1+\max_i|y_i|+dL\right).
+\]
+For the executed $d\le3$ scores, all coordinates are in $[0,1]$, $L\ge0$, and all coefficients are finite. The interval subtraction, absolute value, at most three accumulated distances, slope multiplication and label addition have fewer than 32 elementary rounded endpoint operations. With unit roundoff $u=2^{-53}$, induction on this straight-line expression bounds the endpoint width by $512u(1+\max|y_i|+dL)$ plus fewer than 128 smallest-subnormal units. This is strictly below the displayed allowance. This deliberately conservative bound also covers exact-zero cancellations. Taking minima introduces no arithmetic rounding. The code's pointwise excess check is an additional failure detector, not the proof of uniformity.
+
+The ReLU minimum-gate query encloses $a-\max\{0,a-b\}$ using interval operations. Its interval need not have the same endpoints as a direct minimum interval, even though both enclose the same exact value. Accordingly the representation audit checks mutual overlap, while the exact compiler proof establishes equality of the mathematical object. The deployed witness selector uses the shared cone-score intervals, not an unverified rounded index emitted by a network library.
+
+An uncertain simulated state may intersect several acquisition cells. If all its corners yield the same dyadic index, the implemented action is uniquely determined and its exact dyadic value is used. Otherwise the implementation encloses all possible actions by $[0,1/2]$ and propagates that enclosure. It records the ambiguity. Such an interval may be conservative but cannot discard a feasible implemented path. Separate adversarial tests place states on acquisition boundaries, cone ties and state-domain endpoints and exercise nontrivial downward repair.
+
+\subsection{Primitive moduli, quadrature and sufficient resources}
+Use the $\ell^1$ state norm. For the coupled investment primitives, direct differentiation or coordinatewise difference bounds give
+\[
+ C_x=\frac1{8d},\quad C_a=\frac p2,\quad F_x=\frac34,
+ \quad F_a=\frac d4,\quad F_z=\frac d{16},\quad K^A=\frac1{4d},\quad L_g=\frac5{2d}.
+\]
+For example, a state coordinate affects its own transition with derivative $1/2$ and its predecessor's with derivative at most $1/4$; the maximum column sum is $3/4$. The terminal mean-square term has gradient magnitude at most $2/d$, and the cyclic dispersion term contributes at most $1/(2d)$. Since $a\le1/2$ and $z\in[-1,1]$, every transition lies between zero and $7/8$.
+
+The graph objective modulus has the exact-real recurrence
+\[
+ L_t=\frac{1+p}{8d}+\frac{13\beta}{16}L_{t+1}.
+\]
+For $p\le1$, $L_T=5/(2d)$ and an upward modulus-rounding error at most $1/(4d)$ per date, induction gives $L_t\le3/d$; the exact recurrence has enough strict slack to absorb that error. Consequently
+$D_t^Q=p/2+\beta dL_{t+1}/4\le77/64$.
+These are sufficient primitive bounds. The certificates themselves use the smaller recorded moduli and actual query intervals.
+
+A node action grid $j b(x)/N$ covers the feasible interval within $b(x)/(2N)\le1/(4N)$. Downward quantization increases this radius by at most $2^{-a}$. For $M$ uniform midpoint bins on $[-1,1]$, the expected absolute distance between a continuous draw and its bin midpoint is $1/(2M)$. Since $f_{t+1}\circ F$ is $L_{t+1}d/16$-Lipschitz in the common innovation, the discounted expectation remainder is at most $\beta L_{t+1}d/(32M)$. The terminal quadratic is evaluated by outward primitive operations at quadrature points, so this same valid modulus remainder applies without an unknown integration oracle.
+
+Write $e_t\le\beta L_{t+1}d/(32M)+\epsilon_{\rm ar}$ and choose $M=2N$. In the one-sided witness account, $2L_th_t\le3/N$ for $h_t=d/(2N)$, and the action-net term is at most $(77/64)(1/(4N)+2^{-a})$. The two query remainders add at most $45/(512N)+2\epsilon_{\rm ar}$. Acquisition gives $2L_tr_t\le3\,2^{-b}$, and robust repair adds at most $(77/64)(2^{-b}/4+2^{-a})$. Summing these quantities proves
+\[
+ G\le S_T\left\{\frac{1735}{512N}+\frac{845}{256}2^{-b}
+                  +\frac{77}{32}2^{-a}+2\epsilon_{\rm ar}+\nu\right\}.
+\]
+For a requested $\varepsilon>0$, sufficient choices are the next admissible power-of-two $N$ and integer bits satisfying
+\begin{align*}
+ N&\ge\frac{5S_T\,1735}{512\varepsilon},&
+ 2^b&\ge\frac{5S_T\,845}{256\varepsilon},&
+ 2^a&\ge\frac{5S_T\,77}{32\varepsilon},\\
+ \epsilon_{\rm ar}&\le\frac{\varepsilon}{10S_T},&
+ \nu&\le\frac{\varepsilon}{5S_T}.&&
+\end{align*}
+The precision of numerical queries and score evaluation must increase to meet the last two conditions. Fixed binary64 and a fixed finite ladder are not guaranteed to attain every positive tolerance. The numerical catalogue is reported at its original cap without rounding a failure into success.
+
+\subsection{Bit work, storage and comparisons}
+Let a rational label or slope have at most $B$ numerator and denominator bits. Each tensor closure value is an original label plus $L$ times a grid distance at most $d$. On a power-of-two grid, the resulting numerator and denominator bit lengths are bounded by $2B+O(\log N+\log d)$. Carrying an original owner avoids compounding arbitrary rational denominators through a new interpolation. The reference implementation uses rational additions and comparisons, whose bit costs are retained as $C_{\rm rat}$; the reported operation counts are not mislabeled as bit complexity or floating-point operations.
+
+At a date, $KJ$ own-future queries require $KJM$ transitions and continuation evaluations. A flat cone continuation uses $K$ cone scores per state; compiled queries use at most $2^d$. Exact closure adds $2dN(N+1)^{d-1}$ rational additions/comparisons. Witness selection, cell location, and robust capacity repair add $O(d2^d)$ floating/comparison work and $O(d)$ bounded-size integer operations per deployed query. For the multilinear comparator, evaluation also uses $2^d$ corners, edge-modulus computation uses $O(dK)$ operations, and its strengthened actor enclosure uses $(2N+1)^d2^d$ nearest-node/corner comparisons. All are charged in the implementation or the explicit symbolic account.
+
+Permanent storage is $O(TK)$ labels, actions and owner indices, with their actual coefficient bit lengths; implicit grid metadata costs $O(d)$, although the reference implementation caches $Kd$ coordinates. The batch implementation stores at most 64 state nodes times $JM$ transition vectors and continuation-query temporaries at a time. Raw checkpoints retain original labels/actions, slope moduli, query errors and closure indices. The direct study additionally stores two quantized endpoint arrays per contrast. Exact endpoint moments require $O(n)$ integer additions and squarings, with bit lengths determined by the cost bound, 32 endpoint fractional bits and $\log n$. NPZ compression, rational serialization, process start and final record output have their explicit observed clocks or file-size account; they are not assigned zero work.
+
+This accounting shows precisely which factor the shared compiler improves. It supplies no asymptotic advantage of compiled ReLU over the same compiled native envelope. Moreover, $K=(N+1)^d$ and action/integration factors remain, so the theorem neither removes the curse of dimensionality nor certifies generic nonlinear-optimizer reliability.
+
+\section{Direct continuous-law policy-cost inference}\label{supp:direct47}
+Fix two deployed policies independently of the new comparison paths. Couple their initial states and innovations with correct marginals. Let $D$ be their actual discounted-cost difference. Conditional on a vector of uniformly selected innovation and initial-state bins $B$, the interval program returns $[L(B),U(B)]$ containing $D$ for every within-bin realization and every compatible numerical actor outcome. Therefore
+$\mathbb E L(B)\le\mathbb E D\le\mathbb E U(B)$. Uniform bin selection with independent within-bin uniform coordinates reproduces the original continuous law exactly; drawing those inner coordinates is unnecessary for a valid enclosure.
+
+Suppose each policy cost lies in $[0,C]$. Rounding path endpoints outward to spacing $q=2^{-32}$ puts the endpoint random variables in $[-C-q,C+q]$, a range of width $W=2C+2q$. For a family of $K$ pair contrasts with $n$ independent bin-path draws per contrast, let $\overline L,\overline U$ be endpoint sample means and $s_L^2,s_U^2$ their unbiased sample variances. Rescaling Theorem 4 of \citet{maurer2009}, applied to $-L$ and $U$ with tail allowance $\alpha/(2K)$, gives
+\begin{align*}
+ r(s^2)&=\sqrt{\frac{2s^2\log(4K/\alpha)}n}
+           +\frac{7W\log(4K/\alpha)}{3(n-1)},\\
+ \mathbb E D&\in[\overline L-r(s_L^2),\overline U+r(s_U^2)]
+\end{align*}
+simultaneously for the family with probability at least $1-\alpha$. Dependence across contrasts is allowed; independence is required across paths within a contrast. Selection of candidate policies after viewing these comparison outcomes would require a different design, and is not performed here.
+
+If endpoints are stored as integers $a_j$ times $2^{-32}$, their moments are reconstructed exactly as
+\[
+ \overline a=\frac{\sum_ja_j}{n2^{32}},\qquad
+ s_a^2=\frac{n\sum_ja_j^2-(\sum_ja_j)^2}{n(n-1)2^{64}}.
+\]
+The published reconstruction independently verifies every radius by exact rational arithmetic. For $x=2^ky$ with $1\le y<2$, use
+\[
+ \log y=2\sum_{j=0}^{m-1}\frac{z^{2j+1}}{2j+1}+R_m,
+ \quad z=\frac{y-1}{y+1},\quad
+ 0\le R_m\le\frac{2z^{2m+1}}{(2m+1)(1-z^2)}.
+\]
+The same expansion for $\log2$, with $m=96$, bounds the logarithm above. Subtracting the radius's linear term using this rational upper bound, then squaring exactly, confirms that each saved binary64 radius bounds the required square root plus linear term. Thus high-precision decimal proposals are not accepted solely because they appear numerically accurate. Saved final confidence endpoints are outward rational-to-binary64 roundings.
+
+For the original scalar economy, valid primitive bounds are
+$\overline c=197/256+p/16$ and $\overline g=314/256$; take
+$C=\sum_{t<T}\beta^t\overline c+\beta^T\overline g$.
+For the constrained economy, $\overline c=1/32+p/8$ and $\overline g=9/8$ suffice. The raw-endpoint audit checks support as well as every mean, variance, radius and confidence endpoint. The scalar family uses $K=30$, $n=262144$; the multidimensional family uses $K=8$, $n=65536$. Each uses $\alpha=0.05$ separately. Their union is not advertised as a single 95 percent family.
+
+The fixed margin $0.005$ is a numerical expected-cost tolerance. An interval wholly contained in $[-0.005,0.005]$ identifies the stipulated tolerance comparison; it does not identify exact equality or a cost ordering. These are distributional initial-state statements and do not establish uniform all-state policy ranking. Uniform all-state loss remains the role of the deterministic certificate. Nonlinear certainty equivalents do not satisfy the linear expectation argument and are not covered by this new statistical result.
+
+\input{tables/scalar_full47}
+\input{tables/frontier_full47}
