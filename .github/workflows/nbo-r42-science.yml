@@ -1,0 +1,72 @@
+name: NBO R42 from-primitives science
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r42-source-2026-10-07
+    paths:
+      - .github/workflows/nbo-r42-science.yml
+      - revisions/2026-10-07-r42/publication/science-code.b64
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  science:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      OMP_NUM_THREADS: 1
+      OPENBLAS_NUM_THREADS: 1
+      MKL_NUM_THREADS: 1
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install numerical dependencies
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0 mpmath==1.3.0 requests==2.34.2
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Restore pinned inherited verifier and frozen R42 source
+        run: |
+          python - <<'PY'
+          import os,requests,base64,hashlib,json,zipfile,tarfile,io,pathlib
+          root=pathlib.Path('work');root.mkdir()
+          api='https://api.github.com/repos/TrillionniumFoundation/NBO'
+          sess=requests.Session();sess.headers.update({'Authorization':'Bearer '+os.environ['GITHUB_TOKEN'],'Accept':'application/vnd.github+json'})
+          response=sess.get(api+'/actions/artifacts/11460768113/zip',timeout=180);response.raise_for_status()
+          assert hashlib.sha256(response.content).hexdigest()=='b5dc1a9fdcedc3279dbd7e9c190425f7e856f1fbcd67083e7452c2febc06aac6'
+          z=zipfile.ZipFile(io.BytesIO(response.content))
+          for info in z.infolist():
+              p=pathlib.PurePosixPath(info.filename);assert not p.is_absolute() and '..' not in p.parts
+          z.extractall(root)
+          ledger=json.loads((root/'revisions/2026-10-07-r41/audit/FILES_SHA256.json').read_text())
+          for name,digest in ledger.items():assert hashlib.sha256((root/name).read_bytes()).hexdigest()==digest,name
+          rel='revisions/2026-10-07-r42';dest=root/rel;dest.mkdir(parents=True,exist_ok=True)
+          def fetch(path):
+              res=sess.get(api+'/contents/'+path,params={'ref':os.environ['GITHUB_SHA']},timeout=90);res.raise_for_status();obj=res.json();data=base64.b64decode(obj['content'])
+              assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()==obj['sha']
+              return data
+          payload=fetch(rel+'/publication/science-code.b64');data=base64.b64decode(payload)
+          assert hashlib.sha256(data).hexdigest()=='291dcfaa6b35a53b192a78aa18769e6a2539a5f9bcda1dadbbc4862ac1b6b9ed'
+          with tarfile.open(fileobj=io.BytesIO(data),mode='r:gz') as archive:
+              for info in archive.getmembers():
+                  p=pathlib.PurePosixPath(info.name);assert info.isfile() and not p.is_absolute() and '..' not in p.parts and str(p).startswith(rel+'/code/')
+              archive.extractall(root,filter='data')
+          for name in ['STUDY_PROTOCOL.md','PROTOCOL_ADDENDUM.md']:(dest/name).write_bytes(fetch(rel+'/'+name))
+          (dest/'audit').mkdir(exist_ok=True)
+          provenance=dict(source_commit=os.environ['GITHUB_SHA'],run_id=os.environ['GITHUB_RUN_ID'],review_commit='d97959d6347464749111599a88a5f790f7aecc4c',reviewed_manuscript_commit='06a104a8db06b76464165899d817b303cb2aaa01',inherited_artifact_id=11460768113,inherited_artifact_sha256='b5dc1a9fdcedc3279dbd7e9c190425f7e856f1fbcd67083e7452c2febc06aac6',verified_inherited_hashes=len(ledger),historical_clock_replacements=0)
+          (dest/'audit/SCIENCE_PROVENANCE.json').write_text(json.dumps(provenance,indent=2,sort_keys=True)+'\n')
+          PY
+      - name: Exact rational and dependency tests
+        run: python work/revisions/2026-10-07-r42/code/tests.py
+      - name: Run all fresh isolated services
+        run: python work/revisions/2026-10-07-r42/code/study.py
+      - name: Preserve science records and all failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r42-from-primitives-science
+          path: work/revisions/2026-10-07-r42/
+          if-no-files-found: warn
+          retention-days: 90
