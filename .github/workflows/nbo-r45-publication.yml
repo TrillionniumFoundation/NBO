@@ -7,6 +7,7 @@ on:
       - '.github/workflows/nbo-r45-publication.yml'
 permissions:
   contents: write
+  actions: read
 jobs:
   publication:
     runs-on: ubuntu-latest
@@ -48,6 +49,24 @@ jobs:
           for name,digest in json.loads((p/'publication/PAPER_SOURCE_SHA256.json').read_text())['sha256'].items():
               assert hashlib.sha256((p/name).read_bytes()).hexdigest()==digest,name
           PY
+      - name: Restore verified companions and clean-checkout build fallback
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/TrillionniumFoundation/NBO/actions/artifacts/11475101500/zip > "$RUNNER_TEMP/r44-publication.zip"
+          cp revisions/2026-10-07-r45/publication/PAPER_SOURCE_SHA256.json revisions/2026-10-07-r45/audit/PUBLICATION_CAPSULE_SOURCE_SHA256.json
+          python revisions/2026-10-07-r45/code/prepare_publication.py "$RUNNER_TEMP/r44-publication.zip"
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          p=Path('revisions/2026-10-07-r45')
+          f=p/'publication/PAPER_SOURCE_SHA256.json'
+          j=json.loads(f.read_text())
+          for n in ('code/assemble.py','audit/DEVELOPMENT_DISCLOSURE.md','code/prepare_publication.py'):
+              j['sha256'][n]=hashlib.sha256((p/n).read_bytes()).hexdigest()
+          j['build_correction']='audit/PUBLICATION_BUILD_CORRECTION.json; original capsule identities retained in audit/PUBLICATION_CAPSULE_SOURCE_SHA256.json'
+          f.write_text(json.dumps(j,indent=2)+'\n')
+          PY
       - name: Install publication dependencies
         run: |
           python -m pip install numpy==2.1.3 scipy==1.14.1
@@ -66,7 +85,8 @@ jobs:
           import hashlib,json
           from pathlib import Path
           p=Path('revisions/2026-10-07-r45')
-          for n,d in json.loads((p/'publication/PAPER_SOURCE_SHA256.json').read_text())['assembled_sources'].items():
+          j=json.loads((p/'publication/PAPER_SOURCE_SHA256.json').read_text())
+          for n,d in {**j['sha256'],**j['assembled_sources']}.items():
               assert hashlib.sha256((p/n).read_bytes()).hexdigest()==d,n
           Path('ECTA.tex').write_text('\\input{revisions/2026-10-07-r45/ECTA.tex}\n')
           Path('supp.tex').write_text('\\input{revisions/2026-10-07-r45/supp.tex}\n')
@@ -81,7 +101,10 @@ jobs:
             echo 'Refusing to replace an existing review-ready revision'; exit 1
           fi
           git switch -c "$target"
-          git add revisions/2026-10-07-r45 ECTA.tex supp.tex README.md
+          find revisions/2026-10-07-r45 -type d -name __pycache__ -prune -exec rm -rf {} +
+          git add -f revisions/2026-10-07-r45
+          git add ECTA.tex supp.tex README.md
+          git diff --cached --name-only --diff-filter=D | grep . && exit 1 || true
           git commit -m "R45: complete Econometrica revision, constructive proofs, full study and referee response"
           git push origin "HEAD:refs/heads/$target"
       - uses: actions/upload-artifact@v4
