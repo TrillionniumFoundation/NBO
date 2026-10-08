@@ -1,0 +1,97 @@
+name: NBO R51 complete Econometrica revision
+on:
+  push:
+    branches: [revision/econometrica-nbo-r51-integrated-source-2026-10-08]
+    paths: ['.github/workflows/nbo-r51-publication.yml', 'revisions/2026-10-08-r51/publication/START.json']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUNBUFFERED: '1'
+      TZ: UTC
+      SOURCE_DATE_EPOCH: '1791447545'
+      FORCE_SOURCE_DATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Fetch immutable reviewed sources
+        run: |
+          git fetch --depth=1 origin 2822f50100c7a53ec5fe07d39e9b37d487ab0547 4708450610c38e6b8963670cecadc887508c85c0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Verify and restore ordinary revision sources
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json,lzma
+          r=Path('revisions/2026-10-08-r51')
+          parts=sorted((r/'publication').glob('payload.[0-9][0-9].part'))
+          assert len(parts)==13
+          compressed=b''.join(p.read_bytes() for p in parts)
+          assert hashlib.sha256(compressed).hexdigest()=='54f83b9d67428feb013726643a235e02a1f1febc9caa398a1627556990651744'
+          raw=lzma.decompress(compressed)
+          assert hashlib.sha256(raw).hexdigest()=='e8cde5b8cd1faeb133699691ff4a6eee067f55386052c821aecbd8dcc3055d47'
+          files=json.loads(raw);assert len(files)==43
+          for n,text in files.items():
+              p=Path(n)
+              assert not p.is_absolute() and '..' not in p.parts
+              assert p.suffix.lower() not in {'.ttf','.otf','.woff','.woff2','.pfb','.pfa','.afm','.tfm'}
+              target=r/p;target.parent.mkdir(parents=True,exist_ok=True);target.write_text(text,encoding='utf-8')
+          print('Verified and restored',len(files),'ordinary sources')
+          PY
+      - name: Restore exact historical evidence for permanent deposition
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p revisions/2026-10-08-r51/evidence
+          gh api repos/TrillionniumFoundation/NBO/actions/artifacts/11524319892/zip > revisions/2026-10-08-r51/evidence/R48-publication.zip
+          gh api repos/TrillionniumFoundation/NBO/actions/artifacts/11529312739/zip > revisions/2026-10-08-r51/evidence/R49-main.zip
+          gh api repos/TrillionniumFoundation/NBO/actions/artifacts/11528468638/zip > revisions/2026-10-08-r51/evidence/R49-graded.zip
+          python revisions/2026-10-08-r51/code/hydrate51.py
+      - name: Publish ordinary science sources before the known-design reproduction
+        run: |
+          git config user.name 'NBO revision automation'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -- revisions/2026-10-08-r51
+          git reset HEAD -- revisions/2026-10-08-r51/evidence
+          git commit -m 'R51: publish integrated ordinary NBO sources and finite-sweep proofs before reproduction'
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r51-integrated-source-2026-10-08 HEAD:refs/heads/revision/econometrica-nbo-r51-science-freeze-2026-10-08
+          echo "NBO_SCIENCE_SOURCE=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Permanently deposit each hash-verified historical archive
+        run: |
+          for name in R48-publication.zip R49-main.zip R49-graded.zip; do
+            git add -- "revisions/2026-10-08-r51/evidence/$name"
+            git commit -m "R51: permanently preserve exact historical evidence $name"
+            git push origin HEAD:refs/heads/revision/econometrica-nbo-r51-integrated-source-2026-10-08
+          done
+      - name: Install pinned numerical and publication dependencies
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended texlive-science pandoc poppler-utils
+      - name: Execute source-bound known-design numerical reproduction
+        run: |
+          set -o pipefail
+          python revisions/2026-10-08-r51/code/execute51.py 2>&1 | tee revisions/2026-10-08-r51/audit/execution51.log
+      - name: Audit raw evidence, run 44 tests and compile all five documents
+        run: |
+          set -o pipefail
+          python revisions/2026-10-08-r51/code/build51.py 2>&1 | tee revisions/2026-10-08-r51/audit/build51.log
+      - name: Independently rebuild a clean Git archive and publish the complete revision
+        run: python revisions/2026-10-08-r51/code/release51.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r51-publication
+          path: revisions/2026-10-08-r51
+          retention-days: 30
