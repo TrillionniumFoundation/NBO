@@ -1,0 +1,76 @@
+name: NBO R53 frozen full-sweep study
+on:
+  push:
+    branches: [revision/econometrica-nbo-r53-source-2026-10-08]
+    paths: [.github/workflows/nbo-r53-science.yml]
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r53-science
+  cancel-in-progress: false
+jobs:
+  original-economy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            /revisions/2026-10-08-r52/
+            /revisions/2026-10-08-r53/
+          sparse-checkout-cone-mode: false
+      - name: Install numerical dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy
+      - name: Preserve original development and freeze ordinary scientific sources
+        run: |
+          cp -an revisions/2026-10-08-r52/. revisions/2026-10-08-r53/
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          /usr/bin/python3 revisions/2026-10-08-r53/code/tests53.py 2>&1 | tee revisions/2026-10-08-r53/audit/TESTS53_PREFLIGHT.log
+          git add -f revisions/2026-10-08-r53
+          git commit -m 'R53: preserve complete original paper and bind tested ordinary scientific sources'
+          /usr/bin/python3 revisions/2026-10-08-r53/code/study53.py --freeze
+          git add -f revisions/2026-10-08-r53/audit/SOURCE_FREEZE53.json
+          git commit -m 'R53: freeze scientific inputs before four prospective full-policy executions'
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r53-source-2026-10-08 HEAD:refs/heads/revision/econometrica-nbo-r53-science-freeze-2026-10-08
+      - name: Reconstruct complete primitive prefixes and execute all-date iterations
+        run: |
+          /usr/bin/python3 revisions/2026-10-08-r53/code/study53.py --service compiled-witness --T 2 2>&1 | tee revisions/2026-10-08-r53/audit/EXECUTION53_W2.log
+          /usr/bin/python3 revisions/2026-10-08-r53/code/study53.py --service tensor-fvi --T 2 2>&1 | tee revisions/2026-10-08-r53/audit/EXECUTION53_F2.log
+          /usr/bin/python3 revisions/2026-10-08-r53/code/study53.py --service compiled-witness --T 3 2>&1 | tee revisions/2026-10-08-r53/audit/EXECUTION53_W3.log
+          /usr/bin/python3 revisions/2026-10-08-r53/code/study53.py --service tensor-fvi --T 3 2>&1 | tee revisions/2026-10-08-r53/audit/EXECUTION53_F3.log
+      - name: Independently enclose actual policy costs and all prespecified contrasts
+        run: |
+          /usr/bin/python3 revisions/2026-10-08-r53/code/study53.py --direct 2 2>&1 | tee revisions/2026-10-08-r53/audit/DIRECT53_T2.log
+          /usr/bin/python3 revisions/2026-10-08-r53/code/study53.py --direct 3 2>&1 | tee revisions/2026-10-08-r53/audit/DIRECT53_T3.log
+      - name: Publish executed evidence on a separate revision branch
+        run: |
+          git add -f revisions/2026-10-08-r53
+          git commit -m 'R53: retain executed all-date policies, non-null certificates, full work and independent actual-cost evidence'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r53-executed-2026-10-08
+      - name: Retain complete ordinary sources and evidence even after a failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r53-full-sweep-evidence
+          path: revisions/2026-10-08-r53/
+          retention-days: 30
+          compression-level: 1
+      - name: Retain compact new evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r53-new-evidence
+          path: |
+            revisions/2026-10-08-r53/results53/
+            revisions/2026-10-08-r53/audit/*53*
+          retention-days: 30
+          compression-level: 1
