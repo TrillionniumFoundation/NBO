@@ -15,6 +15,7 @@ jobs:
       OPENBLAS_NUM_THREADS: '1'
       MKL_NUM_THREADS: '1'
       PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUNBUFFERED: '1'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -54,6 +55,17 @@ jobs:
           for n,h in json.loads((p/'SOURCE_SHA256.json').read_text()).items():assert hashlib.sha256((p/n).read_bytes()).hexdigest()==h,n
           PY
           echo "PUBLICATION_INPUT_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Preserve safe historical links without changing manuscript or science
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,subprocess,sys
+          p=Path('revisions/2026-10-08-r48')
+          helper=p/'code/repair_clean48.py'
+          assert hashlib.sha256(helper.read_bytes()).hexdigest()=='f2766be9b0ecbacfba9ac677cdb2babbe43fdfe0c6996d2f9a847640f9422aa1'
+          subprocess.run([sys.executable,str(helper)],check=True)
+          assert hashlib.sha256((p/'code/clean48.py').read_bytes()).hexdigest()=='d9f7f9e38c6d16a079695343754af227bded5725a7e3d3be922f3f650d85f8b3'
+          PY
       - name: Restore exact historical publication inputs once
         env:
           GH_TOKEN: ${{ github.token }}
