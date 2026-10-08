@@ -6,6 +6,8 @@ R=Path(__file__).resolve().parents[1]
 M={'compiled-witness':'W','tensor-fvi':'F','surplus-fvi':'A'}
 
 def put(name,text):
+    if name.endswith('.tex') and any(ord(c)<32 and c not in '\n\r\t' for c in text):
+        raise ValueError('Control character in generated LaTeX: '+name)
     p=R/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(text)
 def number(x,d=4):return f'{x:.{d}f}'
 def endpoint(x,lower,d=5):
@@ -14,7 +16,7 @@ def endpoint(x,lower,d=5):
 def band(x,d=5):return '['+endpoint(x[0],True,d)+', '+endpoint(x[1],False,d)+']'
 def table(name,caption,label,heads,rows,note,cols=None):
     cols=cols or 'l'+'r'*(len(heads)-1)
-    text='\\begin{table}[htbp]\n\\centering\n\\caption{'+caption+'}\\label{'+label+'}\n{\\small\n\\begin{tabular}{'+cols+'}\n\\hline\n'
+    text='\\begin{table}[htbp]\n\\centering\n\\caption{'+caption+'}\\label{'+label+'}\n{\\small\\setlength{\\tabcolsep}{4pt}\n\\begin{tabular}{'+cols+'}\n\\hline\n'
     text+=' & '.join(heads)+r' \\'+'\n\\hline\n'
     text+='\n'.join(' & '.join(map(str,row))+r' \\' for row in rows)
     text+='\n\\hline\n\\end{tabular}}\n\\par\\smallskip\n{\\footnotesize '+note+'}\n\\end{table}\n'
@@ -48,7 +50,7 @@ def main():
             for t,(gap,chi) in enumerate(zip(z['greedy_gap_by_date'],z['contrast_bound_by_date'])):
                 rows.append([svc['T'],M[svc['method']],z['pass_number'],t,number(chi,5),number(gap,5)])
     table('date-bounds54','Positive contrast bounds and complete-action gaps','tab:date-bounds54',
-        ['$T$','Method','Pass','Date','$\chi$ upper','$\varepsilon$ upper'],rows,
+        ['$T$','Method','Pass','Date',r'$\chi$ upper',r'$\varepsilon$ upper'],rows,
         'The symmetric bound is obtained from anchored signed endpoints and the independent scalar fallback. The deployed gate retains the signed endpoints. The directed gap already includes whole-cell evaluation, continuous-action covering, integration and arithmetic effects; these are not added a second time. Per-bin and per-candidate endpoints remain in the compressed raw records.','rrrrrr')
     rows=[]
     for svc in a['primary']:
@@ -87,7 +89,6 @@ def main():
     table('misspecification54','Controlled deviations from exact action-null structure','tab:misspecification54',
         ['Quantity','Recorded value'],rows,
         'The catalogue changes known ReLU directions, action exposures and action-dependent innovation means. Harm means a strictly positive lower true-cost difference for an action selected by the deliberately false-null rule. Corrected decisions pass the nonpositive true-upper check. Cell--cases are deterministic repeated diagnostics, not independent economic observations.','lr')
-    # Compact machine-readable counterpart of all derived tables.
     put('tables/tables54.json',json.dumps(a,sort_keys=True,indent=2)+'\n')
     print(json.dumps(dict(tables=9,source='audit/RESULT_AUDIT54.json')))
 if __name__=='__main__':main()
