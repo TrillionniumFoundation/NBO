@@ -1,0 +1,66 @@
+name: NBO R49 graded matched study
+on:
+  push:
+    branches: [revision/econometrica-nbo-r49-source-2026-10-08]
+    paths: ['.github/workflows/nbo-r49-graded.yml']
+permissions:
+  contents: write
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            revisions/2026-10-07-r45
+            revisions/2026-10-08-r48
+            revisions/2026-10-08-r49
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install fixed numerical inputs
+        run: python -m pip install numpy==2.1.3 scipy==1.14.1
+      - name: Freeze and verify graded source identities
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          p=Path('revisions/2026-10-08-r49');(p/'graded/audit').mkdir(parents=True,exist_ok=True)
+          expected={'code/graded49.py':'b11f1bcaa9c40c3a2ee894ac709fed69909c28b146d4c108c06e61fcc9a18591','code/tests_graded49.py':'812a2e4314555c83d6d6c2a196b0ac26ea02373839d38d96d0743d781d5ff13f','code/service49.py':'1f2e618d7cef86782a83d7bc695f9fafcd64752021f6081dad4f18dcbf9a85d4'}
+          for n,h in expected.items():assert hashlib.sha256((p/n).read_bytes()).hexdigest()==h,n
+          for n in ['STUDY_PROTOCOL.md','ADAPTIVE_BASELINE_AMENDMENT.md']:
+              expected[n]=hashlib.sha256((p/n).read_bytes()).hexdigest()
+          for n in ['common.py','tensor.py','service.py']:
+              name='../2026-10-08-r48/code/'+n;expected[name]=hashlib.sha256((p/name).read_bytes()).hexdigest()
+          for n in ['constructive.py','interval.py']:
+              name='../2026-10-07-r45/code/'+n;expected[name]=hashlib.sha256((p/name).read_bytes()).hexdigest()
+          (p/'GRADED_SOURCE_SHA256.json').write_text(json.dumps(expected,indent=2)+'\n')
+          PY
+      - name: Graded geometry and identity tests
+        run: python -m unittest discover -s revisions/2026-10-08-r49/code -p tests_graded49.py -v > revisions/2026-10-08-r49/graded/audit/pre-execution-tests.log 2>&1
+      - name: Complete isolated matched block
+        run: python revisions/2026-10-08-r49/code/graded49.py --execute
+      - name: Publish immutable graded evidence
+        run: |
+          target=revision/econometrica-nbo-r49-graded-evidence-2026-10-08
+          if git ls-remote --exit-code --heads origin "$target"; then echo 'Refusing to overwrite evidence'; exit 1; fi
+          git switch -c "$target"
+          git config user.name 'NBO revision automation'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-08-r49/graded revisions/2026-10-08-r49/GRADED_SOURCE_SHA256.json
+          if test -n "$(git diff --cached --name-only --diff-filter=D)"; then exit 1; fi
+          git commit -m 'R49: complete graded-grid matched evidence; original block unchanged'
+          git push origin "HEAD:refs/heads/$target"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r49-graded
+          path: revisions/2026-10-08-r49
+          retention-days: 30
