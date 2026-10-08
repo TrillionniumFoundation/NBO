@@ -1,0 +1,81 @@
+\section{Cost-directed feasible improvement}\label{sec:improvement50}
+A policy certificate answers a safety question relative to the optimum. It need not answer the comparison with an installed controller. We now make actual cost reduction a constraint on the improvement step. The continuation representation, including a neural realization, supplies proposals; a centered, policy-specific evaluation determines whether to implement them. The incumbent is always an admissible fallback.
+
+Fix a feasible implemented policy $\pi$ and bounded functions $h_0,\ldots,h_T$ in the common evaluation domain of Section~\ref{sec:core49}. Its observation and rounding rules are part of $\pi$. Suppose verified constants satisfy
+\begin{equation}\label{eq:evalbands50}
+ \ell_t\le \mathcal T_t^\pi h_{t+1}-h_t\le u_t\quad(t<T),
+ \qquad \ell_T\le g-h_T\le u_T.
+\end{equation}
+Define $a_T=\ell_T$, $b_T=u_T$ and
+\[
+ a_t=\ell_t+\beta_t a_{t+1},\qquad
+ b_t=u_t+\beta_t b_{t+1},\qquad w_t=b_t-a_t.
+\]
+All inequalities in this section are uniform over the true state domain. Bounds at sampled points alone do not meet this requirement.
+
+\begin{proposition}[Centered reference advantage]\label{prop:advantage50}
+Under \eqref{eq:evalbands50}, $a_t\le J_t^\pi-h_t\le b_t$. For any feasible action $v$ at state $x$, put
+\[
+ d_t(x,v)=Q_t(h_{t+1};x,v)-Q_t(h_{t+1};x,\pi_t(x)).
+\]
+If $\overline d_t(x,v)$ is a valid upper enclosure of this difference, then
+\begin{equation}\label{eq:advantage50}
+ Q_t(J_{t+1}^\pi;x,v)-J_t^\pi(x)
+ \le \overline d_t(x,v)+\beta_t w_{t+1}.
+\end{equation}
+The width allowance and the action contrast are invariant to date-specific constant shifts of the fitted continuations.
+\end{proposition}
+\begin{proof}
+Monotonicity and cash invariance propagate the two error endpoints backward. Applying them once more to each of the two feasible actions bounds each continuation-evaluation error between $\beta_ta_{t+1}$ and $\beta_tb_{t+1}$. Their difference is at most $\beta_tw_{t+1}$. Date-specific shifts translate both endpoints by the same amount and cancel in the action contrast.\end{proof}
+
+The proposition is deliberately a reference-policy result. Substituting a bound on $h-V^*$ without controlling $h-J^\pi$ changes the statement. Likewise, accepting an action merely because it lowers $Q_t(h_{t+1})$ ignores the reference-evaluation allowance.
+
+\begin{theorem}[Incumbent-preserving Bellman improvement]\label{thm:improve50}
+Suppose a measurable feasible proposal $v_t$ and a nonnegative measurable margin $\kappa_t$ are given. At a state where a verified enclosure satisfies
+\begin{equation}\label{eq:gate50}
+ \overline d_t(x,v_t(x))+\beta_tw_{t+1}\le-\kappa_t(x),
+\end{equation}
+implement $v_t(x)$; otherwise implement the original $\pi_t(x)$. Call the resulting policy $\mu$. For a cell-based observation rule, require feasibility and \eqref{eq:gate50} for every true state in the reported cell, using the same proposed action on that cell. Then $J_t^\mu(x)\le J_t^\pi(x)$ at every date and state.
+
+Under conditional expectation, let $D_t$ be the accepted-state set and let the state trajectory follow $\mu$. Then the stronger quantitative assertion is
+\begin{equation}\label{eq:occupancy50}
+ J_0^\mu(x)-J_0^\pi(x)
+ \le-\E_x^\mu\sum_{t<T}B_t\kappa_t(X_t)\mathbf1_{D_t}(X_t).
+\end{equation}
+The qualitative assertion holds for the stipulated monotone cash-invariant conditional recursion. The occupancy formula is asserted only for expectation.
+\end{theorem}
+\begin{proof}
+At accepted states Proposition~\ref{prop:advantage50} gives $\mathcal T_t^\mu J_{t+1}^\pi\le J_t^\pi-\kappa_t$. Elsewhere the two actions coincide, so the advantage is exactly zero, not $\beta_tw_{t+1}$. Backward monotone comparison, starting from a common terminal cost, gives the first assertion. Under expectation subtract $J_t^\pi(X_t)$ along the $\mu$ trajectory and telescope the conditional expectations. The resulting identity is the expected discounted sum of true reference advantages, each bounded above by the accepted negative margin or by zero.\end{proof}
+
+The improvement principle is related to approximate policy iteration with safeguarded updates, including \citet{metelli2021}. We do not claim that monotone policy improvement itself is new. Here the relevant connection is between a signed own-policy evaluation account, action-centered numerical errors, original-owner construction, and the actual information-constrained action. The test is available to neural and conventional proposals alike. An exact native encoding of a ReLU continuation does not become a second independent method.
+
+\subsection{A fully executed final-date specialization}\label{sec:terminal50}
+A useful test of this result leaves every earlier decision fixed and improves only the final action. Set $h_T=g$. The continuation width is then zero, so the gate concerns the actual conditional final cost, without a fitted policy-evaluation error. For the investment economy in Section~\ref{sec:study49}, write
+\[
+ y_j=\frac1{16}+\frac{x_j}2+\frac{x_{j+1}}8+
+       \frac{x_j(1-x_{j+1})}{16}+\gamma_ja,
+ \quad s_j=(-1)^{j+1},\quad \sigma_z^2=\frac1{3072},
+\]
+where the cyclic convention and $\gamma_j$ are as in that section. Put $b=1/2-2\sum_jy_j/d$, $r=|\sum_js_j|/(16d)$, and
+\begin{equation}\label{eq:psi50}
+ \Psi_2(b,r)=
+ \begin{cases}
+ b_+^2,&r=0,\\
+ \big((b+r)_+^3-(b-r)_+^3\big)/(6r),&r>0.
+ \end{cases}
+\end{equation}
+Exact integration under the original continuous innovation law gives
+\begin{align}\label{eq:exactterminal50}
+ \E g(y+sZ)={}&\frac4d\sum_j(y_j-5/8)^2
+  +\frac1{4d}\sum_j(y_j-y_{j+1})^2+2\Psi_2(b,r)\notag\\
+ &+4\sigma_z^2+\frac{\sigma_z^2}{4d}\sum_j(s_j-s_{j+1})^2.
+\end{align}
+Thus no terminal innovation mesh is needed for this improvement step. Its computation is nevertheless charged. The formula includes the odd-dimensional shortage uncertainty; setting it to zero in dimension three would change the model.
+
+\begin{corollary}[Acquired-cell final improvement]\label{cor:terminal50}
+In the declared investment economies, final conditional cost
+$H(x,a)=c(x,a)+\beta\E g(F(x,a,Z))$ is strictly convex in $a$, with second derivative at least $2p$. Fix an observation cell $C$ and the implemented incumbent action $a_C$. Choose a lattice minimizer $a_C^*$ at the reported midpoint on the cell-wide feasible set. Accept it only if an outward enclosure of $H(x,a_C^*)-H(x,a_C)$ is nonpositive for all $x\in C$. Keep the incumbent on every other cell and at all earlier dates. The resulting acquired policy weakly improves actual expected discounted cost for every initial state. This guarantee does not compare it to a different full-information incumbent.
+\end{corollary}
+The lattice is $\{k/4096:k\in\mathbb N_0\}$, truncated by the minimum capacity on the eight-bit cell. Convex derivative bisection identifies the two neighboring lattice actions; their actual cost contrast selects the midpoint proposal. The gate compares its cost with the incumbent on the entire cell, not just at the midpoint. Exact rational point comparison resolves a numerically ambiguous proposal tie. An uncertain true-state box may intersect several cells; the simulator retains their action hulls rather than selecting a favorable cell.
+
+For each generator, old and repaired policies share their earlier trajectory. Their discounted cost difference therefore equals the conditional final contrast. Centering cancels state-only costs and tightens its interval enclosure. When two generators are compared, their trajectories differ and are simulated separately using common innovations. Both comparisons concern actual policies; neither is obtained by subtracting two policy-loss certificates.
