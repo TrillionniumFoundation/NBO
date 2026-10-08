@@ -1,13 +1,13 @@
 # Neural Bellman Operators
 
-**Authoritative referee revision: R51.**
+**Authoritative complete referee revision: R52.**
 
-Canonical complete branch: `revision/econometrica-nbo-r51-review-ready-2026-10-08`.
+Canonical branch: `revision/econometrica-nbo-r52-review-ready-2026-10-08`.
 
-[Main paper](revisions/2026-10-08-r51/build/ECTA.pdf) · [Supplement](revisions/2026-10-08-r51/build/supp.pdf) · [Referee response](revisions/2026-10-08-r51/build/response.pdf)
+[Main paper](revisions/2026-10-08-r52/build/ECTA.pdf) · [Supplement](revisions/2026-10-08-r52/build/supp.pdf) · [Referee response](revisions/2026-10-08-r52/build/response.pdf)
 
-[Revision guide](revisions/2026-10-08-r51/README.md) · [Complete development](revisions/2026-10-08-r51/build/complete.pdf) · [Complete supplement](revisions/2026-10-08-r51/build/complete-supp.pdf)
+[Revision guide](revisions/2026-10-08-r52/README.md) · [Complete development](revisions/2026-10-08-r52/build/complete.pdf) · [Complete supplement](revisions/2026-10-08-r52/build/complete-supp.pdf)
 
-The original topic, theory, applications and historical adverse evidence are retained. R51 adds finite-sweep incumbent-preserving accuracy theorems and integrates a source-bound reproduction of the recovered cost-directed study. The source, numerical evidence, tests, independent clean-archive rebuild and compiled papers are bound by `revisions/2026-10-08-r51/audit/FINAL_DELIVERY51.json`. Earlier revision and review branches are unchanged.
+R52 adds proved action-contrast accuracy and coupled-residual certificates, and an exhaustive original-economy robustness ablation. The original title, model, broad theory, applications and adverse evidence are retained. All inherited and new tests, source/evidence checks, five-document compilation and clean archive reproduction are bound by `revisions/2026-10-08-r52/audit/FINAL_DELIVERY52.json`. The older branches are unchanged.
 
-Build offline with `python revisions/2026-10-08-r51/code/build51.py`.
+Offline build: `python revisions/2026-10-08-r52/code/build52.py`.
