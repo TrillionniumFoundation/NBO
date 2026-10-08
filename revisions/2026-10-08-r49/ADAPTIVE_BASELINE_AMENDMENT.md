@@ -1,0 +1,17 @@
+# R49 additional graded-grid comparison
+
+Date: 8 October 2026. This amendment is deposited while the original full study at source 7d12150f01588d1218f72daeea0cf7c7d3393a83 is still running and before inspecting its outcome artifact. The original protocol and original scientific sources remain unchanged.
+
+## Reason
+
+Mathematical inspection identifies a design limitation, not a failed theorem: bisecting the interval with the largest curvature-times-squared-length can return a uniform grid at a power-of-two node quota when curvature contrasts are less than four. Removing a dominant unit baseline does not itself guarantee nonuniform realized axes. The original bisection experiment will therefore be retained and reported by its actual realized grids; it will not be silently relabeled as a successful adaptive comparison.
+
+## Additional frozen block
+
+Run a separate complete matched two-state block with compiled witness, uniform FVI, and graded FVI. Use the same four horizon/price cells, three isolated repetitions, rotating method order, and all six separated-resource rungs from the original protocol. This block contains 36 services and 216 rungs. Every generator reconstructs its own future labels from primitives on the same runner for this block. Do not splice clocks from the original block into this comparison. Preserve all failures and outputs. The three- and four-dimensional experiment remains in the original block.
+
+Graded FVI uses the same nine-point-per-coordinate own-future pilot and exact adjacent second-difference weights, with positive floor 2^-40. Regard the eight weights as a positive piecewise-constant density on the eight pilot intervals. Place N+1 coordinate knots at its equal-mass quantiles. Compute those locations rationally and round each interior location to the nearest multiple of 2^-24, with ties to even. Endpoints are exactly zero and one. Require strict increase and retain the actual realized axes and their actual covering radii. This fine dyadic realization makes the midpoint partitions used by the inherited verified FVI actor exact. The original Bellman queries, feasible capacity, continuous-law integration, one-sided certificate, finite deployment check, storage and complete-prefix clock are unchanged. Pilot work, allocation and every earlier failed rung are charged. No sparse-grid or locally optimal mesh claim is made.
+
+The original first-crossing and sensor-cost simulations remain bound to the original block's exact policy hashes. Compare new-block witness/FVI policy hashes with their original counterparts. Identical hashes permit identification as the same policy; a mismatch does not authorize transfer of a direct-cost interval. No direct economic superiority of the graded controller is claimed without its own comparison. All existing policies, protocols, raw records, failed workflows and source identities remain available.
+
+The additional block is frozen before its own execution. Its purpose is a genuinely nonuniform conventional comparison, not selection of a favorable numerical outcome. Report both complete blocks, their distinct execution environments, full tolerance partitions, target attainments, realized grid geometry and timing dispersion. A result unfavorable to witness or to grading is retained. The publication must clearly separate this prospective addition from a rewrite of the original registered method.
