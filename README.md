@@ -1,13 +1,23 @@
 # Neural Bellman Operators
 
-**Authoritative complete referee revision: R52.**
+**Authoritative complete referee revision: R54.**
 
-Canonical branch: `revision/econometrica-nbo-r52-review-ready-2026-10-08`.
+Canonical branch: `revision/econometrica-nbo-r54-review-ready-2026-10-08`.
 
-[Main paper](revisions/2026-10-08-r52/build/ECTA.pdf) · [Supplement](revisions/2026-10-08-r52/build/supp.pdf) · [Referee response](revisions/2026-10-08-r52/build/response.pdf)
+[Main paper](revisions/2026-10-08-r54/build/ECTA.pdf) · [Supplement](revisions/2026-10-08-r54/build/supp.pdf) · [Referee response](revisions/2026-10-08-r54/build/response.pdf)
 
-[Revision guide](revisions/2026-10-08-r52/README.md) · [Complete development](revisions/2026-10-08-r52/build/complete.pdf) · [Complete supplement](revisions/2026-10-08-r52/build/complete-supp.pdf)
+[Revision guide](revisions/2026-10-08-r54/README.md) · [Complete development](revisions/2026-10-08-r54/build/complete.pdf) · [Complete proof supplement](revisions/2026-10-08-r54/build/complete-supp.pdf)
 
-R52 adds proved action-contrast accuracy and coupled-residual certificates, and an exhaustive original-economy robustness ablation. The original title, model, broad theory, applications and adverse evidence are retained. All inherited and new tests, source/evidence checks, five-document compilation and clean archive reproduction are bound by `revisions/2026-10-08-r52/audit/FINAL_DELIVERY52.json`. The older branches are unchanged.
+R54 retains the original title, model, constructive neural backend, broader
+applications and adverse comparisons. It adds a proved directed full-sweep
+certificate, explicit work and storage accounts, and an integrated actual-cost
+study using the separately frozen R53 full-sweep, adaptive and controlled
+misspecification records. This publication does not add independent samples or
+claim unexecuted high-dimensional or representation-specific superiority.
 
-Offline build: `python revisions/2026-10-08-r52/code/build52.py`.
+The five-document build, inherited and new tests, all-record replay, label and
+source preservation, and clean offline archive reproduction are bound by
+`revisions/2026-10-08-r54/audit/FINAL_DELIVERY54.json`.
+The earlier revision and review branches are unchanged.
+
+Offline build: `python3 revisions/2026-10-08-r54/code/build54.py`.
