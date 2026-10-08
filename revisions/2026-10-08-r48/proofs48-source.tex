@@ -1,0 +1,166 @@
+\section{Continuous tensor compilation and feasible witness identity}\label{supp:compiler48}
+This section proves Theorem~\ref{thm:compiler48} of the article. We state its identities explicitly so that the numerical compiler can be checked without relying on an unproved interpolation rule. The original labels and original witness indices, not transformed-node actions, are the inputs.
+
+\subsection{The line transform and its tie invariant}
+For ordered line locations $s_0<\cdots<s_m$, attach to each location a pair $(q_j,a_j)$, where $q_j$ is a real cost and $a_j$ an original index. Order such pairs lexicographically. Addition of a scalar to a pair adds it only to the cost. Start with $u_j=(q_j,a_j)$ and perform
+\begin{align}\label{eq:line48}
+ u_j&\leftarrow\min_{\rm lex}\{u_j,u_{j-1}+L(s_j-s_{j-1})\},
+       &&j=1,\ldots,m,\\
+ u_j&\leftarrow\min_{\rm lex}\{u_j,u_{j+1}+L(s_{j+1}-s_j)\},
+       &&j=m-1,\ldots,0.\notag
+\end{align}
+After the forward pass, induction gives $u_j=\min_{k\le j,\rm lex}(q_k+L(s_j-s_k),a_k)$. The backward pass makes $u_j$ the minimum over all original line inputs of $(q_k+L|s_j-s_k|,a_k)$. To see this directly, a site to the right can be reached by the monotone backward path; a site to the left has already been considered in the forward pass. Any path that reverses direction has weakly larger distance because $L\ge0$, so it cannot improve the cost. With $L=0$ the original smallest index propagates in both directions. Lexicographic addition and minimum preserve the tie information throughout.
+
+For a tensor grid, define the coordinate operator $T_j$ by taking this minimum along coordinate $j$ with all other coordinates fixed. Expanding the finite minima shows
+\[
+ T_d\cdots T_1(y_i,i)(v)
+ =\min_{i,\rm lex}(y_i+L\|v-x_i\|_1,i).
+\]
+Thus the final result is $(z_v,o_v)$ in~\eqref{eq:transform48}. Each grid edge is relaxed at most twice in each coordinate. The edge count is at most $dS$, and all updates can be made in place with one cost and one index per node. The separable distance-transform part is the classical algorithm; see \citet{felzenszwalb2012}. Original action owners are auxiliary information propagated by the same minimum operations, not independently recomputed choices.
+
+\subsection{Off-grid extension and the original tie rule}
+For any corner $v$ and any original site $i$, the triangle inequality gives
+\[
+ y_i+L\|x-x_i\|_1\le y_i+L\|v-x_i\|_1+L\|x-v\|_1.
+\]
+Minimizing first over $i$ proves the lower inequality in~\eqref{eq:corner48}. For the converse, fix a site attaining $f(x)$. If its $j$th coordinate is at or to the left of the cell, choose the left corner coordinate; if it is at or to the right, choose the right corner coordinate. A grid site cannot lie strictly between adjacent grid coordinates. When $x$ lies on the cell boundary, either admissible corner choice gives the same needed identity. Summing the coordinate identities gives
+\[
+ \|x-x_i\|_1=\|x-v\|_1+\|v-x_i\|_1.
+\]
+Using this site in $z_v$ proves the upper inequality and hence equality.
+
+Now take the smallest attaining original index $i_*(x)$. For its associated corner $v$, equality in the preceding chain implies
+$z_v=y_{i_*}+L\|v-x_{i_*}\|_1$.
+If the original owner $o_v$ were smaller than $i_*$, then
+\[
+ y_{o_v}+L\|x-x_{o_v}\|_1
+ \le z_v+L\|x-v\|_1=f(x).
+\]
+It would be an attaining original site with a smaller index, a contradiction. Therefore $o_v=i_*(x)$. Evaluating the original cones of all corner owners and taking their lexicographic minimum proves~\eqref{eq:owner48}. This argument covers inconsistent or dominated labels: it never uses $z_v=y_v$.
+
+Attaching the original action $a_{o_v}$ to a transformed label is essential. Attaching $a_v$ need not preserve the policy. Under the established identity, both implementations select $i_*(x)$ and apply the same feasible repair $\Gamma_{i_*}(x)$. They consequently induce the same action at every state, the same controlled transition law and, by backward evaluation, the same policy value. The argument is not restricted to expected costs; identity of the actual policy preserves any well-defined common recursive evaluation. It does not equate two policies generated from different rounded label arrays.
+
+\subsection{Finite arithmetic and uncertain queries}
+All preprocessing inputs in the executable study are exact rational representations of the stored numerical labels, slopes and coordinate knots. Comparisons in~\eqref{eq:line48} are exact. The compiler stores the resulting rational $z_v$ and integer $o_v$. Its arithmetic-operation count does not suppress numerator/denominator growth: coefficient bit lengths and actual preprocessing time are recorded.
+
+At an exact represented point, outward arithmetic encloses each term of~\eqref{eq:corner48}; taking the minimum lower endpoint and the minimum upper endpoint encloses the true minimum. At an uncertain point $x\in D$, a midpoint value plus and minus $L\sup_{x\in D}\|x-\widehat x\|_1$ is also a valid value enclosure. This is the continuation's Lipschitz property, not an actor regularity assertion.
+
+For the actor, let $\mathcal C(D)$ be the finitely many tensor cells whose closures meet a query box. The previous proof implies that every exact winning original index at any point in that box belongs to $\{o_v:v\in\mathcal V(C),C\in\mathcal C(D)\}$. An interval lower bound above the smallest available upper bound rules out a candidate; all other candidates are retained. Their action hull includes the exact actor at every permitted state. Repair, downward action quantization, costs and transitions are then evaluated by interval extensions. This may enlarge the path enclosure, but cannot improve the statistical comparison by hiding a discontinuity. A degenerate ambiguous box is resolved by exact original-cone comparison with the same smallest-index tie rule.
+
+The off-grid work is bounded by the corner count only for a point or one-cell query. A large uncertainty box can intersect many cells and requires their union. We do not use the point-query complexity theorem to claim dimension-independent or uncertainty-independent simulation work. The actual ambiguity and actor-query counts are included in the direct-comparison records.
+
+
+\subsection{Work to implemented economic accuracy}
+For Corollary~\ref{cor:work-accuracy48}, the deterministic primitive account gives $G\le C_{T,p}/N+2S_T\xi+2\beta^T\xi_T$. Under its allocations the first term is at most $\varepsilon/4$ and the two numerical terms sum to at most $\varepsilon/4$. The exact-selector acquisition addition is $A2^{-b}+K\Delta\le\varepsilon/2$, so the implemented loss is at most $\varepsilon$. A sufficient integer bit count can be found by increasing $b$ until the rational inequality holds; no unchecked logarithm is required. If observation has a fee, the augmented objective also pays $\lambda dbS_T$. One cannot send $b$ to infinity at fixed positive price and infer a vanishing augmented loss.
+
+There are $(N+1)^2$ state nodes, $N+1$ actions at each node and $N$ innovation midpoints. With a compiled continuation each midpoint requires a fixed number of two-dimensional primitive and corner operations, while transforming each date's labels and storing its feasible actors requires $O(N^2)$ further algebraic work. Thus the full backward construction has $O(TN^4)$ arithmetic operations. The dense alternative multiplies the midpoint workload by a further $(N+1)^2$. The finite-bit actor applies the same compiled owner rule and a constant-dimensional capacity repair. For a dyadic ladder ending at $N$, $\sum_{j\ge0}(N/2^j)^q\le N^q/(1-2^{-q})$ for $q>0$; this charges all previous construction attempts. The storage of the entire ladder of checkpoints also has the same $O(TN^2)$ scalar order.
+
+These are sufficient algebraic upper bounds, not lower bounds for conventional methods. A $p$-bit elementary operation is charged at its actual or separately bounded arithmetic cost, and exact rational owners carry their coefficient sizes. Statistical policy comparison is outside this construction bound and is charged as its own joint service. No physical fsync latency, unknown optimizer iteration count, or unrestricted uncertainty-box enumeration is hidden inside the arithmetic order.
+
+\section{Nonuniform fitted-value comparison and multidimensional primitives}\label{supp:baselines48}
+\subsection{A common all-state criterion on unequal coordinate grids}
+Let $g_t=\mathcal T_t f_{t+1}$ have graph modulus $L_t$. At nodes $x_i$, numerical feasible-net minimization returns $y_i$ with
+$-e_t\le y_i-g_t(x_i)\le D_t^Qk_t+e_t$ and original action $a_i$ with $Q_t(f_{t+1};x_i,a_i)\le y_i+e_t$.
+For multilinear interpolation on a rectangle of side lengths $h_j^C$, its nonnegative barycentric weights have sum one and satisfy
+\[
+ \sum_i w_i(x)\|x-x_i\|_1
+ =\sum_j\frac{2(x_j-x_j^-)(x_j^+-x_j)}{h_j^C}
+ \le\frac12\sum_jh_j^C\le h_t,
+\]
+where $h_t$ is half the sum of the largest coordinate gaps. Hence the optimal-residual upper bound is $D_t^Qk_t+e_t+L_th_t$.
+
+Deploy the original action at the nearest coordinatewise node, choosing the smaller original index on a tie, with the same state-feasible repair. On its closed nearest-node cell $D_i$, feasible objective transport gives
+\[
+ Q_t(f_{t+1};x,\Gamma_i(x))-f_t(x)
+ \le e_t+y_i+L_t\|x-x_i\|_1-f_t(x).
+\]
+Intersect $D_i$ with tensor cells and split at $x_i$ in every coordinate. On each resulting rectangle, the expression after $e_t$ is multi-affine: the absolute value has fixed sign and $f_t$ is multilinear. A multi-affine function attains a maximum at a rectangle vertex, as repeated one-dimensional maximization shows. It therefore suffices to test the left midpoint, node, and right midpoint in each coordinate, at most $3^d$ vertices per node, using outward arithmetic. Denote this computed upper bound by $E_t$. The common one-sided policy criterion becomes
+\begin{equation}\label{eq:fvi48}
+ G_F=\sum_{t<T}B_t(D_t^Qk_t+2e_t+L_th_t+E_t)
+        +B_T(2e_T+2L_gh_T).
+\end{equation}
+The witness criterion remains~\eqref{eq:graphgap46} with exact repair. Both compare against the original optimum over all admissible adapted policies. Neither treats a sampled residual as an all-state error.
+
+The interpolant's $\ell^1$ Lipschitz constant is the largest absolute edge slope: each partial derivative is a convex combination of edge slopes, and the dual norm of $\ell^1$ is $\ell^\infty$. Slopes are computed exactly from rational knots and labels. This modulus, not a neural modulus borrowed from another generator, is passed to that method's previous-date target construction.
+
+\subsection{The prespecified error-driven coordinate grid}
+The adaptive conventional comparator is a nonuniform tensor FVI method, not a sparse grid or locally adaptive quadtree. At every date and resolution $N>4$, it computes a fresh $5^d$ pilot array using its own future continuation and the same $N$ feasible action fractions and $N$ innovation midpoints. At terminal date it evaluates the terminal primitive instead. These evaluations are charged even when a later grid repeats a pilot node.
+
+For coordinate $j$, let $D_{j,k}$, $k=1,2,3$, be the maximum, across all other pilot coordinates, of the absolute second difference $|y_{k-1}-2y_k+y_{k+1}|$. Give coarse interval $[k/4,(k+1)/4]$, $k=0,\ldots,3$, weight
+\[
+ w_{j,k}=1+64\max\{D_{j,\max(1,k)},D_{j,\min(3,k+1)}\}.
+\]
+Start with the four coarse intervals. Repeatedly bisect the interval maximizing $w_{j,k}$ times its squared length, breaking ties at the leftmost interval, until there are $N$ intervals on that axis. All rankings and knots are rational. This positive curvature heuristic and its factor 64 were fixed in the scientific source before the full catalogue; no reported outcome selects them. The final cover uses the actual largest gaps. In particular, preferentially refining one area can worsen a global covering allowance elsewhere. The common certificate exposes that tradeoff rather than crediting the adaptive method with an assumed uniform radius.
+
+\subsection{Cycle-coupled dimensions two through four}
+The dimension stress study retains $x\in[0,1]^d$, $a\in[0,\kappa(x)]$, with
+\[
+ \kappa(x)=\frac18+\frac1{8d}\sum_i x_i,\qquad
+ F_i(x,a,z)=\frac1{16}+\frac{x_i}2+\frac{x_{i+1}}8
+ +\frac{x_i(1-x_{i+1})}{16}+b_i a+s_i z.
+\]
+Indices are cyclic; $b_i$ alternates $1/2,1/4$, and $s_i$ alternates $1,-1$. The shock is the original continuous uniform $z\in[-1/32,1/32]$. Write $\bar x=d^{-1}\sum_i x_i$. The stage state cost is
+\[
+ \frac2d\sum_i(x_i-5/8)^2+
+ \frac1{4d}\sum_i(x_i-x_{i+1})^2+
+ 2(1/2-2\bar x)_+^2,
+\]
+with action cost $pa^2+4a^4$. The terminal state cost doubles the first coefficient. At $d=2$ these are exactly the original R47 primitives, including its action set and opposite innovation exposures.
+
+For $d=2,3,4$, valid $\ell^1$ moduli are
+\begin{equation}\label{eq:moduli48}
+ C_x=\frac{13}{2d},\quad L_g=\frac9d,\quad
+ F_x=\frac{11}{16},\quad F_a=\sum_i b_i,\quad
+ C_a=\frac p2+\frac14,\quad K^A=\frac1{8d}.
+\end{equation}
+Indeed, $0\le a\le1/4$ and the displayed transition lies in $[1/32,29/32]$ by direct bounds, so the unit cube is invariant. Each Jacobian column in the state has absolute sum at most $9/16+1/8=11/16$. The action and capacity moduli follow by differentiation.
+
+For the state-cost bound, in the active shortage region the stage derivative with respect to $x_j$ is
+\[
+ \frac4d(x_j-5/8)+\frac{2x_j-x_{j-1}-x_{j+1}}{2d}
+ -\frac8d(1/2-2\bar x).
+\]
+At $d=2$, the repeated neighbor is counted twice. Its coefficients in the coordinates are nonnegative for $d\le4$, so its minimum on the active region is attained at zero and equals $-13/(2d)$. Its positive part is at most the corresponding derivative without the negative shortage term, whose upper bound is $5/(2d)$. On the inactive region the derivative lies between $-7/(2d)$ and $5/(2d)$. The terminal derivative replaces $4/d$ by $8/d$; the analogous bounds give minimum $-9/d$ and smaller absolute upper bounds elsewhere. Continuity across the shortage boundary yields the global moduli in~\eqref{eq:moduli48}. These constants are proved for the displayed dimensions, not silently extrapolated to a different family.
+
+A feasible action net has points $j\kappa(x)/N$, $j=0,\ldots,N$, and covering radius at most $1/(8N)$. In dimension three a downward binary64 realization adds at most $2^{-50}$ to that radius; its stored actions remain feasible. Dimensions two and four and the study's dyadic knots make these fractions exactly representable. Every path integral uses midpoint queries plus a continuous-law remainder. Since $\|F(x,a,z)-F(x,a,z')\|_1=d|z-z'|$, averaging over $M$ equal shock cells gives
+\[
+ \left|\E f(F(x,a,Z))-\frac1M\sum_{m=1}^M f(F(x,a,z_m))\right|
+ \le\frac{dL_f}{64M}.
+\]
+The denominator is obtained from the mean absolute displacement within a cell, one quarter of its length. Discounting, interval evaluation and label rounding are additional terms; the deposited query error includes all of them.
+
+\section{Observation charges and direct cost intervals}\label{supp:decisions48}
+\subsection{The sensor account and integer choice}
+Each observed coordinate cell has width $2^{-b}$ and midpoint error at most $2^{-(b+1)}$, including the boundary cells. For the affine capacity, evaluating the lower endpoint of the observation box produces a feasible lower capacity. Its distance from the true capacity is at most $2K^Ar(b)$. Downward action rounding by $\Delta$ adds at most $\Delta$ to repair displacement. Therefore the acquisition addition at date $t$ is
+$2L_tr(b)+D_t^Q(2K_t^Ar(b)+\Delta_t)$.
+Summing discounted additions and adding the deterministic observation charge gives~\eqref{eq:priced48}. The same summation does not claim that a reference policy-loss bound is a policy-cost point estimate.
+
+The integer precision comparisons follow from the successive difference $C-A2^{-(b+1)}$. If this difference vanishes, both $b$ and $b+1$ minimize locally, and monotonicity makes them global minimizers; the smaller is recorded. Every candidate precision, charge, allowance and augmented bound is stored as a rational number. Checking the two neighbors, or all candidates in the finite range, is an exact optimization certificate for this upper-bound objective.
+
+\subsection{Continuous-law path enclosures}
+For a uniform initial law, two independent forty-bit bins cover the initial coordinates. For a fixed initial vector, the coordinate inputs are exact. At each date a further independent bin encloses the common continuous innovation. The bin width is $2^{-40}$ for an initial coordinate and $2^{-44}$ for the shock interval of total length $1/16$.
+
+For each controller separately, its state box determines all possible observation bins; exact midpoints of those bins form an observation enclosure. The exact actor at every possible observation is enclosed using original witness owners or the nearest-node FVI cells. Capacity repair uses the lowest capacity on each possible observation box. Its action hull includes all possible repaired and quantized actions. The natural interval extensions of cost and transition then propagate the enclosure to the next date. The compiler may accelerate these evaluations but never replaces a path box by an unchecked midpoint actor. Dependence between the two policies is arbitrary inside a paired path; their marginals retain the prescribed innovation law.
+
+The running-cost support follows from the separate bounds $\sum_j(x_j-5/8)^2\le25/32$, $(x_1-x_2)^2/4\le1/4$, $2(1/2-x_1-x_2)_+^2\le1/2$, $pa^2\le p/16$, and $4a^4\le1/64$. Terminal cost is at most $37/16$. These inequalities prove~\eqref{eq:support48}; separate maxima need not occur at the same state. The wider support is retained as a conservative input, rather than estimated from the simulated sample.
+
+\subsection{Moment and probability accounts}
+For a bounded endpoint array $X_1,\ldots,X_n\in[a,b]$, write $M=\max(|a|,|b|)$, $u=2^{-53}$ and $\gamma=(n+4)u/(1-(n+4)u)$. The implementation encloses the computed mean by adding and subtracting $\gamma M$; it enlarges the computed mean square by $\gamma M^2$. These conservative bounds cover multiplication, summation and division in the finite arrays used here, with no overflow. If the mean enclosure is $[m_-,m_+]$ and the second-moment upper bound is $q_+$, an unbiased sample-variance upper bound is
+\[
+ s_+^2=\max\left\{0,\frac n{n-1}
+ \left(q_+-\min_{m\in[m_-,m_+]}m^2\right)\right\}.
+\]
+The minimum square is zero exactly when the interval contains zero. All moment bounds are converted to rationals before computing the confidence allowance. A square-root upper endpoint is checked by exact squaring and rounded upward until valid. The rational partial sum $\sum_{j=0}^{40}10^j/j!>19200=4K/\alpha$ verifies the logarithmic allowance $\ell=10$.
+
+The empirical-Bernstein inequality of \citet{maurer2009}, applied to the two bounded endpoint samples, gives~\eqref{eq:bern48}--\eqref{eq:confidence48}. Each of the $2K$ one-sided assertions receives failure probability $\alpha/(2K)$. The union bound requires no independence across policy-pair tasks, but each task's endpoint sample uses the stipulated independent-bin model. Stored PCG64 seeds and stream hashes give deterministic reproducibility only. The path enclosures are deterministic numerical statements; the confidence level is a separate sampling statement under that model.
+
+For an installed FVI controller, changing to witness costs $k+D_{\mu,b}$. For an installed witness controller, changing to FVI costs $k-D_{\mu,b}$. The sign tests and no-recoupment decision in Theorem~\ref{thm:decision48} follow. They concern the chosen transaction fee and initial law. They neither establish welfare equivalence under an unmodelled calibration nor prove that both controllers are close to the optimum merely because they are close to each other.
+
+\section{Full work records and preservation}\label{supp:work48}
+For each completed service, let $g_r$ be its exact bound at rung $r$ and $w_r$ its accumulated clock through that rung's durable checkpoint. The first-crossing work at tolerance $\varepsilon$ is $w_{\min\{r:g_r\le\varepsilon\}}$, with no attainment when this set is empty. Sorting the union of all exact bound breakpoints yields a complete partition of the positive tolerance axis into left-closed, right-open intervals on which every method's first crossing is fixed. Bounds need not be monotone for this construction: the earliest qualifying rung is always used. The lowest interval with no attainment and the unbounded upper interval are retained.
+
+Every interval in the machine-readable frontier contains each method's selected resolution, median/minimum/maximum prefix wall time, CPU time, component counts and durable checkpoint size. The three repetitions are deterministic constructions with separate process clocks; they are not independent economic tasks or neural initializations. The dimension stress cells have one execution and are labelled accordingly. Peak resident memory includes the interpreter and warm-up. The internal prefix starts at primitives after the fixed non-economic warm-up; the parent process records the startup-inclusive duration separately. CPU affinity and numerical-library threads are fixed, while CPU frequency is not controlled.
+
+The service includes target generation, adaptive pilots, exact compilation, continuous-law integration and its remainder, actor extraction, certification, failed rungs, serialization and a fixed finite acquired-deployment checksum. That checksum is a measured deployment component, not an empirical substitute for the uniform acquisition theorem. An independent direct policy-cost experiment is a separate joint service. Its clock includes both frozen-policy loads and compilation, hash checks, common paths, repair, statistics and durable output. This pair-specific cost is reported separately; it is not assigned silently to one controller or called zero. Historical R46 scalar prefix-time curves are reconstructed from their original records without retiming or adding them to R48 clocks.
+
+The scalar, original constrained and precision findings remain historical evidence. The new compiled construction is a separate prospective service, while the fixed-object compiler diagnostic retains the old labels and original witnesses. This separation prevents faster evaluation of a frozen object from being misreported as better optimizer reliability or a newly superior policy.

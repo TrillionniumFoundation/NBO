@@ -1,0 +1,156 @@
+\section{Warm-Start Learning to a Full-Policy Accuracy Target}
+\label{sec:r34robust}
+A local training guarantee is useful for policy construction only when its
+error allowance is paid in the policy objective. There is a further difficulty
+with warm starts: their fitted Gram matrices need not underestimate the new
+continuation. The primitive envelope used for the cold construction cannot
+therefore be carried over by an appeal to monotonicity. We give an explicit
+budget that accommodates overshooting factors, errors in own-policy
+evaluation, and inexact actor solves. The economic model and the comparison
+with all adapted policies are those of Section~\ref{sec:r27entropic}.
+
+\subsection{An implementable local acceptance condition}
+At date $t$, write $S_t=\Psi_\theta(P_{t+1}^{\pi})$, where the future policy
+has already been finalized. Suppose an evaluator supplies a symmetric center
+$\widetilde M_t$ and a certified radius
+\[
+ \|\widetilde M_t-dS_t\|_2\leq e_t^M.
+\]
+The fitted scalar continuation has coefficient
+$\widehat S_t=W_t'W_t/d$; $W_t$ may be rectangular. Put
+\begin{align}
+ F_t&=A_t-B_tK_t,&
+ Z_t&=R_tK_t-\beta B_t'\widehat S_tF_t,\notag\\
+ a_t&\geq\|W_t'W_t-\widetilde M_t\|_F,&
+ z_t&\geq\|Z_t\|_F.\label{eq:r34localdata}
+\end{align}
+Thus $z_t$ measures the actor's equation error, not its fitting objective.
+The exact full-action residual is
+$D_t=R_tK_t-\beta B_t'S_tF_t$. For any certified bounds
+$b_t\geq\|B_t\|_2$ and $f_t\geq\|F_t\|_2$,
+\begin{equation}\label{eq:r34mixed}
+ \|D_t\|_F\leq z_t+
+ \frac{\beta b_tf_t}{d}(a_t+\sqrt d\,e_t^M).
+\end{equation}
+The two matrix errors enter differently. The Gram error is bounded in
+Frobenius norm, whereas the evaluation radius is spectral. Omitting the
+factor $\sqrt d$ from the latter term would not be valid. When an enclosure
+of $\|F_t\|_F$ is available, it replaces $\sqrt d f_t$ in that term.
+
+\subsection{A primitive budget that allows overshooting}
+Keep the reference feedback, slack $\eta>0$, coefficient envelope
+$\bar p_t$, and positive margins $\bar\gamma_t$ from
+\eqref{eq:r31primitive}. Let
+\[
+ q_* = \min_{t<T}q_t,\qquad
+ u_t=\bar p_{t+1}/\bar\gamma_t,\qquad
+ v_t=\sqrt{\eta r_tq_t}.
+\]
+All quantities in this paragraph are computed before fitting any target.
+Define the enlarged closed-loop bound
+\begin{equation}\label{eq:r34f}
+ f_t^+=\|A_t\|_2
+       \left\{1+\frac{\beta b_t^2(u_t+q_*)}{r_t}\right\}
+             +\frac{b_tv_t}{r_t},
+ \qquad
+ g_t=f_t^++\frac{b_t}{r_t}
+       \left(v_t+\frac{\beta b_tf_t^+q_*}{\bar\gamma_t^2}\right).
+\end{equation}
+Norms in a numerical budget denote certified upper bounds. Starting from
+$\lambda_T^+=\mu_T^+=0$, compute
+\begin{align}
+ \lambda_t^+&=q_t+
+       \frac{\beta g_t^2}{\bar\gamma_t^2}\lambda_{t+1}^+,
+ &\mu_t^+&=\beta\left(\mu_{t+1}^+
+             +\frac{\tau\lambda_{t+1}^+}{\bar\gamma_t}\right).
+ \label{eq:r34weights}
+\end{align}
+Unlike the exact-terminal construction, this account permits an actor error
+at the last date. For an initial radius $\|x_0\|^2\leq b_0$, choose $s>0$
+so that
+\begin{equation}\label{eq:r34allocation}
+ s\leq\eta,\qquad s\lambda_t^+\leq q_*\ (1\leq t<T),\qquad
+ s(b_0\lambda_0^++\mu_0^+)\leq\varepsilon_{\rm policy}.
+\end{equation}
+The local acceptance rule is
+\begin{equation}\label{eq:r34accept}
+ a_t+e_t^M\leq dq_*,\qquad
+ z_t+\frac{\beta b_tf_t^+}{d}(a_t+\sqrt d\,e_t^M)
+                         \leq\sqrt{s r_tq_t}.
+\end{equation}
+Both inequalities are checked. The first controls the candidate's magnitude;
+the second pays for its decision error. A positive training tolerance remains
+only after the evaluator and actor have taken their shares of the budget.
+
+\begin{theorem}[Budgeted warm-start policy construction]
+\label{thm:r34robust}
+Suppose the primitive coefficient envelope has positive moment margins and
+\eqref{eq:r34allocation} holds. Construct the policy backward. At every date,
+evaluate the finalized future policy, return a positive-semidefinite fitted
+coefficient and an actor, and verify \eqref{eq:r34localdata}--\eqref{eq:r34accept}.
+Then $0\preceq P_t^\pi\preceq\bar p_tI$ and
+\begin{equation}\label{eq:r34policybound}
+ 0\leq J_0^\pi(x)-J_0^*(x)
+ \leq s\{\lambda_0^+\|x\|^2+\mu_0^+\}
+ \leq\varepsilon_{\rm policy},\qquad \|x\|^2\leq b_0.
+\end{equation}
+The comparison is with all adapted policies of finite recursive cost, over
+all real vector controls. No commutation or one-sided approximation condition
+on the fitted Gram matrices is required.
+
+For a warm fit whose center, initial factor, step error, and precision satisfy
+Theorem~\ref{thm:r33warm}, a finite cap follows by substituting its positive
+remaining Gram allowance in \eqref{eq:r33cap}. The evaluator's radius and the
+actor equation error must still satisfy \eqref{eq:r34accept}. A training gate
+alone is not the acceptance rule for the economic policy.
+\end{theorem}
+
+The proof in Section~\ref{sec:r34proof} jointly establishes the coefficient
+envelope and the full-policy bound. The extra $q_*$ in \eqref{eq:r34f} pays
+for approximation on either side of the target; the final term pays for the
+actor solve. The construction does not use an optimal policy as a training
+label. At the last date the true continuation coefficient is
+$\Psi_\theta(Q_f)$, not $Q_f$ unless $\theta=0$ (or the transform is otherwise
+unchanged). The terminal target may be supplied directly and its actor
+checked without training another continuation.
+
+\begin{corollary}[A finite arithmetic implementation]\label{cor:r34finite}
+Suppose the economic matrices, risk parameter, discount factor, and supplied
+bounds are rational, and the stated moment margins are strict. Own-policy
+coefficient evaluation and actor equations can be solved by exact rational
+matrix arithmetic. At a certified warm start, compute the factor update
+exactly and round its entries to a dyadic grid. Choosing the grid fine enough
+that its Gram noise floor is below the remaining positive allowance gives a
+finite number of updates satisfying \eqref{eq:r34accept}. When a warm gate
+fails, the controlled cold construction with rational squared initialization
+provides a finite alternative at nonterminal dates. Consequently the policy
+bound has a finite-arithmetic realization, rather than only a formal
+real-arithmetic interpretation.
+\end{corollary}
+
+This corollary is a statement about a specified arithmetic routine. Ordinary
+floating-point matrix products require their own full-step error enclosure;
+nearest-storage rounding by itself does not cover them. The independent
+rounded-policy verifier is retained for the larger numerical experiments.
+An additional action-execution allowance is added to
+\eqref{eq:r34policybound} before comparing with a requested tolerance.
+
+\subsection{Construction, reliability, and work}
+For the declared admissible inputs, the deterministic cap is uniform over
+warm factors and permitted update errors. It is not a reliability interval
+estimated from a few fitting seeds. Its economic content is a finite
+construction to a full-policy tolerance under recursive preferences,
+including the cost of precision. The exact-arithmetic example in the
+replication package checks the policy envelope, noncommuting Gram errors,
+evaluation, and the returned vector actors against the same rational inputs.
+It is a constructive validation instance, not an additional independent
+sample in the earlier economic experiments.
+
+An amortization comparison includes evaluating the changed future, testing
+the warm gate, unsuccessful checks, fallback training, actor solves,
+verification, and durable output. The theory gives a cap for the neural
+factor updates; it does not turn that cap into a lower wall-clock cost than
+an analytic structural solution. The earlier cost frontiers and their
+unfavorable comparisons are retained. In particular, improving the trainable
+continuation's mathematical guarantee does not change which procedure was
+cheapest in an already executed experiment.

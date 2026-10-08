@@ -1,0 +1,24 @@
+# R48 development and publication disclosure
+
+This revision addresses the R47 advisory report without changing the original paper's subject or rewriting historical evidence. The exact review commit is 3e142dda054f6fd3b9559c0cf2faa658933a2169.
+
+The prospective protocol was committed at ce166e6feb49796bbc60670bcc36201eec07837b before the complete scientific catalogue. Unit and development checks preceded the executed study and are not empirical timing observations. The new algorithm, adaptive indicator, source-defined random streams and error allowances were fixed in the ordinary scientific source commit 53e4eff391bd4b6e035981c7fbb96df1aeff0e54 before execution.
+
+Scientific files were transported in a compressed text capsule, with the exact archive SHA-256 599a7c4794c48e47fb1bf5d61bd6a1964e5ac2db88a2c2997d3e6524d5a95fbd required before decoding. Four exact transmission edits restored those predeclared bytes. The temporary local R47 directory alias was corrected from 2026-10-07-r47 to the actual repository directory 2026-10-08-r47. The final common.py hash is e1a2492c2e83fb5b73d5cae8e082d8e42858f32c713dbbd286b11b9269f88110. The corrected ordinary sources, complete source hashes and preparation audit were committed and pushed before any complete service or simulation. No primitive, target, policy selection or sampling rule was changed by the directory correction.
+
+The exact compiler uses the classical separable L1 distance transform. The paper credits that algorithm, proves the original-witness and continuous-query obligations, and explicitly permits its use by the identical native min-plus implementation. No classical distance-transform novelty or neural-exclusive acceleration is claimed.
+
+The R47 first publication artifact is used as a source-bound manuscript input and preserved byte for byte. It belongs to a failed publication run, not a canonical successful R47 submission. R48 publication restores ordinary inputs once, installs the missing pdfinfo dependency, and thereafter builds offline from committed sources. Earlier failed/cancelled runs are preserved, not relabeled.
+
+The scientific source freeze covers the eight execution and reconstruction files. Manuscript assembly, typesetting, response and clean-build scripts are publication files and do not retrain, resimulate or retime the frozen study. All generated table arithmetic is reconstructed from actual completed records. The manuscript distinguishes observed timings from asymptotic arithmetic counts, exact mathematical identity from numerical overlap checks, and a priced guarantee from actual cost optimality.
+
+The source and evidence branches are intermediate working objects. Only the fully materialized new review-ready branch, with release, preservation, clean-rebuild and final-delivery audits, is the submitted revision. No main-branch or historical-path mutation is part of publication.
+
+A separate local verification replay of the fixed T=2, p=1, uniform-initial-law, six-bit-observation direct comparison used all 262144 paths. Both endpoint-array hashes agree with the cloud record. A lower-endpoint reduction differs within its certified rounding account under NumPy 2.3.5 rather than 2.1.3; the largest confidence-endpoint difference is approximately 5.506e-20, and all signed and replacement-fee decisions agree. The actual replay record and comparison audit are deposited separately. Its clocks are not pooled with the frozen catalogue. The other 47 direct simulations and full construction catalogue were not independently rerun in that check.
+
+
+## Publication-only clean-archive correction
+
+Publication run 37718102816 compiled the 67-page article, 61-page supplement and 13-page response, reconstructed the frozen evidence and passed all 96 regressions. Its clean Git-archive check then stopped because the original check rejected every symbolic link. The historical repository contains the relative alias `revisions/2026-10-07-r44/evidence/2026-10-07-r41 -> ../../2026-10-07-r41`; the earlier local artifact restoration had materialized this alias as ordinary files and did not expose the distinction. No review-ready branch was pushed by that failed run.
+
+The corrected archive check retains only safe, relative repository-internal symbolic links, validates each lexical target and every resolved link chain, uses Python's data extraction filter, and still rejects archive-root escape, absolute links, special files and hard links. The resulting archive is rebuilt with all 96 tests, ordinary-source comparisons, manuscript compilation and scientific hash checks unchanged. Link identities are included in the clean-rebuild audit. The original cleaner and publication input manifest are retained in the audit directory. No mathematical text, experimental protocol, frozen scientific source, candidate policy, result, timing observation or target is changed by this publication-only correction. The failed run remains failed.
