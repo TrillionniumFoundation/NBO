@@ -1,0 +1,93 @@
+# Response to the Referee
+
+## Neural Bellman Operators — Revision R54
+
+We thank the referee for distinguishing the useful policy-relevant continuation result from the stronger numerical claims that its preceding experiment did not establish. This revision develops the same Neural Bellman Operators paper. Its title, economic model, constructive neural backend, original Bellman optimum, feasibility requirements, and broader historical applications are retained. We respond by supplying a directed certificate with a full proof and explicit computational account, and by integrating the subsequent, separately frozen R53 full-sweep and perturbation evidence into an ordinary, self-contained submission.
+
+The controlling report is the owner-commissioned advisory review of R52, dated 8 October 2026, on review commit `8e811efb4e1b2e9d588472bce1d35bb93eaaf23a`. It reviews manuscript commit `e82e05e658d6aba9bb843dcece66410d1040a49a`. The empirical source for this revision is the later executed R53 extension commit `de82bbe365b1b2124ab2edcab7d9237182f51617`. The R53 main and supplementary wrappers had not yet integrated those results and still contained the R52 exposition. R54 supplies that missing manuscript integration as well as the new directed theorem, error account, record replay and literature positioning. We do not describe the advisory report as a decision of the Econometric Society.
+
+The main additions are in the sections entitled **Directed certificates and complete policy improvement** and **Full policy sweeps in the nonlinear investment economy**. The supplement gives every datewise contrast bound, action-cover gap, gate comparison, and complete work record. The five-document package includes the main article, technical supplement, point-by-point response, complete development article, and complete proof supplement. All inherited adverse evidence remains visible. The release audit checks the inherited label sets and frozen file identities; an ordinary build and a clean-archive rebuild are required for publication.
+
+## M1 and B1: What is general, and what belongs to the neural construction?
+
+We agree that an action-contrast certificate is not intrinsically neural. The revised abstract and introduction separate three objects: the constructive witness-producing continuation, its policy-identical native and affine–ReLU encodings, and a representation-neutral verification and improvement rule. The neural backend remains part of the original paper: it constructs an own-future continuation with retained feasible witnesses under the stated primitive moduli. The new certification theorem is available to both that backend and conventional approximations.
+
+The revision therefore does not infer a neural computational advantage from the existence of a ReLU realization. It tests the policies returned by distinct generators and gives the same improvement rule to the conventional comparators. The original construction, compiler identities, and acquisition results remain in the main theorem chain and the complete editions. The positive new claim is that a directed, implementable certificate links these constructed incumbents to full-policy safety and finite-horizon accuracy at a recorded verification cost.
+
+## M2 and B2: Execute a nonzero certificate in the continuous economy
+
+The R52 amplitude ablation only tested an exact null direction. The integrated R53 execution instead evaluates signed differences of full incumbent-policy costs in the original nonlinear two-state economy. It uses the verification gauge $h=0$, for which the running residual is the incumbent stage cost and the terminal residual is the terminal payoff. The policy generator is not changed to a zero critic. The resulting pair residuals and continuation differences are nonconstant and generally non-null.
+
+The new signed-residual proposition proves that interval residual differences propagate through a coupling with the correct marginals and yield a directed advantage enclosure. Centered polynomial identities, separately propagated state differences, exact integer actor-rectangle extrema, continuous innovation-bin enclosures and analytic final integration make the construction executable. The whole observation domain is enumerated at the stated acquisition precision. Every candidate and continuous-action-cover endpoint is retained. The supplementary date table reports the computed positive symmetric contrast allowance as well as the stronger directed gap; the code supplies an enclosure procedure on requested pair boxes, not a sampled claim about an unknown policy value.
+
+The scalar-width and symmetric-contrast gates are evaluated on the same candidates. Their acceptance counts are displayed alongside the directed counts. This makes both the gain from retaining direction and the remaining interval conservatism observable. We charge this procedure as policy evaluation; the use of $h=0$ is not a free oracle or a representation-specific shortcut.
+
+## M3 and B5: Run complete policy sweeps and report the error recursion
+
+Both original generators are reconstructed from primitives for horizons two and three. Every earlier construction rung is charged, and the reconstructed policy is checked against the original checkpoint. Each complete acquired incumbent then receives exactly $T$ passes, with every date updated against the same old policy before simultaneous adoption. The implementation is therefore a full-sweep calculation, not a sequence of relabeled terminal repairs.
+
+The directed theorem uses whole-cell upper bounds for feasible candidates and lower interval covers of every continuous feasible action. With $U$ the selected upper advantage and $L$ the full-action lower bound, the additional accuracy allowance is the uniform maximum of $U-L$. The theorem proves statewise nonworsening and the recursion $E_t^{k+1}\leq\beta_t E_{t+1}^k+\varepsilon_t^k$, followed by its exact finite-horizon unrolling. An explicit one-period example proves sharpness of the coefficient one. The preceding symmetric theorem, with its different error information and coefficient two, is retained unchanged.
+
+Every pass record contains the old and new policy identities, changed and retained cells, admitted and blocked candidates, action-cover endpoints, contrast bounds, directed gaps and cumulative work. Actual expected costs are evaluated for the entire policy after every pass. Rational finite-model tests separately exercise the exact $T$-pass conclusion and the conservative whole-cell inequality. Nonzero numerical errors do not become zero merely because $T$ passes have been executed, and the manuscript reports the actual remaining certificate rather than asserting exact numerical optimality.
+
+## M4 and B6: Approximately null structure and false-null decisions
+
+The extension deposits 384 controlled cases formed by two incumbents, three nuisance amplitudes and four values of each of three perturbations. The perturbations change the ReLU direction, action exposure and a known action-dependent innovation-mean coefficient. Each case exhausts every closed five-bit observation cell and records the corrected and deliberately false-null decisions.
+
+The new quantitative bound uses the Lipschitz property of the nuisance component and a verified coupling of the actual kernels. For affine common-innovation exposure it is $|M|\,|v^\top B(a-b)|$. The text derives the coefficient under simultaneous direction and exposure perturbations and explains how an additional innovation discrepancy must be charged. Exact zero is used only after the coefficient has been checked algebraically.
+
+The replay checks that all corrected selected actions remain feasible and have nonpositive true-advantage upper endpoints. The false-null record identifies harmful actions only when their true-advantage lower endpoint is strictly positive. Accepted, blocked and unchanged cases are all preserved. This addresses controlled approximate nullity and known misspecification; it does not constitute discovery of an invariant from a learned critic, nor inference for an unknown transition law. The innovation-mean shift retains a known valid coupling, so it is not mislabeled as a generic test of arbitrary marginal misspecification.
+
+## M5 and B4: Complexity, memory, and approximation errors
+
+The new complexity proposition gives preprocessing and storage for the tensor acquired-actor range tables, the per-query work, an explicit pair-node bound for a full pass, and streaming memory requirements. With $N$ root cells, $A$ candidate and cover intervals, $q$ innovation bins and horizon $T$, the pair-node count is bounded by $AN\sum_{r=1}^{T}\sum_{j=0}^{r-1}q^j$. Streaming removes the need to store an entire pair-state table, but does not erase tensor-state dependence or the horizon cost. The executed values are $N=32^2$, $A=17$ and $q=16$.
+
+A separate error-expansion argument permits residual approximation, compressed pair representations, integration and arithmetic errors when each has a verified uniform endpoint allowance. The expansion obeys $b_t=\eta_t+\beta_tb_{t+1}$. Additional action-kernel integration errors are charged at their own step. This specifies how a structure-exploiting approximation could remain valid; the executed study uses streamed intervals and does not claim to have implemented low-rank compression.
+
+The work tables distinguish logical actor-table bytes, process peak memory, pair nodes, actor queries, coupling bins, primitive construction and complete service clocks. Five-bit actor tables require 149,760 bytes per date in the actual integer representation. That number is not substituted for total memory. All recorded source and policy identities are retained so the analytical count can be compared with the executed procedure.
+
+## M6, B3 and B7: Actual policy cost and complete work
+
+Actual expected cost is the first numerical endpoint in the new study section. Both absolute costs and paired differences are reported at every pass. The three-date witness policy has an identified cumulative own-incumbent gain after its full sweeps, while its final comparison with FVI remains unresolved. We do not describe an interval containing zero as equality, superiority or reversal of the inherited ranking. The R49 counts of 93 higher, zero lower and three unresolved witness-cost comparisons, and the later common-repair counts of 26 higher and one unresolved, remain unchanged.
+
+For a common actual-cost upper target, the revised paper defines a finite catalogue frontier from the simultaneous upper endpoints. For each method the selected pass has the smallest cost upper endpoint. Its recorded work includes every own construction rung, all executed sweeps and durable outputs, plus the entire shared cost-inference service. Charging the full shared service to each method is conservative and avoids inventing a marginal timing that was not measured. Exact breakpoints, eligible methods and least-recorded-work choices are deposited in the machine-readable audit. Replay and publication overhead are separately timed.
+
+This is an observed complete-catalogue release frontier. It is not a minimum-work sequential stopping frontier: the experiment did not separately execute every possible stopping-and-inference schedule. We make that distinction explicit instead of presenting a partial prefix clock as the complete cost of an unexecuted algorithm. Likewise, new publication replay timings are not substituted for the original scientific service timings.
+
+The direct-cost calculation replays outward endpoints under the original continuous initial and innovation laws. It does not clip negative common-shock path gains on the ground that expected gains are nonnegative. Policy-identical comparisons are exact zero identities. The primary and adaptive inference families have separate coverage accounts; this integration adds no independent sample size.
+
+## M7: A stronger adaptive conventional comparator
+
+The extension reconstructs a surplus-driven FVI comparator whose adaptation history and nonuniform date-model counts are recorded. Its representation actually changes. Every pilot and every earlier rung is included in its construction work. Both inherited methods are reconstructed on the same extension runner, checked for policy identity, and subjected to the same complete improvement and cost-inference procedure. The comparison includes all three methods before and after every pass.
+
+This is distinct from the failed curvature rule that left the grid uniform and from the adverse graded rule already in the archive. Neither historical result is deleted. The new comparator is nonuniform tensor FVI, not a sparse-grid method; that distinction is stated in the main article and supplement.
+
+## M8 and B8: Dimensional scaling
+
+The revised mathematical work account explicitly retains its dependence on state dimension, acquisition resolution and horizon. The streamed recursion is a constructive alternative to storing a full pair-state table. It is not presented as evidence that the tensor bottleneck has disappeared. The original higher-dimensional stress cases remain in the historical evidence, but the newly executed full sweeps concern the original nonlinear two-state economy.
+
+A genuinely non-tensor high-dimensional experiment has not been added to this release. Accordingly, no such empirical capability is claimed, and nonuniformity is not substituted for it. The constructive NBO objective and the original general model remain intact; the present addition establishes and executes a full-policy certificate in its declared model, with explicit costs that can be assessed rather than hidden. The referee can therefore distinguish the completed full-sweep result from the separate dimensional-scaling question without a change of paper topic.
+
+## B9: The economic decision and its units
+
+The full-sweep policies create an actual controller-adoption question that the exact-null amplitude ablation did not create. If the cumulative gain is in $[l,u]$, a replacement charge $\tau$ gives net gain in $[l-\tau,u-\tau]$ on the same simultaneous event. The main article reports this entire break-even account. Positive lower gain supports adoption for every fee below it; fees above the upper gain are ruled out; the intermediate region remains unresolved.
+
+The investment primitives and fees are normalized theoretical quantities. We do not portray them as estimated installation costs or a calibrated welfare result. The substantive numerical object is an implementable policy change whose gain is identified under the original law, with the construction, verification and decision costs separately stated. Information acquisition and the original fee-selection results remain part of the same economic framework.
+
+## M9: Relation to the closest literature
+
+The introduction now distinguishes approximate-policy-iteration error propagation, conservative and safe policy improvement, bisimulation metrics, potential-based reward transformations and value-equivalent models. It discusses Munos, Kakade and Langford, Pirotta and coauthors, Ferns and coauthors, Ng and coauthors, and Grimm and coauthors using verified primary-source metadata.
+
+The comparison is specific. Our pair recursion transports a fixed incumbent's signed evaluation error rather than defining a state-aggregation metric. Action-null continuation components leave the original economic reward and transition laws unchanged, unlike a reward-transformation formulation. Value-equivalent model classes and continuation-error contrasts under fixed actual kernels are related but different objects. The paper claims the combined acquired-cell feasibility, directed certification, complete-action accuracy and costed implementation result, not priority for the general principles of policy iteration, coupling or safe improvement.
+
+## M10 and B10: Exposition and preservation
+
+The active article now provides a reading path from the original constructive NBO backend to acquired feasibility, action contrasts, directed full sweeps and actual economic costs. The new theorem and its complete proof are in the article; detailed datewise records, work and numerical semantics are in the supplement. The complete editions retain the broader applications and historical formulations under their original hypotheses. Expected-cost action-kernel identities are not silently extended to nonlinear recursive preferences.
+
+We have not responded by retitling the project, substituting a different model, deleting unfavorable results, or replacing the original paper with a generic framework. Every inherited labeled result is checked for preservation, and the old branches remain unchanged. This also means that the present manuscript is not claimed to be the short replacement paper suggested in the report. The editorial organization makes the completed theorem–implementation–cost chain explicit while preserving the original substantive development for continued review.
+
+## Verification and remaining distinctions
+
+The release procedure verifies the two R53 source freezes, every saved full-sweep decision, every perturbation-policy choice and the direct-cost interval arithmetic. It runs the inherited tests and the new directed-theorem regressions, compiles all five documents, checks labels and references, and performs a clean offline archive rebuild. The final manifest binds the ordinary sources, evidence and compiled outputs. Stored-endpoint replay is not described as independently recomputing every kernel integral, and compilation is not described as external mathematical approval.
+
+The positive result submitted for renewed review is a constructive, incumbent-preserving full-policy NBO procedure with a proved directed finite-sweep error account, an executed nonzero certificate in the original continuous economy, controlled approximate-null diagnostics, and direct policy-cost and complete-work evidence. Representation-specific superiority, learned invariant discovery, calibrated economic magnitudes, optimal sequential stopping work, and a non-tensor high-dimensional execution remain distinct claims and are not inferred from these results.
