@@ -1,0 +1,106 @@
+name: NBO R48 compiled-policy study
+on:
+  push:
+    branches: [revision/econometrica-nbo-r48-compiled-policy-source-2026-10-08]
+    paths: ['.github/workflows/nbo-r48-study.yml','revisions/2026-10-08-r48/transport/repair.json']
+permissions:
+  contents: write
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            revisions/2026-10-07-r44
+            revisions/2026-10-07-r45
+            revisions/2026-10-07-r46
+            revisions/2026-10-08-r47
+            revisions/2026-10-08-r48
+            reviews/2026-10-08-econometrica-numerical-methods-r47
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify transport and materialize frozen ordinary sources
+        run: |
+          python - <<'PY'
+          import base64,hashlib,io,json,zipfile
+          from pathlib import Path
+          p=Path('revisions/2026-10-08-r48')
+          s=''.join(f.read_text().strip() for f in sorted((p/'transport').glob('science.[0-9][0-9].b64')))
+          repairs=[('K29y0eSbe','K29yBN53y0eSbe'),('Enx dMU','EnxdMU'),('HbfU7TPRNGP','HbfU7TPNGP'),('MEtiurNpHp2+x','MEtiurNp2+x')]
+          applied=[]
+          for old,new in repairs:
+              if old in s:
+                  assert s.count(old)==1
+                  s=s.replace(old,new);applied.append({'old':old,'new':new})
+          extra=p/'transport/repair.json'
+          if extra.exists():
+              for c in sorted(json.loads(extra.read_text()),key=lambda c:c['start'],reverse=True):
+                  assert s[c['start']:c['end']]==c['old']
+                  s=s[:c['start']]+c['new']+s[c['end']:]
+          raw=base64.b64decode(s,validate=True)
+          assert hashlib.sha256(raw).hexdigest()=='599a7c4794c48e47fb1bf5d61bd6a1964e5ac2db88a2c2997d3e6524d5a95fbd','Transport integrity failed before any scientific execution'
+          with zipfile.ZipFile(io.BytesIO(raw)) as z:
+              assert all(not Path(n).is_absolute() and '..' not in Path(n).parts for n in z.namelist())
+              z.extractall(p)
+          frozen=json.loads((p/'SOURCE_SHA256.json').read_text())
+          for n,h in frozen.items():assert hashlib.sha256((p/n).read_bytes()).hexdigest()==h,n
+          # Correct the local input-directory alias to the actual pinned repository path.
+          f=p/'code/common.py';text=f.read_text()
+          assert text.count("P47=R.parent/'2026-10-07-r47'")==1
+          f.write_text(text.replace("P47=R.parent/'2026-10-07-r47'","P47=R.parent/'2026-10-08-r47'"))
+          assert hashlib.sha256(f.read_bytes()).hexdigest()=='e1a2492c2e83fb5b73d5cae8e082d8e42858f32c713dbbd286b11b9269f88110'
+          frozen['code/common.py']=hashlib.sha256(f.read_bytes()).hexdigest()
+          (p/'SOURCE_SHA256.json').write_text(json.dumps(frozen,indent=2,sort_keys=True)+'\n')
+          (p/'audit').mkdir(exist_ok=True)
+          (p/'audit/PRE_EXECUTION_SOURCE_PREPARATION.json').write_text(json.dumps({'transport_sha256':hashlib.sha256(raw).hexdigest(),'transport_repairs':applied,'input_path_correction':'R47 is committed under revisions/2026-10-08-r47, not the local extraction alias 2026-10-07-r47. No algorithm, primitive, target or sampling design changed. The final ordinary sources and their hashes are committed before execution.','source_hashes':frozen},indent=2)+'\n')
+          PY
+          git config user.name 'NBO revision automation'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add revisions/2026-10-08-r48/code revisions/2026-10-08-r48/SOURCE_SHA256.json revisions/2026-10-08-r48/audit/PRE_EXECUTION_SOURCE_PREPARATION.json
+          git commit -m 'R48: freeze ordinary compiler, policy-comparison and full-service scientific sources'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r48-compiled-policy-source-2026-10-08
+          echo "SOURCE_MATERIALIZED_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Install pinned numerical dependencies
+        run: python -m pip install numpy==2.1.3 scipy==1.14.1
+      - name: Exact compiler and inherited regression tests
+        run: |
+          export PYTHONPATH="$PWD/revisions/2026-10-07-r45/preserved/R41/code:$PWD/revisions/2026-10-07-r45/preserved/R41/vendor/r38/code"
+          python - <<'PY'
+          import subprocess,sys,re,json
+          from pathlib import Path
+          p=Path('revisions/2026-10-08-r48');result={}
+          for name,folder,pattern,count in [('R44','2026-10-07-r44','tests.py',14),('R45','2026-10-07-r45','tests.py',13),('R46','2026-10-07-r46','tests.py',14),('feasible46','2026-10-07-r46','test_feasible.py',8),('R47','2026-10-08-r47','tests.py',20),('R48','2026-10-08-r48','tests48.py',27)]:
+              q=subprocess.run([sys.executable,'-m','unittest','discover','-s',str(Path('revisions')/folder/'code'),'-p',pattern,'-v'],text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+              (p/'audit'/('tests-'+name+'.log')).write_text(q.stdout)
+              print(q.stdout)
+              assert q.returncode==0,name
+              m=re.search(r'Ran (\d+) tests?',q.stdout);assert m and int(m[1])==count
+              result[name]={'tests':count,'passed':True}
+          (p/'audit/TEST_AUDIT.json').write_text(json.dumps(result,indent=2)+'\n')
+          PY
+      - name: Execute all prespecified services and direct contrasts
+        run: python revisions/2026-10-08-r48/code/execute48.py
+      - name: Publish complete evidence on a new branch
+        run: |
+          target=revision/econometrica-nbo-r48-evidence-2026-10-08
+          if git ls-remote --exit-code --heads origin "$target"; then echo 'Refusing to replace an existing evidence branch'; exit 1; fi
+          git switch -c "$target"
+          git add -f revisions/2026-10-08-r48/results revisions/2026-10-08-r48/audit
+          if test -n "$(git diff --cached --name-only --diff-filter=D)"; then echo 'No deletion permitted'; exit 1; fi
+          git commit -m 'R48: complete compiled-policy, adaptive FVI, dimension and direct-cost evidence'
+          git push origin "HEAD:refs/heads/$target"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r48-study
+          path: revisions/2026-10-08-r48
+          retention-days: 30
