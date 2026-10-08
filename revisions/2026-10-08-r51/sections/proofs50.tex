@@ -1,0 +1,63 @@
+\section{Reference evaluation and safe improvement}\label{supp:improve50}
+We give details of the reference-policy argument to separate a true improvement theorem from an approximate-greedy heuristic. All comparisons are on the same invariant domain and common conditional-evaluation domain as the main article. Feasible measurable policies include acquisition, capacity repair and numerical action realization.
+
+Let $e_t=J_t^\pi-h_t$. At the terminal date $e_T\in[a_T,b_T]$. If $e_{t+1}\in[a_{t+1},b_{t+1}]$, cash invariance and monotonicity yield
+\[
+ \beta_ta_{t+1}\le
+ \mathcal T_t^\pi J_{t+1}^\pi-\mathcal T_t^\pi h_{t+1}
+ \le\beta_tb_{t+1}.
+\]
+Adding the signed own-policy residual proves the backward enclosure in Proposition~\ref{M-prop:advantage50}. Applying the same statement with either feasible action proves the difference allowance. No independence or differentiability of the fitted critic is required. The domain hypothesis matters: a certainty equivalent need not satisfy the argument for an inadmissible translated continuation.
+
+If $\widetilde h_t=h_t+k_t$, then $\widetilde e_t=e_t-k_t$ and the residual shifts by $\beta_tk_{t+1}-k_t$. The propagated intervals become $[a_t-k_t,b_t-k_t]$, so their widths are unchanged. The two action evaluations of $\widetilde h_{t+1}$ each shift by $\beta_tk_{t+1}$, leaving the contrast unchanged. This is the centered invariance of the improvement test.
+
+For the full expectation identity, define
+$A_t^\pi(x,a)=Q_t(J_{t+1}^\pi;x,a)-J_t^\pi(x)$. Along any feasible $\mu$ trajectory,
+\begin{align*}
+ \E_x^\mu\sum_{t<T}B_tA_t^\pi(X_t,\mu_t(X_t))
+ &=\E_x^\mu\sum_{t<T}\{B_tc_t(X_t,\mu_t(X_t))
+          +B_{t+1}J_{t+1}^\pi(X_{t+1})-B_tJ_t^\pi(X_t)\}\\
+ &=J_0^\mu(x)-J_0^\pi(x).
+\end{align*}
+Boundedness and finite horizon justify expectation and summation. Rejected actions give exactly zero reference advantage, while accepted ones give at most $-\kappa_t$. This proves Theorem~\ref{M-thm:improve50}. Under a nonlinear conditional recursion, use backward monotonicity instead of this telescoping expectation identity. A nonlinear evaluation does not justify the occupancy formula by changing notation alone.
+
+The state-cell version fixes an action and verifies its inequality uniformly on the whole cell. Testing a cell midpoint alone is insufficient. Every implemented true state belongs to a cell whose gate is valid, and boundary cells use a declared deterministic report rule. In interval simulation, boxes straddling report boundaries retain all eligible actions, independently of whether their point-state selection is discontinuous. The analytic nonincrease may tighten a numerical advantage enclosure by intersection with $(-\infty,0]$, because the support is established independently of the simulated sample. This is not truncation of an unfavorable sample estimate.
+
+\section{Exact integration and action optimization}\label{supp:terminal50}
+Write $Z\sim U[-1/32,1/32]$. The deterministic part of each next coordinate is $y_j$, and its random part is $s_jZ$. Hence the expectation of $(y_j+s_jZ-c)^2$ is $(y_j-c)^2+1/3072$. For the cyclic difference use coefficient $s_j-s_{j+1}$. Summing yields the quadratic and variance terms in equation~\eqref{M-eq:exactterminal50}.
+
+For the shortage term, the affine random component is uniform on $[-r,r]$, where $r=|\sum_js_j|/(16d)$. Direct antiderivatives give, for $r>0$,
+\[
+ \E(b+U)_+^2=\frac{(b+r)_+^3-(b-r)_+^3}{6r},\qquad
+ \E(b+U)_+=\frac{(b+r)_+^2-(b-r)_+^2}{4r}.
+\]
+For $r=0$ take $b_+^2$ and $b_+$. These formulas hold at the two boundaries as well as inside the crossing region. The implementation encloses cancellation outward. Independent regression checks split the innovation interval at the exact shortage root and integrate the resulting quadratic pieces by exact rational Simpson identities; the checks are not used to generate the study's continuation labels.
+
+At fixed $x$, the transition is affine in $a$. The terminal objective is a sum of convex quadratics and squared positive parts of affine functions. Its expectation is convex. The action cost $pa^2+4a^4$ has second derivative $2p+48a^2\ge2p$. Thus final conditional cost has a unique continuous minimizer, possibly on the capacity boundary. Its lattice minimizer lies at the first lattice point with nonnegative derivative or the preceding point, with boundary truncation. The implementation searches at most the fixed 4096 denominator's range, compares the two costs, and uses exact rational comparison when outward point intervals fail to decide a tie. The incumbent need not be one of these two actions: safety is established by the subsequent whole-cell comparison.
+
+For bits $b$, let integer cell indices be $k_1,\ldots,k_d$. The smallest capacity on the cell is $1/8+\sum_jk_j/(8d2^b)$. Its largest lattice index is exactly
+\[
+ \left\lfloor\frac{4096(d2^b+\sum_jk_j)}{8d2^b}\right\rfloor.
+\]
+Integer arithmetic avoids an upward feasibility error, including in dimension three. The original action is clipped and rounded downward by this same rule. Feasibility is therefore not inferred from an interval midpoint. The final gate keeps the same earlier policies; its true improvement is relative to that acquired incumbent, not to a different exact-state policy.
+
+\section{Simultaneous actual-cost inference}\label{supp:inference50}
+The R50 primary family contains 25 pairs of baseline generators. Each group contains four policies---the two incumbents and their final repairs---and produces four absolute costs and six pairwise differences. Thus there are 250 sampled estimands. Their selection uses frozen construction information only. Within each group the continuous initial law and the first $T-1$ innovations are represented by forty-bit bins with outward propagation. The last innovation is integrated analytically. Conditional expectation over this last innovation preserves each policy's expected total cost. It reduces simulation variance without substituting a new innovation law.
+
+The path-cost support derived in the retained inference section applies in dimensions two through four: the target and imbalance terms are coordinate averages with the same bounds, the shortage term is bounded by $1/2$, and feasible actions do not exceed $1/4$. Consequently $0\le J\text{-score}\le H$, with $H$ as in Section~\ref{supp:inference49}; a paired score lies in $[-H,H]$. An incumbent-minus-own-repair contrast is nonnegative by the independently proved gate and is bounded by $H$. Because the earlier trajectory is common, its numerical enclosure uses the centered final contrast instead of subtracting two complete total-cost intervals.
+
+For endpoint observations $X_i\in[A,B]$, the retained empirical-Bernstein bound uses
+\[
+ R_n=\sqrt{2\overline{\operatorname{Var}}(X)\ell/n}
+       +7(B-A)\ell/[3(n-1)],
+\]
+with outward moment intervals, an upper sample variance, and a rationally checked upward square root. Lower endpoints and upper endpoints each receive a one-sided bound. Set $n=131072$, $\ell=13$ and $\alpha=1/100$. The family cap is 512; an exact finite Taylor sum proves $e^{13}>4(512)/\alpha$. A union bound therefore covers all 250 actual-cost estimands under the independent-bin model. The cap leaves room but does not certify unrecorded models or initial laws. The pseudorandom stream and its hash establish reproducibility, not independence of ideal observations. The confidence event for the retained R49 family is separate; combining old and new statistical assertions incurs the sum of their failure probabilities.
+
+\section{Mechanism and economic frontiers}\label{supp:mechanism50}
+Denote witness and FVI by $W,F$ and their final repairs by $W^+,F^+$. Pure algebra yields
+\begin{equation}\label{eq:decomposition50}
+ J_W-J_F=(J_W-J_{W^+})+(J_{W^+}-J_{F^+})-(J_F-J_{F^+}).
+\end{equation}
+All three terms concern actual costs. The first and last are direct measures of removable final-action loss; the middle retains differences from earlier actions, acquired states, continuation approximation and the gate's conservatism. It is not identified as a single causal contribution of neural representation. The experiment reports each term, accepted and blocked cell counts, final action means, final state means and earlier action means by date. This exposes how much of the original ordering can be removed without retraining the continuation. It does not claim that the residual has been exhaustively decomposed into mutually independent mechanisms.
+
+For finite intervals $[L_j,U_j]$, the upper-net-cost choice's true regret is bounded by the selected upper line minus the minimum lower line. To see why this is conservative, consider two overlapping cost intervals: their midpoint ordering may reverse within the same event. The upper-envelope decision remains valid but cannot identify the true minimizer. Pairwise centered intervals can certify individual replacements more sharply than the absolute frontier. For any fixed installation fee, transmission conversion factor and nonnegative resource price, add their declared costs before applying the comparison. A new price does not require new sampling on the same finite event. A new sensing policy does.

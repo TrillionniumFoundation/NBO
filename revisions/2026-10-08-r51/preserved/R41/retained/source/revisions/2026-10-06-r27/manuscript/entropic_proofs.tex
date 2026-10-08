@@ -1,0 +1,131 @@
+\section{Recursive-risk and execution envelopes}
+\label{sec:r27riskproof}
+\begin{lemma}[Gaussian continuation perturbations]\label{lem:r27riskderivative}
+Let $P\succeq L\succeq0$, $\|P-L\|_2\leq d_0$, and
+$\gamma=1-2\theta\|\Sigma\|_2\|P\|_2>0$. Then
+\[
+ 0\preceq\Psi_\theta(P)-\Psi_\theta(L)
+       \preceq\frac{d_0}{\gamma^2}I,\qquad
+ 0\leq h_\theta(P)-h_\theta(L)
+       \leq\frac{d_0\tr\Sigma}{\gamma}.
+\]
+The same inequalities hold at $\theta=0$ by continuity.
+\end{lemma}
+\begin{proof}
+Gaussian integration after completing the square gives
+\eqref{eq:r27gaussian}. Its derivatives in a symmetric direction $E$ are
+\[
+ D\Psi_\theta(P)[E]
+ =(I-2\theta P\Sigma)^{-1}E(I-2\theta\Sigma P)^{-1},
+\]
+and
+\[
+ Dh_\theta(P)[E]
+ =\tr\{\Sigma^{1/2}(I-2\theta\Sigma^{1/2}P\Sigma^{1/2})^{-1}
+                      \Sigma^{1/2}E\}.
+\]
+Along the segment from $L$ to $P$, the inverse norms in the first display are
+at most $\gamma^{-1}$ by the Neumann series. The symmetric inverse in the
+second display is bounded by $\gamma^{-1}I$. Integrating the derivatives,
+using $0\preceq P-L\preceq d_0I$, proves the claims. This proof also applies
+to singular positive semidefinite $\Sigma$.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:r27entropic}]
+Set $L_t(x)=x'(P_t-\delta_tI)x+c_t-\kappa_t$. The stated checks ensure that
+every continuation coefficient used in this construction is positive
+semidefinite and inside the Gaussian moment domain. Terminally $L_T=U_T$.
+At date $t$, write $P=P_{t+1}$ and $L=P-\delta_{t+1}I$.
+Let $S(P)$ denote the coefficient of the minimized current-action objective
+with continuation coefficient $P$. Completion of squares gives
+\[
+ P_t-S(P)=D_t'H_t^{-1}D_t\preceq\zeta_t^2I/r_t.
+\]
+Let $K^L$ minimize the objective using $\Psi_\theta(L)$, and
+$H^L=R_t+\beta B_t'\Psi_\theta(L)B_t$. The exact identity
+\[
+ H^L(K_t-K^L)
+ =D_t+\beta B_t'\{\Psi_\theta(P)-\Psi_\theta(L)\}F_t
+\]
+and Lemma~\ref{lem:r27riskderivative} imply
+$\|A_t-B_tK^L\|_2\leq\bar f_t$.
+Evaluating the larger-continuation objective at $K^L$ therefore gives
+\[
+ 0\preceq S(P)-S(L)\preceq\beta\bar f_t^2w_t I.
+\]
+Consequently $P_t-\delta_tI\preceq S(L)$. Own-policy constants satisfy
+$c_t=\beta\{c_{t+1}+h_\theta(P_{t+1})\}$.
+The constant part of \eqref{eq:r27riskenvelope} and the lemma give
+\[
+ c_t-\kappa_t\leq
+ \beta\{c_{t+1}-\kappa_{t+1}+h_\theta(L)\}.
+\]
+Together these are precisely the Bellman-subsolution inequality
+$L_t\leq\inf_u\{\ell_t+\beta\mathcal R_\theta L_{t+1}\}$.
+Order preservation and backward induction imply $L_0\leq J_0^*$, including
+comparison with arbitrary history-adapted controls of finite recursive cost.
+The feasible stored policy gives $J_0^*\leq U_0$. Subtracting proves
+\eqref{eq:r27riskgap}.
+\end{proof}
+
+\begin{proposition}[Execution errors under recursive preferences]
+\label{prop:r27riskexecution}
+Suppose the implemented action differs from $-K_tx$ by an adapted error
+$e_t$ satisfying $\|e_t\|_2\leq\varepsilon_{\rm ex}\|x\|_2$ at every date.
+Let $k_t\geq\|K_t\|_2$ and $s_t\geq\|R_t\|_2$.
+Starting with $\delta_T^e=\kappa_T^e=0$, define
+\begin{align*}
+ \gamma_t^e&=1-2\theta\sigma(p_{t+1}+\delta_{t+1}^e),&
+ \nu_t&=(p_{t+1}+\delta_{t+1}^e)/\gamma_t^e,\\
+ a_t^e&=2\varepsilon_{\rm ex}k_ts_t+
+             \varepsilon_{\rm ex}^2s_t
+       +\beta\nu_t(2\varepsilon_{\rm ex}f_tb_t+
+                         \varepsilon_{\rm ex}^2b_t^2),\\
+ \delta_t^e&=\beta f_t^2\delta_{t+1}^e/(\gamma_t^e)^2+a_t^e,&
+ \kappa_t^e&=\beta\{\kappa_{t+1}^e+
+                    \tau\delta_{t+1}^e/\gamma_t^e\}.
+\end{align*}
+If every $\gamma_t^e>0$, the implemented policy's cost is at most
+$U_0(x)+\delta_0^e\|x\|^2+\kappa_0^e$. Its excess cost over $J^*$ is thus
+bounded by $(\delta_0+\delta_0^e)\|x\|^2+\kappa_0+\kappa_0^e$.
+\end{proposition}
+\begin{proof}
+Assume the next implemented value is bounded by
+$x'(P_{t+1}+\delta_{t+1}^eI)x+c_{t+1}+\kappa_{t+1}^e$.
+Apply Lemma~\ref{lem:r27riskderivative} between $P_{t+1}$ and
+$P_{t+1}+\delta_{t+1}^eI$, using the margin $\gamma_t^e$.
+The unchanged transition contributes at most
+$\beta f_t^2\delta_{t+1}^e\|x\|^2/(\gamma_t^e)^2$.
+The action perturbation contributes at most
+$(2\varepsilon_{\rm ex}k_ts_t+\varepsilon_{\rm ex}^2s_t)\|x\|^2$
+to current cost and at most
+$\beta\nu_t(2\varepsilon_{\rm ex}f_tb_t+
+\varepsilon_{\rm ex}^2b_t^2)\|x\|^2$ to the continuation quadratic.
+The log-determinant and constant contributions are bounded by
+$\kappa_t^e$. Backward induction proves the upper envelope. The last assertion
+uses Theorem~\ref{thm:r27entropic}. The action-error premise is an explicit
+mathematical contract; it is not inferred merely from using floating-point
+hardware on unbounded inputs.
+\end{proof}
+
+\paragraph{Verified numerical inverses.}
+For an interval matrix $S$, propose a numerical inverse $C$ and bound
+$r\geq\|I-SC\|_\infty$. If $r<1$, then
+\[
+ \|S^{-1}-C\|_\infty\leq\|C\|_\infty r/(1-r).
+\]
+This follows from $S^{-1}=C(I-(I-SC))^{-1}$. A matrix ball with that uniform
+entry radius encloses the inverse. The implementation uses this test for
+$S=I-2\theta\Sigma P$, together with the moment-domain test, outward scalar
+products, and independently enclosed own-policy matrices. Failed inverse,
+positivity, domain, or final tolerance checks remain failures to certify.
+
+\paragraph{Certified current-action responses.}
+In this convex capital economy the optimal current-action objective is
+strongly convex with quadratic modulus at least $r_0$.
+If a policy has a full recursive-cost gap at most $E$ at a given initial state,
+its current action differs from the optimal action by at most $\sqrt{E/r_0}$.
+The mean of its $d$ action coordinates therefore differs by at most
+$\sqrt{E/(dr_0)}$. Pairing two such intervals gives a valid current-action
+response band under a change in risk preferences with all future policies
+reoptimized. No independence or population sampling assertion is needed.

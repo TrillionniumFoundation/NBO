@@ -1,0 +1,124 @@
+\section{From Safe Improvement to Finite-Sweep Accuracy}\label{sec:finite-sweeps51}
+The preceding improvement result compares an implemented policy with its own
+incumbent. We now connect that comparison to the original Bellman optimum.
+This distinction matters economically: a policy can improve strictly while
+remaining more costly than a conventional alternative. The result below
+preserves the original objective and gives explicit sufficient conditions for
+closing its optimality gap; it does not infer those conditions from a small
+empirical residual.
+
+Consider the finite-horizon expectation model of the paper, with bounded
+costs, feasible measurable Markov policies, and discount factors
+$\beta_t\geq0$, $0\leq t<T$. Write
+\[
+ Q_t(h;x,a)=c_t(x,a)+\beta_t\mathbb E[h(X_{t+1})\mid x,a],\qquad
+ (T_th)(x)=\inf_{a\in A_t(x)}Q_t(h;x,a),
+\]
+and $V_T^*=g$, $V_t^*=T_tV_{t+1}^*$. The benchmark is the original
+fully observed optimum. An acquired-state policy remains feasible for this
+benchmark; a restriction to cellwise actions may, however, impose a positive
+approximation floor. No vanishing information error is assumed.
+
+Starting from a feasible $\pi^0$, at pass $k$ let $h^k$ have certified
+signed policy-evaluation bands
+\begin{equation}\label{eq:sweep-bands51}
+ a_t^k\leq J_t^{\pi^k}(x)-h_t^k(x)\leq b_t^k,
+ \qquad w_t^k=b_t^k-a_t^k.
+\end{equation}
+These can be obtained from the signed-residual recursion already proved;
+the approximator need not have a small absolute level error. Let a feasible
+proposal $v_t^k$ satisfy, uniformly in $x$,
+\begin{equation}\label{eq:sweep-greedy51}
+ Q_t(h_{t+1}^k;x,v_t^k(x))\leq (T_th_{t+1}^k)(x)+\alpha_t^k.
+\end{equation}
+For its centered comparison with the exact incumbent, define
+$d_t^k(x)=Q_t(h_{t+1}^k;x,v_t^k(x))-
+Q_t(h_{t+1}^k;x,\pi_t^k(x))$.
+A quantitative upper enclosure satisfies
+\begin{equation}\label{eq:sweep-enclosure51}
+ d_t^k(x)\leq\overline d_t^k(x)\leq d_t^k(x)+\zeta_t^k.
+\end{equation}
+Here $\zeta_t^k$ includes acquisition-cell variation and integration or
+arithmetic enclosure width, not just the machine unit roundoff. The new
+policy uses the proposal exactly when
+$\overline d_t^k(x)+\beta_tw_{t+1}^k\leq0$ and otherwise uses
+$\pi_t^k(x)$ unchanged. For an acquired cell, feasibility and this comparison
+must hold throughout that cell, with a single implementable action and
+acceptance decision. Bounds \eqref{eq:sweep-greedy51}--\eqref{eq:sweep-enclosure51}
+are required on the same cells, including their boundaries.
+
+\begin{theorem}[Finite-sweep accuracy with incumbent preservation]
+\label{thm:finite-sweeps51}
+Suppose \eqref{eq:sweep-bands51}--\eqref{eq:sweep-enclosure51} hold at each
+pass, with nonnegative finite $\alpha_t^k$ and $\zeta_t^k$. Put
+\[
+ \epsilon_t^k=\alpha_t^k+\zeta_t^k+2\beta_tw_{t+1}^k,
+ \qquad E_t^k=\|J_t^{\pi^k}-V_t^*\|_\infty.
+\]
+Then $J_t^{\pi^{k+1}}\leq J_t^{\pi^k}$ at every date and state, and
+\begin{equation}\label{eq:sweep-recursion51}
+ E_t^{k+1}\leq\beta_t E_{t+1}^k+\epsilon_t^k,
+ \qquad E_T^k=0.
+\end{equation}
+Set $B_{t,0}=1$ and $B_{t,j}=\prod_{r=t}^{t+j-1}\beta_r$.
+For $1\leq m\leq T-t$,
+\begin{equation}\label{eq:sweep-unroll51}
+ E_t^m\leq B_{t,m}E_{t+m}^0+
+ \sum_{j=0}^{m-1}B_{t,j}\epsilon_{t+j}^{m-1-j}.
+\end{equation}
+In particular, if $\epsilon_t^k\leq\bar\epsilon_t$ uniformly in $k$,
+then after $T$ passes
+\begin{equation}\label{eq:sweep-final51}
+ E_t^T\leq\sum_{j=0}^{T-t-1}B_{t,j}\bar\epsilon_{t+j}.
+\end{equation}
+With exact policy evaluation up to a datewise constant, exact greedy
+proposals, and exact centered comparisons, the policy is optimal after at
+most $T$ passes, and no intermediate pass raises its cost.
+\end{theorem}
+
+The hypotheses separate three computational tasks. A trained continuation
+must be evaluated relative to the policy actually retained; the action
+search must approximate the original feasible infimum; and the comparison
+must be valid over the available information set. A guarantee for only one
+of these tasks does not imply the theorem. The same conclusion applies to
+native and neural representations when they implement the same objects.
+In particular, it does not turn their common compilation saving into a
+neural-specific advantage. Safe policy improvement is an established
+principle; the result here supplies the signed-width and acquisition-aware
+error account for the incumbent-preserving NBO construction.
+
+\begin{proposition}[An implementable cellwise proposal bound]
+\label{prop:cell-greedy51}
+Let an acquired cell $C$ have representative $x_C$ and radius $r_C$.
+Suppose $Q_t(h;\cdot,a)$ is $L_t$-Lipschitz on the cell for every menu
+action, and $Q_t(h;x,\cdot)$ is $D_t$-Lipschitz on feasible actions.
+Let $M_C\subseteq\bigcap_{x\in C}A_t(x)$ be a nonempty finite menu such that every
+$a\in A_t(x)$, for every $x\in C$, lies within $\delta_{A,C}$ of some
+member of $M_C$. If $v_C\in M_C$ is an $\eta_C$-minimizer at $x_C$,
+then it satisfies \eqref{eq:sweep-greedy51} on $C$ with
+\[
+ \alpha_t^k\leq \eta_C+2L_tr_C+D_t\delta_{A,C}.
+\]
+\end{proposition}
+The directed-cover assumption is substantive when constraints move with the
+state. It is not implied by a dense grid at the representative alone. A
+failed cover or a cell that cannot certify a comparison retains its incumbent;
+it must not be counted as a successful accuracy refinement.
+
+\begin{proposition}[Sharpness of the evaluation-width coefficient]
+\label{prop:sharp-width51}
+Under the theorem's assumptions, the coefficient two on
+$\beta_tw_{t+1}^k$ in \eqref{eq:sweep-recursion51} cannot be uniformly
+replaced by a smaller constant, even for a one-period deterministic problem
+with two actions, an exact greedy proposal, and exact contrast arithmetic.
+\end{proposition}
+
+The theorem is constructive but conditional on verified error budgets. It
+does not assert that a continuous neural fit uniformly approximates a
+discontinuous acquired-policy value, or that refining a fixed acquisition
+contract eliminates its information floor. The executed investment study
+below certifies a final-date improvement. It is not an execution of $T$
+full improvement passes, nor numerical evidence of the finite-sweep
+near-optimality conclusion. Exact finite-state regression tests exercise the
+new identities, rejection cases, and sharpness example separately from the
+economic benchmark.

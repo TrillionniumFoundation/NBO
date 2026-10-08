@@ -1,0 +1,94 @@
+\section{Proofs for Precision-Adaptive Refresh}\label{sec:r37proof}
+\begin{proof}[Proof of Theorem~\ref{thm:r37precision}]
+Write $Y=WM^{-1/2}$ and $C=Y'Y=I+E$. The ideal update in
+\eqref{eq:r37update}, followed by right multiplication by $M^{-1/2}$,
+is $\overline Y=Y(3I-C)/2$. Consequently
+\[
+ \overline Y'\overline Y=C(3I-C)^2/4,
+ \qquad \overline Y'\overline Y-I=(-3E^2+E^3)/4.
+\]
+These identities hold for rectangular $Y$; they require no commutation
+between $W'W$ and $M$. The matrices in the right-hand identities commute
+because they are polynomials in the single symmetric matrix $E$.
+If $\|E\|_2\leq\rho\leq r$, the second identity gives
+$\|\overline Y'\overline Y-I\|_2\leq c_r\rho^2$.
+Moreover, for every eigenvalue $e\in[-r,r]$,
+\[
+ 0\leq(1+e)(2-e)^2/4=1+e^2(e-3)/4\leq1.
+\]
+Hence $\|\overline Y\|_2\leq1$. Put $Z=\Delta M^{-1/2}$.
+The implemented Gram matrix differs from the ideal one by
+$\overline Y'Z+Z'\overline Y+Z'Z$, of norm at most $2\nu+\nu^2$.
+The allocated precision therefore implies
+\[
+ \|E_{j+1}\|_2\leq c_r\rho_j^2+2\nu_j+\nu_j^2
+                         \leq\rho_j^2=\rho_{j+1}.
+\]
+Induction proves \eqref{eq:r37double}, since $\rho_j^2\leq\rho_j\leq r$.
+Solving $\rho_0^{2^K}\leq\tau$ gives \eqref{eq:r37cap}. The zero-update
+cases are immediate.
+
+Entrywise nearest-grid rounding has Frobenius error at most
+$\sqrt{pd}\,2^{-b-1}$. Multiplication by $M^{-1/2}$ and
+$\|M^{-1/2}\|_2\leq m^{-1/2}$ give the specified upper bound $\nu$.
+In particular, $\nu\leq(1-c_r)\rho_j^2/3$ is sufficient: it implies
+$\nu\leq1$ and thus $2\nu+\nu^2\leq3\nu\leq(1-c_r)\rho_j^2$.
+An admissible integer therefore always exists, and the first admissible
+positive integer satisfies
+\[
+ b_j\leq C+2\log_2(1/\rho_j)
+\]
+for a finite constant $C$ depending only on $A$ and $r$. If $K\geq1$ is
+the first successful update count, $\rho_0^{2^{K-1}}>\tau$. Hence
+\begin{align*}
+ \sum_{j<K} b_j
+ &\leq CK+2\log_2(1/\rho_0)(2^K-1)\\
+ &<CK+4\log_2(1/\tau),
+\end{align*}
+which proves \eqref{eq:r37bitaccount}. A zero-update fit contributes an
+empty sum. This bound is on stored fractional precision, not on the bit
+lengths of intermediate rational products.
+
+Finally, the target is fixed throughout the fit. Its exact inverse can be
+constructed once, checked against $M$, and applied to each successive Gram
+matrix. The inverse applications and their residual checks are still
+performed and charged. No inverse is needed when the initial factor is
+accepted. This establishes the final accounting assertion without claiming
+that the training or the checks have zero cost.
+\end{proof}
+
+\begin{proof}[Proof of the target-change bound]
+The old certificate and target comparison give
+\[
+ (1-\rho_{\rm old})(1-\omega)M_{\rm new}
+ \preceq W'W\preceq
+ (1+\rho_{\rm old})(1+\omega)M_{\rm new}.
+\]
+The upper relative excess is $\rho_{\rm old}+\omega+
+\rho_{\rm old}\omega$; the lower relative deficit is
+$\rho_{\rm old}+\omega-\rho_{\rm old}\omega$, which is no greater.
+The larger quantity thus certifies the proposed new basin radius. The
+calculation concerns only the old factor, not an inverse or a policy that
+has been accepted under a different target.
+\end{proof}
+
+\begin{proof}[Proof of Corollary~\ref{cor:r37policy}]
+For the current center $\widetilde M_t$, the relative Gram enclosure yields
+\[
+ \|W_t'W_t-\widetilde M_t\|_F
+ \leq\sqrt d\,\|\widetilde M_t\|_2\|E_t\|_2
+ \leq\sqrt d\,L_t\tau_t\leq a_t.
+\]
+The target-change gate, or a direct gate, supplies the initial basin. The
+precision theorem supplies this inequality in finitely many steps for each
+positive allowance, provided the implementation supplies the required
+precision. The terminal transformed coefficient is evaluated directly.
+Working backward after finalizing each future policy therefore supplies
+exactly the Gram, evaluation, and actor premises of
+Theorem~\ref{thm:r34robust}. That theorem proves the coefficient envelope
+and the all-action Bellman comparison jointly, and gives the displayed
+initial-state policy bound. No inference from sampled states, a finite
+action catalogue, or a small fitting loss is used in this implication.
+An independently bounded discrepancy between the stored policy and its
+executed actions must be added through its own implementation account.
+\end{proof}
