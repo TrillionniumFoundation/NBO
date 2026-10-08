@@ -1,0 +1,124 @@
+\section{The economic operator and its policy account}\label{sec:core49}
+Consider dates $t=0,\ldots,T$ and an invariant compact state domain $X\subset\R^d$. At date $t$, the action belongs to a nonempty compact set $A_t(x)$. The transition is $F_t(x,a,Z_{t+1})$, the current cost is $c_t(x,a)$, and the terminal cost is $g(x)$. Write $B_0=1$ and $B_t=\prod_{j<t}\beta_j$, with $\beta_j>0$. An implemented policy includes its observation rule, action selection and feasible numerical realization, not just its stored parameters.
+
+For a continuation $v$, define
+\begin{equation}\label{eq:operator49}
+ Q_t(v;x,a)=c_t(x,a)+\beta_t\rho_t(v(F_t(x,a,Z))),\qquad
+ \mathcal T_tv(x)=\inf_{a\in A_t(x)}Q_t(v;x,a).
+\end{equation}
+Throughout the deterministic comparison, the evaluations $\rho_t$ are monotone and cash invariant on a common domain containing all functions and constant translates used below. They are therefore nonexpansive in the supremum norm. Continuous objectives, effective compact feasible correspondences and measurable minimizers, or measurable arbitrarily near-minimizers with their error charged, are assumed. The stipulated conditional recursion gives Bellman comparison against all admissible adapted controls. In the experiments $\rho_t$ is conditional expectation, costs are bounded and innovations have their original continuous uniform law. The direct-cost inference in Section~\ref{sec:decisions49} is specific to expectation; it is not automatically an inference theorem for nonlinear recursive utility or games.
+
+A Neural Bellman Operator is a construction and evaluation procedure for \eqref{eq:operator49}. It forms targets using its \emph{own} fitted $f_{t+1}$, returns a neural continuation and a feasible policy, and records an economic error allowance. It does not receive the optimal continuation as a training label. Arbitrary trained networks can be evaluated by the first result below. The subsequent constructive backend specifies how a network and its actor are obtained without assuming successful nonconvex optimization.
+
+\subsection{Action-dependent errors and complete-policy loss}
+Let $H(a)$ be a true current cost and $\widehat H(a)$ its continuation approximation. If $\widehat a$ is $\delta$-optimal for $\widehat H$ on the same feasible action set, then
+\begin{equation}\label{eq:center49}
+ H(\widehat a)-\inf_aH(a)\le\delta+
+ \operatorname{osc}_{a}\{\widehat H(a)-H(a)\}.
+\end{equation}
+Indeed, compare $\widehat a$ with an arbitrarily near-optimal true action and cancel the approximate objectives. The infimum limit gives the result. Additive continuation levels cancel; action-dependent discrepancies do not. Under a change in future policies, the continuation must be transported to the new economic problem before this inequality licenses reuse. The full development edition retains the original quantitative transport, recursive-domain and economic-application results. No transport bound is presumed valid after an unaccounted change of constraints or preferences.
+
+\begin{proposition}[One-sided policy sandwich]\label{prop:sandwich49}
+Suppose, uniformly in state,
+\[
+ f_t-\mathcal T_tf_{t+1}\le u_t,\qquad
+ \mathcal T_t^\pi f_{t+1}-f_t\le v_t,
+ \qquad \ell_T\le f_T-g\le u_T.
+\]
+Then the actual feasible policy satisfies
+\begin{equation}\label{eq:sandwich49}
+ 0\le J_0^\pi-V_0^*\le
+ \sum_{t<T}B_t(u_t+v_t)+B_T(u_T-\ell_T).
+\end{equation}
+The bound is invariant to date-specific constant shifts of the fitted continuations, provided the associated residual accounts are shifted consistently.
+\end{proposition}
+\begin{proof}
+Backward comparison and cash invariance give
+\[
+ V_t^*\ge f_t-\sum_{k=t}^{T-1}B_{t,k}u_k-B_{t,T}u_T,
+ \quad
+ J_t^\pi\le f_t+\sum_{k=t}^{T-1}B_{t,k}v_k-B_{t,T}\ell_T,
+\]
+where $B_{t,k}=\prod_{j=t}^{k-1}\beta_j$. The terminal claim is the stipulated enclosure; applying the Bellman or fixed-policy operator proves each inductive step. Subtraction gives \eqref{eq:sandwich49}. A shift $f_t\mapsto f_t+c_t^0$ adds $c_t^0-\beta_tc_{t+1}^0$ to $u_t$ and subtracts it from $v_t$. The terminal width is unchanged.
+\end{proof}
+
+A sharper valid residual account for the same continuation and the same deployed actor sharpens knowledge of the policy. It does not retrain that policy or change its realized cost. Conversely, subtracting two upper bounds in \eqref{eq:sandwich49} does not identify the difference in actual costs. These distinctions govern both the historical comparisons and the new experiments.
+
+\section{Constructing and compiling a feasible neural policy}\label{sec:construction49}
+Assume the primitive objective has, for feasible state--action pairs, state modulus $A_t^Q=C_{x,t}+\beta_tF_{x,t}L_{t+1}$ and action modulus $D_t=C_{a,t}+\beta_tF_{a,t}L_{t+1}$. Let
+\[
+ d_H(A_t(x),A_t(z))\le K_t^A\|x-z\|_1,
+ \qquad L_t=A_t^Q+D_tK_t^A,\qquad L_T=L_g.
+\]
+The Hausdorff condition and the primitive moduli imply that $\mathcal T_tf_{t+1}$ is $L_t$-Lipschitz whenever $f_{t+1}$ is $L_{t+1}$-Lipschitz. All moduli and numerical integration procedures are supplied by the economic primitives, not fitted from successful outcomes.
+
+At state nodes $x_{t,i}$ with covering radius $h_t$, form effective feasible $k_t$-nets. Evaluate their own-future objectives with certified error at most $e_t$. Minimize the computed labels and retain the corresponding \emph{original} action $a_{t,i}$. A Borel repair $\Gamma_{t,i}(x)$ is feasible at $x$ and satisfies
+\begin{equation}\label{eq:repair49}
+ \|\Gamma_{t,i}(x)-a_{t,i}\|_1\le K_t^A\|x-x_{t,i}\|_1+\zeta_t.
+\end{equation}
+The allowance $\zeta_t$ concerns displacement; feasibility itself may not fail. Define
+\begin{equation}\label{eq:cone49}
+ f_t(x)=\min_i\{y_{t,i}+L_t\|x-x_{t,i}\|_1\},\quad
+ i_t(x)=\min\arg\min_i\{y_{t,i}+L_t\|x-x_{t,i}\|_1\}.
+\end{equation}
+Return $\pi_t(x)=\Gamma_{t,i_t(x)}(x)$. Terminal labels approximate $g$ with error $e_T$ and use the same cone construction with modulus $L_g$.
+
+\begin{theorem}[Own-future construction with feasible witnesses]\label{thm:construct49}
+The functions in \eqref{eq:cone49} have exact affine--ReLU realizations and Lipschitz moduli $L_t$ independent of label error. The returned policy is feasible and measurable. It satisfies
+\begin{align}\label{eq:enclosures49}
+ -e_t\le f_t-\mathcal T_tf_{t+1}&\le D_tk_t+e_t+2L_th_t,\\
+ \mathcal T_t^\pi f_{t+1}-f_t&\le e_t+D_t\zeta_t,\notag
+\end{align}
+and hence
+\begin{equation}\label{eq:constructionloss49}
+ J_0^\pi-V_0^*\le
+ \sum_{t<T}B_t(D_tk_t+2e_t+2L_th_t+D_t\zeta_t)
+ +B_T(2e_T+2L_gh_T).
+\end{equation}
+With effective covers, repairs and certified queries at the prescribed accuracy, allocating each nonnegative term a share of a positive economic tolerance gives a terminating finite construction. A fixed numerical precision or a capped finite experimental ladder need not contain that allocation.
+\end{theorem}
+\begin{proof}
+The selected node label lies between the node Bellman infimum minus $e_t$ and that infimum plus $D_tk_t+e_t$. The Lipschitz property of the infimum implies that every cone lies above it minus $e_t$. At a nearest node its cone exceeds the infimum by at most $D_tk_t+e_t+2L_th_t$. At the attaining original index, the two feasible pairs and \eqref{eq:repair49} give
+\[
+ Q_t(f_{t+1};x,\Gamma_{t,i}(x))
+ \le y_{t,i}+e_t+L_t\|x-x_{t,i}\|_1+D_t\zeta_t.
+\]
+This proves \eqref{eq:enclosures49}. The terminal residual belongs to $[-e_T,e_T+2L_gh_T]$; Proposition~\ref{prop:sandwich49} gives the loss bound. A finite minimum of equally Lipschitz cones is equally Lipschitz. The identities $|z|=\operatorname{ReLU}(z)+\operatorname{ReLU}(-z)$ and $\min(u,v)=u-\operatorname{ReLU}(u-v)$ give the exact network. Finite lexicographic comparison and Borel repair give measurability. Effective refinement of the finitely many positively weighted terms yields the termination assertion.
+\end{proof}
+
+The Lipschitz-extension principle is classical \citep{mcshane1934}. A native min-plus envelope and its exact ReLU circuit, using the same labels, witnesses and ties, are \emph{one method with two encodings}. They return the same function and policy. Neither Theorem~\ref{thm:construct49} nor a faster representation proves a uniquely neural capability or a training-success probability for Adam or L-BFGS. The mathematical increment is the complete feasible, own-future construction and implementation account; the empirical question is its work and policy value relative to conventional generators.
+
+\subsection{Original-owner compilation on a tensor cover}
+On a tensor cover $\mathcal X=\prod_{j=1}^d\{x_{j,0},\ldots,x_{j,n_j}\}$, put $S=\prod_j(n_j+1)$. For arbitrary labels $y_i$, including inconsistent inexact labels, compute at each grid node $v$
+\[
+ (z_v,o_v)=\min_{\rm lex,i}(y_i+L\|v-x_i\|_1,i).
+\]
+The index $o_v$ is the original label owner, not the transformed node $v$.
+
+\begin{theorem}[Continuous original-owner identity]\label{thm:compile49}
+For a closed tensor cell $C$ with corners $\mathcal V(C)$, and $x\in C$,
+\begin{align}\label{eq:compile49}
+ f(x)&=\min_{v\in\mathcal V(C)}(z_v+L\|x-v\|_1),\\
+ (f(x),i_*(x))&=\min_{\rm lex,v\in\mathcal V(C)}
+ (y_{o_v}+L\|x-x_{o_v}\|_1,o_v).\notag
+\end{align}
+Coordinatewise forward and backward relaxations compute $(z,o)$ in $O(dS)$ additions and comparisons and $O(S)$ storage. After locating the cell, a query uses $O(d2^d)$ arithmetic operations. Exact rational comparisons preserve all ties, including $L=0$. Using the original owner's repaired action preserves the uncompiled policy, its cost and its certificate exactly.
+\end{theorem}
+\begin{proof}
+The triangle inequality bounds $f(x)$ above by each corner expression. Choose the lexicographically first attaining site $i_*(x)$. In every coordinate choose the cell endpoint between $x_j$ and $x_{i_*,j}$. At this corner distances add exactly. An owner of strictly smaller transformed value would improve the objective at $x$; a tied smaller owner would contradict the original tie rule. Thus this corner has owner $i_*(x)$, proving both identities. Along a coordinate line, forward and backward relaxations respectively minimize over sites on either side, always comparing value--original-index pairs. Iterating over coordinates gives the separable distance transform and its stated work. Rational arithmetic and unchanged repair complete the claim.
+\end{proof}
+
+The nodal algorithm is the classical distance transform \citep{felzenszwalb2012}; preserving the original action through continuous off-grid queries is the policy obligation. If there are $J_{t,i}$ node actions and $M_t$ integration representatives, write $Q_t=M_t\sum_iJ_{t,i}$. Literal dense cone evaluation costs $O(\sum_t dS_{t+1}Q_t)$ in representation work. Compilation replaces this by $O(\sum_t[dS_{t+1}+Q_td2^d])$, plus cell location, primitive evaluation, integration, feasible repair, certificate and output. Rational bit lengths and state boxes crossing many cells incur additional costs. There is no dimension-free complexity assertion.
+
+\subsection{Acquired states and conventional actors}
+A $b$-bit coordinate sensor reports a dyadic cell and its midpoint $\widehat x$. On the unit cube, $\|x-\widehat x\|_1\le r(b)=d2^{-b-1}$. For the investment capacity $\kappa(x)$ below, clip the original action to the smallest capacity throughout that cell and round down to an action quantum $\Delta_t$. This is feasible at every state in the cell. Relative to an exact true-state repair, its displacement is at most $2K_t^Ar(b)+\Delta_t$. Transporting the witness cone from $\widehat x$ to $x$ adds at most $2L_tr(b)$, plus any certified selector objective error $\nu_t$. Thus the implemented-policy account adds
+\begin{equation}\label{eq:acquire49}
+ \sum_{t<T}B_t\{(2L_t+2D_tK_t^A)r(b)+D_t\Delta_t+\nu_t\}.
+\end{equation}
+No continuity of the discrete owner selector is assumed. At uncertain numerical comparisons the simulator retains all possible actors, rather than choosing a favorable one.
+
+For conventional FVI the continuation is multilinear on its realized tensor grid. Its actual modulus is bounded by the largest coordinate edge slope. A nearest-node actor uses a feasible node minimizer and true-state repair. Let $h_t$ be the largest half-cell $\ell^1$ radius, $L_t^{\rm gr}$ the Bellman graph modulus, and $e_t$ the node query allowance. Its optimal residual upper bound is $D_tk_t+e_t+L_t^{\rm gr}h_t$. Its selected-policy upper bound is $e_t+E_t$, where
+\[
+ E_t=\sup_x\{y_{i(x)}+L_t^{\rm gr}\|x-x_{i(x)}\|_1-f_t(x)\}.
+\]
+Partitioning cells by nearest-node boundaries makes the expression separately affine in each coordinate. Its maximum is therefore at a partition vertex; the implementation encloses all such vertices. Both uniform and curvature-refined FVI receive this sharper one-sided account, not an artificially doubled baseline. Their acquired-state allowance is derived separately in \eqref{eq:fvisensor49}.
