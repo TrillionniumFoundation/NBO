@@ -1,0 +1,64 @@
+name: NBO R53 adaptive and misspecification extension
+on:
+  push:
+    branches: [revision/econometrica-nbo-r53-revision-2026-10-08]
+    paths: [.github/workflows/nbo-r53-extension.yml]
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r53-extension
+  cancel-in-progress: false
+jobs:
+  frozen-extension:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            /revisions/2026-10-08-r53/
+          sparse-checkout-cone-mode: false
+      - name: Install numerical dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy
+      - name: Freeze the separately specified extension before execution
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          /usr/bin/python3 revisions/2026-10-08-r53/code/extend53.py --test 2>&1 | tee revisions/2026-10-08-r53/audit/EXTENSION53_PREFLIGHT.log
+          /usr/bin/python3 revisions/2026-10-08-r53/code/extend53.py --freeze
+          git add -f revisions/2026-10-08-r53/audit/*53*
+          git commit -m 'R53: bind adaptive-comparison and misspecification extension sources before execution'
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r53-revision-2026-10-08 HEAD:refs/heads/revision/econometrica-nbo-r53-extension-freeze-2026-10-08
+      - name: Execute fresh complete same-runner services including adaptive FVI
+        run: |
+          /usr/bin/python3 revisions/2026-10-08-r53/code/extend53.py --service compiled-witness 2>&1 | tee revisions/2026-10-08-r53/audit/EXTENSION53_W.log
+          /usr/bin/python3 revisions/2026-10-08-r53/code/extend53.py --service tensor-fvi 2>&1 | tee revisions/2026-10-08-r53/audit/EXTENSION53_F.log
+          /usr/bin/python3 revisions/2026-10-08-r53/code/extend53.py --service surplus-fvi 2>&1 | tee revisions/2026-10-08-r53/audit/EXTENSION53_A.log
+          /usr/bin/python3 revisions/2026-10-08-r53/code/extend53.py --direct 2>&1 | tee revisions/2026-10-08-r53/audit/EXTENSION53_DIRECT.log
+      - name: Execute all 384 controlled non-nullity and kernel perturbation cases
+        run: /usr/bin/python3 revisions/2026-10-08-r53/code/extend53.py --diagnostics 2>&1 | tee revisions/2026-10-08-r53/audit/EXTENSION53_NULL.log
+      - name: Publish all raw extension records without replacing primary data
+        run: |
+          git add -f revisions/2026-10-08-r53
+          git commit -m 'R53: retain full adaptive comparison, fresh actual-cost family and every misspecification record'
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r53-revision-2026-10-08 HEAD:refs/heads/revision/econometrica-nbo-r53-extension-executed-2026-10-08
+      - name: Retain extension sources and complete evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r53-extension-evidence
+          path: |
+            revisions/2026-10-08-r53/results53-extension/
+            revisions/2026-10-08-r53/audit/*53*
+            revisions/2026-10-08-r53/STUDY_PROTOCOL53*.md
+            revisions/2026-10-08-r53/code/extend53.py
+          retention-days: 30
+          compression-level: 1
