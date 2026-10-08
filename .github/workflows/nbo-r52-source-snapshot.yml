@@ -5,6 +5,9 @@ on:
     paths: [.github/workflows/nbo-r52-source-snapshot.yml]
 permissions:
   contents: read
+concurrency:
+  group: nbo-r52-source-snapshot
+  cancel-in-progress: true
 jobs:
   snapshot:
     runs-on: ubuntu-latest
@@ -13,13 +16,16 @@ jobs:
         with:
           ref: 62ffa8d0753c82a1363831f49a297c815d89204f
           fetch-depth: 1
+          sparse-checkout: |
+            /revisions/2026-10-08-r51/
+          sparse-checkout-cone-mode: false
           persist-credentials: false
-      - name: Export immutable complete source tree
+      - name: Export immutable self-contained predecessor revision
         run: |
           mkdir -p /tmp/nbo-r52-inputs
           git rev-parse HEAD > /tmp/nbo-r52-inputs/BASE_COMMIT.txt
           git ls-tree -r HEAD > /tmp/nbo-r52-inputs/BASE_TREE.txt
-          git archive --format=tar HEAD | gzip -1 > /tmp/nbo-r52-inputs/base.tar.gz
+          git archive --format=tar HEAD revisions/2026-10-08-r51 | gzip -1 > /tmp/nbo-r52-inputs/base.tar.gz
           sha256sum /tmp/nbo-r52-inputs/base.tar.gz > /tmp/nbo-r52-inputs/SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
