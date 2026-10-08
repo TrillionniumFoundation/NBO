@@ -45,6 +45,27 @@ jobs:
             git commit -m 'R54: integrate ordinary original-paper sources, complete preserved evidence and point-by-point response'
           fi
           git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r54-referee-revision-2026-10-08 HEAD:refs/heads/revision/econometrica-nbo-r54-source-2026-10-08
+      - name: Diagnose exact committed Python sources before execution
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import ast, hashlib, json, pathlib, subprocess
+          root = pathlib.Path('revisions/2026-10-08-r54')
+          records = []
+          for path in sorted((root / 'code').glob('*.py')):
+              raw = path.read_bytes()
+              committed = subprocess.check_output(['git', 'show', 'HEAD:' + str(path)])
+              if raw != committed:
+                  raise AssertionError('Runtime differs from committed source: ' + str(path))
+              try:
+                  ast.parse(raw, filename=str(path))
+              except SyntaxError:
+                  print(str(path), repr(raw[:1500]), flush=True)
+                  raise
+              records.append({'path': str(path), 'sha256': hashlib.sha256(raw).hexdigest()})
+          log = root / 'audit' / 'RUNTIME_SYNTAX54.json'
+          log.write_text(json.dumps({'head': subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(), 'files': records, 'status': 'passed'}, indent=2) + '\n')
+          print(log.read_text(), flush=True)
+          PY
       - name: Run all inherited and new tests, replay every record, compile five documents
         run: /usr/bin/python3 revisions/2026-10-08-r54/code/build54.py
       - name: Clean archive rebuild and verified atomic remote publication
