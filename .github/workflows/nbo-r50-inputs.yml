@@ -1,0 +1,38 @@
+name: NBO R50 pinned input snapshot
+on:
+  push:
+    branches: [revision/econometrica-nbo-r50-source-2026-10-08]
+    paths: ['.github/workflows/nbo-r50-inputs.yml']
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            revisions/2026-10-08-r48
+            revisions/2026-10-08-r49
+            reviews/2026-10-08-econometrica-numerical-methods-r49
+      - name: Export ordinary sources and audit inputs
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib,subprocess,zipfile
+          root=pathlib.Path('.'); paths=[]
+          for base in ('revisions/2026-10-08-r48','revisions/2026-10-08-r49','reviews/2026-10-08-econometrica-numerical-methods-r49'):
+              for p in (root/base).rglob('*'):
+                  if p.is_file() and p.suffix in ('.py','.tex','.bib','.cls','.cfg','.bst','.md','.json') and not any(s in p.parts for s in ('results','preserved','evidence','build','__pycache__')): paths.append(p)
+          paths += [p for p in root.iterdir() if p.is_file() and p.suffix in ('.tex','.bib','.cls','.cfg','.bst')]
+          with zipfile.ZipFile('r50-inputs.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for p in sorted(set(paths)):z.write(p,str(p))
+              z.writestr('INPUT_SNAPSHOT.json',json.dumps({'base_review_commit':'4708450610c38e6b8963670cecadc887508c85c0','snapshot_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':{str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(paths))}},indent=2))
+          print(len(paths))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r50-pinned-inputs
+          path: r50-inputs.zip
+          retention-days: 30
