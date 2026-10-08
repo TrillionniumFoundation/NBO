@@ -1,0 +1,68 @@
+name: NBO R52 complete revision
+on:
+  push:
+    branches: [revision/econometrica-nbo-r52-source-2026-10-08]
+    paths: [.github/workflows/nbo-r52-publication.yml]
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r52-publication
+  cancel-in-progress: false
+jobs:
+  complete-revision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      SOURCE_DATE_EPOCH: '1791450000'
+      FORCE_SOURCE_DATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            /revisions/2026-10-08-r52/
+            /README.md
+          sparse-checkout-cone-mode: false
+      - name: Install publication dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Integrate and commit ordinary manuscript sources before execution
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          /usr/bin/python3 revisions/2026-10-08-r52/code/integrate52.py
+          git add -f revisions/2026-10-08-r52
+          git commit -m 'R52: integrate full original-paper revision and point-by-point referee response'
+          export NBO52_SOURCE_SHA=$(git rev-parse HEAD)
+          /usr/bin/python3 revisions/2026-10-08-r52/code/study52.py --freeze
+          git add -f revisions/2026-10-08-r52/audit/SOURCE_FREEZE52.json
+          git commit -m 'R52: bind ordinary scientific sources and all eight policies before exhaustive execution'
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r52-source-2026-10-08 HEAD:refs/heads/revision/econometrica-nbo-r52-science-freeze-2026-10-08
+      - name: Execute exhaustive original-economy robustness catalogue
+        run: /usr/bin/python3 revisions/2026-10-08-r52/code/study52.py --execute
+      - name: Audit records, run all tests, and compile all five manuscripts
+        run: /usr/bin/python3 revisions/2026-10-08-r52/code/build52.py
+      - name: Clean archive rebuild and atomic publication
+        run: /usr/bin/python3 revisions/2026-10-08-r52/code/publish52.py
+      - name: Retain complete ordinary revision and verification records
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r52-complete-revision
+          path: revisions/2026-10-08-r52/
+          retention-days: 30
+          compression-level: 1
+      - name: Retain compact publication output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r52-paper-and-audits
+          path: |
+            revisions/2026-10-08-r52/build/*.pdf
+            revisions/2026-10-08-r52/audit/*52*
+          retention-days: 30
