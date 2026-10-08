@@ -1,0 +1,135 @@
+name: NBO R51 cache-free publication verification
+on:
+  push:
+    branches: [revision/econometrica-nbo-r51-clean-publication-audit-2026-10-08]
+    paths: ['.github/workflows/nbo-r51-clean-publication.yml']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  cache-free-rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      TZ: UTC
+      SOURCE_DATE_EPOCH: '1791447545'
+      FORCE_SOURCE_DATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Prepare the independent publication environment
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended texlive-science pandoc poppler-utils
+      - name: Require a successful complete source-bound execution
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,subprocess,time
+          for _ in range(160):
+              r=json.loads(subprocess.check_output(['gh','api','repos/TrillionniumFoundation/NBO/actions/runs/37767980705']))
+              if r['status']=='completed':
+                  assert r['conclusion']=='success',r['conclusion']
+                  break
+              time.sleep(15)
+          else: raise RuntimeError('Complete publication did not finish within the validation budget')
+          PY
+          cp .github/workflows/nbo-r51-clean-publication.yml /tmp/strict-workflow51.yml
+          git fetch --depth=1 origin revision/econometrica-nbo-r51-review-ready-2026-10-08
+          git checkout --detach FETCH_HEAD
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+      - name: Discard generated outputs and rebuild the exact submitted Git archive
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import datetime,hashlib,json,os,shutil,subprocess,sys,tarfile,tempfile
+          root=Path.cwd();rel=Path('revisions/2026-10-08-r51');r=root/rel
+          def git(*args): return subprocess.check_output(['git',*args],text=True).strip()
+          def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+          def write(p,v): p.write_text(json.dumps(v,indent=2,sort_keys=True)+'\n')
+          candidate=git('rev-parse','HEAD');tree=git('rev-parse','HEAD^{tree}')
+          before=json.loads((r/'audit/FINAL_DELIVERY51.json').read_text())
+          assert before['status']=='complete_source_bound_submission'
+          expected=json.loads((r/'audit/PUBLICATION_FILES51.json').read_text())
+          for name,h in expected.items(): assert sha(r/name)==h,name
+          workflow=Path('/tmp/strict-workflow51.yml').read_text()
+          with tempfile.TemporaryDirectory(prefix='nbo51-cache-free-') as td:
+              tmp=Path(td);archive=tmp/'candidate.tar'
+              subprocess.run(['git','archive',candidate,str(rel),'-o',str(archive)],check=True)
+              with tarfile.open(archive) as a: a.extractall(tmp,filter='data')
+              clean=tmp/rel
+              for name in ['build','tables','audit/build-logs']:
+                  shutil.rmtree(clean/name,ignore_errors=True)
+                  assert not (clean/name).exists()
+              with (r/'audit/STRICT_CLEAN51.log').open('w') as log:
+                  p=subprocess.run([sys.executable,str(clean/'code/build51.py')],cwd=tmp,stdout=log,stderr=subprocess.STDOUT)
+              if p.returncode:
+                  print((r/'audit/STRICT_CLEAN51.log').read_text()[-10000:])
+                  raise RuntimeError('Cache-free archive build failed')
+              report=json.loads((clean/'audit/RELEASE51.json').read_text())
+              assert report['total_tests']==44
+              mismatches=[name for name,h in expected.items() if not (clean/name).exists() or sha(clean/name)!=h]
+              assert not mismatches,mismatches[:20]
+              pdfs={}
+              for name in ['ECTA','supp','complete','complete-supp','response']:
+                  original=subprocess.check_output(['pdftotext','-layout',str(r/'build'/(name+'.pdf')),'-'])
+                  rebuilt=subprocess.check_output(['pdftotext','-layout',str(clean/'build'/(name+'.pdf')),'-'])
+                  assert original==rebuilt,name+' rendered text mismatch'
+                  pdfs[name]={'identical_layout_text':True,'layout_text_sha256':hashlib.sha256(rebuilt).hexdigest()}
+              proof={'passed':True,'candidate_commit':candidate,'candidate_tree':tree,
+                     'archive_sha256':sha(archive),'removed_before_build':['build','tables','audit/build-logs'],
+                     'tests_passed':44,'all_publication_file_hashes_identical':True,'publication_file_count':len(expected),
+                     'pdfs':pdfs,'compilation':report['compilation'],'network_or_new_science_in_rebuild':False,
+                     'source_workflow_commit':os.environ['GITHUB_SHA'],'github_run_id':os.environ['GITHUB_RUN_ID']}
+          write(r/'audit/STRICT_CLEAN_ARCHIVE51.json',proof)
+          (r/'audit/STRICT_CLEAN_WORKFLOW51.yml').write_text(workflow)
+          shutil.copy2(r/'audit/FINAL_DELIVERY51.json',r/'audit/FINAL_DELIVERY51_BEFORE_STRICT.json')
+          shutil.copy2(r/'audit/REMOTE_RECEIPT51.json',r/'audit/REMOTE_RECEIPT51_BEFORE_STRICT.json')
+          excluded={'audit/DELIVERY_MANIFEST51.json','audit/FINAL_DELIVERY51.json','audit/REMOTE_RECEIPT51.json'}
+          manifest={str(p.relative_to(r)):sha(p) for p in sorted(r.rglob('*')) if p.is_file() and str(p.relative_to(r)) not in excluded and '__pycache__' not in p.parts}
+          write(r/'audit/DELIVERY_MANIFEST51.json',manifest)
+          before.update({'strict_cache_free_archive_passed':True,'strict_candidate_commit':candidate,
+                         'strict_record_sha256':sha(r/'audit/STRICT_CLEAN_ARCHIVE51.json'),
+                         'manifest_sha256':sha(r/'audit/DELIVERY_MANIFEST51.json'),'files':len(manifest),
+                         'strict_github_run_id':os.environ['GITHUB_RUN_ID']})
+          write(r/'audit/FINAL_DELIVERY51.json',before)
+          subprocess.run(['git','add','--',str(rel/'audit')],check=True)
+          assert not git('diff','--cached','--name-only','--diff-filter=D')
+          subprocess.run(['git','commit','-m','R51: verify cache-free Git archive, all 44 tests and five identical PDF texts'],check=True)
+          branches=['revision/econometrica-nbo-r51-integrated-source-2026-10-08','revision/econometrica-nbo-r51-review-ready-2026-10-08']
+          def push_and_check():
+              head=git('rev-parse','HEAD')
+              subprocess.run(['git','push','--atomic','origin',*[f'HEAD:refs/heads/{b}' for b in branches]],check=True)
+              lines=git('ls-remote','origin',*[f'refs/heads/{b}' for b in branches]).splitlines()
+              assert len(lines)==2 and all(x.split()[0]==head for x in lines)
+              return head
+          published=push_and_check()
+          write(r/'audit/REMOTE_RECEIPT51.json',{'published_commit_observed':published,
+              'observed_refs':{b:published for b in branches},'strict_cache_free_archive_passed':True,
+              'utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              'scope':'Complete publication and strict cache-free verification observed before this receipt-only bookend; both final refs rechecked by the job.'})
+          subprocess.run(['git','add','--',str(rel/'audit/REMOTE_RECEIPT51.json')],check=True)
+          subprocess.run(['git','commit','-m','R51: record final verified remote submission heads'],check=True)
+          final=push_and_check()
+          print(json.dumps({'final_remote_head':final,'branches':branches,'strict_cache_free_archive_passed':True},indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r51-final-paper-and-verification
+          path: |
+            revisions/2026-10-08-r51/build/*.pdf
+            revisions/2026-10-08-r51/audit/*.json
+            revisions/2026-10-08-r51/audit/STRICT_CLEAN51.log
+          retention-days: 30
