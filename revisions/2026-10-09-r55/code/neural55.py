@@ -131,10 +131,10 @@ class Critic:
         if self.kind=='zero':return I.point(np.zeros_like(x.lo))
         if self.kind=='terminal':return gradient_cost(x,True)
         p=self.params
-        if self.kind=='quadratic':return dot(x,p['Q']+p['Q'].T)+p['v']
+        if self.kind=='quadratic':return dot(x,p['Q'])+dot(x,p['Q'].T)+p['v']
         if self.kind=='relu':
             z=dot(x,p['W'])+p['b'];active=I((z.lo>0).astype(float),(z.hi>=0).astype(float))
-            return dot(active,(p['W']*p['u']).T)+p['v']
+            return self.weighted_slope(active)
         raise ValueError('A discontinuous tree has no global gradient enclosure')
     def expected_gradient(self,x,a):
         y=o.deterministic_next(x,a)
@@ -149,7 +149,15 @@ class Critic:
             if r==0:prob=I((zz.lo>0).astype(float),(zz.hi>=0).astype(float))
             else:prob=((zz+s.c.rat_i(r))/s.c.rat_i(2*r)).clip(0,1)
             terms.append(prob)
-        return dot(s.stack(terms),(p['W']*p['u']).T)+p['v']
+        return self.weighted_slope(s.stack(terms))
+    def weighted_slope(self,prob):
+        p=self.params;columns=[]
+        for i in range(self.d):
+            v=I.point(np.full(len(prob.lo),p['v'][i]))
+            for j in range(len(p['u'])):
+                v=v+s.col(prob,j)*I.point(p['W'][i,j])*I.point(p['u'][j])
+            columns.append(v)
+        return s.stack(columns)
     def payload(self):
         if self.kind=='legacy':return dict(kind=self.kind,d=self.d,model=self.forest.payload())
         p={k:np.asarray(v).tolist() for k,v in self.params.items()}
@@ -204,7 +212,7 @@ def train(kind,d,T,samples,seed):
         vals=v.midpoint().reshape(samples,17);labels=vals.min(axis=1)
         begin=time.perf_counter();critics[t]=fit(kind,x,labels,seed+100+t)
         err=critics[t].point(x)-labels
-        logs.append(dict(date=t,samples=samples,bellman_actions=17*samples,fit_seconds=time.perf_counter()-begin,training_mse=float(np.mean(err**2)),fit_enclosure_width_max=float(v.width().max())))
+        logs.append(dict(date=t,samples=samples,training_seed=seed,fitting_seed=seed+100+t,training_states=x.tolist(),training_labels=labels.tolist(),bellman_actions=17*samples,fit_seconds=time.perf_counter()-begin,training_mse=float(np.mean(err**2)),fit_enclosure_width_max=float(v.width().max())))
     return critics,logs
 
 

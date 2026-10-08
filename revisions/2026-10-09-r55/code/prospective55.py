@@ -21,7 +21,7 @@ def arrays(p,**kw):return old.arrays(p,**kw)
 def canonical(v):return old.canonical(v)
 def policy_hash(p,part):return canonical(dict(policy=np.asarray(p).tolist(),partition=part.payload()))
 def source_paths():
-    return [R/'STUDY_PROTOCOL55.md']+[R/'code'/f for f in ('neural55.py','prospective55.py','null55.py','tests55.py')]+[R/'code'/f for f in ('operators50.py','directed53.py','study53.py')]+sorted((R/'inputs').rglob('*.py'))
+    return [R/'STUDY_PROTOCOL55.md']+[R/'code'/f for f in ('neural55.py','prospective55.py','null55.py','tests55.py','cohort55.py','prepare55.py')]+[R/'code'/f for f in ('operators50.py','directed53.py','study53.py')]+sorted((R/'inputs').rglob('*.py'))
 def freeze():
     return save(R/'audit/SOURCE_FREEZE55.json',dict(source_sha256={str(p.relative_to(R)):old.digest(p) for p in source_paths()},protocol='STUDY_PROTOCOL55.md',utc=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),python=platform.python_version(),numpy=np.__version__,scope='Frozen before new production services. Development tests use disjoint tiny tasks and seeds.'))
 def verify():
