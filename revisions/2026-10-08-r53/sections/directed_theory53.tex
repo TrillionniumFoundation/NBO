@@ -1,0 +1,107 @@
+\section{Directed policy improvement on acquired states}\label{sec:directed53}
+We now specialize to conditional expectation and bounded costs. The feasible set, transition law, and Bellman optimum remain those of Section~\ref{sec:core49}. Write $P_t^av(x)=\mathbb E[v(F_t(x,a,Z))]$. Fix a complete acquired policy $\pi^k$ during pass $k$ and put
+\begin{equation}\label{eq:advantage53}
+ \Delta_t^k(x,a)=c_t(x,a)+\beta_tP_t^aJ_{t+1}^{\pi^k}(x)-J_t^{\pi^k}(x).
+\end{equation}
+The incumbent has advantage zero. The policy being evaluated includes its observation and feasible numerical realization at every future date. It is not the policy obtained by changing later dates midway through the same pass.
+
+Let $\mathcal C_t$ be a finite measurable partition of $X$. Boundaries have a declared owner, while numerical enclosures may conservatively cover both neighboring closed cells. On $C\in\mathcal C_t$, the incumbent is the constant action $b_C$. More general acquired actors can be represented by refining the partition. A finite proposal menu $\mathcal A_C$ contains $b_C$, and every member is feasible for \emph{every} $x\in C$. Suppose certified numbers satisfy
+\begin{equation}\label{eq:directed-enclosure53}
+ L_C(a)\le\Delta_t^k(x,a)\le U_C(a)\quad(x\in C,\ a\in\mathcal A_C),
+ \qquad L_C(b_C)=U_C(b_C)=0.
+\end{equation}
+Their construction is part of the algorithm, not an oracle assumption left to the experiment. In addition, construct a lower certificate
+\begin{equation}\label{eq:continuous-inf53}
+ \ell_C\le\inf_{x\in C}\inf_{a\in A_t(x)}\Delta_t^k(x,a).
+\end{equation}
+The second infimum is over the original continuous feasible set, not the proposal menu. An interval cover of a superset of the feasible state--action graph is valid for this lower bound. An action from that superset cannot be deployed unless its feasibility is separately established.
+
+Choose $v_C\in\arg\min_{a\in\mathcal A_C}U_C(a)$, with the exact incumbent winning ties, and define $\pi_t^{k+1}(x)=v_C$ on $C$. Put
+\begin{equation}\label{eq:epsilon53}
+ \epsilon_t^k=\max_{C\in\mathcal C_t}\{U_C(v_C)-\ell_C\},\qquad
+ E_t^k=\sup_{x\in X}(J_t^{\pi^k}(x)-V_t^*(x)).
+\end{equation}
+Both terms in the first expression are computed. Its width charges state acquisition, candidate search, continuous-action coverage, policy evaluation, integration and directed arithmetic together. Keeping the component enclosures separately makes conservatism diagnosable without paying for it twice.
+
+\begin{theorem}[Directed finite-sweep improvement]\label{thm:directed53}
+Suppose \eqref{eq:directed-enclosure53}--\eqref{eq:continuous-inf53} hold at every date of a pass, with the previous complete policy frozen. Then the returned acquired policy is feasible, $J_t^{\pi^{k+1}}\le J_t^{\pi^k}$ at every state and date, and
+\begin{equation}\label{eq:recursion53}
+ E_t^{k+1}\le\beta_tE_{t+1}^k+\epsilon_t^k,\qquad E_T^k=0.
+\end{equation}
+Consequently, after $m\le T-t$ passes,
+\begin{equation}\label{eq:unroll53}
+ E_t^{k+m}\le B_{t,t+m}E_{t+m}^k+
+ \sum_{j=0}^{m-1}B_{t,t+j}\epsilon_{t+j}^{k+m-1-j},
+ \qquad B_{t,s}=\prod_{i=t}^{s-1}\beta_i.
+\end{equation}
+The initialization error disappears after $T-t$ passes. If the enclosures and search give $\epsilon=0$, the original Bellman optimum is reached within the horizon. With finite observation and action resolution, the displayed nonzero error sum, rather than exact convergence, is the conclusion.
+\end{theorem}
+\begin{proof}
+Since the incumbent is available, $U_C(v_C)\le0$. Thus $\mathcal T_t^{\pi^{k+1}}J_{t+1}^{\pi^k}\le J_t^{\pi^k}$. Starting from the common terminal value, backward monotonicity implies $J_t^{\pi^{k+1}}\le J_t^{\pi^k}$ and also $J_t^{\pi^{k+1}}\le\mathcal T_t^{\pi^{k+1}}J_{t+1}^{\pi^k}$. For every $x\in C$,
+\[
+ \Delta_t^k(x,v_C)-\inf_{a\in A_t(x)}\Delta_t^k(x,a)
+ \le U_C(v_C)-\ell_C\le\epsilon_t^k.
+\]
+It follows that $J_t^{\pi^{k+1}}\le\mathcal T_tJ_{t+1}^{\pi^k}+\epsilon_t^k\le V_t^*+\beta_tE_{t+1}^k+\epsilon_t^k$. This proves \eqref{eq:recursion53}. Repeated substitution gives \eqref{eq:unroll53}. All actions in the deployed menu were certified on the whole cell, so feasibility is not inferred from midpoint evaluation.
+\end{proof}
+
+The finite-sweep conclusion is a finite-horizon propagation statement. The computed bound need not decrease monotonically from one pass to the next, even though actual cost cannot increase. Changed actors alter the interval geometry and hence the next evaluation error. The experiment reports both sequences instead of treating a decreasing certificate as a substitute for an economic gain.
+
+\subsection{The relation to symmetric action-contrast certificates}
+For a critic $h^k$, write $e_t^k=J_t^{\pi^k}-h_t^k$ and
+\[
+ d_t^k(x;a,b)=c_t(x,a)-c_t(x,b)+\beta_t(P_t^a-P_t^b)h_{t+1}^k(x).
+\]
+The exact advantage is $d_t^k(x;a,\pi_t^k(x))+\beta_t(P_t^a-P_t^{\pi_t^k(x)})e_{t+1}^k(x)$. If only an absolute certificate $|(P_t^a-P_t^b)e_{t+1}^k|\le R_t^k(x;a,b)\le\chi_t^k$ is available, accepting a feasible proposal when its critic-comparison upper endpoint plus $\beta_tR_t^k$ is nonpositive preserves the incumbent. For an $\alpha_t^k$-greedy proposal and a comparison overestimate at most $\zeta_t^k$, the inherited bound is
+\begin{equation}\label{eq:symmetric53}
+ E_t^{k+1}\le\beta_tE_{t+1}^k+\alpha_t^k+\zeta_t^k+2\beta_t\chi_t^k.
+\end{equation}
+The factor two is necessary for that class of proposal-and-rejection rules. In a one-period, two-action problem with $\beta=1$, deterministic successor states and zero current cost, take critic values $(w,\delta)$ and terminal costs $(2w,\delta)$, where $0<\delta<w$. The incumbent selects the first action and the exact greedy proposal the second. The error contrast is $\chi=w$; nevertheless the gate rejects because its upper comparison is $\delta>0$. The retained gap is $2w-\delta$, approaching $2\chi$. The full inherited proof remains in the historical article and supplement. The directed theorem does not assert a smaller universal coefficient in \eqref{eq:symmetric53}; it uses a stronger, signed input and a directly certified continuous greedy gap.
+
+\subsection{Economic improvement and reference-policy occupancy}
+A strictly negative upper endpoint also quantifies the gain. For any complete candidate $\sigma$, telescoping conditional expectations gives
+\begin{equation}\label{eq:performance53}
+ J_t^\sigma(x)-J_t^\pi(x)=
+ \mathbb E_x^\sigma\!\left[\sum_{s=t}^{T-1}B_{t,s}
+       \Delta_s^\pi(X_s,\sigma_s(X_s))\right].
+\end{equation}
+Thus the selected upper endpoints bound the cost change along the \emph{new} policy's state distribution. This identity explains both the safety theorem and a statistical qualification: statewise expected improvement does not imply nonnegative improvement on every common-innovation path. Direct cost inference must retain negative path gains. Nor does improvement relative to one incumbent imply improvement relative to a different generator.
+
+\section{Constructive signed residual certificates}\label{sec:coupled53}
+Fix $\pi$ and any bounded critic $h$. Define $r_T=g-h_T$ and
+$r_t=c_t^\pi+\beta_tP_t^\pi h_{t+1}-h_t$. The error satisfies $e_t=r_t+\beta_tP_t^\pi e_{t+1}$. For every state pair, choose a measurable coupling $\Lambda_t^\pi(x,y)$ with the two policy-transition marginals. For an action pair, choose $\Lambda_t(x;a,b)$ with the two action-transition marginals. These are mathematical integration devices. They do not impose a joint law on two counterfactual realizations of the economy.
+
+\begin{proposition}[Directed residual transport]\label{prop:transport53}
+Let $[H_t^-,H_t^+]$ enclose $r_t(x)-r_t(y)$ and let $w_t$ be a valid global range width for $e_t$. Set $[D_T^-,D_T^+]=[H_T^-,H_T^+]\cap[-w_T,w_T]$ and recursively
+\begin{equation}\label{eq:pair53}
+ [D_t^-,D_t^+]=
+ \left([H_t^-,H_t^+]+\beta_t
+       \int[D_{t+1}^-,D_{t+1}^+]\,d\Lambda_t^\pi\right)
+       \cap[-w_t,w_t].
+\end{equation}
+Every integral can be replaced by an outward lower and upper enclosure. Then $e_t(x)-e_t(y)\in[D_t^-,D_t^+]$, and
+\begin{equation}\label{eq:action-pair53}
+ (P_t^a-P_t^b)e_{t+1}(x)\in
+ \left[\int D_{t+1}^-d\Lambda_t(x;a,b),
+       \int D_{t+1}^+d\Lambda_t(x;a,b)\right]\cap[-w_{t+1},w_{t+1}].
+\end{equation}
+Adding the critic-comparison interval gives the advantage enclosure required by Theorem~\ref{thm:directed53}. A known identical action has the exact interval $[0,0]$.
+\end{proposition}
+\begin{proof}
+Subtract the two residual identities. Correct coupling marginals give
+$e_t(x)-e_t(y)=r_t(x)-r_t(y)+\beta_t\int(e_{t+1}(u)-e_{t+1}(v))d\Lambda_t^\pi$.
+Backward induction and positivity of integration establish \eqref{eq:pair53}. Each intersection uses another independently valid enclosure. Applying the same marginal identity to the two action kernels proves \eqref{eq:action-pair53}. Identical actions induce identical integrals, irrespective of their numerical representation.
+\end{proof}
+
+Unlike a pair-state distance, $D^-$ and $D^+$ retain an orientation. They need not satisfy symmetry or a triangle inequality. Taking $H_t=\max(|H_t^-|,|H_t^+|)$ before propagation recovers a safe symmetric construction, but can discard cancellation. The returned directed interval itself gives a nonnegative absolute bound by taking the larger absolute endpoint. A uniform bound must cover the entire feasible graph, not merely the actions that happen to be accepted.
+
+\subsection{A primitive, on-demand realization}
+The implemented realization sets $h=0$. Consequently $e_t=J_t^\pi$ and $r_t=c_t^\pi$, with $r_T=g$. This is a verification gauge, not a claim that a zero neural fit solves the economy. The initial policies still come from their separately reconstructed NBO or FVI generators. Equation~\eqref{eq:pair53} now propagates signed differences of original costs along paired policy trajectories. The error is neither zero nor action-null. No unknown policy value is supplied to the verifier.
+
+For the investment dynamics, the same scalar innovation couples the two trajectories. A bin contributes its probability times an interval containing the integrand on that entire bin. The sum therefore encloses the original continuous expectation; there is no uncharged midpoint-quadrature remainder. The last innovation is integrated analytically. Centered polynomial identities carry a separately enclosed state difference, avoiding subtraction of large cost levels. If a transition box intersects several observation cells, the actor range is the minimum and maximum over \emph{all} intersecting cells. Discontinuities are enclosed rather than smoothed away.
+
+For each observation cell, the program evaluates the candidate--incumbent contrasts and eight interval action ranges covering the full feasible set. Their signed endpoints produce \eqref{eq:epsilon53}. Their continuation-error intervals also give a uniform incumbent-anchored bound $R_t^{\mathrm{anc}}$. For any feasible $a,b$, subtracting their contrasts with the same incumbent yields
+\begin{equation}\label{eq:chi53}
+ \chi_t\le\min\{w_{t+1},2R_t^{\mathrm{anc}}\}.
+\end{equation}
+The values are strictly positive in the full-sweep experiment. Recorded maxima of $H$ or $D$ over visited boxes describe that executed pair tree; they are not mislabeled as global suprema over unused state pairs.
