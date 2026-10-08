@@ -1,0 +1,151 @@
+name: NBO R55 prospective science
+on:
+  push:
+    branches: [revision/econometrica-nbo-r55-referee-revision-2026-10-09]
+    paths: [.github/workflows/nbo-r55-science.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r55-science
+  cancel-in-progress: false
+env:
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    outputs:
+      source_sha: ${{ steps.pin.outputs.source_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-08-r54/
+            /revisions/2026-10-09-r55/
+          sparse-checkout-cone-mode: false
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn
+      - id: pin
+        name: Prepare, test and commit the source freeze before production
+        run: |
+          /usr/bin/python3 revisions/2026-10-09-r55/code/prepare55.py
+          /usr/bin/python3 revisions/2026-10-09-r55/code/tests55.py 2>&1 | tee revisions/2026-10-09-r55/audit/DEVELOPMENT_TESTS55.log
+          /usr/bin/python3 revisions/2026-10-09-r55/code/prospective55.py --freeze
+          git config user.name 'NBO prospective verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-09-r55
+          git commit -m 'R55: freeze ordinary scientific sources, economic targets and all confidence allocations before execution'
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r55-referee-revision-2026-10-09 HEAD:refs/heads/revision/econometrica-nbo-r55-source-2026-10-09
+          echo "source_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  study:
+    needs: freeze
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - d: 2
+            T: 2
+          - d: 4
+            T: 4
+          - d: 8
+            T: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.freeze.outputs.source_sha }}
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: revisions/2026-10-09-r55
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn
+      - name: Execute isolated complete services at each prespecified target
+        run: /usr/bin/python3 revisions/2026-10-09-r55/code/cohort55.py --d ${{ matrix.d }} --T ${{ matrix.T }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r55-results-d${{ matrix.d }}-T${{ matrix.T }}
+          path: revisions/2026-10-09-r55/results55/
+          compression-level: 1
+          retention-days: 30
+  learned-null:
+    needs: freeze
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.freeze.outputs.source_sha }}
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: revisions/2026-10-09-r55
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn
+      - name: Execute sample-split learned directions and uncertainty-aware decisions
+        run: /usr/bin/python3 revisions/2026-10-09-r55/code/null55.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r55-results-learned-null
+          path: revisions/2026-10-09-r55/results55/
+          compression-level: 1
+          retention-days: 30
+  deposit:
+    needs: [freeze, study, learned-null]
+    if: always() && needs.freeze.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: revision/econometrica-nbo-r55-referee-revision-2026-10-09
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: revisions/2026-10-09-r55
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nbo-r55-results-*
+          merge-multiple: true
+          path: revisions/2026-10-09-r55/results55
+      - name: Bind and retain complete or partial execution evidence without overwriting history
+        env:
+          STUDY_STATUS: ${{ needs.study.result }}
+          NULL_STATUS: ${{ needs.learned-null.result }}
+          FROZEN_SHA: ${{ needs.freeze.outputs.source_sha }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,os
+          r=Path('revisions/2026-10-09-r55')
+          manifest=json.loads((r/'audit/SOURCE_FREEZE55.json').read_text())
+          for name,h in manifest['source_sha256'].items():
+              if hashlib.sha256((r/name).read_bytes()).hexdigest()!=h:
+                  raise AssertionError('Scientific source changed: '+name)
+          files={str(p.relative_to(r)):hashlib.sha256(p.read_bytes()).hexdigest() for p in (r/'results55').rglob('*') if p.is_file()}
+          record=dict(status='executed' if os.environ['STUDY_STATUS']==os.environ['NULL_STATUS']=='success' else 'partial_execution',study_status=os.environ['STUDY_STATUS'],null_status=os.environ['NULL_STATUS'],frozen_source_commit=os.environ['FROZEN_SHA'],workflow_run=os.environ['GITHUB_RUN_ID'],files_sha256=files)
+          (r/'audit/EXECUTION55.json').write_text(json.dumps(record,indent=2,sort_keys=True)+'\n')
+          print(json.dumps({k:v for k,v in record.items() if k!='files_sha256'}))
+          PY
+          git config user.name 'NBO prospective verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-09-r55/results55 revisions/2026-10-09-r55/audit/EXECUTION55.json
+          git commit -m 'R55: retain prospective execution records, own inference endpoints and all process clocks'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r55-referee-revision-2026-10-09
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r55-execution-for-publication
+          path: |
+            revisions/2026-10-09-r55/results55/
+            revisions/2026-10-09-r55/audit/*55*
+            revisions/2026-10-09-r55/code/*55*
+            revisions/2026-10-09-r55/STUDY_PROTOCOL55.md
+          compression-level: 1
+          retention-days: 30
