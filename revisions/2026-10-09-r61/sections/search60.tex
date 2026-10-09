@@ -1,0 +1,123 @@
+\section{Exact action recovery and the Bellman accuracy contract}\label{sec:search60}
+The preceding lossless screen makes the number of exact comparisons depend on the separation of the best lattice actions. That dependence is useful when separation is substantial, but it is not a reason to assume a favorable regime. We now exploit the integrated objective directly. The resulting exact solver does not require a growth constant, a unique minimizer, or isolation of an algebraic root. We also separate this local optimization question from verification against the original Bellman optimum.
+
+\subsection{Finite differences instead of root isolation}
+Fix a state and a stored continuation. After the exact activation reductions, a scalar-action objective under a finite mixture of scalar uniform innovations has the form
+\begin{equation}\label{eq:objective60}
+ F(a)=c_1a+c_2a^2+c_4a^4
+      +\sum_{j=1}^{m}w_j\Phi_{r_j}(z_j+s_ja)
+      +\sum_{j=1}^{h}v_j(y_j+t_ja)_+^2,
+ \qquad a\in[0,\bar a],
+\end{equation}
+up to a common constant. Here $c_4\ge0$, all stored coefficients are rational, and $\Phi_r(z)=\mathbb E(z+U)_+$ for $U$ uniform on $[-r,r]$, with $\Phi_0(z)=z_+$. The original investment model has $c_4=4$. Mixture probabilities and shifts can be absorbed into the ridge weights and intercepts. Negative weights are allowed. Breakpoints are rational and divide the interval into at most $K\le 2m+h+1$ polynomial pieces. On each closed piece, continuity gives the polynomial $P(a)=d_0+d_1a+d_2a^2+c_4a^4$ at the endpoints as well.
+
+Let $p_j=P(j/Q)$ on the consecutive feasible indices $j=l,\ldots,u$ of one piece. Define $d_j=p_{j+1}-p_j$. Direct expansion gives
+\begin{align}
+ d_j&=\frac{d_1}{Q}+\frac{d_2(2j+1)}{Q^2}
+       +\frac{c_4(4j^3+6j^2+4j+1)}{Q^4},\label{eq:first-difference60}\\
+ d_{j+1}-d_j&=\frac{2d_2}{Q^2}
+       +\frac{c_4(12j^2+24j+14)}{Q^4}.\label{eq:second-difference60}
+\end{align}
+The last expression is nondecreasing for $j\ge0$, including when $d_2<0$. This is a discrete curvature property, not global convexity of the fitted objective.
+
+\begin{lemma}[Exact minimization of one piece]\label{lem:piece60}
+Suppose $0\le l\le u$ and $c_4\ge0$. The smallest minimizing index of $p_l,\ldots,p_u$ can be recovered using $O(1+\log(u-l+1))$ exact rational sign queries and at most four exact objective comparisons. If every second difference is negative, endpoints suffice. Otherwise let $j_0$ be the first index with nonnegative second difference. In addition to the endpoints, it suffices to retain $j_0$ and the first $k\ge j_0$ with $d_k\ge0$, when that index exists. If it does not exist, the right endpoint is the minimum of the remaining tail.
+\end{lemma}
+\begin{proof}
+A sequence with decreasing first differences is discretely concave and has a minimum at an endpoint. If $j_0$ exists, the prefix through $p_{j_0+1}$ is concave, whereas the tail beginning at $p_{j_0}$ is convex. A minimum of the full sequence is therefore either the left endpoint or a minimum of that convex tail. The latter is at the first nonnegative first difference, or at the right endpoint if all its first differences are negative. The first such index is the smallest tail minimizer, including a run of exact ties. Monotonicity of \eqref{eq:second-difference60} locates $j_0$ by integer bisection, and monotonicity of $d_j$ on the tail locates $k$ in the same way. Intervals with fewer than three indices are handled by their endpoints. Exact comparisons of the retained values complete the argument.
+\end{proof}
+
+\begin{theorem}[Root-free exact action witness]\label{thm:rootfree60}
+For \eqref{eq:objective60} on $\{j/Q:0\le j\le\bar j\}$, with $\bar a=\bar j/Q$, form the rational activation partition, intersect each piece with the integer lattice, and apply Lemma~\ref{lem:piece60}. Evaluate the original objective at the union of the retained indices, choosing the smallest index on an exact tie. The result is precisely the original lattice minimizer, without a separation assumption or an algebraic root calculation.
+
+A direct implementation uses
+\begin{equation}\label{eq:operations60}
+ O\bigl((m+h)^2+(m+h)\log(m+h+1)+K\log(\bar j+2)\bigr)
+\end{equation}
+rational operations and comparisons, and $O(m+h+K)$ stored rational numbers and indices. These are operation counts, not unit-cost bit bounds. If $b$ bounds the bit lengths of all operands and $\mathcal C_{\rm rat}(b)$ bounds one rational operation or comparison, multiplying \eqref{eq:operations60} by $\mathcal C_{\rm rat}(b)$ is a valid bit-cost account. For input coefficient bit length at most $B$, fixed degree and denominator $Q$, a conservative bound is
+\[
+ b=O\bigl((m+h+1)(B+\log(Q+1)+\log(m+h+2))\bigr).
+\]
+\end{theorem}
+\begin{proof}
+The activation formulas are exact on every piece. Its lattice intersection is the consecutive interval from the ceiling of its left endpoint times $Q$ to the floor of its right endpoint times $Q$; empty intersections are skipped. These intersections cover every lattice action. The lemma retains a minimizing index for every nonempty intersection and its smallest minimizer. Exact comparison under the original objective is unaffected by the piecewise constants or the earlier common-constant reduction, and gives the original tie rule globally.
+
+Sorting breakpoints costs $O((m+h)\log(m+h+1))$ comparisons. Constructing the polynomial coefficients independently in each piece costs $O(K(m+h))$ operations. The integer bisections cost $O(K\log(\bar j+2))$. There are $O(K)$ final candidate indices, and direct evaluation of the original objective costs $O(K(m+h))$. The implementation stores the features, breakpoints and candidate indices, rather than an array indexed by every lattice point. Finally, products of a fixed number of input rationals have bit length proportional to the input lengths. Summing at most $O(m+h)$ such terms admits a common denominator formed by their product; this gives the stated conservative operand bound, including powers of $Q$ and the rational breakpoint calculations.
+\end{proof}
+
+The theorem is useful in precisely the case where interval separation is inconclusive. A flat piece, a tie between consecutive actions, or a large signed cancellation does not prevent exact bisection. It does not assert that bisection is always fastest: when the lattice is short relative to the activation partition, native exhaustive evaluation can be cheaper. The ablation below therefore includes both, as well as the original symbolic solver after the same exact reduction. Discrete curvature and verified interval exclusion are established numerical principles \citep{murota2003,moore2009}. The result here is their explicit, root-free realization for the integrated NBO objective, with an exact original-witness contract and a bit-aware implementation account.
+
+\subsection{Several controls and uniform-box shocks}
+The lossless witness contract itself need not be scalar. Let $a\in\mathbb R^p$ belong to a bounded rational polytope and to a declared rational action lattice. For a ridge of a one-hidden-layer ReLU continuation, affine exposure gives an argument $z+s^\top a+\sum_{i=1}^{q}U_i$, where the $U_i$ are independent and uniform on $[-r_i,r_i]$. Zero radii are removed. Finite mixtures of such boxes are allowed, with nonnegative rational probabilities summing to one.
+
+\begin{proposition}[Exact integrated ridge]\label{prop:box-shock60}
+For $q\ge1$ and $r_i>0$,
+\begin{equation}\label{eq:box-shock60}
+ \mathbb E\Bigl(z+s^\top a+\sum_{i=1}^q U_i\Bigr)_+
+ =\frac{\displaystyle\sum_{\epsilon\in\{-1,1\}^q}
+           \Bigl(\prod_{i=1}^q\epsilon_i\Bigr)
+           \Bigl(z+s^\top a+\sum_{i=1}^q\epsilon_i r_i\Bigr)_+^{q+1}}
+        {2^q(q+1)!\prod_{i=1}^q r_i}.
+\end{equation}
+Consequently each fitted objective is rational at every feasible lattice action. Its value and valid box enclosures can be computed with signed output weights and exact ties. Evaluation costs include the $2^q$ terms per ridge; the formula does not remove shock-dimension dependence.
+\end{proposition}
+\begin{proof}
+An iterated antiderivative of $x_+$ of order $q$ is $x_+^{q+1}/(q+1)!$. Apply the fundamental theorem of calculus in each integration coordinate and divide by the uniform-box volume. Each boundary choice supplies the corresponding sign in \eqref{eq:box-shock60}. Rationality follows from the rational primitives and lattice. The expected hinge is monotone in its scalar argument, so evaluating it at the exact minimum and maximum of $z+s^\top a$ on a rectangle supplies a valid enclosure. A negative output weight reverses the endpoints. Addition and nonnegative mixture weighting preserve inclusion.
+\end{proof}
+
+The executed two-control extension uses shared capacity $a_1+a_2\le1/8$, exposure columns $(1/2,1/4)$ and $(1/4,1/2)$, and the original first shock together with an optional independent second shock. The extension is stated rather than conflated with the scalar experiment: setting $a_2=0$ and disabling the second shock recovers the original action-dependent objective. The quartic lemma is used only in its stated scalar, piecewise-quartic subclass. The two-shock and two-control calculation instead uses verified box subdivision and exact feasible-point comparison.
+
+\begin{theorem}[Finite constrained recovery with a work budget]\label{thm:box-search60}
+Suppose a finite rational action lattice is intersected with a bounded rational polytope, and every visited integer rectangle has a valid lower objective bound. Maintain an exactly evaluated feasible incumbent and a fixed lexicographic tie rule. Discard a rectangle only if it is infeasible, its lower bound is strictly greater than the incumbent value, or equality holds and its smallest possible index is not earlier than the incumbent. Split any other nonsingleton rectangle into two disjoint integer rectangles, and evaluate singleton actions exactly. Then exhaustive subdivision returns the original smallest minimizing feasible action. Switching after any declared node budget to an exact exhaustive solver preserves this conclusion and charges the preceding work in addition to the fallback.
+
+For side cardinalities $N_1,\ldots,N_p$, a depth-first implementation has depth at most $\sum_i\lceil\log_2N_i\rceil$ under midpoint splitting. Its rectangle stack stores $O(p\sum_i\log(N_i+1))$ integers. Without pruning it can still visit $O(\prod_i N_i)$ nodes. Objective arithmetic, rational bit lengths and exact-polytope feasibility work must be added to these combinatorial counts.
+\end{theorem}
+\begin{proof}
+Each split partitions the remaining integer indices without omission. A discarded infeasible rectangle contains no admissible competitor. Strict lower-bound exclusion removes no minimizer that could improve the incumbent. In the equality case no point can improve its value, and the index condition excludes an earlier tied minimizer. Every unpruned feasible singleton is compared exactly. Finite subdivision therefore retains the globally best value and the specified first minimizer. An exact terminating fallback solves the same remaining mathematical problem, whether or not it reexamines previously visited points. Its repeated work affects cost, not validity. Midpoint splitting halves the active side range, yielding the depth and stack bounds; a complete binary partition has fewer than twice as many nodes as its full rectangular lattice has points.
+\end{proof}
+
+Replacing a solver by either theorem preserves the earlier prospective transcript whenever that controller depends on the mathematical witness rather than elapsed time or solver diagnostics. This transfers exactness to the acquired policy and its certificates; it does not imply that a fitted-optimal action is optimal for the true continuation. That latter error remains in the existing transfer theorem and is examined by an independent all-state calculation next.
+
+\subsection{A direct certificate against the original Bellman optimum}
+Let $\mathcal C_t$ be a finite cover of the original state domain with an unambiguous ownership rule for shared boundaries. Starting from terminal bounds on $g$, maintain a piecewise lower function $L_{t+1}$ for the Bellman value and a piecewise upper function $U_{t+1}$ for the value of an explicitly constructed continuation policy. On a cell $C$, let $\mathcal B_t(C)$ cover every action feasible at every state in $C$, and let $\mathcal A_t(C)$ contain only actions feasible throughout $C$. Suppose verified endpoints satisfy
+\begin{align*}
+ \ell_t(C,B)&\le c_t(x,a)+\beta_tP_t^a L_{t+1}(x)
+      &&(x\in C,\ a\in B\cap A_t(x)),\\
+ u_t(C,b)&\ge c_t(x,b)+\beta_tP_t^b U_{t+1}(x)
+      &&(x\in C,\ b\in\mathcal A_t(C)).
+\end{align*}
+A lower cover may include additional infeasible actions, but every evaluated extension must retain a valid lower enclosure on its feasible subset. All reached state cells and the full original innovation law are included in the expectations. Define
+\[
+ L_t(C)=\min_{B\in\mathcal B_t(C)}\ell_t(C,B),\qquad
+ U_t(C)=\min_{b\in\mathcal A_t(C)}u_t(C,b),
+\]
+and implement the minimizing upper candidate on $C$.
+
+\begin{theorem}[Whole-domain Bellman bracket]\label{thm:bellman-bracket60}
+The constructed complete policy $\pi$ is feasible and satisfies
+\begin{equation}\label{eq:bellman-bracket60}
+ L_t(C)\le J_t^*(x)\le J_t^\pi(x)\le U_t(C),\qquad x\in C.
+\end{equation}
+Hence $\max_C\{U_t(C)-L_t(C)\}$ is an all-state upper bound on loss against the original continuous-action Bellman optimum. A declared tolerance is attained when its outward bound passes the corresponding comparison; no initial distribution or reference-zero gain is needed.
+
+For a refining family, suppose the ideal lower and upper one-step enclosures applied to the true next Bellman value have uniform errors at most $\eta_t$, inclusive of robust-action approximation, state and innovation covering, and arithmetic. If the terminal lower and upper errors are each at most $\eta_T$, then
+\[
+ \sup_C\{U_t(C)-L_t(C)\}
+ \le 2\sum_{j=t}^{T}\Bigl(\prod_{i=t}^{j-1}\beta_i\Bigr)\eta_j.
+\]
+In particular, uniformly vanishing such allowances give arbitrarily small Bellman brackets in finite horizon. The runtime certificate is \eqref{eq:bellman-bracket60}; the consistency statement does not require the algorithm to observe $J^*$.
+\end{theorem}
+\begin{proof}
+Assume the next-date inequalities. Monotonicity of each action kernel gives $P_t^aL_{t+1}\le P_t^aJ_{t+1}^*$. The complete action cover and the lower enclosure therefore imply $L_t(C)\le\inf_{a\in A_t(x)}\{c_t(x,a)+\beta_tP_t^aJ_{t+1}^*(x)\}=J_t^*(x)$. The chosen upper action is feasible at every state in $C$. Its continuation policy has value at most $U_{t+1}$, so its current value is at most the chosen upper endpoint $U_t(C)$. Feasibility gives $J_t^*\le J_t^\pi$. Backward induction proves the bracket.
+
+For consistency, let $e_t^-$ bound $J_t^*-L_t$ and let $e_t^+$ bound $U_t-J_t^*$. Applying a probability kernel to a uniformly bounded next-date discrepancy multiplies it by at most $\beta_t$. The stated ideal enclosure errors consequently give $e_t^-\le\eta_t+\beta_te_{t+1}^-$ and $e_t^+\le\eta_t+\beta_te_{t+1}^+$, with terminal errors at most $\eta_T$. Adding the two unrolled inequalities proves the bound. Primitive uniform continuity and consistent enclosure rules supply vanishing allowances on compact domains when the robust feasible menus and full-action covers converge. These are hypotheses for consistency, not an uncharged value-function oracle.
+\end{proof}
+
+The numerical implementation uses exact rectangle extrema of stored outward bounds. At the last date it integrates the original terminal cost analytically. At earlier dates each innovation bin retains its exact original probability, and no midpoint is substituted for the bin's conditional expectation. This calculation is a conventional constructive benchmark in the same NBO economy. It puts an attained all-state accuracy and the work paid for it beside the learned prospective services, rather than presenting improvement relative to zero investment as a solution of the Bellman problem.
+
+\subsection{The economic value of an exact implementation change}
+For two implementations returning the identical policy, let $w_0,w_1$ be their measured per-service work, $k_0,k_1$ their one-time compilation or installation work, and $\lambda\ge0$ the price of the recorded work unit. Over $H$ uses, with an additional implementation charge $I$, the new-minus-old total cost is
+\[
+ \lambda\{H(w_1-w_0)+(k_1-k_0)\}+I.
+\]
+When $w_1<w_0$, the recorded computation saving pays for a positive setup difference only beyond the corresponding break-even use count. This condition is reported separately from policy-cost comparisons and from the cold single-use boundary. No electricity tariff, processor frequency, installation price or external welfare calibration is inferred from a hosted-runner clock.

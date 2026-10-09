@@ -1,0 +1,126 @@
+\section{Directed certificates and complete policy improvement}\label{sec:directed54}
+The action-contrast result permits an error component to be large when it is irrelevant to a decision. A second source of conservatism remains: taking an absolute value before comparing two actions discards the direction of a useful continuation difference. We retain that direction throughout the verification calculation. The policy generator, the original economic primitives, and the Bellman optimum are unchanged.
+
+\subsection{Whole-cell improvement and accuracy}
+Fix a complete incumbent $\pi^k$ and write
+\[
+ A_t^k(x,a)=c_t(x,a)+\beta_t P_t^aJ_{t+1}^{\pi^k}(x)
+                       -J_t^{\pi^k}(x).
+\]
+Thus $A_t^k(x,\pi_t^k(x))=0$. Let $C$ be an observation cell. Candidate actions must be implementable and feasible for every true state in $C$. A finite family $\mathcal B_t(C)$ must cover every feasible action at every such state; a covering set may contain additional, infeasible actions if its lower enclosure remains valid on the feasible subset. Suppose verified numbers satisfy
+\begin{align*}
+ A_t^k(x,a_i)&\le u_t^k(C,a_i) &&(x\in C),\\
+ \ell_t^k(C,B)&\le A_t^k(x,a) &&(x\in C,\ a\in B\cap A_t(x)).
+\end{align*}
+All numerical errors are included in these endpoints. The incumbent is an additional candidate with exact upper endpoint zero. Put
+\begin{equation}\label{eq:directed-selection54}
+ U_t^k(C)=\min\{0,\min_i u_t^k(C,a_i)\},\qquad
+ L_t^k(C)=\min\{0,\min_{B\in\mathcal B_t(C)}\ell_t^k(C,B)\}.
+\end{equation}
+Select an action attaining $U_t^k(C)$, retaining the incumbent on a tie, and implement all selected dates simultaneously. This is a finite computation; it does not presume access to the policy value in the display defining $A$.
+
+\begin{theorem}[Directed finite-sweep certificate]\label{thm:directed54}
+Consider the bounded, finite-horizon expected-cost model of Theorem~\ref{thm:contrast52}. Suppose the whole-cell feasibility and enclosure conditions above hold at every pass. Set
+\[
+ \varepsilon_t^k=\sup_C\{U_t^k(C)-L_t^k(C)\}.
+\]
+Then $\varepsilon_t^k\ge0$, $J_t^{\pi^{k+1}}(x)\le J_t^{\pi^k}(x)$ at every state and date, and
+\begin{equation}\label{eq:directed-recursion54}
+ E_t^{k+1}\le\beta_t E_{t+1}^k+\varepsilon_t^k,
+ \qquad E_t^k=\sup_x\{J_t^{\pi^k}(x)-J_t^*(x)\}.
+\end{equation}
+Writing $B_{t,0}=1$ and $B_{t,j}=\prod_{i=0}^{j-1}\beta_{t+i}$, for $K\ge1$ and $m=\min\{K,T-t\}$,
+\[
+ E_t^K\le\sum_{j=0}^{m-1}B_{t,j}\varepsilon_{t+j}^{K-1-j}
+            +B_{t,m}E_{t+m}^{K-m}.
+\]
+The final term vanishes when $K\ge T-t$. In particular, exact directed greedy certificates yield the original Bellman optimum within $T$ passes. The coefficient one on $\varepsilon$ cannot be reduced uniformly.
+\end{theorem}
+
+\begin{proof}
+For every $x\in C$, the selected action has advantage at most $U_t^k(C)\le0$. Starting from the common terminal value and proceeding backwards, monotonicity of conditional expectation gives $J_t^{\pi^{k+1}}\le J_t^{\pi^k}$. The covering property also gives
+\[
+ A_t^k(x,\pi_t^{k+1}(x))-\inf_{a\in A_t(x)}A_t^k(x,a)
+       \le U_t^k(C)-L_t^k(C).
+\]
+The left side is nonnegative, so the right side is nonnegative. Replacing the new continuation by the old one using the already proved safety inequality, and then comparing with an arbitrarily near-optimal Bellman action, yields \eqref{eq:directed-recursion54}. Taking the limit removes any need for attainment of the continuous-action infimum. Iteration proves the displayed finite-sweep bound. For sharpness, take one decision date, an incumbent of cost $\delta>0$, and an unproposed feasible action of cost zero. The exact incumbent upper advantage is zero and the exact cover lower advantage is $-\delta$. Retaining the incumbent gives both $E=\delta$ and $\varepsilon=\delta$.
+\end{proof}
+
+This result does not replace Theorem~\ref{thm:contrast52}. The earlier theorem is useful when only a symmetric error bound is available. The present certificate is useful when a numerical calculation retains signed endpoints. In either case safety for a proposed action is weaker than accuracy against the full feasible infimum. The action cover in \eqref{eq:directed-selection54} is indispensable for the latter. A small gap on a finite proposal menu alone is not a small Bellman gap.
+
+\subsection{Signed residual transport without a policy-value oracle}
+Fix a critic $h$ and incumbent $\pi$. Let $e_t=J_t^\pi-h_t$ and $r_t=\mathcal T_t^\pi h_{t+1}-h_t$, with $r_T=g-h_T$. Suppose $\mathcal H_t(x,y)$ is an interval enclosing $r_t(x)-r_t(y)$. For a coupling $\Lambda_t^\pi(x,y)$ with the stated policy-kernel marginals, interval addition and integration define
+\begin{equation}\label{eq:signed-residual54}
+ \mathcal D_T(x,y)=\mathcal H_T(x,y),\qquad
+ \mathcal D_t(x,y)=\mathcal H_t(x,y)+\beta_t
+          \int\mathcal D_{t+1}(u,v)\,d\Lambda_t^\pi(x,y)(u,v).
+\end{equation}
+Integration means an enclosure of the lower and upper integrals, not midpoint quadrature. Independently valid signed evaluation bands may be intersected with this interval; an empty intersection signals a failed certificate and must stop acceptance.
+
+\begin{proposition}[Directed residual enclosure]\label{prop:signed-residual54}
+The interval $\mathcal D_t(x,y)$ encloses $e_t(x)-e_t(y)$. If $\Lambda_t(x;a,b)$ couples the two action kernels and $\mathcal A_t^h(x;a,b)$ encloses
+\[
+ c_t(x,a)-c_t(x,b)+\beta_t(P_t^a-P_t^b)h_{t+1}(x),
+\]
+then
+\begin{equation}\label{eq:directed-advantage54}
+ \mathcal A_t^h(x;a,b)+\beta_t
+       \int\mathcal D_{t+1}(u,v)\,d\Lambda_t(x;a,b)(u,v)
+\end{equation}
+encloses $A_t^\pi(x,a)$ when $b=\pi_t(x)$. Replacing each integral by an outward enclosure preserves the result. Taking absolute endpoint maxima recovers an admissible symmetric action-contrast certificate.
+\end{proposition}
+
+\begin{proof}
+The identity $e_t=r_t+\beta_tP_t^\pi e_{t+1}$ and the marginal conditions imply the corresponding identity for differences at $(x,y)$. Backward induction gives \eqref{eq:signed-residual54}. Substitute $J_{t+1}^\pi=h_{t+1}+e_{t+1}$ into the advantage and use the action-kernel marginal conditions to obtain \eqref{eq:directed-advantage54}. Endpoint integration is order preserving because coupling weights are nonnegative. Intersection with another valid enclosure preserves containment.
+\end{proof}
+
+The choice $h=0$ is a valid verification gauge: $e=J^\pi$, the running residual is the incumbent's stage cost, and the terminal residual is $g$. It does not change the previously constructed policy or claim that a zero critic is an effective policy generator. Under this gauge, a common-innovation rollout of stage-cost differences computes the signed recursion directly. Its computational cost must therefore be charged as policy evaluation. Neither a neural critic nor a native representation receives that work for free.
+
+\subsection{A computable specialization in the original investment economy}
+The full-sweep implementation uses the same two-dimensional nonlinear investment primitives as the preceding study. For two coupled states $x,y$, retain a separate enclosure of $\Delta=x-y$ rather than recomputing it by subtracting two large state boxes. For the cyclic bilinear transition, the deterministic difference in coordinate $j$ is
+\[
+ \Delta_j\left(\frac12+\frac{1-x_v}{16}\right)
+ +\Delta_v\left(\frac18-\frac{y_j}{16}\right)+b_j(a-b),
+ \quad v\ne j,\quad (b_1,b_2)=\left(\frac12,\frac14\right).
+\]
+A common innovation cancels in this difference, but is still integrated with its original continuous marginal law. Centered polynomial identities evaluate differences of quadratic and quartic costs. For a shortage term, the intersection
+\[
+ u_+-v_+\ \in\ ( [u]_+-[v]_+ )\cap
+       [\min\{0,\underline\Delta\},\max\{0,\overline\Delta\}]
+\]
+retains a verified interval for $\Delta=u-v$. In regions where both arguments are positive, their difference is exactly $\Delta$; where both are negative it is zero. These identities are evaluated outward.
+
+The acquired actor is discontinuous at cell boundaries. Its action range on a rectangle is obtained from exact minima and maxima of integer action indices, including all intersected cells. No Lipschitz assumption is imposed on that actor. Innovation intervals are integrated by enclosures on dyadic bins with their exact probabilities. The final innovation is integrated analytically using the original polynomial and shortage identities. The resulting lower covers include every continuous feasible action, whereas only robustly feasible lattice actions can be selected.
+
+\begin{proposition}[Work, storage, and certified approximation]\label{prop:complexity54}
+Suppose an acquired actor has $n^d$ cells per date and a range-minimum and range-maximum table over dyadic rectangles. Its preprocessing and stored table size are $O(Tn^d(1+\log n)^d)$, and a rectangle query uses $O(d+2^d)$ work. Let $N$ be the number of verified observation cells, $A$ the total number of candidate and lower-cover intervals per cell, and $q$ the number of innovation bins at each unresolved date. If the last innovation is integrated analytically, one full pass visits at most
+\begin{equation}\label{eq:pair-work54}
+ AN\sum_{r=1}^{T}\sum_{j=0}^{r-1}q^j
+\end{equation}
+pair nodes. Streaming the innovation children requires $O(Tmd)$ working state storage for a batch of $m$ roots, in addition to actor tables and $O(TAN)$ retained endpoint records. Thus a full pair-state table is unnecessary, but tensor-state and exponential-horizon costs have not disappeared.
+
+More generally, suppose an approximate signed pair calculation has a verified terminal endpoint error $\eta_T$ and local endpoint error at most $\eta_t$ at date $t$, inclusive of residual approximation, compression, integration, and arithmetic. Expanding each computed interval by
+\[
+ b_T=\eta_T,\qquad b_t=\eta_t+\beta_tb_{t+1}
+\]
+is sufficient to enclose the exact signed recursion. In an action-kernel integral the continuation expansion is multiplied by $\beta_t$; its own integration and arithmetic errors must also be added.
+\end{proposition}
+
+\begin{proof}
+There are $n^d$ base locations and at most $(1+\log_2 n)^d$ side-length combinations. Each rectangular extremum is reconstructed from $2^d$ overlapping dyadic rectangles. A root with $r$ remaining dates has at most $1+q+\cdots+q^{r-1}$ visited nodes; summing over roots, dates, and action intervals gives \eqref{eq:pair-work54}. Processing one child at a time gives the stated stack bound. Finally, integration against a probability coupling is nonexpansive in a uniform endpoint error. Backward induction then proves the error expansion.
+\end{proof}
+
+In the executed case, $d=2$, $n=32$, $A=17$ (nine proposals and eight continuous-action cover intervals), and $q=16$. Each actor table occupies 149,760 bytes in the recorded integer representation, hence 299,520 bytes for two dates and 449,280 bytes for three. These are table bytes, not process peak memory. Identity pairs can terminate without recursion and reduce actual work below \eqref{eq:pair-work54}. Verified compression could further reduce storage, but its error must enter the displayed recursion; unverified interpolation across policy jumps is inadmissible. The present experiment executes streamed interval recursion, not a low-rank pair approximation.
+
+\subsection{Approximately null components and misspecification}
+An exactly null direction is a special case of a quantitative bound. Let $n(y)=M\sigma(v^\top y+b)$, where $\sigma$ is one-Lipschitz. For a verified coupling of the actual action kernels, suppose $s(x;a,b)$ bounds $\mathbb E|v^\top(Y^a-Y^b)|$. Then
+\begin{equation}\label{eq:approx-null54}
+ |(P_t^a-P_t^b)n(x)|\le |M|s(x;a,b).
+\end{equation}
+This follows directly from the Lipschitz inequality and integration. For a common-innovation affine exposure $Y^a-Y^b=B(a-b)$, the bound is $|M|\,|v^\top B(a-b)|$. If $v=v_0+\delta v$, $B=B_0+\delta B$, and $v_0^\top B_0=0$, the non-null coefficient is
+\[
+ \delta v^\top B_0+v_0^\top\delta B+\delta v^\top\delta B.
+\]
+Any action-dependent innovation discrepancy under the actual coupling contributes its own expected absolute projection. These terms cannot be set to zero because a fitted component resembles an invariant.
+
+The deposited perturbation catalogue varies the ReLU direction, action exposure, and an action-dependent innovation-mean shift. Its positive bound is substituted into the same incumbent gate. It also records the policy that would result from falsely declaring the component null. This is a controlled model-misspecification test with known perturbed primitives, not a learned-null discovery procedure or an inference guarantee for an unknown transition law. The original investment laws and the original cost comparisons remain unchanged.
