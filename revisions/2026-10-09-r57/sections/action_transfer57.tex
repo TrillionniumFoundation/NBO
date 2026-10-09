@@ -1,0 +1,105 @@
+\section{From fitted action witnesses to economic policy accuracy}\label{sec:action-transfer57}
+An exact action witness has a definite but limited meaning: it removes optimization error for the stored continuation at a reported state. The next result identifies the further obligations needed to turn that statement into an error bound for the implemented economic policy. It also isolates a comparison that can be made without attributing the common verifier's contribution to a particular representation.
+
+Fix a complete reference policy $\pi$, a date $t$, and an acquired cell $C$ with representative $x_C$. Write
+\[
+ Q^h(x,a)=c_t(x,a)+\beta_tP_t^ah_{t+1}(x),\qquad
+ Q^\pi(x,a)=c_t(x,a)+\beta_tP_t^aJ_{t+1}^{\pi}(x).
+\]
+The superscripts refer to the continuation used, not to different economic primitives. Let $G_C$ be a finite action lattice feasible throughout $C$, containing the reference action. The reference is assumed implementable on the cell; all selected actions are measurable under the same observation contract. For $g_C\in G_C$, define its reported-state optimization loss by
+\begin{equation}\label{eq:optimization-loss57}
+ \kappa_C=Q^h(x_C,g_C)-\min_{b\in G_C}Q^h(x_C,b).
+\end{equation}
+This is a nonnegative, finite quantity. Theorem~\ref{thm:algebraic56} makes it exactly zero for its returned lattice witness, regardless of the training loss or the signs of the learned output weights.
+
+For all $x\in C$ and $a,b\in G_C$, suppose the following nonnegative bounds are available:
+\begin{align}
+ \big|[Q^h(x,a)-Q^h(x,b)]-[Q^h(x_C,a)-Q^h(x_C,b)]\big|
+       &\le\eta_C,\label{eq:spatial-contrast57}\\
+ \big|[Q^\pi-Q^h](x,a)-[Q^\pi-Q^h](x,b)\big|
+       &\le\chi_C.\label{eq:evaluation-contrast57}
+\end{align}
+Suppose also that every $a\in A_t(x)$ has a $b\in G_C$ with
+\begin{equation}\label{eq:robust-cover57}
+ Q^\pi(x,b)\le Q^\pi(x,a)+\delta_C.
+\end{equation}
+These are distinct requirements. The first concerns acquisition within a cell, the second the action-relevant continuation error, and the third the difference between the robust deployed lattice and the original state-dependent continuous feasible set.
+
+Let $[l_C(g_C),u_C(g_C)]$ enclose the true reference advantage
+$Q^\pi(x,g_C)-J_t^\pi(x)$ throughout $C$. Let $w_C$ be a verified upper bound on this interval's width. The adoption rule of Theorem~\ref{thm:directed56} is applied to a candidate set containing $g_C$ and the reference, with selected upper endpoint $U_C\le\min\{0,u_C(g_C)\}$. Denote its complete-action lower endpoint by $L_C$.
+
+\begin{theorem}[Fitted witness transfer]\label{thm:transfer57}
+Under \eqref{eq:optimization-loss57}--\eqref{eq:robust-cover57} and the valid whole-cell endpoints above, the selected action $a_C$ satisfies, at every $x\in C$,
+\begin{align}
+ Q^\pi(x,a_C)&\le J_t^\pi(x),\label{eq:transfer-safety57}\\
+ Q^\pi(x,a_C)-\inf_{a\in A_t(x)}Q^\pi(x,a)
+ &\le \min\{U_C-L_C,\rho_C\},\label{eq:transfer-gap57}\\
+ \rho_C&:=\kappa_C+\eta_C+\chi_C+\delta_C+w_C.\nonumber
+\end{align}
+Consequently the directed finite-sweep recursion remains valid with
+\[
+ \varepsilon_t^k=\sup_C\min\{U_t^k(C)-L_t^k(C),\rho_t^k(C)\}.
+\]
+In particular, exact neural action search removes $\kappa_C$ from this bound, not the other four terms. The coefficient one on the sum $\rho_C$ is sharp without additional restrictions.
+\end{theorem}
+\begin{proof}
+Fix $x\in C$, an arbitrary feasible action $a$, and its covering lattice point $b$. Equations~\eqref{eq:optimization-loss57}--\eqref{eq:evaluation-contrast57} imply
+\[
+ Q^\pi(x,g_C)-Q^\pi(x,b)
+ \le\kappa_C+\eta_C+\chi_C.
+\]
+Adding \eqref{eq:robust-cover57} gives a bound against $Q^\pi(x,a)$ with the additional term $\delta_C$. The endpoint rule gives
+\[
+ Q^\pi(x,a_C)-J_t^\pi(x)
+ \le U_C\le u_C(g_C)
+ \le Q^\pi(x,g_C)-J_t^\pi(x)+w_C.
+\]
+Combining these inequalities and taking the infimum over $a$ proves the $\rho_C$ bound. The full-action lower cover gives the independent $U_C-L_C$ bound. Also $U_C\le0$, proving \eqref{eq:transfer-safety57}. Backward induction from the common terminal value gives safety for simultaneous adoption of all dates. The proof of Theorem~\ref{thm:directed56} then applies with the smaller valid local error; no optimizer attainment for the continuous infimum is needed.
+
+For sharpness, take one decision date, one observation cell containing one state, exact fitted values, and two actions with costs zero and $\delta>0$. Let the incumbent and only proposed action be the action of cost $\delta$, but let the lattice and full lower cover contain both actions. Then $\kappa_C=\delta$, the other four terms are zero, and the retained policy has loss exactly $\delta$. Thus the coefficient multiplying the unrestricted sum cannot be smaller than one.
+\end{proof}
+
+The width term records the conservatism of certifying the proposed action and then choosing among upper endpoints. It is necessary: the action with the smallest upper bound need not have the smallest true advantage. A separately verified bound on $u_C(g_C)-[Q^\pi(x,g_C)-J_t^\pi(x)]$ can replace the full interval width. Likewise, sharper contrast bounds may replace \eqref{eq:spatial-contrast57} and \eqref{eq:evaluation-contrast57}. Their validity must be established before they are used in the policy account.
+
+\subsection{A primitive continuous-action allowance}
+The continuous-action condition is explicit in the investment family. Let $\bar a(x)$ be its capacity, $\Delta$ the action spacing, and
+\[
+ m_C\Delta=\Delta\left\lfloor\frac{\inf_{x\in C}\bar a(x)}{\Delta}\right\rfloor,
+ \qquad G_C=\{0,\Delta,\ldots,m_C\Delta\}.
+\]
+If $Q^\pi(x,\cdot)$ is uniformly $L_a$-Lipschitz, then
+\begin{equation}\label{eq:lattice-cover57}
+ \delta_C=L_a\{\operatorname{osc}_C\bar a+\Delta\}
+\end{equation}
+is admissible. For the smooth installed zero policy in the original normalized family, one may take
+\begin{equation}\label{eq:primitive-action-lipschitz57}
+ L_a=\frac34+\frac{900}{91}.
+\end{equation}
+\begin{proof}
+For a feasible $a$, use the smaller of its downward lattice rounding and $m_C\Delta$. Its distance from $a$ is at most $\operatorname{osc}_C\bar a+\Delta$, proving \eqref{eq:lattice-cover57}. The derivative of $a^2+4a^4$ has absolute value at most $3/4$ on $[0,1/4]$. Proposition~\ref{prop:work56} bounds the zero-policy value's Lipschitz constant in the maximum norm by $1920/91$. The action exposure has maximum norm $1/2$ and the discount is $15/16$. Therefore the continuation's action Lipschitz constant is at most $900/91$, proving \eqref{eq:primitive-action-lipschitz57}.
+\end{proof}
+The primitive allowance is valid but can be conservative. The executed policy bound uses the direct continuous-action lower cover, not a claim that the primitive sum is always tighter. The transfer theorem permits both accounts and shows exactly where an improved action search can enter the original Bellman-accuracy objective.
+
+\subsection{Nested proposals and identifiable verification gains}
+Consider two candidate sets $M_0\subseteq M_1$ for the same reference, acquired cells, complete-action lower cover and valid upper-endpoint procedure. The endpoints of shared actions must be identical; this condition prevents changes in a fitted residual cache from being confused with changes in the proposed actions. Both sets retain the reference with exact upper advantage zero.
+
+\begin{corollary}[Nested-candidate certificate]\label{cor:nested57}
+Let $U_i(C)$ be the minimum candidate upper endpoint for $M_i$. Then
+\[
+ U_1(C)\le U_0(C)\le0,\qquad
+ 0\le U_1(C)-L(C)\le U_0(C)-L(C).
+\]
+The improvement is strict precisely when an added candidate has upper endpoint strictly below $U_0(C)$. Both returned complete policies are statewise safe relative to the reference. These inequalities alone do not order their actual expected costs.
+\end{corollary}
+\begin{proof}
+Taking a minimum over a larger finite set proves the first inequalities. The valid full-action lower bound is no greater than every feasible action's advantage and hence no greater than either selected upper bound. This proves the nonnegative gap inequalities and the strictness criterion. Safety follows from Theorem~\ref{thm:directed56}. To see the last distinction, consider a single state and date, an incumbent of cost $2$, an old candidate of cost $1$ with advantage enclosure $[-1,-1/2]$, and a new candidate of cost $5/4$ with exact advantage $-3/4$. The new candidate has the smaller upper endpoint and is adopted, although its cost is higher than that of the old candidate. Both improve the incumbent. A lower cover of $-1$ makes both certificates valid.
+\end{proof}
+
+In the new experiment the ReLU-exact mode retains every ReLU-menu action and adds the algebraic witness. Both use the same fitted coefficients at a given construction attempt and a critic-independent smooth-reference verifier. Thus the corollary is an observed, testable comparison rather than a representation claim. Exact center-objective regret, stricter upper endpoints, changed deployed actions and independent expected-cost differences are reported separately.
+
+\subsection{A paid decision between returned policies}
+Let $[l,u]$ cover $J(\pi_1)-J(\pi_0)$ on a simultaneous event after both policies have been selected. If adopting $\pi_1$ rather than $\pi_0$ incurs an additional replacement charge $\tau$ and measured computational work difference $\Delta W$, its net cost difference at computation price $\lambda\ge0$ lies in
+\begin{equation}\label{eq:incremental-adoption57}
+ [l+\tau+\lambda\Delta W,\ u+\tau+\lambda\Delta W].
+\end{equation}
+A negative upper endpoint supports adoption; a positive lower endpoint rules it out on the same event. Between those regions the comparison is unresolved. This affine transformation is valid for every declared nonnegative price on that event. It does not turn a normalized benchmark into an estimated installation fee. It links a particular fitted-action computation to the same economic policy and resource question as the original NBO construction.
