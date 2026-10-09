@@ -37,9 +37,11 @@ def main():
     need(science['services']==96 and science['attained']==80 and science['budget_exhausted']==16,'Service catalogue mismatch')
     need(fixed['distinct_actors']==5 and fixed['original_actor_aliases']==32,'Fixed-actor catalogue mismatch')
     need(factor['checked_exact_answers']==3160 and factor['workers']==2,'Factorial answer count')
-    binding_path=R/'audit/SOURCE_BINDING61.json'
-    before=bindings()
+    binding_path=R/'audit/SOURCE_BINDING61.json';before=bindings()
     if binding_path.exists():need(before==read(binding_path)['files_sha256'],'Clean source/scientific-output binding differs')
+    # The ordinary build owns this binary but never rewrites a scientific
+    # compilation receipt or charges this fresh timer to an earlier service.
+    b.run(['g++','-O3','-std=c++17','code/search60.cpp','-o','build/native60'],'r61-native-build')
     tests=b.historical()
     for script in SCRIPTS:tests[script[:-3]]=b.tests([sys.executable,'code/'+script],'r61-'+script[:-3])
     tests['native_factorial61']=b.tests([sys.executable,'code/factorial61.py','--test'],'r61-native-factorial-tests')
