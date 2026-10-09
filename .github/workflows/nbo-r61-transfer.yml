@@ -1,0 +1,42 @@
+name: NBO R61 bounded input transfer
+on:
+  push:
+    branches: [revision/econometrica-nbo-r61-referee-revision-2026-10-09]
+    paths: [.github/workflows/nbo-r61-transfer.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r61-pinned-inputs
+          run-id: 37941277552
+          github-token: ${{ github.token }}
+          path: /tmp/inputs
+      - run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile
+          source=zipfile.ZipFile('/tmp/inputs/nbo61-inputs.zip')
+          with zipfile.ZipFile('/tmp/sources61.zip','w',zipfile.ZIP_DEFLATED,compresslevel=1) as text, zipfile.ZipFile('/tmp/numerics61.zip','w',zipfile.ZIP_STORED) as numeric:
+              for item in source.infolist():
+                  name=item.filename
+                  if name.startswith('centered/') and name.endswith('.npz') and not name.startswith('centered/results60-centered/'):continue
+                  if name.endswith('.npz'):numeric.writestr(name,source.read(item))
+                  else:text.writestr(name,source.read(item))
+          print([(p.name,p.stat().st_size) for p in (Path('/tmp/sources61.zip'),Path('/tmp/numerics61.zip'))])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r61-sources
+          path: /tmp/sources61.zip
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r61-numerics
+          path: /tmp/numerics61.zip
+          compression-level: 0
