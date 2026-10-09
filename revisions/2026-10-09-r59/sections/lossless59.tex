@@ -1,0 +1,109 @@
+\section{Lossless search for trained neural action witnesses}\label{sec:lossless59}
+The fitted-witness transfer result separates an optimization error from the errors in acquisition, continuation evaluation and full-action verification. An exact solver eliminates the first error, but exactness alone does not make the solver economical. We now exploit the learned features to reduce the work of returning precisely the same action witness. The continuation, economic primitives and original Bellman-accuracy target remain unchanged.
+
+\subsection{Exact reduction of integrated neural features}
+Fix a state and a stored affine--ReLU continuation. Interpret its finite binary coefficients as rational numbers, as in Section~\ref{sec:map56}. With a scalar uniform innovation, the expectation of a ridge is
+\[
+ \phi_r(z)=\begin{cases}
+ \bigl((z+r)_+^2-(z-r)_+^2\bigr)/(4r),&r>0,\\
+ z_+,&r=0.
+ \end{cases}
+\]
+The radius $r$ is the absolute projection of the innovation support on the ridge direction. After removing a constant independent of the action, the fitted objective in the investment model takes the form
+\begin{equation}\label{eq:ridge-objective59}
+ F(a)=q_1a+q_2a^2+4a^4+
+       \sum_{j=1}^{m}\omega_j\phi_{r_j}(z_j+s_ja).
+\end{equation}
+All coefficients are rational. Negative fitted weights are permitted. No convexity of the fitted continuation is assumed. The robust feasible action lattice is $\mathcal L=\{k\delta:0\leq k\leq K\}$, where $\delta$ and $K\delta$ are fixed by the acquisition contract.
+
+A feature can be simplified before any lattice search. Let $[v_j^-,v_j^+]$ be the exact range of $z_j+s_ja$ on $[0,K\delta]$. If $v_j^+\leq-r_j$, its contribution vanishes. If $v_j^-\geq r_j$, it is affine. If $r_j>0$ and $[v_j^-,v_j^+]\subseteq[-r_j,r_j]$, it is quadratic. Absorb these contributions into a rational constant $c_0$ and the coefficients of $a$ and $a^2$. Only features crossing an activation-region boundary remain in the ridge sum. Consequently
+\begin{equation}\label{eq:exact-reduction59}
+ F(a)=c_0+\widetilde q_1a+\widetilde q_2a^2+4a^4+
+        \sum_{j\in\mathcal C}\omega_j\phi_{r_j}(z_j+s_ja)
+ \quad(0\leq a\leq K\delta).
+\end{equation}
+This is an identity, not pruning by a small fitted weight. A feature with a large weight may be eliminated exactly, whereas a small crossing feature remains unless its whole contribution is enclosed.
+
+\subsection{An interval screen with an exact return}
+Write $f_k=F(k\delta)-c_0$. Compute outward enclosures $[\ell_k,u_k]$ of all $f_k$ and put
+\begin{equation}\label{eq:screen59}
+ b=\min_{0\leq k\leq K}u_k,\qquad
+ S=\{k:\ell_k\leq b\}.
+\end{equation}
+Compare the original objective exactly on $S$, choosing the smallest index on a tie. The weak inequality in the definition of $S$ is essential. Floating-point endpoints reject a point only when they prove that it cannot minimize the original objective; they never supply an approximate answer in place of the exact comparison.
+
+\begin{theorem}[Lossless neural action search]\label{thm:lossless59}
+Suppose the intervals in \eqref{eq:screen59} are finite, ordered and valid. Then $S$ contains every exact lattice minimizer. Exact rational comparison on $S$, with the same smallest-index convention, returns exactly the witness of exhaustive lattice minimization and of the terminating algebraic solver.
+
+Let $\eta=\max_k(u_k-\ell_k)$. Every survivor satisfies
+\begin{equation}\label{eq:survivor-gap59}
+ F(k\delta)-\min_{a\in\mathcal L}F(a)\leq2\eta.
+\end{equation}
+In particular, a unique minimizer is the only survivor whenever its gap to the second-best lattice point exceeds $2\eta$.
+
+More generally, let $\mathcal M\subseteq\mathcal L$ be the exact minimizer set. If, for some $\mu>0$,
+\[
+ F(a)-\min_{\mathcal L}F\geq\frac{\mu}{2}
+        \operatorname{dist}(a,\mathcal M)^2\qquad(a\in\mathcal L),
+\]
+then
+\[
+ |S|\leq\min\left\{K+1,\ |\mathcal M|
+       \left(1+2\left\lfloor\frac{2\sqrt{\eta/\mu}}{\delta}\right\rfloor\right)\right\}.
+\]
+The growth condition is an additional assumption, not a property inferred from a fitted ReLU representation.
+\end{theorem}
+
+\begin{proof}
+Let $k_*$ minimize $f_k$. For every $j$, $f_{k_*}\leq f_j\leq u_j$, hence $\ell_{k_*}\leq f_{k_*}\leq b$ and $k_*\in S$. This argument retains all minimizers, including ties. Exact comparison with the same tie rule therefore returns the same index. The algebraic solver enumerates lattice neighbors of every activation boundary and isolated stationary point on each polynomial piece; its established exhaustive-search equivalence then gives the same witness.
+
+For a survivor $k$, validity and the width bound imply
+\[
+ f_k\leq\ell_k+\eta\leq b+\eta
+      \leq u_{k_*}+\eta\leq f_{k_*}+2\eta.
+\]
+This proves \eqref{eq:survivor-gap59} and the unique-gap statement. Under the additional growth condition a survivor is within $2\sqrt{\eta/\mu}$ of some element of $\mathcal M$. There are at most $1+2\lfloor2\sqrt{\eta/\mu}/\delta\rfloor$ lattice points within that distance of one lattice minimizer. Taking a union, and then the total lattice cardinality, proves the last bound.
+\end{proof}
+
+The generic screening implication uses only interval order. The implementation contribution here is the exact reduction of integrated trained ridges, outward evaluation of their reduced objective, and exact recovery of the original NBO witness. On a failed arithmetic check or a lattice exceeding the declared screening limit, the implementation calls the original terminating algebraic solver. A fallback is charged as work and cannot be recorded as an approximate successful screen. A wide but valid enclosure may retain the entire lattice; the theorem promises correctness in that case, not a speed gain.
+
+\begin{proposition}[Arithmetic work and working storage]\label{prop:screen-work59}
+Let $N=K+1$, let $m_c=|\mathcal C|$, and let $s=|S|$. Forming the state-specific neural coefficients and performing exact region reduction requires $O(dm)$ arithmetic operations for an $m$-ridge continuation in dimension $d$. The screen uses $O(N(1+m_c))$ fixed-precision interval operations, followed by $O(sm)$ rational operations to compare survivors using the original objective. The vectorized implementation uses $O(N(1+m_c))$ interval working storage, in addition to the fitted coefficients, and returns $O(s)$ retained indices. These are arithmetic counts; the cost of rational arithmetic also depends on operand bit lengths.
+\end{proposition}
+
+\begin{proof}
+Each ridge requires state and innovation projections and a constant number of exact range tests. Each remaining ridge contributes one scalar interval expression at each lattice point. Pairwise outward summation of the ridge contributions is linear in their number. The exact return evaluates the original $m$-ridge objective at each survivor. The implementation retains ridge-by-lattice batches, giving the stated storage rather than a streaming bound. Integer index comparison resolves equal rational values. None of these counts eliminates the dependence on $d$, lattice resolution or fitted width.
+\end{proof}
+
+Terminal optimization is unchanged in the experiment. The screened intervention concerns only nonterminal trained-ReLU continuations. In particular, time saved by an analytic terminal formula is not credited to learned-feature reduction.
+
+\subsection{Preservation of a prospective economic return}
+A solver is used inside a procedure, not in isolation. Consider a deterministic prospective controller conditional on its construction data and random streams. At each attempted resolution it constructs an acquired policy, verifies whole-cell advantages and continuous-action lower covers, and then runs the declared sequence of cost-inference looks. It returns at the first certified economic target, advances resolution when required by its rule, or reports budget exhaustion. Suppose its branching decisions depend on these mathematical outputs, not on elapsed time or solver-specific diagnostic counters.
+
+\begin{theorem}[Prospective transcript invariance]\label{thm:transcript59}
+Run the same controller with the algebraic solver and the lossless screened solver. Suppose corresponding construction steps produce identical stored continuations, acquisition partitions and other candidate actions, and use identical inference streams. Then both controllers return the same policy, have identical whole-cell verification endpoints and cost-inference endpoints, and stop at the same resolution and inference look with the same status. Their exact fitted-optimization loss is the same, namely zero on the declared action lattice. Their all-state Bellman-error certificate is unchanged.
+
+The returned policies have exactly equal expected economic cost under every admissible initial distribution. This equality does not require statistical inference. It does not assert equality of computation cost.
+\end{theorem}
+
+\begin{proof}
+Condition on the common construction inputs and streams. Theorem~\ref{thm:lossless59}, or the exact fallback, gives identical proposed action indices at every leaf and date. The remaining candidate menu and its ordering are the same. The same verifier therefore evaluates the same intervals and resolves the same incumbent-preserving comparisons, producing an identical acquired policy and continuous-action error account. Evaluating that policy on the same interval paths gives identical path endpoints, hence identical inference bounds and the same next controller decision. Induction over inference looks and attempted resolutions proves the entire transcript assertion. No additional attempt occurs after a successful return. The inherited fitted-witness transfer and directed policy-improvement theorems apply to the identical witnesses and certificates. Finally, identical policies have the same controlled law and expected cost for every initial law.
+\end{proof}
+
+The theorem is conditional on actual parameter identities, not merely on a shared training seed. The empirical audit checks those identities. It does not apply to a wall-clock deadline rule: a faster solver can reach a different stage before a real-time deadline. Nor does a target that is not attained under the declared finite budgets become impossible in the underlying economic model.
+
+\begin{corollary}[Computation prices at an unchanged policy]\label{cor:price59}
+Suppose both implementations return $\pi$ and face specified computation charges $C_A,C_S$. At a nonnegative price $\lambda$, their total expected policy-plus-computation cost difference is
+\[
+ \{J(\pi)+\lambda C_S\}-\{J(\pi)+\lambda C_A\}
+       =\lambda(C_S-C_A).
+\]
+If an installed controller has a verified replacement-gain interval $[l,u]$, a fixed installation charge $\tau$ gives net gain in
+$[l-\tau-\lambda C_i,\ u-\tau-\lambda C_i]$ for implementation $i$.
+\end{corollary}
+
+\begin{proof}
+Cancel the identical policy costs in the first display and subtract the specified deterministic charges from the gain interval in the second.
+\end{proof}
+
+This comparative statement holds for specified resource charges. Three measured process repetitions do not estimate a distribution-free expected runtime, and the study does not calibrate $\lambda$ or $\tau$. They do, however, permit a directly interpretable work comparison at exactly the same economic and statistical accuracy, without attributing different welfare to identical neural policies.
