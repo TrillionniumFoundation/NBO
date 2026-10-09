@@ -1,0 +1,69 @@
+name: NBO R60 centered Bellman accuracy
+on:
+  push:
+    branches: [revision/econometrica-nbo-r60-referee-revision-2026-10-09]
+    paths: [.github/workflows/nbo-r60-centered-bellman.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r60-centered-bellman
+  cancel-in-progress: false
+jobs:
+  accuracy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: revisions/2026-10-09-r60
+      - name: Merge pinned original scientific source
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git fetch --depth=50 origin revision/econometrica-nbo-r60-source-2026-10-09
+          git merge --no-edit FETCH_HEAD
+      - name: Install verification dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sympy python3-sklearn
+      - name: Check exact reference cancellations before centered production
+        run: |
+          /usr/bin/python3 revisions/2026-10-09-r60/code/tests_centered60.py 2>&1 | tee revisions/2026-10-09-r60/audit/build-logs/pre-freeze-centered60.log
+        shell: bash --noprofile --norc -eo pipefail {0}
+      - name: Freeze centered extension before observing any of its rungs
+        run: |
+          /usr/bin/python3 revisions/2026-10-09-r60/code/centered60.py --freeze
+          git add -f revisions/2026-10-09-r60
+          git commit -m 'R60: freeze tested common-reference Bellman extension before new accuracy execution'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r60-centered-source-2026-10-09
+      - name: Execute all five original-law centered accuracy rungs
+        run: /usr/bin/python3 revisions/2026-10-09-r60/code/centered60.py
+      - name: Bind completed accuracy evidence and publish isolated branch
+        run: |
+          python3 - <<'PY'
+          import pathlib,json,hashlib,os
+          root=pathlib.Path('revisions/2026-10-09-r60');result=json.loads((root/'results60-centered/summary.json').read_text());assert result['status']=='executed' and len(result['rows'])==5
+          manifest={str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in (root/'results60-centered').rglob('*') if p.is_file()}
+          (root/'audit/CENTERED_EXECUTION60.json').write_text(json.dumps(dict(status='executed',workflow_run_id=os.environ['GITHUB_RUN_ID'],files_sha256=manifest,targets=result['targets']),sort_keys=True,indent=2)+'\n')
+          PY
+          git add -f revisions/2026-10-09-r60/results60-centered revisions/2026-10-09-r60/audit/CENTERED_EXECUTION60.json
+          git commit -m 'R60: retain complete centered original Bellman frontier and every declared target outcome'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r60-centered-executed-2026-10-09
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r60-centered-bellman
+          path: |
+            revisions/2026-10-09-r60/results60-centered/
+            revisions/2026-10-09-r60/audit/*60C*
+            revisions/2026-10-09-r60/audit/build-logs/pre-freeze-centered60.log
+          compression-level: 1
+          retention-days: 30
