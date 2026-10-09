@@ -1,0 +1,150 @@
+\section{Proofs for Primitive-Budget Recursive Learning}\label{sec:r31proofs}
+\subsection{The Gaussian continuation map}
+For symmetric $P$ in the norm domain $2\theta\sigma\|P\|_2<1$, the map
+$\Psi(P)=P(I-2\theta\Sigma P)^{-1}$ is symmetric. This follows from its
+convergent series, or from
+$(I-2\theta P\Sigma)^{-1}P=P(I-2\theta\Sigma P)^{-1}$;
+commutation of $P$ and $\Sigma$ is not required. Differentiation gives
+\[
+ D\Psi(P)[E]=(I-2\theta P\Sigma)^{-1}
+               E(I-2\theta\Sigma P)^{-1}.
+\]
+On a segment with $\|P\|_2\leq p$ and
+$\gamma=1-2\theta\sigma p>0$, the Neumann bound therefore gives
+$\|D\Psi(P)[E]\|_2\leq\gamma^{-2}\|E\|_2$.
+The corresponding scalar term in the certainty equivalent has derivative
+\[
+ Dh_\theta(P)[E]=\operatorname{tr}
+       \{(I-2\theta\Sigma P)^{-1}\Sigma E\}.
+\]
+For a positive-semidefinite segment, its norm is bounded by
+$\operatorname{tr}(\Sigma)\|E\|_2/\gamma$. The limits at $\theta=0$ are
+$D\Psi(P)[E]=E$ and $Dh_0(P)[E]=\operatorname{tr}(\Sigma E)$.
+These distinct powers of $\gamma$ explain the separate coefficient and
+constant weights in the policy certificate.
+
+\subsection{Proof of Proposition~\ref{prop:r31tube}}
+The assertion is exact at $T$. Suppose it holds at $t+1$. Both the proposed
+center and the unknown exact coefficient lie in the norm ball of radius
+$p_{t+1}$ about zero. The positive margin guarantees that the exact Gaussian
+moment exists. The derivative bound on the segment joining the two matrices
+implies
+\[
+ \|\Psi(P_{t+1})-\Psi(C_{t+1})\|_2
+                         \leq e_{t+1}/\gamma_t^2.
+\]
+Subtract the proposed Bellman equation from exact own-policy evaluation.
+The triangle inequality gives \eqref{eq:r31tube}. Positive definiteness of
+the exact coefficient follows inductively from the positive stage cost and
+the positive-semidefinite transformed continuation. The constants in the
+own-policy values are finite because every Gaussian domain margin is
+positive. No positivity of the numerical proposal itself is needed.
+
+Writing the exact action residual as
+$D_t=R_tK_t-\beta B_t'\Psi(P_{t+1})F_t$ and adding and subtracting the
+centered expression proves \eqref{eq:r31defect}, using
+$\|B'EF\|_F\leq\|B\|_2\|E\|_2\|F\|_F$.
+All inequalities concern exact objects enclosed by the reported arithmetic;
+the nominal inverse or nominal residual is never used without its enclosure.
+
+\subsection{A trainable-factor contraction}
+Let $mI\preceq M\preceq LI$, $W_0=\sqrt c\,O$ with $O$ orthogonal,
+$0<c\leq m$, and $0<\alpha\leq1/(4L)$. Set $X_j=W_j'W_j$.
+The iteration in \eqref{eq:r31training} implies
+\[
+ X_{j+1}=(I+\alpha(M-X_j))X_j(I+\alpha(M-X_j)).
+\]
+Since $X_0=cI$, every $X_j$ commutes with $M$. In their common eigenbasis,
+for an eigenvalue $\lambda$ of $M$,
+\[
+ x_{j+1}=x_j\{1+\alpha(\lambda-x_j)\}^2.
+\]
+If $c\leq x_j\leq\lambda$, the update is no smaller than $x_j$ and no
+larger than $\lambda$. To prove the latter statement, factor
+\[
+ \sqrt\lambda-\sqrt{x_j}\{1+\alpha(\lambda-x_j)\}
+ =(\sqrt\lambda-\sqrt{x_j})
+       \{1-\alpha\sqrt{x_j}(\sqrt\lambda+\sqrt{x_j})\}\geq0.
+\]
+The last factor is at least $1-2\alpha L>0$. Subtracting the scalar update
+also yields
+\[
+ 0\leq\lambda-x_{j+1}
+  =(\lambda-x_j)
+     \{1-2\alpha x_j-\alpha^2x_j(\lambda-x_j)\}
+  \leq(1-\alpha c)(\lambda-x_j).
+\]
+Consequently $cI\preceq X_j\preceq M$ and
+$\|X_j-M\|_F\leq(1-\alpha c)^j\sqrt d\,L$.
+This proves the sufficient cap in \eqref{eq:r31cap}. The proof trains all
+factor entries; simultaneous diagonalization is an argument about the
+iterates, not an eigenvalue oracle supplied to the algorithm.
+
+\subsection{Proof of Theorem~\ref{thm:r31constructive}}
+We first prove the primitive envelope and target bounds jointly, backward
+in time. At $T$, the exact coefficient is $Q_f$. Suppose
+$0\preceq P_{t+1}\preceq\bar p_{t+1}I$ and, at nonterminal dates,
+$P_{t+1}\succeq Q_{t+1}$. The risk-domain test then implies
+\[
+ dq_{t+1}I\preceq d\Psi(P_{t+1})
+       \preceq d\bar p_{t+1}I/\bar\gamma_t
+\]
+for every fitted date. The contraction just proved gives a positive
+semidefinite fitted matrix $\widehat P= W'W/d\preceq\Psi(P_{t+1})$ with
+$\|\widehat P-\Psi(P_{t+1})\|_F\leq a_t/d$.
+The fitted actor satisfies
+\[
+ K_t=(R_t+\beta B_t'\widehat P B_t)^{-1}
+                         \beta B_t'\widehat P A_t,
+ \qquad \|A_t-B_tK_t\|_2\leq f_t.
+\]
+Its exact residual therefore obeys
+\[
+ \|D_t\|_F
+ =\|\beta B_t'(\widehat P-\Psi(P_{t+1}))F_t\|_F
+ \leq\beta b_tf_ta_t/d\leq\sqrt{s r_tq_t}.
+\]
+At the terminal actor this residual is zero. Completing the square in the
+true one-step objective shows that the fitted actor's loss against its true
+greedy improvement is bounded by $s q_t\|x\|^2$. Comparing that minimum
+with the fixed reference action $-L_tx$ gives the matrix inequality
+\[
+ P_t\preceq Q_t+L_t'R_tL_t+
+         \beta(A_t-B_tL_t)'\Psi(P_{t+1})(A_t-B_tL_t)+s q_tI
+       \preceq\bar p_tI.
+\]
+Here $s q_tI\preceq\eta Q_t$. The lower bound $P_t\succeq Q_t$ follows
+from own-policy evaluation. This closes the induction without assuming a
+bound on a target not yet generated.
+
+It remains to bound the recursive policy loss. Apply the lower-subsolution
+recursion \eqref{eq:r27riskenvelope}. Suppose inductively that
+$\delta_{t+1}\leq s\lambda_{t+1}\leq q_*$ and
+$\kappa_{t+1}\leq s\mu_{t+1}$. Its continuation margin is at least
+$\bar\gamma_t$, its full-action residual is at most
+$\sqrt{s r_tq_t}\leq\sqrt{\eta r_tq_t}$, and its lower-greedy closed-loop
+bound is at most $\widetilde f_t$. Thus
+\[
+ \delta_t\leq s q_t\mathbf1_{\{t<T-1\}}
+       +\frac{\beta\widetilde f_t^2}{\bar\gamma_t^2}s\lambda_{t+1}
+       =s\lambda_t,
+ \qquad \kappa_t\leq s\mu_t.
+\]
+The condition $s\lambda_t\leq q_*$ ensures positivity of every required
+lower continuation because $P_t\succeq Q_t\succeq q_tI$.
+The terminal allowance is zero, so the induction starts. The full adapted
+policy comparison in Theorem~\ref{thm:r27entropic}, followed by
+\eqref{eq:r31allocate}, proves \eqref{eq:r31constructivegap}.
+
+\subsection{Numerical acceptance and work}
+The finite cap bounds ideal hidden-weight updates, not processor time.
+The implementation may use a smaller step, an enlarged cap, and periodically
+spaced residual checks. A failed numerical training threshold or a failed
+risk-domain test remains a failed attempt. For a returned rounded gain, the
+outward residual-centered evaluation and the separately bounded action error
+are the acceptance criteria. The experiment charges primitive-envelope
+construction, own-policy transforms, all factor updates, actor solves,
+residual checks, successful and failed verification, and durable output.
+A structural comparator receives the same analytic Gaussian primitives and
+is timed and verified separately. Access to those primitives is not evidence
+of a sampling advantage in a model whose continuation must be simulated.

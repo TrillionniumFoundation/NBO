@@ -1,0 +1,1921 @@
+\documentclass[ecta,nameyear,draft]{econsocart}
+\usepackage{xr-hyper}
+\usepackage{amsmath,amsfonts,amssymb,amsthm,graphicx,booktabs,array,longtable}
+\usepackage{algorithm,algpseudocode,bm,enumitem}
+\usepackage[T1]{fontenc}
+\usepackage{mathpazo}
+\usepackage{microtype}
+\usepackage{needspace}
+\RequirePackage[colorlinks,citecolor=blue,linkcolor=blue,urlcolor=blue]{hyperref}
+\startlocaldefs
+\newtheorem{theorem}{Theorem}
+\renewcommand{\thetheorem}{S.\arabic{theorem}}
+\renewcommand{\theequation}{S.\arabic{equation}}
+\renewcommand{\thesection}{S.\arabic{section}}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{assumption}{Assumption}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+\newcommand{\E}{\mathbb E}
+\newcommand{\R}{\mathbb R}
+\newcommand{\HH}{\mathcal H}
+\newcommand{\LL}{\mathcal L}
+\newcommand{\Act}{\mathcal A}
+\newcommand{\sg}{\operatorname{sg}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\Lip}{\operatorname{Lip}}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\endlocaldefs
+
+\let\NBOLongtable\longtable
+\def\longtable{\Needspace{7\baselineskip}\NBOLongtable}
+
+\setlength{\emergencystretch}{2em}
+\externaldocument{revisions/2026-10-07-r41/build/supp_from_historical_article}[historical_article.pdf]
+\externaldocument{revisions/2026-10-07-r41/build/supp_from_historical_supplement}[historical_supplement.pdf]
+\externaldocument{revisions/2026-10-07-r41/build/supp_from_applications}[applications.pdf]
+\externaldocument{revisions/2026-10-07-r41/build/supp_from_ECTA}[ECTA.pdf]
+\externaldocument{revisions/2026-10-07-r41/build/supp_from_response}[response.pdf]
+
+\makeatletter
+\def\copyright@text{Prepared for referee review}
+\makeatother
+\makeatletter\def\copyright@text{Prepared for referee review}\makeatother
+\begin{document}
+\begin{frontmatter}
+\title{Technical Supplement to Neural Bellman Operators}
+\runtitle{Neural Bellman Operators}
+\begin{aug}
+\author[id=au1,addressref={add1}]{\fnms{Qian}~\snm{QI}}
+\address[id=add1]{Peking University}
+\end{aug}
+\end{frontmatter}
+\section{Decision Accuracy, Transport, and Stopping: Proofs}\label{app:r19proofs}
+This section gives the complete arguments for the new economic error chain.
+The inherited verification, Bellman-bridge, and diffusion proofs are retained
+in the preceding sections. The constants below pertain to the new stored
+finite-law experiment unless a more general hypothesis is stated.
+
+\subsection{Proof of Proposition~\ref{prop:r19decision}}
+First suppose an optimal action $a^*$ exists. The approximate maximizing
+property implies
+\[
+ r_\theta(s,a^*)+\widehat S_0(T_\theta(s,a^*))
+ -r_\theta(s,\widehat a)-\widehat S_0(T_\theta(s,\widehat a))
+ \leq\delta_\theta(s).
+\]
+Substituting $S_\theta=\widehat S_0-e+\Delta_\theta$ gives
+\begin{align*}
+ Q_\theta(s,a^*)-Q_\theta(s,\widehat a)
+ \leq {}&\delta_\theta(s)
+       +e(T_\theta(s,\widehat a))-e(T_\theta(s,a^*))\\
+       &+\Delta_\theta(T_\theta(s,a^*))
+                -\Delta_\theta(T_\theta(s,\widehat a)).
+\end{align*}
+Each difference is at most its action-set oscillation. For an unattained
+finite supremum, take an $\epsilon$-maximizer and let $\epsilon$ decrease
+to zero. This proves \eqref{eq:r19osc} without a differentiability assumption.
+
+For finite actions let $v_j=e(T_\theta(s,a_j))-\bar e_\pi(s)$.
+In the weighted inner product $\langle x,y\rangle_\pi=\sum_j\pi_jx_jy_j$,
+the representer of $v_i-v_j$ has entries $1/\pi_i$ at $i$, $-1/\pi_j$
+at $j$, and zero elsewhere. Its squared norm is $1/\pi_i+1/\pi_j$.
+Cauchy--Schwarz gives
+\[
+ (v_i-v_j)^2\leq(1/\pi_i+1/\pi_j)\sum_k\pi_kv_k^2.
+\]
+Maximizing over the finite pair set proves
+$\operatorname{osc}e\leq\sqrt{C_\pi R_\pi}$. The transport difference is
+at most $2b_\theta$, proving \eqref{eq:r19riskloss}. For random fitted
+objects the inequality is pathwise. With deterministic $C_\pi$, for example,
+$\E\sqrt{C_\pi R_\pi}\leq\sqrt{C_\pi\E R_\pi}$ whenever the expectation
+is finite. Repetition of the same random seed does not create a new draw
+for this expectation. Finally, if every nonoptimal action loses at least
+$g$ and the displayed bound is below $g$, a nonoptimal implemented action
+would contradict the bound.\hfill$\square$
+
+\subsection{Proof of Theorem~\ref{thm:r19transport}}
+Couple both economies by the same innovation sequence and the same initial
+postdecision state. If $\|X_k^\theta-X_k^0\|\leq d_k$, then the triangle
+inequality and \eqref{eq:r19transportassumptions} give
+\[
+ \|X_{k+1}^\theta-X_{k+1}^0\|
+ \leq\epsilon_{\theta,k}+L_kd_k=d_{k+1}.
+\]
+Induction starts at $d_0=0$. At each reward date,
+$|g_{\theta,k}(X_k^\theta)-g_{0,k}(X_k^0)|
+ \leq\eta_{\theta,k}+H_kd_k$.
+Multiply by the nonnegative weights, sum including the terminal reward,
+and take expectations. The bound is uniform because each assumed bound is
+uniform on the invariant domain. No interchange of a supremum over future
+controls with a fixed-policy expectation is used.
+
+For recursive evaluations write
+$D_k=\|V_{\theta,k}-V_{0,k}\|_\infty$. Add and subtract
+$\mathcal G_{\theta,k}(V_{0,k+1})$ to obtain
+$D_k\leq\nu_{\theta,k}+\beta_kD_{k+1}$.
+Backward substitution from $D_K\leq b_K$ gives
+\eqref{eq:r19recursive}. Both arguments require that every coupled state
+and every recursively evaluated utility belong to the domains on which the
+bounds were verified. The theorem makes no extension past these domains.
+If a domain is localized, an exit contribution must be bounded separately
+before using the result as a global guarantee.\hfill$\square$
+
+\subsection{Proof of Proposition~\ref{prop:r19stopping}}
+Strong concavity gives, for any feasible $b$,
+\[
+ Q(b)-Q(a)\leq Q'(a)(b-a)-\kappa(b-a)^2/2.
+\]
+In the interior, maximize this upper bound over all real $b-a$ to obtain
+$|Q'(a)|^2/(2\kappa)$. At the lower endpoint restrict the maximization to $b-a\geq0$.
+Its value is
+\[
+ \frac{(\max\{Q'(a),0\})^2}{2\kappa}.
+\]
+At the upper endpoint the analogous residual is $\max\{-Q'(a),0\}$. Enlarging a bounded
+feasible half-interval to the half-line is conservative. This proves
+\eqref{eq:r19residual}.
+
+An outward derivative interval bounds the applicable residual, and a positive
+lower curvature bound enlarges the resulting nonnegative fraction. Thus each
+task certificate holds deterministically at every attempted stage. A first
+successful average certificate implies the average economic target; previous
+failures do not affect validity. If checks are stochastic, let $B_j$ denote
+the event that attempted check $j$ falsely certifies its candidate. The
+conditional hypothesis gives $\Pr(B_j)\leq\E\alpha_j$; an unattempted
+check contributes zero. The union bound yields
+$\Pr(\bigcup_jB_j)\leq\E\sum_j\alpha_j\leq\alpha$. This proof requires
+conditional validity for the data actually used after past decisions.
+A fixed-time interval repeatedly queried without such a property does not
+meet the hypothesis.
+
+The work identity follows by summing the disjoint measured operations through
+the stop, including unsuccessful fits and tests. Under the stated exact
+linear cost model, subtraction gives
+$W_N(q)-W_R(q)=F_N-F_R-q(c_R-c_N)$, establishing the strict inequality
+in \eqref{eq:r19break}. Integer query counts use that strict inequality;
+a tie at an integer threshold is not a strict saving. Measured costs in the
+experiment are used directly and are not assumed to satisfy a linear model.
+\hfill$\square$
+
+\subsection{Proof of Corollary~\ref{cor:r19amortization}}
+Condition on the feature map and design, which are independent of the fitting
+noises. Least squares gives
+$\widehat\beta-\beta=G_n^{-1}\Phi^{\mathsf T}\xi$.
+For a fixed queried argument $x$, the prediction error is a linear combination
+of the independent noises. Its sub-Gaussian variance parameter is at most
+\[
+ \sigma^2\|\Phi G_n^{-1}\phi(x)\|^2
+ =\sigma^2\phi(x)^{\mathsf T}G_n^{-1}\phi(x)
+ \leq\sigma^2\ell/n.
+\]
+The two-sided sub-Gaussian bound and a union bound over the $K$ distinct
+arguments therefore give
+\[
+ \Pr\left(\max_x|\widehat S(x)-S(x)|>
+  \sigma\sqrt{\frac{2\ell}{n}\log\frac{4K}{\alpha}}\right)
+ \leq\alpha/2.
+\]
+Uniformly on that event, the oscillation in every feasible finite action
+menu is at most twice the displayed bound. Proposition~\ref{prop:r19decision}
+with zero transport and \eqref{eq:r19learnbudget} gives loss at most
+$\varepsilon$ at every query. Full column rank and the leverage bound are
+separate hypotheses and must actually hold at the selected integer $n$.
+They are not consequences of the scalar sample-size inequality.
+
+For the direct method, each prediction average has sub-Gaussian variance
+parameter at most $\sigma^2/t$. Dependence between predictions caused by
+common innovations across different arguments does not affect the union
+bound; independence is required only for the observations within an average,
+or an equivalent sub-Gaussian bound for that average. The same calculation
+with $\ell/n$ replaced by $1/t$ proves the second guarantee. A union bound
+over the two methods gives joint coverage $1-\alpha$, without assuming
+independence between them. Reusing a cached prediction at exactly the same
+continuation identity and argument incurs no additional simulation count.
+This is why $K$, rather than the number of repeated requests, enters the
+work comparison.
+
+Subtract the complete specified costs to obtain
+\eqref{eq:r19explicitadvantage}. The fixed term $F(n)$ includes dictionary
+construction, all labels, the least-squares solve and its validation; it is
+not just a neural update clock. Common selection and verification work
+cancels only under the explicit equal-cost hypothesis. Otherwise its
+difference remains. These are sufficient budgets and actual costs for the
+declared procedures, not statistical lower bounds on arbitrary algorithms.
+If $|\E\widehat S(x)-S(x)|\leq B$ uniformly under a misspecified dictionary,
+the prediction bound acquires $B$; if future continuation changes by at most
+$b$, the decision bound acquires a further $2b$. Thus the same argument
+uses margin $\varepsilon-\delta-2B-2b>0$, provided the stated bias bound is
+verified. A pointwise approximation error of an arbitrary basis expansion
+is not automatically a bound on the bias of its fitted least-squares
+projection.\hfill$\square$
+
+\subsection{Uniform curvature in the stored capital economy}
+\label{app:r19curvature}
+Let $M=(1-\mu)I+\mu\bm1\bm1^{\mathsf T}/d$. It is row stochastic and
+has infinity operator norm one. For $f(y)=\lambda\tanh(My)$, the inequalities
+$|\tanh'|\leq1$ and $|\tanh''|\leq2$ imply, along a scalar path with
+$\|y'\|_\infty\leq P$ and $\|y''\|_\infty\leq D$,
+\begin{equation}
+ \|(f(y))''\|_\infty\leq\lambda(D+2P^2).
+ \label{eq:r19prodcurv}
+\end{equation}
+The postdecision map has first derivative $-h\bm1$ and second derivative
+zero, so initialize $P=h$, $D=0$. Adding the first innovation does not
+change these derivatives. For each of the three future transitions set
+\begin{align*}
+ B_k&=\lambda(D+2P^2),&
+ D&\leftarrow D+hB_k,&P&\leftarrow(1+h\lambda)P.
+\end{align*}
+The order matters: $B_k$ uses the preceding $P,D$. The second derivative of
+the future production reward is at most $W_kB_k$, since every stored $W_k$
+is positive. All future terms involving the fixed withdrawal are constant
+with respect to the current action.
+
+For a vector $v$ write $\operatorname{range}(v)=\max_i v_i-\min_i v_i$.
+At the first shocked postdecision state a valid range bound for each stored
+path is
+\[
+ R_0=\operatorname{range}(y)+2h\lambda+
+                       \operatorname{range}(z_0).
+\]
+Every subsequent transition satisfies
+$R_k=R_{k-1}+2h\lambda+\operatorname{range}(z_k)$ as an upper bound.
+The scalar drift and common withdrawal cancel from a coordinate range.
+For the terminal payoff $g(y)=-\gamma\operatorname{Var}_d(y)/2$,
+\[
+ (g(y))''=-\gamma\operatorname{Var}_d(y')
+ -\gamma\overline{(y-\overline y\bm1)y''}
+ \leq\gamma R_3D_3.
+\]
+The first term is nonpositive; dropping it is an upper bound, not a sign
+reversal. Combining these inequalities gives a uniform upper bound on the
+continuation curvature,
+\[
+ S_0(x(y,a))''\leq
+ M(y):=\sum_{k=1}^{3}W_kB_k+\gamma\E_{16}[R_3D_3].
+\]
+Since the current reward has second derivative
+$-A_0(w/a^2+\eta)$, a valid lower bound for true strong concavity on the
+whole interval is
+\begin{equation}
+ \kappa(y,\theta)=A_0\{w/\bar a^2+\eta\}-M(y).
+ \label{eq:r19kappa}
+\end{equation}
+The verifier evaluates this expression with outward arithmetic and requires
+a strictly positive lower endpoint for every task. A nonpositive result
+would be a verification failure, not a reason to delete that task. The
+published records retain every returned lower endpoint.
+
+The true derivative is enclosed separately rather than inferred from the
+surrogate. For each stored path initialize $p_0=-h\bm1$. At a future state,
+\[
+ f'(y)=\lambda\{1-\tanh^2(My)\}Mp,\qquad
+ p\leftarrow p+h f'(y).
+\]
+Accumulate $W_k\overline{f'(y)}$ and the terminal derivative
+$-\gamma\overline{(y-\overline y\bm1)p}$. Average over all sixteen atoms
+and add the current derivative
+$A_0(w/a-\eta a-\tau)-W_0$. Every operation is evaluated on enclosing
+intervals. Dependency between occurrences of the same variable may widen
+an interval, but cannot invalidate the enclosure.
+
+\subsection{Arithmetic enclosure and its implementation}
+The stored binary64 coefficients and innovation increments define the exact
+finite economy. Floating-point evaluation of a Gaussian generator is not
+being asserted to be exact sampling from a continuous Gaussian economy.
+The generator is used to construct and freeze a finite array; the subsequent
+scientific statement concerns that array with equal masses.
+
+The arithmetic module encloses each binary operation by the adjacent
+representable numbers toward minus and plus infinity. It checks finite
+values, IEEE round-to-nearest behavior and gradual underflow. Products and
+quotients take extrema over endpoint combinations, with divisors bounded
+away from zero. Squaring includes zero when the argument interval contains
+zero. Balanced reductions avoid interpreting a non-enclosing ordinary mean
+as an interval sum. Induction on an expression's operation graph proves
+inclusion for arithmetic expressions from enclosed inputs.
+
+The nonlinear enclosure does not assume that a library's hyperbolic tangent
+is correctly rounded. For $0\leq t\leq1/2$, the exponential is enclosed by
+its degree-18 Taylor polynomial and the nonnegative tail bound
+\[
+ 0\leq e^t-\sum_{j=0}^{18}t^j/j!
+ \leq \frac{t^{19}/19!}{1-t/20}.
+\]
+All terms are enclosed using the same arithmetic. Exact binary scaling (checked on every replayed argument) reduces the
+argument to this interval; repeated squaring and reciprocation recover
+positive and negative arguments. The identity
+$\tanh x=(e^{2x}-1)/(e^{2x}+1)$ and monotonicity provide endpoint enclosures.
+For the auxiliary logarithm check, scaling to $[1,2)$ gives
+$z=(x-1)/(x+1)\in[0,1/3)$ and
+\[
+ \log x=2\sum_{j=0}^{31}\frac{z^{2j+1}}{2j+1}+R,
+ \qquad 0\leq R\leq\frac{2z^{65}}{65(1-z^2)}.
+\]
+The stored enclosing endpoints for $\log2$ is independently checked with
+exact rational series bounds. Synthetic high-precision derivative tests
+check the implemented recursion on separate small-dimensional cases.
+These tests complement the analytical enclosure argument; they are not
+substitutes for it or additional economic observations.
+
+\subsection{Charge monotonicity and the economic tolerance}
+For an interior maximizing action, differentiate
+$Q_\theta'(y,a^*(\tau))=0$. Because the charge enters the derivative as
+$-A_0\tau$, the implicit-function identity is
+$Q''\,\partial a^*/\partial\tau-A_0=0$, proving
+\eqref{eq:r19charge}. For the constrained case take $\tau_2>\tau_1$ and
+respective optimal actions $a_2,a_1$. Adding their optimality inequalities
+leaves
+$A_0(\tau_2-\tau_1)(a_2-a_1)\leq0$, hence $a_2\leq a_1$.
+Uniqueness follows from strict concavity.
+
+An external grant in the utility account satisfies
+$A_0w\log(1+g)=U$ exactly when $g=\exp(U/(A_0w))-1$. This is a
+monotone normalization of a certified payoff loss. The published grant
+table uses ordinary binary64 evaluation and is explicitly descriptive;
+the primary rigorous statement is the outward payoff-loss bound. No claim
+is made that increasing actual endogenous consumption by this amount leaves
+capital, future rewards, or the reference policy unchanged.
+
+\section{From Current Decisions to Policy Accuracy}\label{sec:r21composition}
+A continuation certificate is useful for a dynamic economy only if the
+certified object is the future of the policy under assessment. This section
+states the conditions under which the local decision accounts compose.
+They apply to additive and order-preserving recursive evaluation, while
+keeping the utility domains and admissible deviations of the economic model.
+
+At dates $t=0,\ldots,T-1$, let $\mathcal D_t$ be an invariant state domain
+and $A_t(s)$ the full admissible current action set. Write
+\[
+ (T_t v)(s)=\sup_{a\in A_t(s)}G_t(s,a,v),\qquad
+ (T_t^\pi v)(s)=G_t(s,\pi_t(s),v).
+\]
+Assume the dynamic programming principle on these domains, measurable
+admissible policies, and finite values. Each $G_t$ is order preserving in its
+continuation argument and is sup-norm Lipschitz, uniformly in $(s,a)$, with
+constant $\beta_t\geq0$ on a common invariant value domain. Let
+$V_T^*=V_T^\pi$ and define $V_t^*=T_tV_{t+1}^*$ and
+$V_t^\pi=T_t^\pi V_{t+1}^\pi$. The relevant local advantage is
+\begin{equation}
+ g_t^\pi(s)=T_tV_{t+1}^\pi(s)-T_t^\pi V_{t+1}^\pi(s).
+ \label{eq:r21advantage}
+\end{equation}
+It evaluates all current deviations against the \emph{same implemented
+future policy}; it is neither a training residual nor an advantage computed
+against an unrelated anchor continuation.
+
+\begin{theorem}[Composition of economic certificates]\label{thm:r21composition}
+Under the preceding assumptions, suppose that on a common event
+\begin{equation}
+ 0\leq g_t^\pi(s)\leq\varepsilon_t
+ \quad\text{for every }s\in\mathcal D_t,
+ \qquad t=0,\ldots,T-1.
+ \label{eq:r21uniform}
+\end{equation}
+Then, on that event, at every initial state,
+\begin{equation}
+ 0\leq V_0^*-V_0^\pi\leq
+ \sum_{t=0}^{T-1}w_t\varepsilon_t,
+ \qquad w_t=\prod_{j=0}^{t-1}\beta_j.
+ \label{eq:r21composition}
+\end{equation}
+For additive Markov evaluation
+$G_t(s,a,v)=r_t(s,a)+\beta_tP_t^av(s)$, a state-dependent refinement is
+$V_t^*-V_t^\pi\leq B_t$, where
+\begin{equation}
+ B_T=0,\qquad
+ B_t(s)=u_t(s)+\beta_t\sup_{a\in A_t(s)}P_t^aB_{t+1}(s)
+ \label{eq:r21envelope}
+\end{equation}
+whenever $u_t(s)\geq g_t^\pi(s)$ and the displayed quantities are finite.
+\end{theorem}
+
+Section~\ref{app:r21proofs} proves the result. Centered continuation-error
+and transport bounds from Proposition~\ref{prop:r19decision} can supply
+\eqref{eq:r21uniform} when established uniformly on the required state and
+action domains. Alternatively, an interval certificate for the true
+one-step objective can supply it directly. In either case, the continuation
+must be $V_{t+1}^\pi$, or its discrepancy must be charged. The verification
+may be deterministic. With random certificates, all domain and date bounds
+must hold on one event, for example by a prespecified summable conditional
+error allocation. Selecting a stopping time does not remove this requirement.
+
+This theorem identifies a positive route from reusable policy evaluation to
+full policy accuracy. It also identifies precisely what the computational
+evidence below supplies. A mean certificate on a finite state catalogue
+establishes the declared current-decision experiment; it does not establish
+\eqref{eq:r21uniform} outside that catalogue. Sampling only states visited by
+$\pi$ is insufficient because a profitable deviation may reach other states.
+The state envelope in \eqref{eq:r21envelope} deliberately takes a supremum
+over admissible transitions, not only the transitions of the fitted policy.
+
+\paragraph{Relation to the continuous economy and strategic applications.}
+Let $\Pi_h$ be a specified implementable policy class in the original economy.
+If its class-approximation gap is at most $\eta_{\rm class}$, and
+$|J(\pi)-J_h(\pi)|\leq\eta_{\rm value}$ uniformly for $\pi\in\Pi_h$, then a
+policy satisfying \eqref{eq:r21composition} in the approximating model has
+\begin{equation}
+ \sup_{\pi}J(\pi)-J(\widehat\pi)
+ \leq\eta_{\rm class}+2\eta_{\rm value}
+       +\sum_t w_t\varepsilon_t+\eta_{\rm impl},
+ \label{eq:r21bridge}
+\end{equation}
+where $\eta_{\rm impl}$ bounds any additional payoff loss in implementation.
+The class and value-transfer allowances are separate mathematical inputs,
+not numbers inferred from the finite experiments. For recursive utility,
+order and Lipschitz bounds are imposed on the actual common utility domain;
+actionwise centering is applied to the evaluated action payoff, not through
+an arbitrary nonlinear aggregator. For a dynamic game, apply the same
+account to each player's full deviation problem against the same opponents'
+profile. Bounds $\epsilon_i$ for all players imply an $\epsilon_i$-best-response
+profile under the specified equilibrium concept. A single local deviation
+or a single player's calculation does not supply those premises. The original
+information, boundary, transversality, and deviation requirements remain in
+the Economic Applications companion.
+
+\subsection{Allocating computation across dates}
+The policy target suggests how to distribute a verified approximation budget.
+Suppose the local account at date $t$ is $b_t+e_t$, where $b_t$ contains
+fixed optimization, representation, and transport allowances. Suppose further
+that a declared procedure attains approximation allowance $e_t>0$ using
+$n_t\geq A_t/e_t^2$ fitting observations at charged marginal cost $c_t>0$.
+Here $A_t>0$ includes its confidence allocation and design constants. The
+full-rank and coverage conditions underlying such a rate must hold at the
+selected budgets; Corollary~\ref{cor:r19amortization} is one finite-query
+example, not a license to assume uniform coverage of an infinite state space.
+
+\begin{proposition}[Allocation for a policy target]\label{prop:r21allocation}
+Assume $w_t>0$ and let
+$E=\varepsilon-\sum_t w_tb_t>0$, $a_t=c_tA_t$, and
+$H=\sum_ta_t^{1/3}w_t^{2/3}$. Among positive allowances satisfying
+$\sum_tw_te_t\leq E$, the minimum continuous fitting bill is
+\begin{equation}
+ \min\sum_t\frac{a_t}{e_t^2}=\frac{H^3}{E^2},\qquad
+ e_t=\frac{E}{H}\left(\frac{a_t}{w_t}\right)^{1/3}.
+ \label{eq:r21allocation}
+\end{equation}
+Rounding each observation count up adds at most $\sum_tc_t$ to this bill.
+All fixed construction, reusable-cache, query, and verification costs must
+be added. The statement minimizes the displayed sufficient-cost account,
+not the work of all possible numerical methods.
+\end{proposition}
+
+The propagation and allocation arguments use standard dynamic-programming
+stability and convex optimization. Their role here is to connect the paper's
+centered, transported, and true-objective certificates to a specified dynamic
+economic target. They do not replace approximation or coverage assumptions.
+Finite-time fitted-value analysis, including the distinction between sampling
+norms and policy loss, provides an important antecedent
+\citep{MunosSzepesvari2008}. The empirical contribution below remains a
+measured comparison of complete procedures, rather than a claim of a new
+principle of optimality.
+
+\section{Proofs for Policy Composition and Economic Contrasts}\label{app:r21proofs}
+\begin{proof}[Proof of Theorem~\ref{thm:r21composition}]
+Backward induction and order preservation give $V_t^*\geq V_t^\pi$.
+Suppose $0\leq V_{t+1}^*-V_{t+1}^\pi\leq b$ on $\mathcal D_{t+1}$.
+The elementary supremum inequality and the uniform Lipschitz condition give
+\[
+ 0\leq T_tV_{t+1}^*-T_tV_{t+1}^\pi\leq\beta_tb.
+\]
+Adding $T_tV_{t+1}^\pi-V_t^\pi=g_t^\pi$ shows that the sup-norm error is at
+most $\varepsilon_t+\beta_tb$. Iteration from the common terminal value
+proves \eqref{eq:r21composition}, including the case of a zero Lipschitz
+constant. No assumption that $\pi$ itself attains the optimal action is used.
+For the state envelope, suppose by induction that
+$V_{t+1}^*-V_{t+1}^\pi\leq B_{t+1}$. Then
+\begin{align*}
+ V_t^*(s)-V_t^\pi(s)
+ &\leq \sup_a\{r_t(s,a)+\beta_tP_t^aV_{t+1}^\pi(s)
+                  +\beta_tP_t^aB_{t+1}(s)\}-V_t^\pi(s)\\
+ &\leq g_t^\pi(s)+\beta_t\sup_aP_t^aB_{t+1}(s)
+ \leq B_t(s).
+\end{align*}
+Invariance ensures that every expectation is taken on a domain on which the
+induction applies. These are pathwise deductions on the common certificate
+event, so no additional probability statement is introduced by the proof.
+\end{proof}
+
+\paragraph{Why catalogue averages cannot be substituted.}
+Consider a two-date economy with zero first-date rewards. A deviation at the
+initial state can reach a state with a unit second-date gain that the
+implemented policy never visits. All local advantages at the implemented
+policy's visited states can be zero while the initial optimality gap equals
+one. Thus a bound only on that occupancy distribution cannot be substituted
+for \eqref{eq:r21uniform}. The same example shows why changing the supremum
+in \eqref{eq:r21envelope} to the transition of $\pi$ is generally invalid.
+Weighted sampling-norm results require their own distribution-shift or
+coverage assumptions. We make no such inference from the finite query banks.
+
+\begin{proof}[Proof of the bridge \eqref{eq:r21bridge}]
+For the returned approximating policy $\pi_h\in\Pi_h$, write
+\begin{align*}
+ \sup_\pi J(\pi)-J(\widehat\pi)
+ &\leq\eta_{\rm class}
+       +\sup_{\pi\in\Pi_h}J(\pi)-J(\pi_h)+\eta_{\rm impl}\\
+ &\leq\eta_{\rm class}+2\eta_{\rm value}
+       +\sup_{\pi\in\Pi_h}J_h(\pi)-J_h(\pi_h)+\eta_{\rm impl}.
+\end{align*}
+Apply Theorem~\ref{thm:r21composition} to the last difference with the
+specified policy class and action information. If an enlarged approximating
+action class is used, its optimum is an upper bound and the inequality
+continues to hold. The conclusion for fixed opponents follows by taking this
+same supremum over each player's admissible deviations. A simultaneous
+profile of these inequalities is precisely the stated approximate
+best-response condition; no existence or fixed-point claim is inferred.
+\end{proof}
+
+\begin{proof}[Proof of Proposition~\ref{prop:r21allocation}]
+For any positive feasible allowances, H\"older's inequality implies
+\[
+ H=\sum_t\left(\frac{a_t}{e_t^2}\right)^{1/3}
+                    (w_te_t)^{2/3}
+ \leq\left(\sum_t\frac{a_t}{e_t^2}\right)^{1/3}
+                    \left(\sum_tw_te_t\right)^{2/3}.
+\]
+Hence the objective is at least $H^3/E^2$. The displayed allowances satisfy
+$\sum_tw_te_t=E$ and attain equality. Since
+$0\leq\lceil A_t/e_t^2\rceil-A_t/e_t^2<1$, their integer observation cost
+exceeds the continuous bill by less than $\sum_tc_t$. At any date whose
+statistical design requires a minimum sample size, that requirement must
+also hold at the rounded budget; otherwise the design must be charged and
+the constrained allocation recomputed. Dates with zero propagation weight
+are omitted from this positive-weight allocation problem.
+\end{proof}
+
+\subsection{Optimal-action intervals and comparative statics}
+The economic bands in Table~\ref{tab:r21nbocontrasts} use more information
+than a mean value-loss certificate. Let $Q$ be continuously differentiable
+and $\kappa$-strongly concave on $[\ell,u]$, with unique maximizer $a^*$.
+For feasible $a$, let $r(a)$ be the directional residual in
+Proposition~\ref{prop:r19stopping}. Then
+\begin{equation}
+ |a-a^*|\leq r(a)/\kappa.
+ \label{eq:r21actionradius}
+\end{equation}
+To see this for $a<a^*$, the optimality condition gives $Q'(a^*)\geq0$
+when $a^*=u$, and gives zero at an interior optimum. Strong concavity then
+implies $Q'(a)\geq\kappa(a^*-a)$. For $a>a^*$, the reverse argument gives
+$-Q'(a)\geq\kappa(a-a^*)$. At an endpoint the positive-part residual gives
+exactly the appropriate one-sided inequality. The case $a=a^*$ is immediate.
+
+Use the interval upper bound $\overline r_i$ and the strictly positive
+curvature lower bound $\underline\kappa_i$ for each task. Outward arithmetic
+and intersection with feasibility give
+\[
+ I_i=\left[a_i-\frac{\overline r_i}{\underline\kappa_i},
+           a_i+\frac{\overline r_i}{\underline\kappa_i}\right]
+                   \cap[\ell_i,u_i],\qquad a_i^*\in I_i.
+\]
+For the same tasks under a changed future $\theta$ and the anchor, the mean
+optimal response belongs to $q^{-1}\sum_i(I_{\theta,i}-I_{0,i})$.
+No independent-noise assumption is needed: these are deterministic
+inclusions for fixed finite laws. We use the final NBO actions, not the
+enumeration actions, to obtain the NBO response bands. The envelope over
+three fitting streams contains every corresponding inclusion; it does not
+turn three fixed streams into a population confidence interval. Printed
+endpoints are rounded outwards. A negative upper endpoint establishes a
+negative mean optimal response in that declared economy.
+
+\subsection{Source and arithmetic audit}
+The R21 audit reads every original R20 service record, verifies its stored
+SHA256 digest, reestablishes the inherited source identities, regenerates
+only the fixed task arguments, and recomputes the certificates at the saved
+actions. It does not retrain any predictor or replace any clock. All
+984 attempted certificates and 120 additional zero-charge certificates are
+compared field for field with their original values. The attempted checks
+cover 319,062 task actions. The audit also verifies feasibility, stopping
+order, recorded success flags, every cost decomposition, and the exact
+binary scaling used in the interval exponential implementation. This is an
+arithmetic and source audit of the specified finite model, not an empirical
+assessment of external economic calibration.
+
+\section{Full-Policy Verification Details}\label{sec:r23proofs}
+This section supplies the arithmetic and implementation accounts for
+Section~\ref{sec:r23policy}. All numerical coefficients are the exact values
+of their stored binary64 representations. The stochastic law remains
+Gaussian with those coefficients; no finite shock catalogue is substituted.
+
+\subsection{The quadratic local advantage}
+For a fixed supplied future policy, substitute
+$U_{t+1}(z)=z'P_{t+1}z+c_{t+1}$ into its one-step cost. The action-dependent
+terms are
+\[
+ u'H_tu+2\beta u'B_t'P_{t+1}A_tx.
+\]
+Since $H_t\succ0$, the minimum over the entire space $\R^d$ occurs at
+$u_t^g=-H_t^{-1}\beta B_t'P_{t+1}A_tx$. Evaluating at $-K_tx$ and subtracting
+this minimum yields
+\[
+ (-K_tx-u_t^g)'H_t(-K_tx-u_t^g)=x'D_t'H_t^{-1}D_tx.
+\]
+There is no approximation in this identity and no reference to the optimal
+future policy. The possibly loose Frobenius bound in
+\eqref{eq:r23eta} is chosen to make the implementation independent of an
+uncertified spectral decomposition. A failed bound need not indicate that
+the actual policy loss exceeds the tolerance.
+
+\subsection{Outward matrix balls}
+A matrix ball $(C,R)$ denotes every matrix $M$ with
+$|M-C|\leq R$ entrywise, where $R\geq0$. Exact input balls have zero radius.
+For conformable balls $(C,R)$ and $(D,S)$, let $k$ be the inner dimension.
+The exact product is enclosed about the computed product $\operatorname{fl}(CD)$
+by the radius
+\begin{equation}
+ \gamma_{2k}|C||D|+|C|S+R|D|+RS+2k\tau\mathbf1,
+ \label{eq:r23ballproduct}
+\end{equation}
+with every nonnegative calculation rounded upward. Here
+$\gamma_n=nu/(1-nu)$, $u$ is the binary64 unit roundoff, and $\tau$ is the
+smallest positive normal binary64 number. The underflow allowance deliberately
+exceeds the corresponding subnormal absolute-error allowance. The factor
+$2k$ permits separate multiplication and addition rounding in classical
+binary64 products. Fused operations only reduce this particular account.
+Overflow and nonfinite values are rejected rather than certified.
+
+To calculate a nonnegative product upper bound, the implementation divides
+the computed product by a downward bound for $1-\gamma_{2k}$, adds the
+underflow allowance, and rounds upward. Addition, scalar multiplication,
+traces, squared Frobenius norms, and maximum absolute row sums have analogous
+outward bounds. These operations enclose the actual recursion, not merely
+a rounded residual evaluated without error bars. Positivity of $P_t$ follows
+from the exact evaluation equation and positive stage costs, not from an
+unverified numerical eigenvalue. In the executed model the positive diagonal
+entries of $Q_t,R_t$ give the coercivity lower bounds directly. Covariance
+validity is checked by symmetry and strict diagonal dominance.
+
+The tests compare matrix operations with rational arithmetic on the exact
+binary input values, including signed products and cancellation. Separate
+tests compare policy losses with a separately computed optimal comparator,
+check the coercive bound at states far outside an ordinary training range,
+perturb policies within the declared execution class, and verify that the
+certificate still runs when the Riccati comparator is disabled. These tests
+complement, rather than replace, the enclosure argument.
+
+\subsection{A robust action-implementation envelope}
+Suppose the implemented action is $-K_tx+e_t$, with
+$\|e_t\|_2\leq e\|x\|_2$, possibly depending on the past and current state.
+Put $\overline P_T=Q_T$ and $\overline c_T=0$. For $F_t=A_t-B_tK_t$, set
+\begin{align}
+ h_t={}&2\|R_tK_t\|_F e+\|R_t\|_\infty e^2\nonumber\\
+ &+\beta\{2\|\overline P_{t+1}F_t\|_F\|B_t\|_F e
+             +\|\overline P_{t+1}\|_\infty\|B_t\|_F^2e^2\},
+ \label{eq:r23implh}\\
+ \overline P_t={}&Q_t+K_t'R_tK_t+
+                    \beta F_t'\overline P_{t+1}F_t+h_tI,\nonumber\\
+ \overline c_t={}&\beta\{\overline c_{t+1}+\tr(\overline P_{t+1}\Sigma)\}.
+ \label{eq:r23implrec}
+\end{align}
+All displayed coefficients are replaced by their outward upper enclosures
+in the numerical calculation.
+
+\begin{proposition}[Implementation allowance]\label{prop:r23implementation}
+For every execution satisfying the relative action-error bound, its remaining
+cost is at most $x'\overline P_tx+\overline c_t$. On the initial ball
+$\|x\|_2^2\leq b$, its excess over the ideal stored policy is at most
+\begin{equation}
+ \varepsilon_{\rm impl}
+ =\max\{0,b\|\overline P_0-P_0\|_\infty+
+                         \overline c_0-c_0\}.
+ \label{eq:r23implallow}
+\end{equation}
+\end{proposition}
+\begin{proof}
+Expanding the current action cost around $-K_tx$ bounds its increase by
+$\{2\|R_tK_t\|_F e+\|R_t\|_\infty e^2\}\|x\|_2^2$.
+Expanding the next-state quadratic envelope around $F_tx$ bounds its
+increase by the second line of \eqref{eq:r23implh}, times $\|x\|_2^2$.
+The mean-zero innovation contributes its trace term and has no cross term
+with a nonanticipating action. Backward induction proves the value envelope.
+Subtract the exact stored-policy quadratic value, use symmetry and the
+maximum-row-sum bound, and maximize over the initial ball. This proves
+\eqref{eq:r23implallow} even when the execution errors are history dependent.
+\end{proof}
+
+The error budget is explicit. Certification of arbitrary machine executions
+without an error contract would be a different claim. The experiment neither
+removes this term nor infers it from agreement on sampled states.
+
+\subsection{Reoptimized comparative statics}
+Let $K^{(r)}$ be a certified complete policy in regime $r$, and let its
+reported total loss bound on the initial ball be $b_r$. At a fixed initial
+state, the first-action objective with the \emph{optimal} future is a strictly
+convex quadratic with Hessian at least $2R_0$. The cost difference between
+using the candidate's first action and the optimal first action, both followed
+by the optimal future, is no larger than the candidate's full policy loss.
+Thus, with $r_0\leq\lambda_{\min}(R_0)$,
+\begin{equation}
+ \|u_0^{(r)}-u_0^{*,(r)}\|_2\leq\sqrt{b_r/r_0}.
+ \label{eq:r23actionradius}
+\end{equation}
+At $x_0=-\mathbf1$, define mean investment
+$m_r=d^{-1}\mathbf1'K_0^{(r)}\mathbf1$. Its distance from the optimal mean
+is at most $\sqrt{b_r/(r_0d)}$. The reported radius also includes the
+relative-execution and summation allowances. Subtracting the interval for
+the anchor from that for the changed regime gives a valid optimum-response
+interval. It is an enclosure in a specified model, not a confidence interval
+for an estimated economic population. Strong competitors are evaluated by
+the same construction.
+
+\subsection{Trainable continuation factors}
+For the square-activation critic, write
+$L(W;P)=\frac14\|W'W-dP\|_F^2$, with symmetric own-policy target $P$.
+Differentiation gives $\nabla_W L=W(W'W-dP)$. If $X\sim N(0,I)$, the mean
+squared error between the gradients of $\|WX\|^2/d$ and $X'PX$ equals
+$4\|W'W-dP\|_F^2/d^2$. The target is obtained by evaluating the current
+candidate policy; it is not the Riccati value matrix. The experiment trains
+all hidden weights for a fixed number of gradient updates and then solves
+the actor's full vector-action problem. A conventional quadratic receives
+the identical population target and is allowed its exact minimizer. This
+matched-information comparison isolates the cost of the neural factorization.
+No advantage over conventional quadratics is built into the target oracle.
+
+\section{Recursive-risk and execution envelopes}
+\label{sec:r27riskproof}
+\begin{lemma}[Gaussian continuation perturbations]\label{lem:r27riskderivative}
+Let $P\succeq L\succeq0$, $\|P-L\|_2\leq d_0$, and
+$\gamma=1-2\theta\|\Sigma\|_2\|P\|_2>0$. Then
+\[
+ 0\preceq\Psi_\theta(P)-\Psi_\theta(L)
+       \preceq\frac{d_0}{\gamma^2}I,\qquad
+ 0\leq h_\theta(P)-h_\theta(L)
+       \leq\frac{d_0\tr\Sigma}{\gamma}.
+\]
+The same inequalities hold at $\theta=0$ by continuity.
+\end{lemma}
+\begin{proof}
+Gaussian integration after completing the square gives
+\eqref{eq:r27gaussian}. Its derivatives in a symmetric direction $E$ are
+\[
+ D\Psi_\theta(P)[E]
+ =(I-2\theta P\Sigma)^{-1}E(I-2\theta\Sigma P)^{-1},
+\]
+and
+\[
+ Dh_\theta(P)[E]
+ =\tr\{\Sigma^{1/2}(I-2\theta\Sigma^{1/2}P\Sigma^{1/2})^{-1}
+                      \Sigma^{1/2}E\}.
+\]
+Along the segment from $L$ to $P$, the inverse norms in the first display are
+at most $\gamma^{-1}$ by the Neumann series. The symmetric inverse in the
+second display is bounded by $\gamma^{-1}I$. Integrating the derivatives,
+using $0\preceq P-L\preceq d_0I$, proves the claims. This proof also applies
+to singular positive semidefinite $\Sigma$.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:r27entropic}]
+Set $L_t(x)=x'(P_t-\delta_tI)x+c_t-\kappa_t$. The stated checks ensure that
+every continuation coefficient used in this construction is positive
+semidefinite and inside the Gaussian moment domain. Terminally $L_T=U_T$.
+At date $t$, write $P=P_{t+1}$ and $L=P-\delta_{t+1}I$.
+Let $S(P)$ denote the coefficient of the minimized current-action objective
+with continuation coefficient $P$. Completion of squares gives
+\[
+ P_t-S(P)=D_t'H_t^{-1}D_t\preceq\zeta_t^2I/r_t.
+\]
+Let $K^L$ minimize the objective using $\Psi_\theta(L)$, and
+$H^L=R_t+\beta B_t'\Psi_\theta(L)B_t$. The exact identity
+\[
+ H^L(K_t-K^L)
+ =D_t+\beta B_t'\{\Psi_\theta(P)-\Psi_\theta(L)\}F_t
+\]
+and Lemma~\ref{lem:r27riskderivative} imply
+$\|A_t-B_tK^L\|_2\leq\bar f_t$.
+Evaluating the larger-continuation objective at $K^L$ therefore gives
+\[
+ 0\preceq S(P)-S(L)\preceq\beta\bar f_t^2w_t I.
+\]
+Consequently $P_t-\delta_tI\preceq S(L)$. Own-policy constants satisfy
+$c_t=\beta\{c_{t+1}+h_\theta(P_{t+1})\}$.
+The constant part of \eqref{eq:r27riskenvelope} and the lemma give
+\[
+ c_t-\kappa_t\leq
+ \beta\{c_{t+1}-\kappa_{t+1}+h_\theta(L)\}.
+\]
+Together these are precisely the Bellman-subsolution inequality
+$L_t\leq\inf_u\{\ell_t+\beta\mathcal R_\theta L_{t+1}\}$.
+Order preservation and backward induction imply $L_0\leq J_0^*$, including
+comparison with arbitrary history-adapted controls of finite recursive cost.
+The feasible stored policy gives $J_0^*\leq U_0$. Subtracting proves
+\eqref{eq:r27riskgap}.
+\end{proof}
+
+\begin{proposition}[Execution errors under recursive preferences]
+\label{prop:r27riskexecution}
+Suppose the implemented action differs from $-K_tx$ by an adapted error
+$e_t$ satisfying $\|e_t\|_2\leq\varepsilon_{\rm ex}\|x\|_2$ at every date.
+Let $k_t\geq\|K_t\|_2$ and $s_t\geq\|R_t\|_2$.
+Starting with $\delta_T^e=\kappa_T^e=0$, define
+\begin{align*}
+ \gamma_t^e&=1-2\theta\sigma(p_{t+1}+\delta_{t+1}^e),&
+ \nu_t&=(p_{t+1}+\delta_{t+1}^e)/\gamma_t^e,\\
+ a_t^e&=2\varepsilon_{\rm ex}k_ts_t+
+             \varepsilon_{\rm ex}^2s_t
+       +\beta\nu_t(2\varepsilon_{\rm ex}f_tb_t+
+                         \varepsilon_{\rm ex}^2b_t^2),\\
+ \delta_t^e&=\beta f_t^2\delta_{t+1}^e/(\gamma_t^e)^2+a_t^e,&
+ \kappa_t^e&=\beta\{\kappa_{t+1}^e+
+                    \tau\delta_{t+1}^e/\gamma_t^e\}.
+\end{align*}
+If every $\gamma_t^e>0$, the implemented policy's cost is at most
+$U_0(x)+\delta_0^e\|x\|^2+\kappa_0^e$. Its excess cost over $J^*$ is thus
+bounded by $(\delta_0+\delta_0^e)\|x\|^2+\kappa_0+\kappa_0^e$.
+\end{proposition}
+\begin{proof}
+Assume the next implemented value is bounded by
+$x'(P_{t+1}+\delta_{t+1}^eI)x+c_{t+1}+\kappa_{t+1}^e$.
+Apply Lemma~\ref{lem:r27riskderivative} between $P_{t+1}$ and
+$P_{t+1}+\delta_{t+1}^eI$, using the margin $\gamma_t^e$.
+The unchanged transition contributes at most
+$\beta f_t^2\delta_{t+1}^e\|x\|^2/(\gamma_t^e)^2$.
+The action perturbation contributes at most
+$(2\varepsilon_{\rm ex}k_ts_t+\varepsilon_{\rm ex}^2s_t)\|x\|^2$
+to current cost and at most
+$\beta\nu_t(2\varepsilon_{\rm ex}f_tb_t+
+\varepsilon_{\rm ex}^2b_t^2)\|x\|^2$ to the continuation quadratic.
+The log-determinant and constant contributions are bounded by
+$\kappa_t^e$. Backward induction proves the upper envelope. The last assertion
+uses Theorem~\ref{thm:r27entropic}. The action-error premise is an explicit
+mathematical contract; it is not inferred merely from using floating-point
+hardware on unbounded inputs.
+\end{proof}
+
+\paragraph{Verified numerical inverses.}
+For an interval matrix $S$, propose a numerical inverse $C$ and bound
+$r\geq\|I-SC\|_\infty$. If $r<1$, then
+\[
+ \|S^{-1}-C\|_\infty\leq\|C\|_\infty r/(1-r).
+\]
+This follows from $S^{-1}=C(I-(I-SC))^{-1}$. A matrix ball with that uniform
+entry radius encloses the inverse. The implementation uses this test for
+$S=I-2\theta\Sigma P$, together with the moment-domain test, outward scalar
+products, and independently enclosed own-policy matrices. Failed inverse,
+positivity, domain, or final tolerance checks remain failures to certify.
+
+\paragraph{Certified current-action responses.}
+In this convex capital economy the optimal current-action objective is
+strongly convex with quadratic modulus at least $r_0$.
+If a policy has a full recursive-cost gap at most $E$ at a given initial state,
+its current action differs from the optimal action by at most $\sqrt{E/r_0}$.
+The mean of its $d$ action coordinates therefore differs by at most
+$\sqrt{E/(dr_0)}$. Pairing two such intervals gives a valid current-action
+response band under a change in risk preferences with all future policies
+reoptimized. No independence or population sampling assertion is needed.
+
+\section{Proofs for Primitive-Budget Recursive Learning}\label{sec:r31proofs}
+\subsection{The Gaussian continuation map}
+For symmetric $P$ in the norm domain $2\theta\sigma\|P\|_2<1$, the map
+$\Psi(P)=P(I-2\theta\Sigma P)^{-1}$ is symmetric. This follows from its
+convergent series, or from
+$(I-2\theta P\Sigma)^{-1}P=P(I-2\theta\Sigma P)^{-1}$;
+commutation of $P$ and $\Sigma$ is not required. Differentiation gives
+\[
+ D\Psi(P)[E]=(I-2\theta P\Sigma)^{-1}
+               E(I-2\theta\Sigma P)^{-1}.
+\]
+On a segment with $\|P\|_2\leq p$ and
+$\gamma=1-2\theta\sigma p>0$, the Neumann bound therefore gives
+$\|D\Psi(P)[E]\|_2\leq\gamma^{-2}\|E\|_2$.
+The corresponding scalar term in the certainty equivalent has derivative
+\[
+ Dh_\theta(P)[E]=\operatorname{tr}
+       \{(I-2\theta\Sigma P)^{-1}\Sigma E\}.
+\]
+For a positive-semidefinite segment, its norm is bounded by
+$\operatorname{tr}(\Sigma)\|E\|_2/\gamma$. The limits at $\theta=0$ are
+$D\Psi(P)[E]=E$ and $Dh_0(P)[E]=\operatorname{tr}(\Sigma E)$.
+These distinct powers of $\gamma$ explain the separate coefficient and
+constant weights in the policy certificate.
+
+\subsection{Proof of Proposition~\ref{prop:r31tube}}
+The assertion is exact at $T$. Suppose it holds at $t+1$. Both the proposed
+center and the unknown exact coefficient lie in the norm ball of radius
+$p_{t+1}$ about zero. The positive margin guarantees that the exact Gaussian
+moment exists. The derivative bound on the segment joining the two matrices
+implies
+\[
+ \|\Psi(P_{t+1})-\Psi(C_{t+1})\|_2
+                         \leq e_{t+1}/\gamma_t^2.
+\]
+Subtract the proposed Bellman equation from exact own-policy evaluation.
+The triangle inequality gives \eqref{eq:r31tube}. Positive definiteness of
+the exact coefficient follows inductively from the positive stage cost and
+the positive-semidefinite transformed continuation. The constants in the
+own-policy values are finite because every Gaussian domain margin is
+positive. No positivity of the numerical proposal itself is needed.
+
+Writing the exact action residual as
+$D_t=R_tK_t-\beta B_t'\Psi(P_{t+1})F_t$ and adding and subtracting the
+centered expression proves \eqref{eq:r31defect}, using
+$\|B'EF\|_F\leq\|B\|_2\|E\|_2\|F\|_F$.
+All inequalities concern exact objects enclosed by the reported arithmetic;
+the nominal inverse or nominal residual is never used without its enclosure.
+
+\subsection{A trainable-factor contraction}
+Let $mI\preceq M\preceq LI$, $W_0=\sqrt c\,O$ with $O$ orthogonal,
+$0<c\leq m$, and $0<\alpha\leq1/(4L)$. Set $X_j=W_j'W_j$.
+The iteration in \eqref{eq:r31training} implies
+\[
+ X_{j+1}=(I+\alpha(M-X_j))X_j(I+\alpha(M-X_j)).
+\]
+Since $X_0=cI$, every $X_j$ commutes with $M$. In their common eigenbasis,
+for an eigenvalue $\lambda$ of $M$,
+\[
+ x_{j+1}=x_j\{1+\alpha(\lambda-x_j)\}^2.
+\]
+If $c\leq x_j\leq\lambda$, the update is no smaller than $x_j$ and no
+larger than $\lambda$. To prove the latter statement, factor
+\[
+ \sqrt\lambda-\sqrt{x_j}\{1+\alpha(\lambda-x_j)\}
+ =(\sqrt\lambda-\sqrt{x_j})
+       \{1-\alpha\sqrt{x_j}(\sqrt\lambda+\sqrt{x_j})\}\geq0.
+\]
+The last factor is at least $1-2\alpha L>0$. Subtracting the scalar update
+also yields
+\[
+ 0\leq\lambda-x_{j+1}
+  =(\lambda-x_j)
+     \{1-2\alpha x_j-\alpha^2x_j(\lambda-x_j)\}
+  \leq(1-\alpha c)(\lambda-x_j).
+\]
+Consequently $cI\preceq X_j\preceq M$ and
+$\|X_j-M\|_F\leq(1-\alpha c)^j\sqrt d\,L$.
+This proves the sufficient cap in \eqref{eq:r31cap}. The proof trains all
+factor entries; simultaneous diagonalization is an argument about the
+iterates, not an eigenvalue oracle supplied to the algorithm.
+
+\subsection{Proof of Theorem~\ref{thm:r31constructive}}
+We first prove the primitive envelope and target bounds jointly, backward
+in time. At $T$, the exact coefficient is $Q_f$. Suppose
+$0\preceq P_{t+1}\preceq\bar p_{t+1}I$ and, at nonterminal dates,
+$P_{t+1}\succeq Q_{t+1}$. The risk-domain test then implies
+\[
+ dq_{t+1}I\preceq d\Psi(P_{t+1})
+       \preceq d\bar p_{t+1}I/\bar\gamma_t
+\]
+for every fitted date. The contraction just proved gives a positive
+semidefinite fitted matrix $\widehat P= W'W/d\preceq\Psi(P_{t+1})$ with
+$\|\widehat P-\Psi(P_{t+1})\|_F\leq a_t/d$.
+The fitted actor satisfies
+\[
+ K_t=(R_t+\beta B_t'\widehat P B_t)^{-1}
+                         \beta B_t'\widehat P A_t,
+ \qquad \|A_t-B_tK_t\|_2\leq f_t.
+\]
+Its exact residual therefore obeys
+\[
+ \|D_t\|_F
+ =\|\beta B_t'(\widehat P-\Psi(P_{t+1}))F_t\|_F
+ \leq\beta b_tf_ta_t/d\leq\sqrt{s r_tq_t}.
+\]
+At the terminal actor this residual is zero. Completing the square in the
+true one-step objective shows that the fitted actor's loss against its true
+greedy improvement is bounded by $s q_t\|x\|^2$. Comparing that minimum
+with the fixed reference action $-L_tx$ gives the matrix inequality
+\[
+ P_t\preceq Q_t+L_t'R_tL_t+
+         \beta(A_t-B_tL_t)'\Psi(P_{t+1})(A_t-B_tL_t)+s q_tI
+       \preceq\bar p_tI.
+\]
+Here $s q_tI\preceq\eta Q_t$. The lower bound $P_t\succeq Q_t$ follows
+from own-policy evaluation. This closes the induction without assuming a
+bound on a target not yet generated.
+
+It remains to bound the recursive policy loss. Apply the lower-subsolution
+recursion \eqref{eq:r27riskenvelope}. Suppose inductively that
+$\delta_{t+1}\leq s\lambda_{t+1}\leq q_*$ and
+$\kappa_{t+1}\leq s\mu_{t+1}$. Its continuation margin is at least
+$\bar\gamma_t$, its full-action residual is at most
+$\sqrt{s r_tq_t}\leq\sqrt{\eta r_tq_t}$, and its lower-greedy closed-loop
+bound is at most $\widetilde f_t$. Thus
+\[
+ \delta_t\leq s q_t\mathbf1_{\{t<T-1\}}
+       +\frac{\beta\widetilde f_t^2}{\bar\gamma_t^2}s\lambda_{t+1}
+       =s\lambda_t,
+ \qquad \kappa_t\leq s\mu_t.
+\]
+The condition $s\lambda_t\leq q_*$ ensures positivity of every required
+lower continuation because $P_t\succeq Q_t\succeq q_tI$.
+The terminal allowance is zero, so the induction starts. The full adapted
+policy comparison in Theorem~\ref{thm:r27entropic}, followed by
+\eqref{eq:r31allocate}, proves \eqref{eq:r31constructivegap}.
+
+\subsection{Numerical acceptance and work}
+The finite cap bounds ideal hidden-weight updates, not processor time.
+The implementation may use a smaller step, an enlarged cap, and periodically
+spaced residual checks. A failed numerical training threshold or a failed
+risk-domain test remains a failed attempt. For a returned rounded gain, the
+outward residual-centered evaluation and the separately bounded action error
+are the acceptance criteria. The experiment charges primitive-envelope
+construction, own-policy transforms, all factor updates, actor solves,
+residual checks, successful and failed verification, and durable output.
+A structural comparator receives the same analytic Gaussian primitives and
+is timed and verified separately. Access to those primitives is not evidence
+of a sampling advantage in a model whose continuation must be simulated.
+
+\section{From Training Geometry to Policy Accuracy}\label{sec:r32geometry}
+The constructive schedule above controls a particular initialization. A returned
+factor need not have been trained from that initialization. We therefore give
+a second, a posteriori route which uses both first- and second-order information.
+It rules out a singular stationary factor without assuming that its rank has
+already been certified. Throughout this section $W\in\R^{d\times d}$ is the
+trainable hidden-weight matrix, not a fixed dictionary.
+
+For a symmetric target $M\succeq mI\succ0$, put
+\[
+ f_M(W)=\tfrac14\|W'W-M\|_F^2,\qquad G_M(W)=W(W'W-M).
+\]
+The Hessian is a self-adjoint operator on matrices equipped with the Frobenius
+inner product. Its lower bound below must hold in every matrix direction;
+a finite selection of curvature probes does not establish that premise.
+
+\begin{theorem}[Gradient--curvature certificate]\label{thm:r32geometry}
+Suppose $\nabla^2 f_M(W)\succeq-\kappa I$, where $0\leq\kappa<m$.
+Then
+\begin{equation}\label{eq:r32geometry}
+ \sigma_{\min}(W)^2\geq\frac{m-\kappa}{3},\qquad
+ \|W'W-M\|_F\leq
+       \sqrt{\frac{3}{m-\kappa}}\,\|G_M(W)\|_F.
+\end{equation}
+In particular, a zero-gradient factor satisfying this curvature condition
+represents the target exactly.
+\end{theorem}
+\begin{proof}
+For $E=W'W-M$ and an arbitrary direction $Z$, differentiation gives
+\[
+ D^2f_M(W)[Z,Z]
+   =\tfrac12\|W'Z+Z'W\|_F^2+\operatorname{tr}(E Z'Z).
+\]
+Let $s=\sigma_{\min}(W)$ and choose a corresponding pair of unit singular
+vectors $u,v$, so that $Wv=su$ and $W'u=sv$. These relations also hold at
+$s=0$, with left and right null vectors. Set $Z=uv'$. Then $\|Z\|_F=1$ and
+\[
+ -\kappa\leq D^2f_M(W)[Z,Z]=3s^2-v'Mv\leq3s^2-m.
+\]
+This proves the lower singular-value bound. Since $m>\kappa$, $W$ is
+invertible, and $E=W^{-1}G_M(W)$. The Frobenius norm inequality proves the
+second assertion.
+\end{proof}
+
+At $W=0$, the gradient vanishes for every target, although its approximation
+error is generally large. The Hessian has a direction with curvature at most
+$-m$. Thus the theorem excludes exactly the false implication from a small
+gradient alone that would arise at this stationary point. It does not assert
+that arbitrary nonconvex training attains the required second-order condition.
+The finite construction in Theorem~\ref{thm:r31constructive} and the
+certificate here are distinct results.
+
+\subsection{An inexact own-policy target}
+The policy evaluator may supply a symmetric approximation $\widetilde M$ rather
+than the exact target. Suppose an independent evaluation account establishes
+$\|M-\widetilde M\|_2\leq e$. Let
+\[
+ \|G_{\widetilde M}(W)\|_F\leq g,\qquad
+ \nabla^2 f_{\widetilde M}(W)\succeq-\widetilde\kappa I,
+ \qquad \|W\|_F\leq w.
+\]
+
+\begin{corollary}[Evaluation-aware factor error]\label{cor:r32inexact}
+If $M\succeq mI$ and $\widetilde\kappa+e<m$, then
+\begin{equation}\label{eq:r32inexact}
+ \|W'W-M\|_F\leq
+ (g+we)\sqrt{\frac{3}{m-\widetilde\kappa-e}}.
+\end{equation}
+A sufficient check for the target floor is
+$\widetilde M\succeq(m+e)I$.
+\end{corollary}
+\begin{proof}
+The gradient difference is $-W(M-\widetilde M)$, with Frobenius norm at most
+$\|W\|_F e$. The difference of the Hessian operators maps $Z$ to
+$-Z(M-\widetilde M)$ and has operator norm at most $e$. Hence the true
+Hessian is bounded below by $-(\widetilde\kappa+e)I$ and the true gradient
+norm by $g+we$. Apply Theorem~\ref{thm:r32geometry}. The sufficient target
+floor follows from the spectral error bound. Notice that a spectral error
+for the target multiplies the \emph{Frobenius} norm of $W$ here; replacing
+it by its spectral norm without a dimension allowance would be invalid.
+\end{proof}
+
+For the recursive economy the exact target at date $t$ is
+$M_t=d\Psi_\theta(P_{t+1}^{\pi})$, evaluated under the returned policy's
+own future. Proposition~\ref{prop:r31tube} supplies the sufficient radius
+$e_t^{M}=d e_{t+1}/\gamma_t^2$ around
+$\widetilde M_t=d\Psi_\theta(C_{t+1})$; the approximation of that transformed
+center, when numerical, contributes its own additional radius.
+Neither a target inherited from a different policy nor a nominal matrix
+inverse supplies this radius without its separate evaluation bound.
+
+Write $a_t$ for the right side of \eqref{eq:r32inexact} divided by $d$,
+$\widehat P_t=W_t'W_t/d$, and let
+\[
+ Z_t=R_tK_t-\beta B_t'\widehat P_t(A_t-B_tK_t)
+\]
+be the actor residual against the fitted continuation. The true full-action
+residual then satisfies
+\begin{equation}\label{eq:r32actor}
+ \|D_t\|_F\leq\|Z_t\|_F+
+   \beta\|B_t\|_2\|A_t-B_tK_t\|_2 a_t.
+\end{equation}
+Indeed, subtracting the two residuals leaves
+$\beta B_t'(\widehat P_t-\Psi_\theta(P_{t+1}^{\pi}))
+(A_t-B_tK_t)$. This identity proves the bound. Substitution in
+Theorem~\ref{thm:r27entropic} gives a full adapted-policy certificate whenever
+its domain, positivity, and implementation conditions also hold. The curvature
+check is consequently a training diagnostic with an explicit route to economic
+accuracy, not a replacement for the independent economic stopping rule.
+
+\subsection{The terminal boundary and the iteration account}
+The terminal coefficient is known, not learned. Under recursive risk
+preferences, the last actor must nevertheless transform that known coefficient:
+\begin{equation}\label{eq:r32terminal}
+ K_{T-1}=\{R_{T-1}+\beta B_{T-1}'\Psi_\theta(Q_f)B_{T-1}\}^{-1}
+              \beta B_{T-1}'\Psi_\theta(Q_f)A_{T-1}.
+\end{equation}
+This is the meaning of direct terminal evaluation. Substituting $Q_f$ for
+$\Psi_\theta(Q_f)$ in this formula is justified at $\theta=0$, or when the
+transform actually equals $Q_f$, but not in general. The scalar constant
+$h_\theta(Q_f)$ does not change this actor. The frozen implementation already
+uses \eqref{eq:r32terminal}; the current manuscript makes the boundary explicit.
+
+The isotropic factor construction also admits the sharper contraction
+\begin{gather*}
+ \|W_j'W_j-M\|_F\leq(1-2\alpha c)^j\sqrt d\,L,\\
+ 0<c\leq\lambda_{\min}(M),\qquad
+ 0<\alpha\leq(4L)^{-1},\qquad\|M\|_2\leq L.
+\end{gather*}
+To see this, use the common eigenbasis in the constructive proof. With
+$c\leq x_j\leq\lambda$,
+\[
+ \lambda-x_{j+1}=(\lambda-x_j)
+   \{1-2\alpha x_j-\alpha^2x_j(\lambda-x_j)\}
+ \leq(1-2\alpha c)(\lambda-x_j).
+\]
+Nonnegativity follows from the previously proved upper bound
+$x_{j+1}\leq\lambda$, and $1-2\alpha c\geq1/2$. This sharper account
+justifies a cap based on $-\log(1-2\alpha c)$ as well as the looser published
+cap. It changes neither the frozen experimental budgets nor their interpretation
+in rounded arithmetic.
+
+For small matrices the replication code represents stored binary inputs as
+exact rational numbers and checks the whole Hessian by a rational
+positive-semidefiniteness elimination. Its certificates are conditional on the
+declared target-radius bound, which must come from evaluation rather than from
+this algebraic check. This implementation validates the new implication and
+its failure cases. It is not offered as a scalable replacement for the
+fifty-dimensional residual verifier, and its timing is not a primary economic
+comparison.
+
+\section{Certified Warm Starts under Changing Continuations}\label{sec:r33warm}
+A continuation fitted to one economic future can be useful for another without
+being accurate enough to reuse unchanged. The relevant distinction is between
+an admissible initial factor and an admissible final policy. This section gives
+a finite training account for the former and retains the independent economic
+certificate for the latter. In contrast to the isotropic construction in
+Section~\ref{sec:r31constructive}, the starting Gram matrix need not commute
+with the new target. The result also allows explicitly bounded errors in each
+hidden-weight update.
+
+Let $M$ be a symmetric continuation target satisfying
+$mI\preceq M\preceq LI$, where $0<m\leq L$. The target is fixed during
+one fit, after the candidate's future policy has been finalized. A factor
+$W\in\R^{p\times d}$, with $p\geq d$, represents the scalar continuation
+$\|Wx\|^2/d$; every entry of $W$ is trainable. Write
+$H_j=W_j'W_j$ and consider the implemented update
+\begin{equation}\label{eq:r33update}
+ W_{j+1}=W_j\{I-\alpha(H_j-M)\}+\Delta_j,
+ \qquad \|\Delta_j\|_F\leq\nu.
+\end{equation}
+The perturbation account must cover the whole computed step, including
+products and subtraction, not only the final storage conversion. The theorem
+is a deterministic implication for all errors satisfying this account.
+
+\begin{theorem}[Perturbation-stable warm-start training]\label{thm:r33warm}
+Choose $0<r\leq m/2$ and $0<\alpha\leq\{2(L+r)\}^{-1}$, and set
+\begin{align}
+ b&=L+r, & q&=1-3\alpha m/4,\notag\\
+ z&=2\sqrt b(1+\alpha r)\nu+\nu^2,&
+ f&=z/(1-q).\label{eq:r33noise}
+\end{align}
+Suppose $\|H_0-M\|_F\leq e_0\leq r$ and $f\leq r$. Then every iterate
+in \eqref{eq:r33update} satisfies
+\begin{equation}\label{eq:r33envelope}
+ \|H_j-M\|_F\leq f+q^j(e_0-f)\leq r.
+\end{equation}
+In particular, if $f<a<e_0$, it suffices to take
+\begin{equation}\label{eq:r33cap}
+ k=\left\lceil\frac{\log\{(e_0-f)/(a-f)\}}{-\log q}\right\rceil
+\end{equation}
+updates to achieve Gram error at most $a$. If $e_0\leq a$, no update is
+required. No simultaneous diagonalization of $H_0$ and $M$ is assumed.
+\end{theorem}
+
+The proof in Section~\ref{sec:r33proofs} uses a Frobenius-norm contraction
+for a Sylvester operator, rather than the common eigenbasis used by the cold
+construction. It therefore covers rotated and overparameterized factors and
+warm starts whose Gram matrices lie on either side of the target. The positive
+noise floor is economically relevant: a requested continuation tolerance at
+or below that floor is not certified by the finite-cap formula. More accurate
+arithmetic or a different verified construction is then required; increasing
+the iteration count alone does not justify acceptance.
+
+\subsection{Transport and own-policy evaluation}
+Suppose the old factor is accompanied by
+$\|W_0'W_0-M_{\rm old}\|_F\leq e_{\rm old}$ and the newly evaluated target
+by $\|M-M_{\rm old}\|_F\leq h$. The computable gate
+\begin{equation}\label{eq:r33gate}
+ e_{\rm old}+h\leq r
+\end{equation}
+certifies an admissible warm start with $e_0=e_{\rm old}+h$. A direct enclosure
+of $\|W_0'W_0-M\|_F$ is an alternative, potentially sharper gate. Neither gate
+certifies the old action as accurate in the changed economy. If the gate
+fails, the controlled cold construction remains available; the failed gate
+and all subsequent work are charged. A target obtained from the previous
+regime's policy cannot replace the new policy's own continuation without a
+separate transport bound.
+
+A numerical evaluator may return a symmetric center $\widetilde M$ and an
+independently verified spectral radius $e^M$ for the exact own-policy target
+$M^\pi$. Apply Theorem~\ref{thm:r33warm} to $\widetilde M$, using certified
+bounds on that center. If its final Gram error is at most $a$, then
+\begin{equation}\label{eq:r33eval}
+ \|W'W-M^\pi\|_2\leq a+e^M.
+\end{equation}
+In the recursive capital economy, $M_t^\pi=d\Psi_\theta(P_{t+1}^\pi)$.
+The residual-centered evaluation in Proposition~\ref{prop:r31tube} supplies
+$e_t^M=d e_{t+1}/\gamma_t^2$, with an additional allowance for evaluating the
+transformed center when needed. This is a statement about the returned
+policy, not the policy used to produce an old warm start.
+
+For a returned actor $K_t$, put $F_t=A_t-B_tK_t$,
+$\widehat P_t=W_t'W_t/d$, and
+$Z_t=R_tK_t-\beta B_t'\widehat P_tF_t$. Its exact full-action residual obeys
+\begin{equation}\label{eq:r33policy}
+ \|D_t\|_F\leq\|Z_t\|_F+
+ \frac{\beta\|B_t\|_2\|F_t\|_F}{d}(a_t+e_t^M).
+\end{equation}
+The Frobenius norm of $F_t$, rather than its spectral norm without a dimension
+allowance, is essential when $e_t^M$ is only a spectral radius.
+Substituting these residuals in Theorem~\ref{thm:r27entropic}, with its moment,
+positivity, and implementation conditions, gives the same full adapted-policy
+comparison as before. The training theorem changes the construction of the
+candidate, not the economic target or the acceptance rule.
+
+\subsection{Reliability and complete work}
+The reliability statement is uniform over the class of initial factors and
+update perturbations just specified. It is not a confidence interval inferred
+from two or three training seeds. A randomized implementation supported
+entirely in this verified class inherits the deterministic cap. Whether a
+rounded evaluator, update routine, and returned policy satisfy the premises
+is checked separately. Failed domain, transport, precision, or final-policy
+checks remain failures to certify.
+
+For a sequence of changed futures, the warm-start service account is
+\begin{equation}\label{eq:r33work}
+ C_{\rm warm}=C_{\rm initial}+\sum_\ell
+ \{C_{\rm evaluate,\ell}+C_{\rm gate,\ell}
+   +C_{\rm fit,\ell}+C_{\rm actor,\ell}
+   +C_{\rm verify,\ell}+C_{\rm write,\ell}\}.
+\end{equation}
+Failed gates, cold fallbacks, and failed final checks enter this same sum.
+The cap gives an upper bound on the number of factor updates in an admissible
+warm fit. Comparing two upper bounds on training iterations does not establish
+a lower realized cost than a competitor that stops early. An economic work
+advantage requires complete measured costs, or an upper bound for the warm
+procedure below an independently justified lower bound for its comparator.
+In particular, the analytic structural solution in the quadratic economy
+remains a legitimate comparator. This distinction preserves the adverse
+frontiers of the earlier experiments while giving a positive, checkable
+criterion for when an old neural continuation can be retrained safely.
+
+The additional validation exercises below concern this training implication,
+including noncommuting starts, rectangular factors, bounded perturbations,
+transport failure, and unattainable precision requests. They are algebraic
+and implementation checks, not additional independent economic experiments
+and not a replacement for the previously frozen services.
+
+\section{Proofs for Certified Warm Starts}\label{sec:r33proofs}
+\subsection{A noncommuting Gram contraction}
+Let $E=H-M$ and suppose $\|E\|_F\leq r$. Then
+$(m-r)I\preceq H\preceq(L+r)I=bI$. The ideal, unperturbed factor step has
+Gram error
+\begin{equation}\label{eq:r33gramidentity}
+ E^+=E-\alpha(EH+HE)+\alpha^2EHE.
+\end{equation}
+Diagonalize $H$, solely for this argument, with eigenvalues
+$h_i\in[m-r,b]$. The linear map
+$E\mapsto E-\alpha(EH+HE)$ multiplies each matrix entry in that basis by
+$1-\alpha(h_i+h_j)$. These multipliers lie between zero and
+$1-2\alpha(m-r)$ because $2\alpha b\leq1$. Frobenius invariance and
+$\|EHE\|_F\leq br\|E\|_F$ give
+\[
+ \|E^+\|_F\leq
+ \{1-2\alpha(m-r)+\alpha^2br\}\|E\|_F.
+\]
+Since $\alpha b\leq1/2$ and $r\leq m/2$,
+\[
+ 2(m-r)-\alpha br\geq2m-\tfrac52r\geq\tfrac34m.
+\]
+Thus $\|E^+\|_F\leq q\|E\|_F$, with $q$ as in
+\eqref{eq:r33noise}. Notice that $0<q<1$ and that the diagonalizing basis
+is that of the current $H$, not a common basis for $H$ and $M$. This is why
+no commutation assumption has entered the proof.
+
+\subsection{Perturbations and the finite cap}
+Write $U=W(I-\alpha E)$. Since $\|W\|_2^2=\|H\|_2\leq b$,
+$\|U\|_2\leq\sqrt b(1+\alpha r)$. Adding $\Delta$ to the factor changes
+the Gram matrix by
+\[
+ U'\Delta+\Delta'U+\Delta'\Delta.
+\]
+Its Frobenius norm is at most
+$2\|U\|_2\|\Delta\|_F+\|\Delta\|_F^2\leq z$.
+This estimate is valid for every rectangular $p\times d$ factor.
+Consequently, while the radius condition holds,
+$\|H_{j+1}-M\|_F\leq q\|H_j-M\|_F+z$.
+The scalar recursion with initial value $e_0$ has the exact solution
+$f+q^j(e_0-f)$. Each value is a convex combination of $e_0$ and $f$, both
+at most $r$. Induction therefore proves that the radius condition continues
+to hold and establishes \eqref{eq:r33envelope}. If $f<a<e_0$, solving the
+scalar inequality for $j$ yields \eqref{eq:r33cap}. If $e_0\leq a$, the
+initial factor already meets the requested Gram threshold.
+
+\subsection{Transport and economic residuals}
+The triangle inequality proves \eqref{eq:r33gate}. For an inexact target,
+$\|W'W-M^\pi\|_2\leq\|W'W-\widetilde M\|_F+
+\|\widetilde M-M^\pi\|_2$, proving \eqref{eq:r33eval}.
+Finally,
+\[
+ D_t-Z_t=\beta B_t'\{\widehat P_t-\Psi_\theta(P_{t+1}^\pi)\}F_t.
+\]
+The inequality $\|B'EF\|_F\leq\|B\|_2\|E\|_2\|F\|_F$ proves
+\eqref{eq:r33policy}. All state and action quantifiers, Gaussian moment
+margins, lower-subsolution positivity checks, and implementation allowances
+are those of Theorem~\ref{thm:r27entropic}; none is inferred from the
+training gate. In particular, a residual against an old regime's continuation
+must first pay its own-policy evaluation discrepancy.
+
+\subsection{Numerical interpretation of the error account}
+For a routine that computes the ideal matrix expression exactly and then
+rounds each entry to a grid of spacing $h$, nearest rounding gives
+$\nu\leq h\sqrt{pd}/2$. A floating-point implementation that also rounds
+matrix products must add enclosures for those operations before invoking
+this bound. The exact-rational regression tests use the former, explicitly
+specified routine. Their success does not validate an unenclosed BLAS
+roundoff account. Similarly, the stored scalar cap is checked by exact
+rational comparison rather than trusting a rounded logarithm at a ceiling
+boundary. This verification concerns the cap arithmetic, not the economic
+model's unknown evaluation radius.
+
+\section{Proofs for Budgeted Warm-Start Policy Construction}
+\label{sec:r34proof}
+\subsection{The mixed-norm residual}
+Let $E_t=W_t'W_t-\widetilde M_t$ and
+$V_t=\widetilde M_t-dS_t$. Then
+\[
+ D_t-Z_t=\frac{\beta}{d}B_t'(E_t+V_t)F_t.
+\]
+The inequalities $\|B'EF\|_F\leq\|B\|_2\|E\|_F\|F\|_2$ and
+$\|B'VF\|_F\leq\|B\|_2\|V\|_2\|F\|_F$, together with
+$\|F_t\|_F\leq\sqrt d\|F_t\|_2$, prove \eqref{eq:r34mixed}.
+The spectral discrepancy also gives
+\[
+ \|\widehat S_t-S_t\|_2\leq(a_t+e_t^M)/d\leq q_*.
+\]
+These statements do not require the center or the Gram error to commute
+with the true coefficient.
+
+\subsection{A joint backward induction}
+The coefficient bound is exact at the terminal date. Suppose
+$0\preceq P_{t+1}^\pi\preceq\bar p_{t+1}I$. The positive primitive margin
+implies $0\preceq S_t\preceq u_tI$, hence
+$0\preceq\widehat S_t\preceq(u_t+q_*)I$. The actor identity can be written
+\[
+ (R_t+\beta B_t'\widehat S_tB_t)K_t
+                      =\beta B_t'\widehat S_tA_t+Z_t.
+\]
+Its left coefficient is bounded below by $r_tI$. Since
+$z_t\leq\sqrt{s r_tq_t}\leq v_t$, it follows that
+\[
+ \|F_t\|_2\leq\|A_t\|_2+
+    \frac{b_t}{r_t}\{\beta b_t(u_t+q_*)\|A_t\|_2+z_t\}
+       \leq f_t^+.
+\]
+Equation~\eqref{eq:r34mixed} and the second local acceptance test therefore
+yield $\|D_t\|_F\leq\sqrt{s r_tq_t}$. Completing the square in the exact
+one-step action objective bounds the returned actor's excess coefficient
+over its true greedy improvement by $s q_t I$. Comparison of that minimum
+with the reference feedback $L_t$ gives
+\[
+ P_t^\pi\preceq Q_t+L_t'R_tL_t+
+ \beta(A_t-B_tL_t)'S_t(A_t-B_tL_t)+s q_tI\preceq\bar p_tI,
+\]
+because $s q_tI\preceq\eta Q_t$. Positive stage costs give
+$P_t^\pi\succeq Q_t\succeq q_tI$. This closes the coefficient induction.
+In particular, the target bound used in the next fit is not inferred from
+a presumed successful policy comparison.
+
+Now apply the subsolution recursion of
+Theorem~\ref{thm:r27entropic}. If
+$\delta_{t+1}\leq s\lambda_{t+1}^+\leq q_*$, its true margin is at least
+$\bar\gamma_t$ and its lower-greedy closed-loop bound is at most $g_t$.
+Consequently
+\[
+ \delta_t\leq s q_t+
+       \frac{\beta g_t^2}{\bar\gamma_t^2}s\lambda_{t+1}^+
+           =s\lambda_t^+,
+ \qquad
+ \kappa_t\leq\beta\left(s\mu_{t+1}^+
+       +\frac{\tau s\lambda_{t+1}^+}{\bar\gamma_t}\right)=s\mu_t^+.
+\]
+The zero terminal allowances start this induction. The allocation preserves
+the lower subsolution's required positivity at every noninitial date.
+The recursive full-policy theorem and the initial-radius inequality then
+prove \eqref{eq:r34policybound}. Neither state sampling nor a restriction to
+linear competitors enters this argument.
+
+\subsection{Finite arithmetic and fallback}
+For rational matrices and a finalized rational feedback, the Gaussian
+coefficient map uses matrix multiplication and an inverse of
+$I-2\theta\Sigma P$. A strict norm-domain margin implies invertibility.
+The own-policy coefficient and the next fitted actor can therefore be
+computed by finitely many rational operations. The state-independent
+log-determinant constant is not an input to these actor equations; its
+contribution to the policy comparison is already paid by $\mu_t^+$.
+The scalar bounds can be enlarged rationally, and squared inequalities can
+be checked without treating rounded square roots as exact.
+
+With exact evaluation and actor solves, take $e_t^M=z_t=0$ and select a
+positive rational $a_t$ satisfying \eqref{eq:r34accept}. The exact-product,
+nearest-dyadic update has perturbation norm at most
+$2^{-b}\sqrt{pd}/2$ at $b$ storage bits. Its Gram noise floor tends to zero
+as $b$ tends to infinity. For a certified warm basin, choose $b$ so that the
+floor is below $a_t$ and apply Theorem~\ref{thm:r33warm}. Its recurrence is
+checked with rational upper bounds for the square roots. If the initial
+error already lies below $a_t$, no factor update is needed.
+
+On failure of the warm gate, choose rational $c=s_0^2$ with $0<c\leq m_t$
+and $W_0=s_0I$ at a nonterminal date. The controlled cold contraction in
+Section~\ref{sec:r31proofs}, evaluated without rounding its products, reaches
+the same positive tolerance in finitely many rational updates. This is an
+existence and termination statement for a specified arithmetic procedure,
+not a practical bit-complexity bound for all exact rational implementations.
+It does not justify discarding failed gates from a measured service cost.
+The terminal transformed coefficient is supplied directly. These observations
+prove Corollary~\ref{cor:r34finite}.
+
+\section{Proofs for Precision-Adaptive Refresh}\label{sec:r37proof}
+\begin{proof}[Proof of Theorem~\ref{thm:r37precision}]
+Write $Y=WM^{-1/2}$ and $C=Y'Y=I+E$. The ideal update in
+\eqref{eq:r37update}, followed by right multiplication by $M^{-1/2}$,
+is $\overline Y=Y(3I-C)/2$. Consequently
+\[
+ \overline Y'\overline Y=C(3I-C)^2/4,
+ \qquad \overline Y'\overline Y-I=(-3E^2+E^3)/4.
+\]
+These identities hold for rectangular $Y$; they require no commutation
+between $W'W$ and $M$. The matrices in the right-hand identities commute
+because they are polynomials in the single symmetric matrix $E$.
+If $\|E\|_2\leq\rho\leq r$, the second identity gives
+$\|\overline Y'\overline Y-I\|_2\leq c_r\rho^2$.
+Moreover, for every eigenvalue $e\in[-r,r]$,
+\[
+ 0\leq(1+e)(2-e)^2/4=1+e^2(e-3)/4\leq1.
+\]
+Hence $\|\overline Y\|_2\leq1$. Put $Z=\Delta M^{-1/2}$.
+The implemented Gram matrix differs from the ideal one by
+$\overline Y'Z+Z'\overline Y+Z'Z$, of norm at most $2\nu+\nu^2$.
+The allocated precision therefore implies
+\[
+ \|E_{j+1}\|_2\leq c_r\rho_j^2+2\nu_j+\nu_j^2
+                         \leq\rho_j^2=\rho_{j+1}.
+\]
+Induction proves \eqref{eq:r37double}, since $\rho_j^2\leq\rho_j\leq r$.
+Solving $\rho_0^{2^K}\leq\tau$ gives \eqref{eq:r37cap}. The zero-update
+cases are immediate.
+
+Entrywise nearest-grid rounding has Frobenius error at most
+$\sqrt{pd}\,2^{-b-1}$. Multiplication by $M^{-1/2}$ and
+$\|M^{-1/2}\|_2\leq m^{-1/2}$ give the specified upper bound $\nu$.
+In particular, $\nu\leq(1-c_r)\rho_j^2/3$ is sufficient: it implies
+$\nu\leq1$ and thus $2\nu+\nu^2\leq3\nu\leq(1-c_r)\rho_j^2$.
+An admissible integer therefore always exists, and the first admissible
+positive integer satisfies
+\[
+ b_j\leq C+2\log_2(1/\rho_j)
+\]
+for a finite constant $C$ depending only on $A$ and $r$. If $K\geq1$ is
+the first successful update count, $\rho_0^{2^{K-1}}>\tau$. Hence
+\begin{align*}
+ \sum_{j<K} b_j
+ &\leq CK+2\log_2(1/\rho_0)(2^K-1)\\
+ &<CK+4\log_2(1/\tau),
+\end{align*}
+which proves \eqref{eq:r37bitaccount}. A zero-update fit contributes an
+empty sum. This bound is on stored fractional precision, not on the bit
+lengths of intermediate rational products.
+
+Finally, the target is fixed throughout the fit. Its exact inverse can be
+constructed once, checked against $M$, and applied to each successive Gram
+matrix. The inverse applications and their residual checks are still
+performed and charged. No inverse is needed when the initial factor is
+accepted. This establishes the final accounting assertion without claiming
+that the training or the checks have zero cost.
+\end{proof}
+
+\begin{proof}[Proof of the target-change bound]
+The old certificate and target comparison give
+\[
+ (1-\rho_{\rm old})(1-\omega)M_{\rm new}
+ \preceq W'W\preceq
+ (1+\rho_{\rm old})(1+\omega)M_{\rm new}.
+\]
+The upper relative excess is $\rho_{\rm old}+\omega+
+\rho_{\rm old}\omega$; the lower relative deficit is
+$\rho_{\rm old}+\omega-\rho_{\rm old}\omega$, which is no greater.
+The larger quantity thus certifies the proposed new basin radius. The
+calculation concerns only the old factor, not an inverse or a policy that
+has been accepted under a different target.
+\end{proof}
+
+\begin{proof}[Proof of Corollary~\ref{cor:r37policy}]
+For the current center $\widetilde M_t$, the relative Gram enclosure yields
+\[
+ \|W_t'W_t-\widetilde M_t\|_F
+ \leq\sqrt d\,\|\widetilde M_t\|_2\|E_t\|_2
+ \leq\sqrt d\,L_t\tau_t\leq a_t.
+\]
+The target-change gate, or a direct gate, supplies the initial basin. The
+precision theorem supplies this inequality in finitely many steps for each
+positive allowance, provided the implementation supplies the required
+precision. The terminal transformed coefficient is evaluated directly.
+Working backward after finalizing each future policy therefore supplies
+exactly the Gram, evaluation, and actor premises of
+Theorem~\ref{thm:r34robust}. That theorem proves the coefficient envelope
+and the all-action Bellman comparison jointly, and gives the displayed
+initial-state policy bound. No inference from sampled states, a finite
+action catalogue, or a small fitting loss is used in this implication.
+An independently bounded discrepancy between the stored policy and its
+executed actions must be added through its own implementation account.
+\end{proof}
+
+
+\section{Complete factorial and timing ledger}\label{sec:r39ledger}
+The following entries summarize all 96 quadratic economy--method objects. Each has three isolated repetitions. Times are complete-service seconds; the range gives the observed minimum and maximum. $U$ counts updates, $B$ target-inverse builds and $F$ failed policy checks in the final tuning trial. The machine-readable audit and original records additionally preserve all tuning trials, actor solves, own-policy evaluation dates, moment margins, native precision, process memory and startup-inclusive clocks. Methods: FR/FC are fixed64 rebuilt/cached; AR/AC are adaptive rebuilt/cached; TC is tuned native cached; S is structural.
+\begin{longtable}{llrrrrrr}
+\toprule Object & Method & Median & Min & Max & $U$ & $B$ & $F$\\\midrule\endhead
+tol 0.0001 & AC & 0.433 & 0.417 & 0.433 & 11 & 3 & 15\\
+tol 0.0001 & AR & 0.421 & 0.418 & 0.422 & 11 & 11 & 15\\
+tol 0.0001 & FC & 0.415 & 0.415 & 0.421 & 11 & 3 & 15\\
+tol 0.0001 & FR & 0.416 & 0.416 & 0.420 & 11 & 11 & 15\\
+tol 0.0001 & S & 0.170 & 0.168 & 0.173 & 0 & 0 & 4\\
+tol 0.0001 & TC & 0.424 & 0.423 & 0.428 & 11 & 3 & 15\\
+tol 0.01 & AC & 0.352 & 0.350 & 0.356 & 8 & 3 & 12\\
+tol 0.01 & AR & 0.351 & 0.349 & 0.358 & 8 & 8 & 12\\
+tol 0.01 & FC & 0.353 & 0.352 & 0.354 & 8 & 3 & 12\\
+tol 0.01 & FR & 0.354 & 0.352 & 0.354 & 8 & 8 & 12\\
+tol 0.01 & S & 0.175 & 0.172 & 0.181 & 0 & 0 & 4\\
+tol 0.01 & TC & 0.356 & 0.351 & 0.356 & 8 & 3 & 12\\
+tol 1e-06 & AC & 0.444 & 0.443 & 0.450 & 12 & 3 & 16\\
+tol 1e-06 & AR & 0.441 & 0.441 & 0.449 & 12 & 12 & 16\\
+tol 1e-06 & FC & 0.442 & 0.440 & 0.444 & 12 & 3 & 16\\
+tol 1e-06 & FR & 0.448 & 0.440 & 0.456 & 12 & 12 & 16\\
+tol 1e-06 & S & 0.171 & 0.170 & 0.172 & 0 & 0 & 4\\
+tol 1e-06 & TC & 0.451 & 0.438 & 0.453 & 12 & 3 & 16\\
+tol 1e-08 & AC & 0.500 & 0.485 & 0.503 & 14 & 3 & 18\\
+tol 1e-08 & AR & 0.489 & 0.483 & 0.500 & 14 & 14 & 18\\
+tol 1e-08 & FC & 0.482 & 0.481 & 0.484 & 14 & 3 & 18\\
+tol 1e-08 & FR & 0.487 & 0.485 & 0.495 & 14 & 14 & 18\\
+tol 1e-08 & S & 0.169 & 0.169 & 0.170 & 0 & 0 & 4\\
+tol 1e-08 & TC & 0.491 & 0.486 & 0.492 & 14 & 3 & 18\\
+tol 1e-10 & AC & 0.486 & 0.483 & 0.499 & 14 & 3 & 18\\
+tol 1e-10 & AR & 0.487 & 0.486 & 0.491 & 14 & 14 & 18\\
+tol 1e-10 & FC & 0.491 & 0.484 & 0.509 & 14 & 3 & 18\\
+tol 1e-10 & FR & 0.491 & 0.486 & 0.500 & 14 & 14 & 18\\
+tol 1e-10 & S & 0.175 & 0.173 & 0.357 & 0 & 0 & 4\\
+tol 1e-10 & TC & 0.488 & 0.488 & 0.502 & 14 & 3 & 18\\
+moment & AC & 0.490 & 0.488 & 0.507 & 14 & 3 & 18\\
+moment & AR & 0.492 & 0.490 & 0.501 & 14 & 14 & 18\\
+moment & FC & 0.479 & 0.476 & 0.491 & 13 & 3 & 17\\
+moment & FR & 0.474 & 0.469 & 0.479 & 13 & 13 & 17\\
+moment & S & 0.171 & 0.171 & 0.178 & 0 & 0 & 4\\
+moment & TC & 0.495 & 0.495 & 0.507 & 14 & 3 & 18\\
+grid 16-8-16.0 & AC & 2.481 & 2.476 & 2.533 & 42 & 7 & 50\\
+grid 16-8-16.0 & AR & 2.474 & 2.463 & 2.636 & 42 & 42 & 50\\
+grid 16-8-16.0 & FC & 2.542 & 2.459 & 2.543 & 42 & 7 & 50\\
+grid 16-8-16.0 & FR & 2.518 & 2.471 & 2.568 & 42 & 42 & 50\\
+grid 16-8-16.0 & S & 0.476 & 0.470 & 0.479 & 0 & 0 & 8\\
+grid 16-8-16.0 & TC & 2.493 & 2.456 & 2.541 & 42 & 7 & 50\\
+grid 32-4-16.0 & AC & 0.859 & 0.856 & 0.876 & 18 & 3 & 22\\
+grid 32-4-16.0 & AR & 0.855 & 0.850 & 0.875 & 18 & 18 & 22\\
+grid 32-4-16.0 & FC & 0.905 & 0.887 & 0.909 & 19 & 3 & 23\\
+grid 32-4-16.0 & FR & 0.892 & 0.889 & 0.895 & 19 & 19 & 23\\
+grid 32-4-16.0 & S & 0.225 & 0.224 & 0.226 & 0 & 0 & 4\\
+grid 32-4-16.0 & TC & 0.857 & 0.855 & 0.858 & 18 & 3 & 22\\
+grid 4-12-4.0 & AC & 3.683 & 3.648 & 3.708 & 44 & 11 & 56\\
+grid 4-12-4.0 & AR & 3.612 & 3.553 & 3.614 & 44 & 44 & 56\\
+grid 4-12-4.0 & FC & 3.645 & 3.556 & 3.725 & 44 & 11 & 56\\
+grid 4-12-4.0 & FR & 3.636 & 3.533 & 3.654 & 44 & 44 & 56\\
+grid 4-12-4.0 & S & 0.856 & 0.839 & 0.861 & 0 & 0 & 12\\
+grid 4-12-4.0 & TC & 3.633 & 3.551 & 3.752 & 44 & 11 & 56\\
+grid 8-4-8.0 & AC & 0.532 & 0.527 & 0.549 & 15 & 3 & 19\\
+grid 8-4-8.0 & AR & 0.536 & 0.534 & 0.540 & 15 & 15 & 19\\
+grid 8-4-8.0 & FC & 0.534 & 0.526 & 0.538 & 15 & 3 & 19\\
+grid 8-4-8.0 & FR & 0.527 & 0.526 & 0.534 & 15 & 15 & 19\\
+grid 8-4-8.0 & S & 0.178 & 0.176 & 0.180 & 0 & 0 & 4\\
+grid 8-4-8.0 & TC & 0.529 & 0.528 & 0.537 & 15 & 3 & 19\\
+change 0.25-cold & AC & 0.448 & 0.446 & 0.449 & 12 & 3 & 16\\
+change 0.25-cold & AR & 0.450 & 0.448 & 0.454 & 12 & 12 & 16\\
+change 0.25-cold & FC & 0.445 & 0.445 & 0.445 & 12 & 3 & 16\\
+change 0.25-cold & FR & 0.445 & 0.441 & 0.447 & 12 & 12 & 16\\
+change 0.25-cold & S & 0.172 & 0.168 & 0.174 & 0 & 0 & 4\\
+change 0.25-cold & TC & 0.446 & 0.437 & 0.451 & 12 & 3 & 16\\
+change 0.25-warm & AC & 0.872 & 0.863 & 0.880 & 12 & 3 & 16\\
+change 0.25-warm & AR & 0.864 & 0.858 & 0.901 & 12 & 12 & 16\\
+change 0.25-warm & FC & 0.863 & 0.853 & 0.865 & 12 & 3 & 16\\
+change 0.25-warm & FR & 0.882 & 0.876 & 0.919 & 12 & 12 & 16\\
+change 0.25-warm & S & 0.598 & 0.584 & 0.602 & 0 & 0 & 4\\
+change 0.25-warm & TC & 0.872 & 0.869 & 0.884 & 12 & 3 & 16\\
+change 1.005-cold & AC & 0.439 & 0.437 & 0.442 & 12 & 3 & 16\\
+change 1.005-cold & AR & 0.448 & 0.442 & 0.473 & 12 & 12 & 16\\
+change 1.005-cold & FC & 0.441 & 0.436 & 0.460 & 12 & 3 & 16\\
+change 1.005-cold & FR & 0.440 & 0.439 & 0.473 & 12 & 12 & 16\\
+change 1.005-cold & S & 0.173 & 0.169 & 0.173 & 0 & 0 & 4\\
+change 1.005-cold & TC & 0.447 & 0.441 & 0.464 & 12 & 3 & 16\\
+change 1.005-warm & AC & 0.679 & 0.658 & 0.680 & 3 & 3 & 7\\
+change 1.005-warm & AR & 0.682 & 0.668 & 0.691 & 3 & 3 & 7\\
+change 1.005-warm & FC & 0.659 & 0.657 & 0.677 & 3 & 3 & 7\\
+change 1.005-warm & FR & 0.665 & 0.662 & 0.689 & 3 & 3 & 7\\
+change 1.005-warm & S & 0.605 & 0.602 & 0.622 & 0 & 0 & 4\\
+change 1.005-warm & TC & 0.666 & 0.660 & 0.667 & 3 & 3 & 7\\
+change 4.0-cold & AC & 0.451 & 0.440 & 0.452 & 12 & 3 & 16\\
+change 4.0-cold & AR & 0.444 & 0.443 & 0.452 & 12 & 12 & 16\\
+change 4.0-cold & FC & 0.446 & 0.436 & 0.456 & 12 & 3 & 16\\
+change 4.0-cold & FR & 0.441 & 0.440 & 0.448 & 12 & 12 & 16\\
+change 4.0-cold & S & 0.172 & 0.171 & 0.173 & 0 & 0 & 4\\
+change 4.0-cold & TC & 0.450 & 0.437 & 0.462 & 12 & 3 & 16\\
+change 4.0-warm & AC & 0.859 & 0.856 & 0.882 & 12 & 3 & 16\\
+change 4.0-warm & AR & 0.873 & 0.866 & 0.876 & 12 & 12 & 16\\
+change 4.0-warm & FC & 0.872 & 0.863 & 0.944 & 12 & 3 & 16\\
+change 4.0-warm & FR & 0.871 & 0.870 & 0.906 & 12 & 12 & 16\\
+change 4.0-warm & S & 0.594 & 0.588 & 0.604 & 0 & 0 & 4\\
+change 4.0-warm & TC & 0.870 & 0.869 & 0.890 & 12 & 3 & 16\\
+\bottomrule\end{longtable}
+\subsection{Nonlinear timing dispersion}
+\begin{tabular}{lrrrr}\toprule Object & Median & Min & Max & Peak RSS (KiB)\\\midrule
+nonlinear-frontier & 6.077 & 5.993 & 6.086 & 45700\\
+neural-1.0-0.0 & 2.846 & 2.840 & 2.848 & 313708\\
+neural-1.0-1.0 & 5.011 & 4.984 & 6.237 & 314288\\
+neural-4.0-0.0 & 2.999 & 2.976 & 3.005 & 313744\\
+neural-4.0-1.0 & 6.222 & 6.220 & 6.225 & 314420\\
+capital-1.0-0.0 & 0.240 & 0.240 & 0.241 & 45400\\
+capital-1.0-1.0 & 1.311 & 1.310 & 1.325 & 45400\\
+capital-4.0-0.0 & 0.409 & 0.408 & 0.410 & 45400\\
+capital-4.0-1.0 & 2.564 & 2.562 & 2.569 & 45400\\
+\bottomrule\end{tabular}
+\par\medskip The frontier is one complete four-mesh service per repetition. Its internal cumulative construction clocks are distinct from this full-service clock. Peak RSS is process high-water memory, not exclusive algorithm storage.
+
+\section{Arithmetic, Dimension, and the Neural Verification Account}
+\label{app:r41arithmetic}
+This appendix supplies the arithmetic and work details for
+Section~\ref{sec:r41direct} of the article. The trained functions at both
+successive dates are inputs to the certificate. Approximation of those
+functions by their former training targets is not an allowed operation.
+
+\subsection{Exact activation regions and the terminal discrepancy}
+Write the stored scalar network as
+\[
+ f(x)=b_0+\sum_{j=1}^m v_j(w_jx+b_j)_+.
+\]
+All coefficients are rational when read as the exact values of their binary
+representations. Units with $w_j=0$ contribute constants. For the remaining
+units, order and deduplicate the rational roots $-b_j/w_j$ in $[0,1]$.
+Between consecutive roots the active set is constant, and summing its
+coefficients gives an exact affine function $A_kx+B_k$. Negative slopes do
+not require a separate approximation rule. The maximum of $|A_k|$ over
+nonempty regions is an all-state Lipschitz bound. This maximum can be much
+smaller than the sum of absolute weights.
+
+\begin{proposition}[Evaluation after rational region compilation]
+\label{prop:r41compile}
+Suppose every rounded root differs from its exact root by at most $e_r$,
+while order is retained. Let $L=\max_k|A_k|$. If region selection at $x$
+uses the rounded roots, evaluating the selected exact affine extension
+instead of $f(x)$ makes an error no larger than $2Le_r$. If several rounded
+roots coincide, the same bound holds provided every displaced boundary
+between the chosen and true regions lies within $e_r$ of $x$. Outward
+coefficient evaluation at a midpoint $x_c$ of an input interval $I$ and an
+additional $L\operatorname{rad}(I)$ then enclose $f(I)$, after charging
+midpoint rounding as well.
+\end{proposition}
+\begin{proof}
+An incorrectly selected region is separated from the true one only by
+roots whose rounded comparisons differ at $x$. Such roots are within
+$e_r$ of $x$. Choose the boundary of the selected region closest to $x$;
+call it $r$. The selected affine function equals $f$ at $r$ by continuity.
+Both $f$ and that affine function have Lipschitz constant at most $L$.
+Their difference at $x$ is therefore at most $2L|x-r|\leq2Le_r$.
+For an interval, add the Lipschitz variation from its midpoint and the
+outward arithmetic enclosure of the selected affine evaluation.
+\end{proof}
+
+For the terminal primitive, split further at the cost kink $3/8$.
+On every resulting interval $f_T-g$ is a quadratic polynomial with rational
+coefficients. A continuous quadratic achieves its extrema at an endpoint
+or at its stationary point if that point is in the interval. Testing those
+points gives rational global endpoints. The terminal error is generally
+nonzero. In the executed study, 66 candidates yield a terminal interval
+approximately $[-0.000668000,0.000410383]$ for every economy, because the
+terminal network and terminal primitive are shared.
+
+\subsection{Rounding the specified execution graph}
+A range-error pair consists of an exact range $[a,b]$ and a nonnegative
+rational error $e$. It means that an ideal node $y$ lies in $[a,b]$ and its
+implemented value differs by at most $e$. Put $M([a,b])=\max(|a|,|b|)$.
+For separate round-to-nearest binary32 operations, use
+$u=2^{-24}$ and $\alpha=2^{-150}$. If a sum has pre-rounding propagated
+error $e_s=e_1+e_2$ and ideal range $I_s$, its new error is
+\[
+ e_s+u\{M(I_s)+e_s\}+\alpha.
+\]
+For a product, first put
+\[
+ e_p=M(I_1)e_2+M(I_2)e_1+e_1e_2;
+\]
+then add $u\{M(I_1I_2)+e_p\}+\alpha$. These formulae follow by expanding
+$(y_1+\delta_1)(y_2+\delta_2)-y_1y_2$ and applying the elementary rounding
+inequality. Rational range propagation is performed separately. Conversion
+of the state, action, price, and shock is included at the input nodes.
+Clipping to a representable closed interval is nonexpansive and cannot
+increase this error.
+
+The deposited implementation applies these recurrences to the operation
+order used in the binary32 transition, cost, and terminal routines.
+Its verification test compares 1,032 native executions with exact rational
+execution of the corresponding ideal graphs. Those finite tests detect
+implementation mistakes; the range induction, not the tests, supplies the
+all-state guarantee. The maximum observed error is less than $0.224$ of
+the corresponding uniform allowance. No conclusion is drawn for a fused
+multiply-add implementation or a platform that flushes subnormals to zero.
+
+Nearest-node policy selection deserves a separate argument because the
+actor is discontinuous. For a true state $x$ and acquired state
+$\widehat x$, a node selected nearest to $\widehat x$ is at most
+$h_x+|\widehat x-x|$ from $x$. The chosen-action and Bellman-minimum
+comparisons each pay $L_x|\widehat x-x|$. There is consequently no need
+for an unjustified Lipschitz bound on the actor itself. At the dyadic grids
+in this study, stored action values and state cutpoints are exactly
+representable in binary32; that fact does not remove errors in state
+acquisition, transition, or cost evaluation.
+
+\subsection{Continuous innovations and multidimensional verification}
+\label{app:r41work}
+The direct certificate is not tied to scalar states or finite-support
+uncertainty. This extension states explicitly what additional work is
+required; it does not identify a grid verifier with a dimension-free
+method. Let $X\subset\mathbb R^{d_x}$, $A\subset\mathbb R^{d_a}$, and
+$Z\subset\mathbb R^{d_z}$ be compact. The innovation has a known law and
+admits a deterministic quantizer $q$ with
+$\|Z-q(Z)\|\leq h_z$ almost surely. The probabilities of the quantizer
+cells are supplied exactly or by enclosing arithmetic. Take a law-invariant,
+monotone, cash-invariant one-step risk functional, evaluated conditionally
+on the current state and action. Expectation and entropic risk satisfy this
+requirement. Suppose the transition is Lipschitz in the innovation with
+constant $L_{Fz,t}$. If stage costs also depend on the innovation, add their
+innovation Lipschitz contribution in the definition below.
+
+\begin{theorem}[A dimension-explicit neural certificate with quantized innovations]
+\label{thm:r41dimension}
+Let the hypotheses of the direct neural certificate hold on $X$ and $A$.
+Put $\zeta_t=\beta_t L_{t+1}L_{Fz,t}h_z$. Construct nodal intervals using
+$q(Z)$ rather than $Z$. If $(\ell_t,u_t,\eta_t)$ are computed from these
+intervals, then
+\[
+ (\ell_t-\zeta_t,\ u_t+\zeta_t,\ \eta_t+2\zeta_t)
+\]
+are valid residual and actor bounds for the unquantized economy. The global
+policy certificate increases by at most $4\sum_{t<T}B_t\zeta_t$.
+
+Let $K_x,K_a,m$ be the numbers of state nodes, action nodes, and quantizer
+cells. Let $P_t$ count scalar arithmetic operations in a forward network
+evaluation, $C_{F,t}$ the transition and cost evaluation work, and
+$C_{\rho,t}(m,p)$ the work to enclose one risk evaluation at precision $p$.
+In units of certified precision-$p$ arithmetic, a streaming direct
+verification uses
+\begin{align*}
+ W\leq C\sum_{t<T}K_xK_a
+ \{m(C_{F,t}+P_{t+1})+C_{\rho,t}(m,p)\}
+ +C\sum_{t\leq T}K_xP_t+W_T+W_{\rm io}.
+\end{align*}
+Here $W_T$ certifies the terminal discrepancy and $W_{\rm io}$ includes
+serialization and the durable evidence writes. For a batch of $b$ state
+nodes, its working storage, in scalar words, is at most
+\[
+ O\!\left(\sum_{t\leq T}P_t+TK_xd_a+md_z+
+ bK_am\,w_{\max}+K_x\right),
+\]
+where $w_{\max}$ bounds the largest network layer width and $b\leq K_x$.
+The policy output itself requires $TK_xd_a$ words. Tensor covers of bounded
+boxes can be chosen with
+\[
+ K_x=O(h_x^{-d_x}),\qquad K_a=O(h_a^{-d_a}),\qquad
+ m=O(h_z^{-d_z}).
+\]
+The hidden constants depend on the domains and the norm, not on training
+convergence. A finite refinement schedule is charged by summing these
+bounds over every attempted resolution, not just the accepted resolution.
+\end{theorem}
+\begin{proof}
+Couple $Z$ and $q(Z)$ on their defining probability space. The two future
+network values differ almost surely by at most
+$L_{t+1}L_{Fz,t}h_z$. Monotonicity and cash invariance bound the difference
+of their risk evaluations by the same number. Law invariance identifies
+the quantized risk evaluation with its finite-support calculation.
+Multiplication by $\beta_t$ gives a uniform $Q$ discrepancy $\zeta_t$.
+Taking an infimum does not increase a uniform error. A residual therefore
+pays $\zeta_t$ at each endpoint; a chosen-action excess pays $2\zeta_t$.
+The residual oscillation and actor allowance together pay $4\zeta_t$.
+Backward induction gives the stated policy bound.
+
+For each of the $TK_xK_a$ state-action pairs the program evaluates $m$
+transitions and networks and then one risk aggregate. Current networks
+are evaluated at the state nodes as well. Streaming over state batches
+retains only the batch's forward activations, the nodal extrema and stored
+actors, the innovation support, and the network coefficients. This proves
+the operation and storage counts. An equally spaced tensor cover proves
+the node bounds. Exact enumeration of a policy's innovation tree at $Q$
+initial queries adds, separately, order
+$Q\sum_{t=0}^Tm^t$ evaluations and a depth-first stack of order $T$ times
+the stored state and risk-aggregation data. This exponential query cost is
+not hidden inside the Bellman verification count.
+\end{proof}
+
+The notation $C_{\rho,t}(m,p)$ is intentional. A native addition is not an
+exact exponential, logarithm, or certified inverse. Bit costs require a
+specified arithmetic implementation and must multiply the appropriate
+operation counts by its precision-dependent costs. The complete-step
+matrix result in the article similarly exposes its lower spectral bound
+and residual enclosure rather than suppressing conditioning in an
+unspecified constant. Neural Lipschitz bounds, risk-evaluation ranges,
+terminal verification, and the admissible condition margins must be
+reported before either count is used numerically.
+
+A refinement reduces verification slack; it cannot force a fixed inaccurate
+network to satisfy an arbitrary policy target. More precisely, suppose
+current-value and quantized $Q$ nodal intervals have widths at most
+$w_{f,t}$ and $w_{q,t}$. Choosing a minimum-upper-endpoint action gives the
+following useful upper bound on the certificate:
+\begin{align*}
+ E_f\leq &\sum_{t<T}B_t\operatorname{osc}(f_t-T_tf_{t+1})
+       +B_T\operatorname{osc}(f_T-g)\\
+ &+\sum_{t<T}B_t\{(2L_t+4L_{x,t})h_x+3L_{a,t}h_a
+              +4\zeta_t+2w_{f,t}+3w_{q,t}\}.
+\end{align*}
+To check the coefficients, the grid minimum differs from the continuous
+minimum by between zero and $L_{a,t}h_a$. The residual range therefore
+pays at most $2L_{a,t}h_a+2w_{f,t}+2w_{q,t}$, in addition to its state
+cover. The selected action pays at most one further $L_{a,t}h_a+w_{q,t}$
+and its two state movements. Quantization supplies the four allowances
+already proved. Thus the refinement tends to the network's residual and
+terminal oscillations, not automatically to zero.
+
+For prescribed verification slack, this theorem specifies its dependence
+on state, action and innovation dimension, horizon, network size, precision,
+and the problem's Lipschitz and conditioning data. It does not establish a
+competitive high-dimensional work frontier. The new executed nonlinear
+certificate below remains scalar; the higher dimensions in the quadratic
+study do not change that fact. A coupled nonlinear scaling comparison with
+strong sparse, projection, or fitted dynamic-programming baselines remains
+an empirical question distinct from this extension theorem.
+
+\begin{longtable}{rrrrr}
+\caption{Neural cost minus the newly optimized spline cost}\label{tab:r41difference}\\\toprule
+$P$ & $\theta$ & Initial state & Lower endpoint & Upper endpoint\\\midrule\endfirsthead
+\toprule $P$ & $\theta$ & Initial state & Lower endpoint & Upper endpoint\\\midrule\endhead
+1 & 0 & 0.125 & 0.000177945 & 0.000177946\\
+1 & 0 & 0.250 & 0.000194975 & 0.000194976\\
+1 & 0 & 0.500 & 0.000213034 & 0.000213035\\
+1 & 0 & 0.750 & 0.000156082 & 0.000263132\\
+1 & 1 & 0.125 & 0.000193876 & 0.000193877\\
+1 & 1 & 0.250 & 0.000187608 & 0.000187609\\
+1 & 1 & 0.500 & 0.000197012 & 0.000197013\\
+1 & 1 & 0.750 & 0.000147061 & 0.000253192\\
+4 & 0 & 0.125 & 0.000203939 & 0.000203940\\
+4 & 0 & 0.250 & 0.000139974 & 0.000139975\\
+4 & 0 & 0.500 & 0.000079894 & 0.000079895\\
+4 & 0 & 0.750 & -0.000346677 & 0.000576982\\
+4 & 1 & 0.125 & 0.000153915 & 0.000153916\\
+4 & 1 & 0.250 & -0.000249177 & 0.000545932\\
+4 & 1 & 0.500 & 0.000087748 & 0.000087749\\
+4 & 1 & 0.750 & 0.000113495 & 0.000113496\\
+\bottomrule\end{longtable}
+All intervals are computed by subtracting separately enclosed own-policy values; displayed endpoints are rounded outward. Positive differences mean higher neural cost. Every interval is contained in $[-10^{-3},10^{-3}]$. This is a descriptive, state-specific cardinal tolerance, not statistical equivalence or a uniform-in-state comparison.
+
+\bibliographystyle{ecta-fullname}
+\bibliography{revisions/2026-10-07-r41/supp_references}
+\end{document}

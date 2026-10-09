@@ -1,0 +1,173 @@
+\section{The Trained Continuation as the Certified Bellman Object}
+\label{sec:r41direct}
+A learned continuation enters the economic argument only when the function
+actually returned by training, rather than its training target, satisfies the
+Bellman comparison. We now set $v_t=f_t$ in
+Theorem~\ref{thm:r39comparison}, where $f_0,\ldots,f_T$ are the stored neural
+networks. The continuation used inside the date-$t$ Bellman operator is
+$f_{t+1}$. Its replacement by a reference approximation is not permitted in
+this calculation. This construction completes the connection between the
+learned scalar continuation and the returned dynamic policy; it does not
+require the training procedure to have found a global minimizer.
+
+\subsection{A certificate that does not use the training reference}
+Let $\{x_i\}$ and $\{a_j\}$ cover $X$ and $A$ with radii $h_x$ and $h_a$,
+respectively. Ties in nearest-node selection have a fixed measurable rule.
+Suppose $f_t$ has Lipschitz constant $L_t$, and let $L_{x,t}$ and $L_{a,t}$
+bound the variation of $Q_t(f_{t+1};x,a)$ in state and action. Verified
+arithmetic returns
+\[
+ f^-_{ti}\leq f_t(x_i)\leq f^+_{ti},\qquad
+ q^-_{tij}\leq Q_t(f_{t+1};x_i,a_j)\leq q^+_{tij}.
+\]
+These intervals enclose evaluations of the network coefficients and the
+primitive transition and cost. Define $L_{ti}=\min_jq^-_{tij}$ and
+$U_{ti}=\min_jq^+_{tij}$. Store any feasible grid action $a_{j(t,i)}$;
+minimizing $q^+_{tij}$ is one implementable choice.
+
+\begin{proposition}[Direct neural Bellman certificate]
+\label{prop:r41direct}
+Set
+\begin{align}
+ \ell_t&=\min_i(f^-_{ti}-U_{ti})-(L_t+L_{x,t})h_x,
+       \label{eq:r41direct}\\
+ u_t&=\max_i(f^+_{ti}-L_{ti}+L_{a,t}h_a)
+                         +(L_t+L_{x,t})h_x,\nonumber\\
+ \eta_t&=\max_i(q^+_{ti,j(t,i)}-L_{ti})+L_{a,t}h_a+2L_{x,t}h_x.
+       \nonumber
+\end{align}
+If $\ell_T\leq f_T-g\leq u_T$ on $X$, the nearest-node actor $\pi$ satisfies
+\begin{equation}
+ 0\leq J_0^\pi(x)-V_0^*(x)\leq
+ E_f:=\sum_{t<T}B_t(u_t-\ell_t+\eta_t)+B_T(u_T-\ell_T).
+ \label{eq:r41E}
+\end{equation}
+Its comparison class is all feasible adapted policies. If a separate
+own-policy calculation gives $J_0^\pi(x)\leq\overline J_0^\pi(x)$, then
+\begin{equation}
+ J_0^\pi(x)-V_0^*(x)
+ \leq\overline J_0^\pi(x)-f^-_0(x)+\sum_{t=0}^TB_tu_t.
+ \label{eq:r41query}
+\end{equation}
+Neither certificate reads a reference spline, its nodal values, or its
+Bellman brackets.
+\end{proposition}
+\begin{proof}
+At a node the continuous-action minimum lies in
+$[L_{ti}-L_{a,t}h_a,U_{ti}]$: every feasible minimizer is within $h_a$ of a
+grid action. Subtraction gives the nodal residual interval. The difference
+$f_t-T_tf_{t+1}$ has Lipschitz constant at most $L_t+L_{x,t}$, which proves
+the first two bounds throughout each covering cell. Moving a chosen action
+and the Bellman minimum from a node to the same state costs at most
+$2L_{x,t}h_x$. This proves the actor bound. Apply
+Theorem~\ref{thm:r39comparison}, whose lower value bound also proves
+\eqref{eq:r41query}. The argument uses the stored neural functions at both
+successive dates, including the terminal date.
+\end{proof}
+
+In contrast to \eqref{eq:r39mesh}, the state remainder includes $L_t$:
+the trained network need not interpolate the verification nodes. Omitting
+that term would incorrectly treat the training target as the learned
+function. Additive shifts $f_t\mapsto f_t+k_t$ change both residual endpoints
+by $k_t-\beta_tk_{t+1}$ and leave their oscillation and the actor allowance
+unchanged. The terminal shift completes the telescoping sum. Thus both
+\eqref{eq:r41E} and the exact version of \eqref{eq:r41query} are invariant
+to the arbitrary levels of the learned continuations.
+
+For the scalar economy, a stored ReLU network has rational breakpoints and
+rational affine coefficients because its floating coefficients are exact
+dyadic numbers when interpreted as stored data. On each activation region
+we compute its affine coefficients from those weights. This is an exact
+compilation of the trained network, not a fitted spline or a conventional
+Bellman solution. If a breakpoint is rounded by at most $e_r$, choosing an
+adjacent affine extension adds at most $2L_te_r$ to the value enclosure.
+Rational coefficient enclosures and the interval width of the evaluation
+argument are charged separately. Appendix~\ref{app:r41arithmetic} proves
+this statement and specifies the arithmetic checks.
+
+The terminal cost in \eqref{eq:r39capital} is piecewise quadratic. Hence the
+extrema of $f_T-g$ occur at an activation breakpoint, at $3/8$, at a domain
+endpoint, or at a stationary point in an intervening region. All these
+points are calculated in rational arithmetic. Terminal fit error is thereby
+included in the same neural chain, rather than set to zero because the
+terminal primitive is known.
+
+The deposited networks were trained on the earlier conventional nodal
+values. That training-data cost remains part of their provenance. The present
+verification changes the certified mathematical object, not that history:
+there are no new neural training runs, and there is no assertion that the
+reference was unnecessary for the original fit. The verification program
+continues to run when the conventional spline evaluator is disabled.
+
+\subsection{From the stored actor to its numerical execution}
+\label{sec:r41deployment}
+The stored actor is not the last object entering an economic calculation.
+Let the observed state be rounded with error at most $s_x$. Suppose selected
+actions and grid cutpoints are represented exactly, and their comparisons
+are exact. Nearest-node selection at the rounded state can choose a different
+cell, but its node is within $h_x+s_x$ of the true state. No continuity of
+the tabulated actor is required. Suppose further that the numerical
+transition and stage-cost graphs satisfy
+\[
+ \|\widetilde F_t(x,a,z)-F_t(x,a,z)\|\leq s_{F,t},\quad
+ |\widetilde c_t(x,a)-c_t(x,a)|\leq s_{c,t},\quad
+ |\widetilde g(x)-g(x)|\leq s_g.
+\]
+The bounds include conversion of their inputs and clipping. Both transitions
+stay in $X$. The recursive risk functional itself retains its stated
+mathematical meaning and is evaluated by enclosing intervals.
+
+\begin{proposition}[Two execution contracts]
+\label{prop:r41deployment}
+Under Proposition~\ref{prop:r41direct}, the rounded-state actor
+$\pi^{\rm exec}$ applied to the original economic transition satisfies
+\begin{equation}
+ 0\leq J_0^{\pi^{\rm exec}}-V_0^*
+       \leq E_f+\sum_{t<T}2B_tL_{x,t}s_x.
+ \label{eq:r41actor_execution}
+\end{equation}
+For the numerical economy that also uses $\widetilde F_t$,
+$\widetilde c_t$, and $\widetilde g$, its recursive cost instead satisfies
+\begin{equation}
+ \widetilde J_0^{\pi^{\rm exec}}-V_0^*
+ \leq E_f+E_{\rm exec},\quad
+ E_{\rm exec}:=\sum_{t<T}B_t
+ (2L_{x,t}s_x+s_{c,t}+\beta_tL_{t+1}s_{F,t})+B_Ts_g.
+ \label{eq:r41execution}
+\end{equation}
+The left side of \eqref{eq:r41execution} need not be nonnegative: its two
+values belong to different transition and accounting models.
+\end{proposition}
+\begin{proof}
+The nearest-node proof of Proposition~\ref{prop:r41direct} replaces $h_x$
+by $h_x+s_x$ in the actor allowance. Feasibility is unchanged. This proves
+\eqref{eq:r41actor_execution}. Monotonicity and cash invariance give
+\[
+ |\rho_t(f_{t+1}(\widetilde F_t))-
+   \rho_t(f_{t+1}(F_t))|\leq L_{t+1}s_{F,t}.
+\]
+Thus the numerical chosen-action operator has an additional upper error
+$2L_{x,t}s_x+s_{c,t}+\beta_tL_{t+1}s_{F,t}$ relative to the original Bellman
+operator. Backward induction on the numerical policy, with terminal error
+$s_g$, adds the discounted sum of these errors to the proof of
+Theorem~\ref{thm:r39comparison}. The lower bound on the original optimum is
+unchanged. This proves \eqref{eq:r41execution} without identifying a rounded
+state trajectory with an exact one.
+\end{proof}
+
+We instantiate the second contract with separately rounded binary32
+operations, round-to-nearest, and gradual underflow. On the specified domain
+there is no overflow. With $u=2^{-24}$ and $\alpha=2^{-150}$, each elementary
+rounding obeys $|\operatorname{fl}(y)-y|\leq u|y|+\alpha$. Rational
+range-and-error propagation through the actual arithmetic graph gives
+\[
+ s_x<5.961\,10^{-8},\quad s_F<3.167\,10^{-7},\quad
+ s_c<5.267\,10^{-7},\quad s_g<6.413\,10^{-7}.
+\]
+The stage-cost bound displayed here covers both prices. All action values
+and cutpoints at the reported dyadic resolutions are exactly representable;
+this accounts for zero action-storage error without setting the whole
+execution allowance to zero. Clipping is nonexpansive. Fused evaluation,
+flush-to-zero, altered state acquisition, and a physical actuator would
+require their own contracts. The software experiment evaluates the rounded
+transition and rounded costs, not a claim of physical deployment validation.

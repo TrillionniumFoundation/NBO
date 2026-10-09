@@ -1,0 +1,89 @@
+\section{A constructive neural service with a primitive error budget}\label{sec:constructive45}
+The policy theorem is deliberately independent of the representation of the continuation. A construction theorem must do more: it must produce a representation, feasible actions, and verified residuals from economic primitives. This section supplies such a theorem for a deterministic ReLU backend. It does not assume convergence of the nonlinear optimizers used in the earlier experiments. Its distinguishing property is that the continuation has a prescribed Lipschitz constant even when its Bellman labels are inexact.
+
+\subsection{Primitive conditions and the neural architecture}
+Consider the compact Bellman economy of Section~\ref{sec:economy}, with a common action set $A\subset\mathbb R^a$ and state set $X\subset\mathbb R^d$. All distances in this section use the $\ell^1$ norm. The innovation law and the monotone, cash-invariant functional $\rho_t$ do not depend on the state or action. The transition remains in $X$. Suppose known nonnegative constants satisfy, uniformly in the innovation,
+\begin{align}\label{eq:primitive45}
+ |c_t(x,a)-c_t(y,b)|&\le C_{x,t}\|x-y\|_1+C_{a,t}\|a-b\|_1,\\
+ \|F_t(x,a,z)-F_t(y,b,z)\|_1&\le F_{x,t}\|x-y\|_1+F_{a,t}\|a-b\|_1.
+\end{align}
+The terminal cost is $L_g$-Lipschitz. These assumptions are additional conditions on the constructive backend, not a replacement for the more general feasible correspondences in the original economic formulation. A state-dependent feasible correspondence requires its own feasible-cover and transport constants.
+
+We require an effective numerical description of the primitives: certified finite state and action covers can be obtained at every positive radius; their nodes are feasible; and a numerical evaluator can enclose each Bellman query to any requested positive tolerance in finite work. The last condition includes evaluation of $\rho_t$, not just evaluation of the network. For expectation with a compact innovation domain, known cell probabilities and a certified innovation cover provide one such evaluator. If $F_t$ is $F_{z,t}$-Lipschitz in the innovation, replacing each cell by a representative at distance at most $h_z$ contributes at most $\beta_tL_{t+1}F_{z,t}h_z$. Arithmetic, probability-mass approximation, and any remaining integration error must be added. The experiment below instead integrates a piecewise-linear network analytically under the original continuous uniform law.
+
+Set
+\begin{equation}\label{eq:constants45}
+ L_T=L_g,\qquad L_t=C_{x,t}+\beta_tF_{x,t}L_{t+1},\qquad
+ L^a_t=C_{a,t}+\beta_tF_{a,t}L_{t+1}.
+\end{equation}
+Choose state nodes $x_{t,i}$ of covering radius $h_t$ and action nodes $a_{t,j}$ of covering radius $k_t$. Given the continuation already constructed at date $t+1$, compute numbers $\widehat q_{t,ij}$ satisfying
+\begin{equation}\label{eq:oracle45}
+ |\widehat q_{t,ij}-Q_t(f_{t+1};x_{t,i},a_{t,j})|\le e_t.
+\end{equation}
+Define $y_{t,i}=\min_j\widehat q_{t,ij}$, choose a minimizing action index $j(t,i)$ with a fixed tie rule, and construct
+\begin{equation}\label{eq:network45}
+ f_t(x)=\min_i\{y_{t,i}+L_t\|x-x_{t,i}\|_1\}.
+\end{equation}
+At date $T$, use labels within $e_T$ of $g$ and the same formula with constant $L_g$. At any other date, deploy the action $a_{t,j(t,i(x))}$ attached to a nearest state node, again with a fixed tie rule. The action is feasible by construction. No future optimal value or conventional comparator is used as a label.
+
+Formula~\eqref{eq:network45} is an exact ReLU construction, not an appeal to a universal approximation theorem. Absolute values use $|u|=\max\{u,0\}+\max\{-u,0\}$; minima use $\min\{u,v\}=u-\max\{u-v,0\}$. A balanced tree of these gates implements the finite minimum. With $K_t$ state nodes, the resulting sparse affine--ReLU circuit has $O(dK_t)$ coefficients and $O(1+\log K_t)$ depth with unrestricted affine fan-in. Signed intermediate values can be carried by their positive and negative parts. The construction is related to the classical Lipschitz extension formula of \citet{mcshane1934}; neither that formula nor its elementary ReLU realization is claimed as new. Here its role is to close an own-future dynamic construction, including the deployed actor and every numerical allowance.
+
+\begin{theorem}[Constructive own-future neural policy]\label{thm:constructive45}
+Under the preceding conditions, the network~\eqref{eq:network45} is $L_t$-Lipschitz at every date, independently of the numerical label errors. Its residual and its deployed actor satisfy
+\begin{align}\label{eq:residual45}
+ -e_t\ &\le f_t-T_tf_{t+1}\le L^a_tk_t+e_t+2L_th_t,\\
+ Q_t(f_{t+1};x,\pi_t(x))-T_tf_{t+1}(x)&\le L^a_tk_t+2e_t+2L_th_t.\label{eq:actor45}
+\end{align}
+At the terminal date, $-e_T\le f_T-g\le e_T+2L_gh_T$. Consequently the cost of the returned policy, relative to the optimum over all admissible adapted policies, is uniformly bounded by
+\begin{equation}\label{eq:gap45}
+ \mathcal G_{\rm con}=
+ \sum_{t<T}B_t\{2L^a_tk_t+4e_t+4L_th_t\}
+       +B_T\{2e_T+2L_gh_T\}.
+\end{equation}
+For fixed nodes and $L_t$, changing every label by at most $\delta$ changes the represented function by at most $\delta$ in the uniform norm; it does not change the Lipschitz bound.
+\end{theorem}
+
+\begin{proof}
+Monotonicity and cash invariance imply nonexpansiveness in the uniform norm. Thus $Q_t(f_{t+1};\cdot,a)$ and $T_tf_{t+1}$ are $L_t$-Lipschitz, while the action modulus is $L^a_t$. At a node, minimization of the numerical queries gives
+$-e_t\le y_{t,i}-T_tf_{t+1}(x_{t,i})\le L^a_tk_t+e_t$.
+Each cone in~\eqref{eq:network45} is $L_t$-Lipschitz, as is their finite minimum. The lower residual bound follows from the triangle inequality for every cone; the upper bound uses a nearest node twice, once for the cone and once for the Bellman value. At that node the selected action is within $L^a_tk_t+2e_t$ of the continuous-action infimum. Transport to $x$ costs at most $2L_th_t$. The terminal argument is identical without action minimization. Substitution of these widths and actor allowances into Theorem~\ref{thm:policy} gives~\eqref{eq:gap45}. Finally, minima of two arrays whose entries differ by at most $\delta$ differ by at most $\delta$. The supplement gives the construction, measurability, and work details.
+\end{proof}
+
+\begin{corollary}[Deterministic termination at an economic tolerance]\label{cor:termination45}
+Let $\varepsilon>0$, $H=\sum_{t=0}^TB_t$, and $s=\varepsilon/H$. At nonterminal dates choose
+\begin{equation}\label{eq:budget45}
+ e_t\le s/8,\qquad L^a_tk_t\le s/8,\qquad L_th_t\le s/16.
+\end{equation}
+At the terminal date choose $e_T\le s/4$ and $L_gh_T\le s/4$. Terms with zero coefficient impose no restriction. Then the finite constructive service returns a feasible neural policy with loss at most $\varepsilon$. No probability law over initializations and no optimizer stopping criterion is needed.
+\end{corollary}
+The result follows because each discounted bracket in~\eqref{eq:gap45} is at most $s$. Effective compactness and the numerical evaluator give finite work for these choices. Arbitrarily small tolerances may require arbitrary precision; the corollary does not promise termination in fixed binary64. A finite implementation ladder can still return a recorded failure, even though the unbounded constructive algorithm terminates under the stated hypotheses.
+
+The earlier scalar constructive result in the retained paper implemented piecewise-linear interpolation as a ReLU network. Its sufficient allocation controlled a label-error-to-mesh ratio in the propagated slope. Formula~\eqref{eq:network45} works in arbitrary finite state dimension and enforces the slope bound directly. In particular, label and action allowances can be allocated at order $\varepsilon$ without a separate slope-preservation requirement that those allowances be quadratic in the state spacing. This is an improvement of that sufficient proof budget, not a lower bound for all spline methods or evidence that conventional Lipschitz projection is unavailable.
+
+\subsection{What the construction costs}
+The construction does not eliminate state coverage. With $K_t$ state nodes, $J_t$ action nodes, $M_t$ innovation representatives, and network evaluation cost $P_{t+1}$, direct target formation requires
+\begin{equation}\label{eq:work45}
+ \sum_{t<T}K_tJ_t\{M_t(C_{F,t}+P_{t+1})+C_{\rho,t}+C_{c,t}\}
+       +O\!\left(\sum_{t=0}^T dK_t\right)
+\end{equation}
+arithmetic operations under the indicated evaluation model. $C_{\rho,t}$ includes the finite-risk functional and probability processing. Certified integration can replace the innovation sum but its own cost must be charged. Bit lengths, adaptive arithmetic, and nearest-node policy queries are additional explicit costs, not constants suppressed by a dimension claim. A rectangular state cover with radius $h_t$ can require order $h_t^{-d}$ nodes; a rectangular action cover can require order $k_t^{-a}$ actions. The theorem is therefore a dimension-explicit construction, not an assertion that a nonlinear high-dimensional frontier has been executed or that the curse of dimensionality has been removed.
+
+In one state dimension, the finite envelope can be compiled exactly into a piecewise-linear representation. Two passes compute the greatest $L$-Lipschitz minorant of the node labels. Between neighboring nodes the envelope is the minimum of the two adjacent affine cones. At most one additional intersection is needed per interval. Rational knots and values permit exact antiderivatives; an interval evaluator encloses their numerical evaluation. This compilation evaluates the defining network exactly and does not substitute labels from a separately solved Bellman problem. The spline comparator receives the same exact-integration acceleration, so it is not charged for an artificial dense neural evaluation loop.
+
+\subsection{A predeclared matched service catalogue}\label{sec:catalogue45}
+The new experiment tests complete services, not only previously failed neural candidates. It uses a further nonlinear investment laboratory with $x\in[0,1]$, $a\in[0,1/4]$, $\beta=15/16$, and independent $z$ uniform on $[-1/32,1/32]$:
+\begin{align}\label{eq:economy45}
+ F(x,a,z)&=\tfrac1{32}+\tfrac{11}{16}x+\tfrac1{16}x(1-x)+a+z,\\
+ c_p(x,a)&=(x-\tfrac{11}{16})^2+pa^2+4a^4+2(\tfrac38-x)_+^2,\\
+ g(x)&=2(x-\tfrac{11}{16})^2+2(\tfrac38-x)_+^2.
+\end{align}
+The invariant domain follows from monotonicity in $x,a,z$ and the two extreme transitions $0$ and $1$. Valid primitive state moduli are $C_x=23/8$, $F_x=3/4$, and $L_g=17/4$; action moduli are $C_a=p/2+1/4$ and $F_a=1$. The downside term penalizes a low capital stock, and the quartic investment cost discourages rapid adjustment. This is a numerical economic laboratory, not an estimated or calibrated quantitative exercise.
+
+The complete design was fixed before execution: horizons $\{2,4\}$, prices $\{1,4\}$, two methods, three isolated repetitions, and the full common state/action ladder $N=A\in\{16,32,64,128,256,512\}$. The targets are $0.5$, $0.25$, and $0.125$ in units of discounted cost. These are policy-loss tolerances, not equivalence margins for a neural-minus-spline contrast. Every rung restarts from terminal primitives and constructs its own future backward. The neural method uses~\eqref{eq:network45}; the spline uses linear interpolation of its own labels and propagates its actual exact slope bound. Both evaluate the same continuous innovation law analytically and round labels to dyadic multiples of $2^{-40}$. All numerical query errors are outwardly enclosed and enter the certificate.
+
+All rungs are retained, including those preceding the first target crossing. The clock to a target includes every preceding rung, target formation, rational compilation, actor construction, verification, and durable checkpoint output. Fresh processes run sequentially on one selected CPU with one numerical-library thread and an identical non-economic warm-up. Imports and warm-up are excluded from the internal clock but included in a separate process clock. CPU frequency is not fixed. Independent policy-cost comparison is not performed in this catalogue and is not assigned a zero cost. Three timing repetitions describe local dispersion, not a population law for neural optimization.
+
+\input{tables/constructive45.tex}
+\input{tables/work45.tex}
+\input{tables/outcome45.tex}
+The finite catalogue measures the deterministic backend just specified. It neither overwrites the original neural optimizer's attainment array nor turns the seven retained-policy diagnostics into prospective observations. The theorem supplies a method-level termination statement for this backend; the recorded services establish only the achieved targets, costs, and storage on the declared economies. A smaller certificate is not a lower realized policy cost. The new numerical comparison and the earlier direct policy-cost comparisons therefore remain distinct throughout.
