@@ -1,0 +1,95 @@
+# Response to the Referee
+
+## Neural Bellman Operators — Revision R57
+
+We thank the referee for identifying the distinction between a valid policy certificate and a demonstrated contribution of a candidate generator. This revision continues the original **Neural Bellman Operators** paper. Its title, economic laws, constructive own-future backend, original feasible-action implementation, Bellman-accuracy objective and resource-allocation results are retained. We respond with a fitted-witness transfer theorem, explicit action-sensitive neural moduli and a new experiment that actually deploys the algebraic neural action search inside the prospective economic service.
+
+The controlling report is the 9 October 2026 advisory review on commit `adf1256cff9cde365246a3db2dac90c72fda3b13`, which assessed R54 manuscript `00e837adb431f4d4b5248fc6d5ff1fc927dd3b65`. It is not presented as a decision of the Econometric Society. The repository subsequently completed the R55 scientific cohorts and R56 manuscript integration. The present revision starts from R56 canonical commit `c269f421a2938e59bd1e83bcee7218ba19a064ca`; it does not repeat that integration under a new revision number.
+
+R56 had already supplied non-tensor prospective services, signed smooth-reference sensitivity, independently validated learned directions and an algebraic action-search theorem. Two further facts remained important: the algebraic solver had not generated the production policies, and most actions in those production policies were determined by the common menu rather than the generator-specific proposal. R57 addresses precisely that missing link, with new source-frozen execution rather than assigning old cost intervals or clocks to new policies.
+
+The new article sections are **From fitted action witnesses to economic policy accuracy** and **Executing fitted neural action witnesses**. The supplement contains the complete new service registry, every fresh paired cost contrast, work components and the datewise accounting convention. The earlier article, supplement, response, applications and unfavorable evidence remain in the complete/development documents and the preserved R56 snapshot.
+
+## M1 and B1: A specific neural computation and its policy meaning
+
+The original NBO subject is retained rather than replaced with a differently titled paper. At the same time, the representation-neutral nature of safe improvement is stated explicitly. The trained neural contribution is not the general idea of incumbent protection and is not an exact encoding of a conventional min-plus policy.
+
+For the stored trained ReLU continuation, exact scalar-uniform integration produces a piecewise-quartic investment objective. The inherited algebraic theorem supplies a terminating action-lattice minimizer through rational breakpoints and cubic-root isolation. R57 now executes that minimizer in prospective services. Negative output weights, zero innovation projection and ties are handled in exact rational arithmetic. Quadratic fitted values receive the analogous exact-search opportunity, and all modes receive the same exact terminal-action solver.
+
+The new fitted-witness transfer theorem explains what this exact computation contributes to the original Bellman objective. Its local bound is the sum of center optimization loss, within-cell action-contrast variation, action-relevant continuation error, continuous-to-robust-lattice coverage and verification overshoot. Exact action search eliminates the first term, not the others. The theorem carries that bound into the coefficient-one finite-sweep recursion and includes a sharpness example. This is a positive link between a trained action computation and full-action economic accuracy, rather than an inference that a neural function class must dominate a conventional one.
+
+## M2 and B4: A genuinely prospective stopping algorithm
+
+The new protocol fixes five modes, three tasks, three distinct training seeds, two targets, two construction attempts and three inference looks before production. Every mode/task/target/seed service starts from primitives in its own process. No fitted object, validation interval or earlier construction rung is supplied free of charge.
+
+The targets require ten- and twenty-percent expected-cost reductions from installed zero investment. The stopping estimand is the signed difference `J(candidate)-q J(installed)`, not a plug-in ratio. A nonpositive upper endpoint returns immediately; a positive lower endpoint advances the resource attempt; otherwise the next declared look is drawn. A final unsuccessful attempt returns a budget-exhausted safe candidate without claiming the target was attained or impossible. The complete registry retains every attempt and return.
+
+One distinction is made explicit. Intermediate refinement attempts are not deployed, and every attempt is verified against the same smooth installed reference. The procedure never differentiates a changed discontinuous acquired actor. Its refinement attempts are therefore not relabeled as successive policy-iteration passes. The original finite-sweep theorem remains available under its own stated premises.
+
+## M3 and B2: Matched economic accuracy and actual returned-policy costs
+
+Each target has a separate from-primitives stopping service. Complete process clocks include imports, construction, exact search, verification, all own inference, serialized outputs and termination. We do not select an after-the-fact favorable certificate threshold or charge only the final successful prefix operation.
+
+After the five methods for a task, target and seed return, a new 65,536-path stream evaluates ReLU-exact minus each of the four other returned policies. That stream is separate from the stopping information under the independent-bin statistical model. These comparisons are about the actual returned policies, even when their first-attainment attempts differ. Negative path differences are retained; exact policy identities are distinguished from unresolved confidence intervals.
+
+The source-frozen design permits at most 1692 intervals in the new simultaneous family, below its declared limit of 2048 at error 1/100. It covers every possible own-service look and the fresh paired contrasts. Three seeds and shared paths do not create an independence assumption across methods. The complete interval registry, not the fitted objective or a reduced certificate, determines comparative economic conclusions. An interval containing zero is not reported as neural superiority or economic equivalence.
+
+## M4 and B3: Decomposition and an algorithmically removable term
+
+The new transfer theorem gives five mathematically defined terms rather than calling every source of conservatism a training error. The center optimization loss is computed exactly for the stored fitted objective. Its elimination is the controlled intervention in the ReLU-exact mode. The common verifier and continuous-action lower cover remain fixed.
+
+The new neural-modulus proposition gives an explicit acquisition allowance from the stored feature weights, action projections and innovation radii. The affine continuation component and exactly action-null ridges contribute zero to that spatial action-contrast bound. Features with nonzero innovation radius receive the corresponding clipped derivative factor. An explicit continuation-error allowance is also given for the installed zero reference, and the continuous-action allowance follows from robust capacity oscillation, action spacing and the original dimension-uniform reference stability bound.
+
+These primitive accounts can be combined with the directly computed `U-L` bound by taking the smaller valid allowance. They are not described as having been the numerical stopping criterion when the execution used the direct lower cover. The recorded `U-C` and `C-L` components still add cellwise; their separately printed maxima need not add to the maximum total gap. We do not label an unexecuted six-factor causal ablation as measured evidence.
+
+The nested-candidate corollary gives a sharper attribution statement: adding the exact witness cannot increase the selected upper endpoint or the same-cover directed gap. Strict improvement is checked from the added endpoint itself. The paper also supplies a simple counterexample showing why this statement alone does not order the true costs of the two selected actions. Thus an improved certificate and an identified economic improvement remain distinct empirical tests.
+
+## M5 and B5: Non-tensor multidimensional execution
+
+The new services use the original nonlinear cyclic investment family at dimension/horizon pairs two/two, four/four and eight/six. Acquired observations use a locally split binary partition with 32 or 64 leaves, not a nonuniform Cartesian product described as non-tensor. Whole-cell capacities and downward-quantized actions remain feasible for every state assigned to a leaf.
+
+The same signed reference procedure is used for all generators. Its proof and dimension/horizon work account are retained from R56, including the dimension-uniform smooth-reference Lipschitz bound and the absence of a full state-pair table or exponential enumeration of future shock histories. The new exact-search records add rational root and candidate-evaluation counts. These are actual multidimensional executions, but not an asymptotic experiment showing that a fixed number of leaves solves arbitrary high-dimensional models at fixed all-state accuracy.
+
+The original Bellman target is not replaced by the initial-law cost-reduction target. Every returned policy has a support-capped one-sweep all-state loss account that includes the old-reference continuation term. The supplement does not substitute its local greedy gap for final Bellman loss.
+
+## M6 and B6: Strong controls and generator attribution
+
+ReLU-menu and ReLU-exact have matched fitted parameters within a construction attempt. Both use the same common actions and the same critic-independent verifier. The exact mode retains the menu rather than replacing it, so removing its additional candidate gives an exact within-attempt attribution calculation. The raw archives retain every action, upper/lower endpoint and selected policy for this calculation.
+
+The comparison also includes a common-only control that performs no fitting, quadratic fitted values with exact search, and ExtraTrees fitted-value proposals. All receive identical terminal analysis and safety rules. The common-only control legitimately pays no fictitious training cost. This makes the value and cost of fitting observable instead of assuming that every benefit of the verifier belongs to a learned generator.
+
+The preceding attribution result remains visible: most R55 decisions were generated by the common menu. The new study records whether the exact neural witness changes that conclusion, at the action and policy levels, for every declared seed and target. Any unresolved paired differences or lower-work conventional alternatives are preserved. The execution is not marketed as a population-level neural ranking.
+
+## M7 and B7: Learned structure under uncertain action exposure
+
+The R56 sample-split learned-direction theorem and its complete R55 structural-uncertainty execution are retained without changing their observations. Directions are fitted from data; independent validation produces a coordinate confidence box for unknown action exposure. The same box qualifies both the nuisance correction and the remaining critic comparison. The corrected gate does not use the simulator's true exposure as a hidden oracle.
+
+The new action-sensitive feature moduli complement that result by making the known-law neural projection terms explicit. They do not remove the need for a confidence set when the primitive exposure is estimated. The maintained unknown-exposure model has known nonlinear drift and action-invariant bounded innovation structure; neither edition claims validity for an arbitrary unknown transition kernel. The inherited zero count of certified harmful plug-in choices in that particular learned-direction catalogue is retained, rather than replaced with the much larger count from the different known-perturbation study.
+
+## M8 and B8: Different fitted objects, reproducibility and paid timing
+
+The new seed identifiers produce different training states and fitted neural parameters. Complete parameter identities verify both that the three seed realizations differ and that the matched menu/exact fits agree. This addresses the missing variation in fitted objects while retaining the older fixed-seed timing experiment as a distinct source of evidence.
+
+Within each task, processes run sequentially on one available core with one numerical-library thread, and mode order rotates across seeds. Governor availability, numerical-library versions, peak resident memory, output bytes and complete process clocks are recorded. Clock frequency is not controlled. Different-seed minimum/median/maximum times mix realization and work variation, so they are not presented as pure timing repetitions. Different task runners are not used to infer a controlled cross-hardware scaling law.
+
+There is one disclosed timing deviation. The additional paired validation was timed through endpoint computation and serialization in the parent driver, not as a separate complete subprocess through final JSON commit. We report that recorded partial clock as additional study overhead. We do not call it complete, silently replace the original number or hide it in the own-target-service time. The complete surrounding clocks for all target services are unaffected.
+
+## M9 and B9: The economic use of the returned computation
+
+The targets now require ten- and twenty-percent reductions from a specified installed policy, not merely a decrease in its certificate. All methods are evaluated against the same original continuous initial law and nonlinear investment costs. The complete gain intervals determine the supported adoption-fee region relative to installation.
+
+Choosing between two returned methods is a further economic decision. The new incremental-adoption account shifts the fresh paired policy-cost interval by the replacement fee and computation price times the measured work difference. It states both the region supporting adoption and the region ruling it out; the intermediate region remains unresolved. This makes the computational procedure part of the economic comparison without selecting a generous fee after observing a favorable result.
+
+The magnitudes remain normalized theoretical units. No external calibration or estimated welfare effect has been added. The positive claim is an implemented and verified policy-return service, with an explicit transfer from its trained action computation to the original accuracy account and a paid comparison of its actual economic consequences. It is not a claim that conventional methods cannot reach the same policy or target.
+
+## M10 and B10: One original paper, with its development preserved
+
+The main article keeps the same connected route: economic operator, constructive backend, primitive resource account, trained neural continuation, exact action witness, acquired-state certificate, prospective return and policy-cost evaluation. R57 inserts the new transfer theorem and executed action-search study into that route. It does not replace the paper with the alternative retitled article suggested in the report.
+
+The prior active article, supplement and response are preserved intact in a named snapshot. The complete and development companions retain the earlier theory, applications and adverse results under their own hypotheses. A historical cohort is identified as historical where necessary, rather than allowing its statement that an exact solver was not used to be confused with the new execution. All inherited labeled results and protected scientific-source/result bytes are checked during publication.
+
+## Verification submitted with R57
+
+The replay regenerates each distinct exact action search from saved fitted coefficients, every signed whole-cell certificate and selected action, all prescribed stopping paths and every fresh validation endpoint. Original sample moments are checked in exact rational arithmetic before verifying the recorded confidence enclosures. The replay does not retrain models, draw new observations or revise the original performance measurements.
+
+The full inherited test chain is rerun alongside the new solver, nested-candidate, transfer-modulus, continuous-cover and price-plane regressions. The publication produces the main article, technical supplement, response and four complete/development companions. A clean archive removes generated documents and tables and reconstructs them after checking the complete scientific-source/evidence binding. Final delivery is bound to the manifest and confirmed remote branch identities. These are reproducibility and internal-consistency checks, not a claim of external mathematical or editorial acceptance.
