@@ -1,0 +1,59 @@
+\section{Trained neural continuations and exact innovation integration}\label{sec:learned56}
+The constructive backend supplies a feasible reference without relying on the success of nonconvex optimization. A trained backend addresses a different computational question: whether features fitted to the operator's own continuation targets produce useful candidate actions at a prescribed resource budget. These two backends are not identified with one another. In particular, fitting the hidden weights below is not compilation of the min-plus construction in Theorem~\ref{thm:construct49}.
+
+Let the transition have the one-factor form
+\[
+ F_t(x,a,Z)=\mu_t(x,a)+s_t(x,a)Z,\qquad
+ Z\sim\operatorname{Unif}[-r,r].
+\]
+The deterministic map $\mu_t$ may be nonlinear and the state may be multidimensional. Consider a fitted continuation with $m$ hidden units,
+\begin{equation}\label{eq:trained56}
+ h(y)=c+v^\top y+\sum_{j=1}^m u_j(w_j^\top y+b_j)_+.
+\end{equation}
+Both hidden and output coefficients may be data dependent. Once a candidate has been constructed, its stored coefficients specify an exact numerical function; uncertainty about whether training found a good function is not an arithmetic uncertainty about the function that was stored.
+
+\begin{lemma}[Integrated neural continuation]\label{lem:integrated56}
+Put $z_j=w_j^\top \mu_t(x,a)+b_j$ and $R_j=r|w_j^\top s_t(x,a)|$. Then
+\begin{equation}\label{eq:integrated56}
+ P_t^ah(x)=c+v^\top \mu_t(x,a)+\sum_{j=1}^m u_j\Phi(z_j,R_j),
+\end{equation}
+where $\Phi(z,0)=z_+$ and, for $R>0$,
+\[
+ \Phi(z,R)=
+ \begin{cases}
+ 0,&z\le -R,\\
+ (z+R)^2/(4R),&-R<z<R,\\
+ z,&z\ge R.
+ \end{cases}
+\]
+For fixed stored coefficients and evaluable primitives, a point expectation uses $O(md)$ arithmetic operations in addition to evaluating $\mu_t$ and $s_t$. Outward evaluation on a state--action box gives a valid enclosure. There is no innovation-grid discretization remainder in this analytic expectation.
+\end{lemma}
+\begin{proof}
+The scalar random variable $w_j^\top s_t Z$ is uniform on $[-R_j,R_j]$, or is identically zero. Integrating its positive part gives the displayed three cases. Linearity of expectation gives \eqref{eq:integrated56}; the affine innovation term has mean zero. Each feature requires two inner products and a bounded number of scalar operations. The function $\Phi$ is nondecreasing in each argument on $R\ge0$: in the interior its radius derivative is $(R^2-z^2)/(4R^2)\ge0$, and outside the interior it is constant in the radius. Endpoint evaluation with directed arithmetic, enclosing an uncertain branch rather than choosing a favorable branch, therefore preserves containment. Negative output weights must reverse interval endpoints in the usual way.
+\end{proof}
+
+The formula is a property of this neural class under the stated innovation law, not a general exact-integration result for arbitrary deep networks or unknown kernels. Quadratic critics also have analytic expectations here; tree critics use valid bin enclosures. Thus eliminating quadrature for the neural backend is a specific computational facility, not a claim that conventional approximation necessarily needs quadrature. On the active hinge region the equivalent expression $(z+R)^2/(4R)$ avoids subtracting two nearly equal squares. At $R=0$ the separate branch is essential.
+
+The fitted construction proceeds backward. At each date it draws training states, forms a finite feasible action menu, evaluates current cost plus the integrated \emph{own} subsequent critic, minimizes these labels, and fits the next critic. Its training labels are not evaluations of the optimal Bellman continuation. Fitted value iteration with general function classes has a substantial literature; see \citet{munos2008} and the tree-based construction of \citet{ernst2005}. Our use of training is accompanied by a separate whole-cell verification obligation. No training mean-square error is substituted for that obligation.
+
+In the executed neural construction the hidden layer has width 32. All hidden and output coefficients receive 120 full-batch Adam updates, followed by a ridge fit of the affine and output coefficients on the learned features. Coefficients are rounded to 24 binary fractional bits. The verifier evaluates this quantized function, not a hypothetical unrounded optimizer. The fitted hidden weights, targets, states, seeds and quantized output are retained. A fitted nonlinear network, a quadratic continuation, an ExtraTrees continuation, and the two original constructive frontends are therefore identifiable, distinct candidate generators. Whether their additional proposals change the deployed policy is an empirical question that we report separately from their fitting errors.
+
+\subsection{Certified action search for the fitted neural continuation}
+The same integrated representation also permits a constructive action search, rather than a second unconverged optimization problem. Fix a reported state in the original economy, so the deterministic next state is $\mu(x,0)+\gamma a$. Let the feasible deployed actions be $\{0,\Delta,\ldots,M\Delta\}$, with $M\Delta$ no greater than the whole-cell lower capacity. Interpret stored coefficients and the reported state as exact dyadic numbers.
+
+\begin{theorem}[Algebraic neural action witnesses]\label{thm:algebraic56}
+For a continuation of the form \eqref{eq:trained56}, its integrated Bellman objective in the original scalar investment action has at most $2m$ interior breakpoints. Between consecutive breakpoints it is a quartic polynomial
+\[
+ 4a^4+q_2a^2+q_1a+q_0,
+\]
+with rational coefficients. An exact minimizer on the deployed action lattice can be found among at most $22m+13$ candidate indices, independently of the number of lattice points. Construction requires $O(md+m^2+m\log m)$ rational arithmetic and comparison operations, plus $O(m)$ cubic-root isolation problems at the action precision. Coefficient bit lengths and root-isolation work must also be charged. The selected action is an original fitted-critic action witness, not a min-plus encoding.
+\end{theorem}
+\begin{proof}
+For feature $j$, write its preactivation mean as $z_j+s_ja$ and its innovation radius as $R_j$. When $s_j\ne0$, branch changes occur only at $(\pm R_j-z_j)/s_j$; for $R_j=0$ these coincide. Retain those breakpoints inside the feasible interval and its two endpoints. Lemma~\ref{lem:integrated56} makes each feature quadratic, affine or zero between breakpoints. Adding $a^2+4a^4$ and the affine part of the critic gives the displayed polynomial. Its derivative is $16a^3+2q_2a+q_1$ and has at most three real roots in each of at most $2m+1$ pieces.
+
+Between stationary points and breakpoints the objective is monotone. Hence a lattice minimizer lies immediately to either side of a breakpoint or a stationary point, or at a feasible endpoint. Isolate each stationary root in a rational interval of width at most $\Delta/4$ and include every index from the floor of its lower endpoint divided by $\Delta$ through the ceiling of its upper endpoint divided by $\Delta$. This contributes at most three indices per isolated root and contains the required neighboring lattice points. The breakpoints and endpoints contribute at most $2(2m+2)$ indices. Thus $9(2m+1)+4m+4=22m+13$ is a valid bound. Extra indices and duplicate candidates do not invalidate minimization. Exact rational evaluation and lexicographic value--action comparison settle ties.
+
+Computing feature coefficients costs $O(md)$, sorting the breakpoints costs $O(m\log m)$ comparisons, and literal formation of the polynomial on each piece costs $O(m^2)$ operations. Rational isolation of the finitely many cubic roots terminates at positive action precision, including multiple roots. This proves the construction and the stated separation between arithmetic counts and bit-dependent root-isolation work.
+\end{proof}
+
+The solver is implemented with rational root isolation and is checked against exhaustive exact lattice minimization, including saved fitted critics from each of the three state dimensions. It minimizes the stored critic's objective at the reported state. Whole-cell safety still requires the true-advantage certificate; critic optimality alone does not justify deployment. The recorded economic experiment used its prospectively fixed 17-action construction menu. Its policies and measured clocks are not retroactively replaced by this new action solver, and its cost intervals are not attributed to untested replacement policies.

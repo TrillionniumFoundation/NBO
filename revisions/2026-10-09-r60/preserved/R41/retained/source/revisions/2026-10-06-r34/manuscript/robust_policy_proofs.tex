@@ -1,0 +1,96 @@
+\section{Proofs for Budgeted Warm-Start Policy Construction}
+\label{sec:r34proof}
+\subsection{The mixed-norm residual}
+Let $E_t=W_t'W_t-\widetilde M_t$ and
+$V_t=\widetilde M_t-dS_t$. Then
+\[
+ D_t-Z_t=\frac{\beta}{d}B_t'(E_t+V_t)F_t.
+\]
+The inequalities $\|B'EF\|_F\leq\|B\|_2\|E\|_F\|F\|_2$ and
+$\|B'VF\|_F\leq\|B\|_2\|V\|_2\|F\|_F$, together with
+$\|F_t\|_F\leq\sqrt d\|F_t\|_2$, prove \eqref{eq:r34mixed}.
+The spectral discrepancy also gives
+\[
+ \|\widehat S_t-S_t\|_2\leq(a_t+e_t^M)/d\leq q_*.
+\]
+These statements do not require the center or the Gram error to commute
+with the true coefficient.
+
+\subsection{A joint backward induction}
+The coefficient bound is exact at the terminal date. Suppose
+$0\preceq P_{t+1}^\pi\preceq\bar p_{t+1}I$. The positive primitive margin
+implies $0\preceq S_t\preceq u_tI$, hence
+$0\preceq\widehat S_t\preceq(u_t+q_*)I$. The actor identity can be written
+\[
+ (R_t+\beta B_t'\widehat S_tB_t)K_t
+                      =\beta B_t'\widehat S_tA_t+Z_t.
+\]
+Its left coefficient is bounded below by $r_tI$. Since
+$z_t\leq\sqrt{s r_tq_t}\leq v_t$, it follows that
+\[
+ \|F_t\|_2\leq\|A_t\|_2+
+    \frac{b_t}{r_t}\{\beta b_t(u_t+q_*)\|A_t\|_2+z_t\}
+       \leq f_t^+.
+\]
+Equation~\eqref{eq:r34mixed} and the second local acceptance test therefore
+yield $\|D_t\|_F\leq\sqrt{s r_tq_t}$. Completing the square in the exact
+one-step action objective bounds the returned actor's excess coefficient
+over its true greedy improvement by $s q_t I$. Comparison of that minimum
+with the reference feedback $L_t$ gives
+\[
+ P_t^\pi\preceq Q_t+L_t'R_tL_t+
+ \beta(A_t-B_tL_t)'S_t(A_t-B_tL_t)+s q_tI\preceq\bar p_tI,
+\]
+because $s q_tI\preceq\eta Q_t$. Positive stage costs give
+$P_t^\pi\succeq Q_t\succeq q_tI$. This closes the coefficient induction.
+In particular, the target bound used in the next fit is not inferred from
+a presumed successful policy comparison.
+
+Now apply the subsolution recursion of
+Theorem~\ref{thm:r27entropic}. If
+$\delta_{t+1}\leq s\lambda_{t+1}^+\leq q_*$, its true margin is at least
+$\bar\gamma_t$ and its lower-greedy closed-loop bound is at most $g_t$.
+Consequently
+\[
+ \delta_t\leq s q_t+
+       \frac{\beta g_t^2}{\bar\gamma_t^2}s\lambda_{t+1}^+
+           =s\lambda_t^+,
+ \qquad
+ \kappa_t\leq\beta\left(s\mu_{t+1}^+
+       +\frac{\tau s\lambda_{t+1}^+}{\bar\gamma_t}\right)=s\mu_t^+.
+\]
+The zero terminal allowances start this induction. The allocation preserves
+the lower subsolution's required positivity at every noninitial date.
+The recursive full-policy theorem and the initial-radius inequality then
+prove \eqref{eq:r34policybound}. Neither state sampling nor a restriction to
+linear competitors enters this argument.
+
+\subsection{Finite arithmetic and fallback}
+For rational matrices and a finalized rational feedback, the Gaussian
+coefficient map uses matrix multiplication and an inverse of
+$I-2\theta\Sigma P$. A strict norm-domain margin implies invertibility.
+The own-policy coefficient and the next fitted actor can therefore be
+computed by finitely many rational operations. The state-independent
+log-determinant constant is not an input to these actor equations; its
+contribution to the policy comparison is already paid by $\mu_t^+$.
+The scalar bounds can be enlarged rationally, and squared inequalities can
+be checked without treating rounded square roots as exact.
+
+With exact evaluation and actor solves, take $e_t^M=z_t=0$ and select a
+positive rational $a_t$ satisfying \eqref{eq:r34accept}. The exact-product,
+nearest-dyadic update has perturbation norm at most
+$2^{-b}\sqrt{pd}/2$ at $b$ storage bits. Its Gram noise floor tends to zero
+as $b$ tends to infinity. For a certified warm basin, choose $b$ so that the
+floor is below $a_t$ and apply Theorem~\ref{thm:r33warm}. Its recurrence is
+checked with rational upper bounds for the square roots. If the initial
+error already lies below $a_t$, no factor update is needed.
+
+On failure of the warm gate, choose rational $c=s_0^2$ with $0<c\leq m_t$
+and $W_0=s_0I$ at a nonterminal date. The controlled cold contraction in
+Section~\ref{sec:r31proofs}, evaluated without rounding its products, reaches
+the same positive tolerance in finitely many rational updates. This is an
+existence and termination statement for a specified arithmetic procedure,
+not a practical bit-complexity bound for all exact rational implementations.
+It does not justify discarding failed gates from a measured service cost.
+The terminal transformed coefficient is supplied directly. These observations
+prove Corollary~\ref{cor:r34finite}.
