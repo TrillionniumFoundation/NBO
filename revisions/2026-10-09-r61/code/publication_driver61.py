@@ -11,8 +11,8 @@ def main():
     print(log.read_text()[-12000:],flush=True)
     if p.returncode==0:return
     diagnoses={}
-    # These diagnostic compilations cannot publish a manuscript. The ordinary
-    # builder still must pass every source/test/preservation and PDF gate.
+    # Diagnostic compilation cannot publish a manuscript. All ordinary gates
+    # remain mandatory; errors are collected across the seven documents.
     for name in DOCS:
         try:
             rec=b.compile_document(name);diagnoses[name]=dict(status='passed',pages=rec['pages'])
@@ -25,6 +25,9 @@ def main():
                         contexts.append('\n'.join(lines[max(0,j-3):min(len(lines),j+9)]))
                 entry['contexts']=contexts
             diagnoses[name]=entry
-    file=R/'audit/PDF_DIAGNOSTICS61.json';file.write_text(json.dumps(dict(status='failed',documents=diagnoses,seconds=time.perf_counter()-start,scope='Diagnostics only; all ordinary-source gates remain mandatory.'),indent=2)+'\n')
-    print(file.read_text(),flush=True);raise SystemExit(p.returncode)
-if __name__=='__main__':main()"}
+    file=R/'audit/PDF_DIAGNOSTICS61.json'
+    file.write_text(json.dumps(dict(status='failed',documents=diagnoses,seconds=time.perf_counter()-start,scope='Diagnostics only; all ordinary-source gates remain mandatory.'),indent=2)+'\n')
+    print(file.read_text(),flush=True)
+    raise SystemExit(p.returncode)
+if __name__=='__main__':
+    main()
