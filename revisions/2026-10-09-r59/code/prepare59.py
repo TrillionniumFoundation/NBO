@@ -16,7 +16,7 @@ def main():
     marker=R/'audit/PREPARATION59.json'
     if not marker.exists():
         own={str(p.relative_to(R)):p.read_bytes() for p in R.rglob('*') if p.is_file()}
-        shutil.copytree(BASE,R,dirs_exist_ok=True,ignore=shutil.ignore_patterns('__pycache__','build'))
+        shutil.copytree(BASE,R,dirs_exist_ok=True,ignore=shutil.ignore_patterns('__pycache__'))
         for n,v in own.items():p=R/n;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(v)
         docs=('ECTA','supp','complete','complete-supp','development','development-supp')
         sys.path.insert(0,str(R/'code'));from assemble56 import labels
