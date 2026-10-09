@@ -1,0 +1,58 @@
+\section{Prospective economic stopping and learned structure}\label{sec:prospective56}
+A policy certificate determines whether a proposed change is safe at every state. An economic stopping rule asks when the returned complete policy has attained a specified expected-cost target under the initial law. Neither question is answered by choosing the best recorded policy after all computation has finished.
+
+\subsection{A first-attainment service}
+Fix an installed policy $\pi^0$, a target $q\in(0,1)$, a finite resource ladder, and cumulative sample sizes at each stage. At a stage, construct a critic from primitives, transfer the old policy exactly to any refined partition, and execute a verified simultaneous sweep. Freeze the resulting complete policy before drawing that stage's fresh evaluation stream. At each declared look form a confidence interval for
+\begin{equation}\label{eq:target56}
+ D_{k,q}=\E J_0^{\pi^k}-q\E J_0^{\pi^0}.
+\end{equation}
+Return the policy at the first nonpositive upper endpoint. A strictly positive lower endpoint ends the current stage and advances to the next resource stage. An unresolved interval leads to the next declared look. Exhausting the last stage returns the safe incumbent and an explicit budget-exhaustion status. It is not a conclusion that the target is unattainable.
+
+\begin{theorem}[Validity at prospective return]\label{thm:stop56}
+Suppose each accepted sweep satisfies Theorem~\ref{thm:directed56}. At each declared stage and look, assume the interval for \eqref{eq:target56} has conditional failure probability at most $\alpha_{k,l}$ given the information preceding the stage's fresh evaluation stream. If $\sum_{k,l}\alpha_{k,l}\le\alpha$, then, with probability at least $1-\alpha$, every successful return satisfies its stated expected-cost target. Every returned incumbent, including one returned after budget exhaustion, is statewise no worse than the original installed policy. No independence between different methods or different looks is required for the union bound. Each within-stage endpoint sample must satisfy its stated conditional sampling assumptions.
+\end{theorem}
+\begin{proof}
+Condition on the history preceding each executed stage. Its frozen policy and fresh independent-bin stream satisfy the fixed-policy interval guarantee. Integrating conditional failure probabilities and taking the union over the prespecified potential looks gives a simultaneous event of probability at least $1-\alpha$. The first-crossing rule selects one already covered interval on this event, so its nonpositive upper endpoint implies \eqref{eq:target56} is nonpositive. Unexecuted later looks need not be computed. Statewise safety follows by composition of the deterministic sweep inequalities and exact policy transfer, independently of the economic inference event.
+\end{proof}
+
+The theorem also permits a countable predetermined ladder with summable failure allowances. The experiment uses the finite ladder specified below, not an unimplemented anytime extension. A process clock begins before construction and ends after its durable output. Failed stages, own-policy evaluation and inference are charged to that service. A method reaching a target early must not be charged for hypothetical later stages, and a method failing early must not have its completed work omitted.
+
+For the implemented bounded-sample account, each path is enclosed over its complete forty-bit initial and innovation cells. The last innovation is integrated analytically. The interval in Theorem~\ref{thm:conditional49} applies at each declared look, using the known support and outward sample moments. The new family limit is 2,048 intervals with logarithm upper bound 14 and error $1/100$; the planned maximum is 1,188 intervals. Earlier looks reuse prefixes within a stage and are covered by the same finite union. Distinct stages use fresh streams. A fixed pseudorandom seed establishes reproducibility under the declared independent-bin model, not mathematical independence of a deterministic sequence.
+
+\begin{corollary}[Economic adoption at return]\label{cor:adoption56}
+Suppose the returned policy has cumulative gain $G=\E J_0^{\pi^0}-\E J_0^\pi\in[l,u]$ on the simultaneous event. For every replacement charge $\tau\ge0$, computation price $\lambda\ge0$, and recorded complete work $W\ge0$, its net gain belongs to
+\[
+ [l-\tau-\lambda W,\ u-\tau-\lambda W].
+\]
+Thus $\tau+\lambda W<l$ certifies profitable adoption and $\tau+\lambda W>u$ rules out profitable adoption. These comparisons hold simultaneously over the entire nonnegative price plane on the original event.
+\end{corollary}
+\begin{proof}
+Subtract the same known quantity $\tau+\lambda W$ from both endpoints of the gain enclosure. The assertion is pathwise on the simultaneous event, so choosing prices after observing recorded work requires no extra confidence allocation.
+\end{proof}
+
+This is a decision at return, not a claim that the executed relative-cost stopping rule optimizes all possible prices or future computation schedules. The units of $\lambda$ must convert recorded work into the model's cost units. In an uncalibrated theoretical economy the price plane is an explicit economic sensitivity analysis, not an estimated welfare magnitude.
+
+\subsection{Learning an approximately null direction}
+Suppose the transition is $\mu_t(x,0)+Ba+sZ$ with unknown $B\in[0,1]^d$, known nonlinear drift and known bounded additive action-invariant innovation law. Fit a direction $\widehat v$ on training observations. Independent validation observations $Y_i$ estimate $B$ coordinatewise; each coordinate has mean $B_j$ and range length at most $w$. Let the recorded mean enclosure be $[\underline m_j,\overline m_j]$ and let $\delta_{\rm bin}$ cover numerical bin displacement. Form
+\begin{equation}\label{eq:confidencebox56}
+ \mathcal K_N=\prod_{j=1}^d
+ \left[\max\{0,\underline m_j-r_N\},\min\{1,\overline m_j+r_N\}\right],
+ \quad r_N=w\sqrt{\ell/(2N)}+\delta_{\rm bin}.
+\end{equation}
+Only validation data, the fitted direction and the declared parameter prior enter the gate.
+
+\begin{theorem}[Confidence-qualified action-null correction]\label{thm:null56}
+For a finite collection of $H$ validation boxes, each with at most $d_{\max}$ coordinates, $2Hd_{\max}e^{-\ell}\le\alpha_B$ gives simultaneous coverage of their true exposures with probability at least $1-\alpha_B$. On this event, for every fitted direction, amplitude $M$, and nonnegative feasible action pair,
+\begin{equation}\label{eq:null56}
+ |(P_B^a-P_B^b)M(\widehat v^\top y+c)_+|
+ \le |M|\sup_{B'\in\mathcal K_N}|\widehat v^\top B'|\,|a-b|.
+\end{equation}
+A whole-cell critic-advantage upper bound evaluated uniformly over the \emph{same} box, plus the discounted right-hand side of \eqref{eq:null56}, is a valid upper bound for the corresponding true advantage with the nuisance removed. Accepting only when that bound is nonpositive preserves safety simultaneously for all tested amplitudes and actions. The simplification is rejected whenever its uncertainty allowance prevents the gate from passing.
+\end{theorem}
+\begin{proof}
+The bounded-coordinate inequality of \citet{hoeffding1963} and a union bound give coverage of \eqref{eq:confidencebox56}; numerical mean and bin allowances preserve containment. On that event, use a common innovation to couple the two actual kernels. Their next-state difference is $B(a-b)$. The positive-part map is one-Lipschitz, so its projected difference is bounded by $|\widehat v^\top B|\,|a-b|$ for every realization. Integration proves \eqref{eq:null56}. The box event controls all linear projections, not merely a preselected direction. Uniformly enclosing the rest of the critic advantage over that same parameter set prevents an unobserved true-parameter oracle from entering the remaining calculation. Subtracting a nuisance difference cannot increase the upper bound by more than its absolute allowance.
+\end{proof}
+
+The experiment uses $w=1/2$, $\ell=14$, 27 validation boxes and at most eight coordinates, giving error at most $1/200$. The direction is fitted on 256 observations and then quantized; the exact stored direction is used in \eqref{eq:null56}. Validation sizes are 512, 4,096 and 32,768. The guarantee concerns an unknown action-exposure vector in a maintained structural model. It does not infer an arbitrary unknown transition law, and coverage failures must remain in the evidence rather than being discarded by reference to the simulator's known truth.
+
+An empty validation box invalidates the parameter qualification and rejects the simplified certificate. It cannot authorize a policy change.
