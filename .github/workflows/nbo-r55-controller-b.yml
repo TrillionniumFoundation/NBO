@@ -1,0 +1,141 @@
+name: NBO R55B complete prospective execution
+on:
+  push:
+    branches: [revision/econometrica-nbo-r55-referee-revision-2026-10-09]
+    paths: [.github/workflows/nbo-r55-controller-b.yml]
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r55-controller-b
+  cancel-in-progress: false
+env:
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  pin:
+    runs-on: ubuntu-latest
+    outputs:
+      source_sha: ${{ steps.pin.outputs.source_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: revisions/2026-10-09-r55
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn
+      - id: pin
+        name: Preserve the initial controller failure and freeze the corrected controller
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import hashlib,json,shutil,sys
+          from pathlib import Path
+          r=Path('revisions/2026-10-09-r55');sys.path.insert(0,str(r/'code'))
+          import prospective55 as p
+          science=p.verify();old=json.loads((r/'audit/SOURCE_FREEZE55.json').read_text())
+          archive=r/'attempts/initial-clock-collision';archive.mkdir(parents=True,exist_ok=False)
+          for name in old['source_sha256']:
+              target=archive/name;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(r/name,target)
+          (archive/'audit').mkdir(exist_ok=True)
+          for name in ('SOURCE_FREEZE55.json','EXECUTION55.json'):
+              shutil.copy2(r/'audit'/name,archive/'audit'/name)
+          shutil.move(str(r/'results55'),str(archive/'results55'))
+          (r/'results55').mkdir()
+          shutil.copytree(archive/'results55/learned-null',r/'results55/learned-null')
+          kernels=('neural55.py','prospective55.py','null55.py','tests55.py')
+          record=dict(science_freeze_sha256=science,controller_sha256={'code/cohort55b.py':hashlib.sha256((r/'code/cohort55b.py').read_bytes()).hexdigest()},initial_workflow_run=37861581693,initial_frozen_commit='9e6e0732dee5715b4ec39168cf196c4f9d6e83ce',correction='Immutable cumulative clock filename collided after the second successful process. Write unique per-process checkpoints and one final aggregate.',scientific_kernels_unchanged={name:hashlib.sha256((r/'code'/name).read_bytes()).hexdigest() for name in kernels},targets_and_sample_rules_changed=False,learned_null_reexecuted=False,maximum_intervals_including_initial_six_services=1296,family_limit=2048)
+          p.save(r/'audit/CONTROLLER_FREEZE55B.json',record)
+          PY
+          /usr/bin/python3 revisions/2026-10-09-r55/code/cohort55b.py --test
+          /usr/bin/python3 revisions/2026-10-09-r55/code/tests55.py
+          git config user.name 'NBO prospective verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-09-r55
+          git commit -m 'R55B: preserve interrupted controller and freeze an immutable-checkpoint correction with unchanged science'
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r55-referee-revision-2026-10-09 HEAD:refs/heads/revision/econometrica-nbo-r55-source-2026-10-09
+          echo "source_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  study:
+    needs: pin
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - d: 2
+            T: 2
+          - d: 4
+            T: 4
+          - d: 8
+            T: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.pin.outputs.source_sha }}
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: revisions/2026-10-09-r55
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn
+      - run: /usr/bin/python3 revisions/2026-10-09-r55/code/cohort55b.py --d ${{ matrix.d }} --T ${{ matrix.T }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r55b-results-d${{ matrix.d }}-T${{ matrix.T }}
+          path: revisions/2026-10-09-r55/results55/
+          compression-level: 1
+          retention-days: 30
+  deposit:
+    needs: [pin, study]
+    if: always() && needs.pin.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: revision/econometrica-nbo-r55-referee-revision-2026-10-09
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: revisions/2026-10-09-r55
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nbo-r55b-results-*
+          merge-multiple: true
+          path: revisions/2026-10-09-r55/results55
+      - name: Bind the complete or partial corrected-controller evidence
+        env:
+          STUDY_STATUS: ${{ needs.study.result }}
+          FROZEN_SHA: ${{ needs.pin.outputs.source_sha }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,os
+          r=Path('revisions/2026-10-09-r55')
+          for manifest in ('SOURCE_FREEZE55.json','CONTROLLER_FREEZE55B.json'):
+              data=json.loads((r/'audit'/manifest).read_text())
+              for name,h in data.get('source_sha256',data.get('controller_sha256',{})).items():
+                  if hashlib.sha256((r/name).read_bytes()).hexdigest()!=h:raise AssertionError(name)
+          files={str(p.relative_to(r)):hashlib.sha256(p.read_bytes()).hexdigest() for p in (r/'results55').rglob('*') if p.is_file()}
+          record=dict(status='executed' if os.environ['STUDY_STATUS']=='success' else 'partial_execution',study_status=os.environ['STUDY_STATUS'],frozen_controller_commit=os.environ['FROZEN_SHA'],workflow_run=os.environ['GITHUB_RUN_ID'],initial_workflow_run=37861581693,learned_null_reexecuted=False,files_sha256=files)
+          (r/'audit/EXECUTION55B.json').write_text(json.dumps(record,indent=2,sort_keys=True)+'\n')
+          print(json.dumps({k:v for k,v in record.items() if k!='files_sha256'}))
+          PY
+          git config user.name 'NBO prospective verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-09-r55/results55 revisions/2026-10-09-r55/audit/EXECUTION55B.json
+          git commit -m 'R55B: deposit complete prospective process clocks and immutable scientific records'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r55-referee-revision-2026-10-09
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r55b-execution-for-publication
+          path: |
+            revisions/2026-10-09-r55/results55/
+            revisions/2026-10-09-r55/attempts/
+            revisions/2026-10-09-r55/audit/*55*
+            revisions/2026-10-09-r55/code/*55*
+            revisions/2026-10-09-r55/STUDY_PROTOCOL55.md
+          compression-level: 1
+          retention-days: 30
