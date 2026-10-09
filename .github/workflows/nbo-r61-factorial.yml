@@ -1,0 +1,112 @@
+name: NBO R61 matched native factorial
+on:
+  push:
+    branches: [revision/econometrica-nbo-r61-referee-revision-2026-10-09]
+    paths: [.github/workflows/nbo-r61-factorial.yml]
+permissions:
+  contents: write
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      source: ${{ steps.freeze.outputs.source }}
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 30
+          filter: blob:none
+          sparse-checkout: /revisions/2026-10-09-r61/
+          sparse-checkout-cone-mode: false
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sympy g++ libboost-dev
+          mkdir -p revisions/2026-10-09-r61/audit/factorial61
+          /usr/bin/python3 revisions/2026-10-09-r61/code/factorial61.py --test 2>&1 | tee revisions/2026-10-09-r61/audit/factorial61/tests.log
+        shell: bash -e -o pipefail {0}
+      - id: freeze
+        run: |
+          /usr/bin/python3 revisions/2026-10-09-r61/code/factorial61.py --freeze
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-09-r61/audit/SOURCE_FREEZE61F.json revisions/2026-10-09-r61/audit/factorial61
+          git commit -m 'R61: freeze language- and representation-matched native factorial before production'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r61-factorial-source-${{ github.run_id }}-${{ github.run_attempt }}
+          echo "source=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  execute:
+    needs: freeze
+    strategy:
+      fail-fast: false
+      matrix:
+        worker: [0,1]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.freeze.outputs.source }}
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: /revisions/2026-10-09-r61/
+          sparse-checkout-cone-mode: false
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sympy g++ libboost-dev
+          /usr/bin/python3 revisions/2026-10-09-r61/code/factorial61.py --worker ${{ matrix.worker }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r61-native-factorial-${{ matrix.worker }}
+          path: revisions/2026-10-09-r61/results61-factorial/worker${{ matrix.worker }}/
+          retention-days: 30
+  audit:
+    needs: [freeze,execute]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.freeze.outputs.source }}
+          fetch-depth: 30
+          filter: blob:none
+          sparse-checkout: /revisions/2026-10-09-r61/
+          sparse-checkout-cone-mode: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nbo-r61-native-factorial-*
+          path: /tmp/factorial61
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sympy
+          mkdir -p revisions/2026-10-09-r61/results61-factorial/worker0 revisions/2026-10-09-r61/results61-factorial/worker1
+          cp /tmp/factorial61/nbo-r61-native-factorial-0/* revisions/2026-10-09-r61/results61-factorial/worker0/
+          cp /tmp/factorial61/nbo-r61-native-factorial-1/* revisions/2026-10-09-r61/results61-factorial/worker1/
+          /usr/bin/python3 revisions/2026-10-09-r61/code/factorial61.py --audit > revisions/2026-10-09-r61/audit/factorial61/audit.log
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-09-r61/results61-factorial revisions/2026-10-09-r61/audit/FACTORIAL_AUDIT61.json revisions/2026-10-09-r61/audit/factorial61
+          git commit -m 'R61: retain complete two-host native factorial and all independently validated exact batch answers'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r61-factorial-2026-10-09
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r61-factorial-audit
+          path: |
+            revisions/2026-10-09-r61/audit/FACTORIAL_AUDIT61.json
+            revisions/2026-10-09-r61/audit/factorial61/
+          retention-days: 30
