@@ -1,0 +1,166 @@
+name: NBO R60 frozen substantive revision
+on:
+  push:
+    branches: [revision/econometrica-nbo-r60-referee-revision-2026-10-09]
+    paths: [.github/workflows/nbo-r60-science.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r60-frozen-science
+  cancel-in-progress: false
+env:
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      sha: ${{ steps.source.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-09-r59/
+            /revisions/2026-10-09-r60/
+            /README.md
+          sparse-checkout-cone-mode: false
+      - name: Install exact scientific dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends g++ libboost-dev python3-numpy python3-scipy python3-sympy python3-sklearn
+      - name: Prepare ordinary sources and pin the actual R59 review
+        run: |
+          /usr/bin/python3 revisions/2026-10-09-r60/code/prepare60.py
+          git fetch --depth=1 origin 8f56a3ae24ef3ce4383d0e9d1d757bd3ed7378c6
+          mkdir -p revisions/2026-10-09-r60/inputs/reviews/R59
+          git show 8f56a3ae24ef3ce4383d0e9d1d757bd3ed7378c6:reviews/2026-10-09-econometrica-numerical-methods-r59/referee_report.md > revisions/2026-10-09-r60/inputs/reviews/R59/referee_report.md
+          rm -rf revisions/2026-10-09-r60/build
+          mkdir -p revisions/2026-10-09-r60/build revisions/2026-10-09-r60/audit/build-logs
+      - name: Compile and check disjoint exact fixtures before production
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import ast,sys,pathlib
+          root=pathlib.Path('revisions/2026-10-09-r60')
+          for p in (root/'code').glob('*60.py'):ast.parse(p.read_text(),filename=str(p))
+          sys.path.insert(0,str(root/'code'))
+          import search60
+          print(search60.compile_native(),flush=True)
+          PY
+          /usr/bin/python3 revisions/2026-10-09-r60/code/tests60.py 2>&1 | tee revisions/2026-10-09-r60/audit/build-logs/pre-freeze-tests60.log
+        shell: bash --noprofile --norc -eo pipefail {0}
+      - name: Freeze scientific source and publish isolated source branch
+        id: source
+        run: |
+          /usr/bin/python3 revisions/2026-10-09-r60/code/services60.py --freeze
+          rm -f revisions/2026-10-09-r60/build/native60
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-09-r60
+          git commit -m 'R60: freeze tested scientific design with immutable R59 inputs and controlling review'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r60-source-2026-10-09
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r60-preparation
+          path: revisions/2026-10-09-r60/audit/*60*
+  workers:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        worker: [0, 1]
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: revisions/2026-10-09-r60
+      - name: Install exact scientific dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends g++ libboost-dev python3-numpy python3-scipy python3-sympy python3-sklearn
+      - name: Verify freeze and compile native implementation on this host
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import sys,pathlib,json
+          root=pathlib.Path('revisions/2026-10-09-r60');sys.path.insert(0,str(root/'code'))
+          import services60,search60,stress60
+          freeze=services60.verify();record=search60.compile_native()
+          out=root/'results60'/'worker${{ matrix.worker }}';out.mkdir(parents=True,exist_ok=True)
+          stress60.save(out/'host-setup.json',dict(freeze_sha256=freeze,compilation=record,environment=stress60.environment()))
+          PY
+      - name: Execute all exact solver ablations and adverse regimes
+        run: /usr/bin/python3 revisions/2026-10-09-r60/code/stress60.py --worker ${{ matrix.worker }}
+      - name: Execute learned two-control constrained action problems
+        run: /usr/bin/python3 revisions/2026-10-09-r60/code/stress60.py --worker ${{ matrix.worker }} --multi
+      - name: Execute original-law all-state Bellman frontier
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import sys,pathlib,json
+          root=pathlib.Path('revisions/2026-10-09-r60');sys.path.insert(0,str(root/'code'))
+          import bellman60
+          print(json.dumps(bellman60.run(root/'results60'/'worker${{ matrix.worker }}'/'bellman'),indent=2),flush=True)
+          PY
+      - name: Execute complete prospective services and independent final-policy comparisons
+        run: /usr/bin/python3 revisions/2026-10-09-r60/code/services60.py --worker ${{ matrix.worker }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r60-worker-${{ matrix.worker }}
+          path: revisions/2026-10-09-r60/results60/worker${{ matrix.worker }}/
+          retention-days: 30
+          compression-level: 1
+  collect:
+    needs: [prepare, workers]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: revisions/2026-10-09-r60
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r60-worker-0
+          path: revisions/2026-10-09-r60/results60/worker0
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r60-worker-1
+          path: revisions/2026-10-09-r60/results60/worker1
+      - name: Check complete cohorts and bind every new scientific record
+        run: |
+          python3 - <<'PY'
+          import pathlib,json,hashlib,os
+          root=pathlib.Path('revisions/2026-10-09-r60');rows=[]
+          for worker in (0,1):
+              p=root/'results60'/f'worker{worker}'
+              stress=json.loads((p/'stress/summary.json').read_text());multi=json.loads((p/'two-control/summary.json').read_text());bellman=json.loads((p/'bellman/summary.json').read_text());cohort=json.loads((p/'prospective/cohort.json').read_text())
+              assert stress['cases']==90 and multi['cases']==16 and cohort['services']==48
+              rows.append(dict(worker=worker,stress_cases=90,two_control_cases=16,services=48,bellman_targets=bellman['targets'],environment=json.loads((p/'host-setup.json').read_text())))
+          files={str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in (root/'results60').rglob('*') if p.is_file()}
+          record=dict(status='executed',workflow_run_id=os.environ['GITHUB_RUN_ID'],frozen_source_commit=os.environ['FROZEN_SHA'],workers=rows,files_sha256=files,scope='Production completion and hash inventory; independent publication replay is a separate required gate.')
+          (root/'audit/SCIENCE_EXECUTION60.json').write_text(json.dumps(record,sort_keys=True,indent=2)+'\n')
+          print(json.dumps({k:v for k,v in record.items() if k!='files_sha256'},indent=2))
+          PY
+        env:
+          FROZEN_SHA: ${{ needs.prepare.outputs.sha }}
+      - name: Commit executed evidence to a new non-forced science branch
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-09-r60/results60 revisions/2026-10-09-r60/audit/SCIENCE_EXECUTION60.json
+          git commit -m 'R60: retain complete two-host stress, multi-action, Bellman-frontier and prospective-service execution'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r60-science-2026-10-09
+          git rev-parse HEAD
