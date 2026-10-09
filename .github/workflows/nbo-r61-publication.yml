@@ -42,36 +42,18 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sympy python3-sklearn python3-pil g++ libboost-dev pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
-      - name: Finalize ordinary manuscript typography and explicit economic comparisons
+      - name: Commit complete ordinary sources with readable tables and distinct appendix numbering
         run: |
-          /usr/bin/python3 - <<'PY'
-          from pathlib import Path
-          import ast,hashlib,json,shutil
-          root=Path('revisions/2026-10-09-r61');changes=[]
-          p=root/'sections/stability61.tex';text=p.read_text();fixed=text.replace(chr(92)+'mathscr',chr(92)+'mathcal')
-          if fixed!=text:
-              changes.append(dict(path=str(p.relative_to(root)),before=hashlib.sha256(text.encode()).hexdigest(),after=hashlib.sha256(fixed.encode()).hexdigest(),change='Use the existing calligraphic endpoint-map font; mathematics unchanged.'));p.write_text(fixed)
-          p=root/'sections/study61.tex';text=p.read_text()
-          insertion='Across the twelve mathematical designs, native ReLU and each of the common-action and quadratic comparators have seven exact policy identities and five unresolved cost differences. No remaining comparison identifies a strictly lower native-ReLU cost. The common-action service has the smallest within-worker median warm return time in every task--target group; in a group whose target is exhausted by all generators this is a statement about observed work, not the work required to attain the target. These outcomes distinguish the implemented NBO contract from a claim of universal neural superiority.\n\n'
-          needle=chr(92)+'input{tables/cost61}\n\n'
-          if insertion not in text:
-              if text.count(needle)!=1:raise AssertionError('Economic table anchor changed')
-              p.write_text(text.replace(needle,needle+insertion,1))
-          for f in (root/'code').glob('*61.py'):ast.parse(f.read_bytes(),filename=str(f))
-          if changes:(root/'audit/MATH_FONT_FIX61.json').write_text(json.dumps(changes,indent=2)+'\n')
-          target=root/'preserved/R59-before-R61/pdf';target.mkdir(parents=True,exist_ok=True)
-          for f in Path('revisions/2026-10-09-r59/build').glob('*.pdf'):shutil.copy2(f,target/f.name)
-          PY
+          /usr/bin/python3 revisions/2026-10-09-r61/code/layout61.py
           /usr/bin/python3 revisions/2026-10-09-r61/code/tables61.py > revisions/2026-10-09-r61/audit/TABLE_GENERATION61.log
           /usr/bin/python3 revisions/2026-10-09-r61/code/assemble61.py
           git add -f revisions/2026-10-09-r61
-          if ! git diff --cached --quiet; then git commit -m 'R61: finish ordinary mathematical typography and retain explicit actual-cost comparisons'; fi
+          if ! git diff --cached --quiet; then git commit -m 'R61: finalize readable tables, full proof displays and complete-edition numbering'; fi
           git push origin HEAD:refs/heads/revision/econometrica-nbo-r61-referee-revision-2026-10-09
       - name: All inherited and new tests, fixed-policy replay and seven-document gates
         run: /usr/bin/python3 revisions/2026-10-09-r61/code/publication_driver61.py
       - name: Clean archive reproduction and atomic final remote delivery
-        shell: bash -e -o pipefail {0}
-        run: /usr/bin/python3 revisions/2026-10-09-r61/code/publish61.py 2>&1 | tee revisions/2026-10-09-r61/audit/PUBLISH_RUN61.log
+        run: /usr/bin/python3 revisions/2026-10-09-r61/code/publish61.py
       - name: Preserve unsuccessful publication diagnostics
         if: failure()
         run: |
