@@ -1,0 +1,100 @@
+name: NBO R61 exact replay and fixed-policy certification
+on:
+  push:
+    branches: [revision/econometrica-nbo-r61-referee-revision-2026-10-09]
+    paths: [.github/workflows/nbo-r61-science.yml]
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r61-science
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 30
+          filter: blob:none
+          sparse-checkout: /revisions/2026-10-09-r61/
+          sparse-checkout-cone-mode: false
+      - name: Install exact and interval verification dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sympy python3-sklearn g++ libboost-dev
+      - name: Compile unchanged native source and test disjoint fixtures
+        run: |
+          /usr/bin/python3 - <<'PY'
+          from pathlib import Path
+          import ast,hashlib,json,os,re,subprocess,time
+          root=Path('revisions/2026-10-09-r61');(root/'build').mkdir(exist_ok=True);logs=root/'audit/verification61';logs.mkdir(exist_ok=True)
+          for f in (root/'code').glob('*61.py'):ast.parse(f.read_bytes(),filename=str(f))
+          start=time.perf_counter();cmd=['g++','-O3','-std=c++17',str(root/'code/search60.cpp'),'-o',str(root/'build/native60')];subprocess.run(cmd,check=True)
+          record=dict(seconds=time.perf_counter()-start,command=cmd,source_sha256=hashlib.sha256((root/'code/search60.cpp').read_bytes()).hexdigest(),binary_sha256=hashlib.sha256((root/'build/native60').read_bytes()).hexdigest(),compiler=subprocess.check_output(['g++','--version'],text=True).splitlines()[0],purpose='R61 exact replay; original R60 compilation clocks unchanged')
+          (root/'audit/COMPILER61.json').write_text(json.dumps(record,indent=2)+'\n')
+          tests={}
+          for name in ('tests60','tests_centered60','tests61'):
+              f=logs/(name+'.log')
+              with f.open('w') as out:run=subprocess.run(['/usr/bin/python3','code/'+name+'.py'],cwd=root,stdout=out,stderr=subprocess.STDOUT)
+              text=f.read_text();print(text,flush=True)
+              if run.returncode:raise RuntimeError(name+' failed')
+              count=re.search(r'Ran (\d+) tests?',text)
+              if not count or not re.search(r'^OK\s*$',text,re.M):raise AssertionError('Missing test success')
+              tests[name]=dict(tests=int(count[1]),status='passed',log_sha256=hashlib.sha256(f.read_bytes()).hexdigest())
+          (root/'audit/TESTS61.json').write_text(json.dumps(tests,indent=2)+'\n')
+          PY
+      - name: Freeze revalidation before production
+        run: |
+          /usr/bin/python3 revisions/2026-10-09-r61/code/revalidate61.py --freeze
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-09-r61/audit/SOURCE_FREEZE61.json revisions/2026-10-09-r61/audit/COMPILER61.json revisions/2026-10-09-r61/audit/TESTS61.json revisions/2026-10-09-r61/audit/verification61
+          git commit -m 'R61: freeze fixed-policy verification after exact disjoint tests and before production'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r61-science-source-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Reconstruct every scientific object and certify unchanged returned actors
+        run: |
+          /usr/bin/python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,os,subprocess,time
+          root=Path('revisions/2026-10-09-r61');rows=[];begin=time.perf_counter()
+          for name,args in [('science',['code/audit61.py']),('fixed-policy',['code/revalidate61.py']),('fixed-policy-replay',['code/revalidate61.py','--replay'])]:
+              start=time.perf_counter();log=root/'audit/verification61'/(name+'.log')
+              with log.open('w') as out:
+                  p=subprocess.run(['/usr/bin/python3',*args],cwd=root,stdout=out,stderr=subprocess.STDOUT);out.flush();os.fsync(out.fileno())
+              row=dict(task=name,returncode=p.returncode,process_and_fsynced_log_seconds=time.perf_counter()-start,log_sha256=hashlib.sha256(log.read_bytes()).hexdigest());rows.append(row)
+              print(log.read_text()[-16000:],flush=True)
+              receipt=root/'audit/verification61'/(name+'-receipt.json')
+              with receipt.open('w') as out:json.dump(row,out,indent=2);out.write('\n');out.flush();os.fsync(out.fileno())
+              row['through_first_durable_receipt_seconds']=time.perf_counter()-start
+              (root/'audit/EXECUTION61.json').write_text(json.dumps(dict(status='in_progress' if p.returncode==0 else 'failed',source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),rows=rows),indent=2)+'\n')
+              if p.returncode:raise RuntimeError(name+' failed')
+          (root/'audit/EXECUTION61.json').write_text(json.dumps(dict(status='passed',source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),workflow_run_id=os.getenv('GITHUB_RUN_ID'),rows=rows,total_seconds=time.perf_counter()-begin,new_training_services=0,new_path_samples=0),indent=2)+'\n')
+          PY
+      - name: Retain completed science on a separate non-forced branch
+        run: |
+          git add -f revisions/2026-10-09-r61/audit revisions/2026-10-09-r61/results61-revalidation
+          git commit -m 'R61: complete all exact and original-law replays and fixed-actor Bellman certification'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r61-science-2026-10-09
+      - name: Preserve unsuccessful verification attempt without claiming completion
+        if: failure()
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-09-r61/audit
+          if ! git diff --cached --quiet; then git commit -m 'R61: preserve unsuccessful verification attempt and full diagnostics'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r61-attempt-${{ github.run_id }}-${{ github.run_attempt }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r61-science-and-revalidation
+          path: |
+            revisions/2026-10-09-r61/audit/*61.json
+            revisions/2026-10-09-r61/audit/verification61/
+            revisions/2026-10-09-r61/results61-revalidation/
+          retention-days: 30
