@@ -1,0 +1,54 @@
+name: NBO R59 complete scientific replay
+on:
+  push:
+    branches: [revision/econometrica-nbo-r59-referee-revision-2026-10-09]
+    paths: [.github/workflows/nbo-r59-scientific-replay.yml]
+permissions:
+  contents: write
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: |
+            revisions/2026-10-09-r58
+            revisions/2026-10-09-r59
+      - name: Install scientific replay dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sympy python3-sklearn
+      - name: Prepare and verify every frozen matched service
+        run: |
+          /usr/bin/python3 revisions/2026-10-09-r59/code/prepare59.py
+          mkdir -p revisions/2026-10-09-r59/audit/build-logs
+          /usr/bin/python3 revisions/2026-10-09-r59/code/tests58.py > revisions/2026-10-09-r59/audit/build-logs/lossless58.log 2>&1
+          /usr/bin/python3 revisions/2026-10-09-r59/code/tests59.py > revisions/2026-10-09-r59/audit/build-logs/theorems59.log 2>&1
+          /usr/bin/python3 revisions/2026-10-09-r59/code/audit59.py > revisions/2026-10-09-r59/audit/build-logs/scientific-replay59.log 2>&1
+          cat revisions/2026-10-09-r59/audit/build-logs/scientific-replay59.log
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-09-r59
+          git commit -m 'R59: retain complete exact-search, certificate, path and prospective transcript replay'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r59-replayed-2026-10-09
+      - name: Show failure diagnostics
+        if: failure()
+        run: tail -n 100 revisions/2026-10-09-r59/audit/build-logs/*.log || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r59-replay-audits
+          path: |
+            revisions/2026-10-09-r59/audit/SUMMARY59.json
+            revisions/2026-10-09-r59/audit/RESULT_AUDIT59.json
+            revisions/2026-10-09-r59/audit/build-logs/*59.log
+            revisions/2026-10-09-r59/audit/build-logs/lossless58.log
+          retention-days: 30
