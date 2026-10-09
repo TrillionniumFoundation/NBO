@@ -1,0 +1,90 @@
+\section{Constructive neural policies from primitive moduli}\label{app:constructive45}
+This section supplies the complete implementation-independent proof of the constructive theorem in the main article. Its assumptions are a compact state set $X\subset\mathbb R^d$, a common compact action set $A\subset\mathbb R^a$, a finite horizon, nonnegative discount factors, an invariant transition, a common innovation law, and state/action-independent monotone cash-invariant conditional evaluation on a common bounded-function domain. The primitive moduli are those in the main article's constructive section. Effective compactness and finite certified numerical evaluation are used only for finite termination, not for the analytic inequalities.
+
+\subsection{Bellman moduli and labels}
+If $\|u-v\|_\infty\le r$, then $v-r\le u\le v+r$. Monotonicity and cash invariance give $|\rho_t(u)-\rho_t(v)|\le r$. Consequently, when $f_{t+1}$ is $L_{t+1}$-Lipschitz,
+\[
+ |Q_t(f_{t+1};x,a)-Q_t(f_{t+1};y,b)|
+ \le L_t\|x-y\|_1+L^a_t\|a-b\|_1,
+\]
+where $L_t=C_{x,t}+\beta_tF_{x,t}L_{t+1}$ and $L^a_t=C_{a,t}+\beta_tF_{a,t}L_{t+1}$. Infima over the same action set preserve the state modulus. Compactness and continuity give minima. Alternatively, the same argument uses arbitrarily close minimizers and then takes their error to zero.
+
+Let $H_t=T_tf_{t+1}$, $q_{ij}=Q_t(f_{t+1};x_i,a_j)$, and $|\widehat q_{ij}-q_{ij}|\le e$. The state and action grids have radii $h,k$. Since every grid action is feasible,
+\[
+ y_i=\min_j\widehat q_{ij}\ge \min_jq_{ij}-e\ge H_t(x_i)-e.
+\]
+Choose an action minimizer $a^*$ and a grid action within $k$ of it. Then
+\[
+ y_i\le q_{ij^*}+e\le H_t(x_i)+L^ak+e.
+\]
+These are bounds on the label array actually produced by the own-future recursion. They do not use $V_{t+1}^*$ and do not assume that a regression loss is small.
+
+\subsection{Envelope, residual, and selected action}
+For arbitrary finite labels $y_i$, define $E_y(x)=\min_i\{y_i+L\|x-x_i\|_1\}$. Each cone is $L$-Lipschitz. For a minimizing cone at $x'$, $E_y(x)-E_y(x')\le L\|x-x'\|_1$, and reversing the points proves the Lipschitz assertion. If $\max_i|y_i-y'_i|\le\delta$, then every cone shifts by at most $\delta$, so $\|E_y-E_{y'}\|_\infty\le\delta$. In particular, numerical label errors cannot inflate the certified slope.
+
+For every node, $y_i+L\|x-x_i\|_1\ge H_t(x_i)-e+L\|x-x_i\|_1\ge H_t(x)-e$. Taking the minimum proves the lower residual bound. Choosing a nearest node $i(x)$ gives
+\[
+ E_y(x)\le H_t(x_{i(x)})+L^ak+e+Lh
+        \le H_t(x)+L^ak+e+2Lh.
+\]
+If $j(i)$ minimizes the numerical queries, then
+\[
+ q_{i,j(i)}\le\widehat q_{i,j(i)}+e=y_i+e
+       \le H_t(x_i)+L^ak+2e.
+\]
+The difference of the chosen-action value and $H_t$ has state modulus at most $2L$. Thus the nearest-node actor has gap at most $L^ak+2e+2Lh$. A deterministic rule for ties among finitely many closed Voronoi cells gives a Borel actor. Any tied nearest node satisfies the same inequality. Because the action set is common, this actor is feasible at every state. This proof would not establish feasibility for an unrestricted state-dependent correspondence.
+
+At the terminal date, $H_T=g$ and there is no action minimization. Labels within $e_T$ of $g$ yield $-e_T\le f_T-g\le e_T+2L_gh_T$. Starting from the terminal network and proceeding backward establishes the assumed continuation moduli at every date. The policy theorem, proved earlier in this supplement, then yields
+\[
+ J_0^\pi(x)-V_0(x)\le
+ \sum_{t<T}B_t(2L^a_tk_t+4e_t+4L_th_t)
+   +B_T(2e_T+2L_gh_T).
+\]
+The comparison is with the optimum over all admissible adapted policies, not just policies constant on the grid. The action covering allowance is precisely what makes the continuous-action comparison possible.
+
+\subsection{Realization and finite termination}
+An absolute value uses two ReLU gates. A sum of $d$ absolute values with affine coefficients computes one cone. The identity $\min(u,v)=u-\max(u-v,0)$ computes pairwise minima. A balanced finite tree consumes $K$ cones in $O(\log K)$ stages, with $O(K)$ additional gates. Positive and negative channels represent signed intermediate scalars in an ordinary feed-forward realization. The total number of coefficients is $O(dK)$; a bounded-fan-in realization can replace each affine sum by a logarithmic-depth addition tree. This is an explicit network with weights determined by labels, state nodes, and the primitive upper modulus.
+
+All constants may be replaced by computable rational upper bounds. The labels can be rational rounded midpoints of certified numerical intervals. State/action covers must be supplied with verifiable covering and feasibility radii, rather than presumed because a set is topologically compact. For the budget $s=\varepsilon/\sum B_t$, the nonterminal terms satisfy
+\[
+ 2(s/8)+4(s/8)+4(s/16)=s,
+\]
+and terminal terms satisfy $2(s/4)+2(s/4)=s$. Positive-radius covers have finitely many nodes and numerical queries reach the specified tolerances by hypothesis. Backward construction therefore takes finite work and the policy loss is at most $\varepsilon$. This is a deterministic algorithm theorem. It does not turn a finite implementation cap into a termination guarantee, and it does not provide a convergence theorem for Adam, stochastic gradient descent, or an arbitrary nonconvex loss.
+
+The work expression in the article counts all state--action--innovation evaluations of the already constructed future network. If numerical precision increases with the requested tolerance, the bit cost of each operation and of each weight must also increase in the account. A tensor cover retains its exponential state/action dimension factors. Analytic or sparse integration can reduce the innovation work but does not remove the covering factors merely by being called neural computation.
+
+\subsection{Exact scalar compilation}
+Let $0=x_0<\cdots<x_N=1$ and let the labels be arbitrary rational numbers. Define
+\[
+ z_i=\min_j\{y_j+L|x_i-x_j|\}.
+\]
+A left-to-right pass computes the minimum over $j\le i$ and a right-to-left pass incorporates $j\ge i$. The result is the greatest $L$-Lipschitz vector lying below the labels: any such vector $w$ satisfies $w_i\le w_j+L|x_i-x_j|\le y_j+L|x_i-x_j|$ for every $j$. In particular $|z_{i+1}-z_i|\le L(x_{i+1}-x_i)$.
+
+For $x\in[x_i,x_{i+1}]$, every cone centered to the left is represented by the best left intercept and every cone centered to the right by the best right intercept. Therefore
+\[
+ E_y(x)=\min\{z_i+L(x-x_i),\ z_{i+1}+L(x_{i+1}-x)\}.
+\]
+For $L>0$, the intersection is
+\[
+ r_i=\frac{x_i+x_{i+1}}2+\frac{z_{i+1}-z_i}{2L}\in[x_i,x_{i+1}].
+\]
+When the intersection is interior it is the only additional knot; endpoint intersections cause no duplicate knot. When $L=0$ the envelope is constant. This proves equality of the compiled piecewise-linear function and the defining network everywhere, including non-dyadic intersections and ties.
+
+For rational knots $r_j$, values $v_j$, and slopes $s_j$, the antiderivative on one cell is
+\[
+ A(x)=A(r_j)+v_j(x-r_j)+\tfrac12s_j(x-r_j)^2.
+\]
+Rational trapezoidal accumulation computes $A(r_j)$ exactly. Under a continuous uniform innovation on $[-\sigma,\sigma]$, the own-future expectation is
+$[A(b+\sigma)-A(b-\sigma)]/(2\sigma)$.
+This is an identity under the original law, not a finite-bin change of the economy.
+
+The numerical evaluator encloses each rational coefficient and each native arithmetic operation outward. At a query near a rounded non-dyadic knot, it resolves the cell using the exact rational knot and the exact rational value of the binary64 query. It does not use a rounded knot as a silent change of the partition. An uncertain antiderivative argument is evaluated at its midpoint and expanded by $\sup|f|$ times its radius; an uncertain innovation center is expanded by $\operatorname{Lip}(f)$ times its radius. Intersections with $[0,1]$ discard only rounding overhang when the exact primitive argument is known to lie in that invariant interval. These steps separate analytic integration from arithmetic rounding.
+
+\subsection{Matched spline account and measurement scope}
+For the spline comparator, linear interpolation of labels with node errors between $-e$ and $L^ak+e$ gives a residual interval
+$[-e-Lh,\ L^ak+e+Lh]$.
+Indeed the interpolating weights are nonnegative and sum to one, and their weighted distance to the query point is at most $h$ on the uniform one-dimensional mesh. Its width is $L^ak+2e+2Lh$, the same form as the envelope width. The nearest-node actor allowance is also the same form. The spline's actual exact slope, not the neural primitive upper bound, is propagated into its next date's query modulus. Both terminal certificates conservatively use the primitive terminal modulus. Neither comparator borrows the other's targets.
+
+The catalogue records exact rational gap formulas, upper binary64 endpoints, all interval-error allowances, defining labels, compiled nodes, and selected actions for every rung. It also records evaluated Bellman queries, continuous-law integrals, antiderivative queries, binary-search upper counts, deployed actor scalars, rational storage quantities, maximum stored numerator/denominator bit lengths, checkpoint bytes, process peak resident memory, internal clocks, and process clocks. Primitive-object counts are not described as a complete floating-point or bit-operation count. Peak memory includes the interpreter and warm-up. The internal target clock includes failed rungs and durable checkpoint output; independent economic comparison is absent rather than costless. These scope qualifications are part of the empirical estimand.
+
+A first-rung timing repetition is not a new random economic environment. For each fixed method/horizon/price combination, the three exact certificate arrays and deployed objects should coincide; their clocks need not. Equality of object hashes is audited separately from timing dispersion. This supplies reproducibility for the declared deterministic generator without inferring a probability of success for another training algorithm.

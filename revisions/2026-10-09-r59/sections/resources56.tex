@@ -1,0 +1,70 @@
+\section{Allocating resources to an economic tolerance}\label{sec:resources49}
+A single resolution parameter imposes an economic restriction that the Bellman problem does not impose. State coverage, action search and integration have different error coefficients and different effects on work. Refining all three at the same rate can therefore spend most of the service budget on the wrong source of error. We separate these choices while retaining the continuation, feasible-witness interpretation and all-state comparison developed above.
+
+\subsection{A separated primitive budget}
+Consider the investment family specified in Section~\ref{sec:legacy56}, with $d\in\{2,3,4\}$ state coordinates, discount $\beta=15/16$, and uniform coordinate grids with $N$ intervals. At a state node use $K+1$ feasible action fractions. Integrate the common scalar innovation using $M$ equal-probability bins and their midpoints. The three integers need not agree. Let $L_t$ be the primitive graph modulus of the constructed witness continuation, and let $D_t$ be its action modulus. A downward numerical displacement of the action grid is denoted by $\delta_a$.
+
+The state and action covering radii satisfy $h_t=d/(2N)$ and $k_t\le 1/(8K)+\delta_a$. The innovation lies in an interval of length $1/16$. Within a bin its expected absolute distance from the midpoint is $1/(64M)$. Since changing the scalar innovation by $z-z'$ changes the next state by at most $d|z-z'|$ in the $\ell^1$ norm, a certified numerical query has an error allowance
+\begin{equation}\label{eq:query49}
+ e_t\le\frac{\beta d L_{t+1}}{64M}+\xi_t.
+\end{equation}
+Here $\xi_t$ covers arithmetic, interval evaluation and label rounding. It does not suppress the integration error. The terminal label allowance is $e_T$.
+
+\begin{proposition}[Separated-resource policy account]\label{prop:budget49}
+Under the feasible-witness hypotheses, the returned policy satisfies
+\begin{equation}\label{eq:separated49}
+ 0\le J^\pi-V^*\le \frac{a}{N}+\frac{b}{K}+\frac{q}{M}+\eta,
+\end{equation}
+where
+\begin{align}\label{eq:coefficients49}
+ a&=d\sum_{t<T}\beta^tL_t+d\beta^TL_g,&
+ b&=\frac18\sum_{t<T}\beta^tD_t,\\
+ q&=\frac d{32}\sum_{t<T}\beta^{t+1}L_{t+1},&
+ \eta&=\sum_{t<T}\beta^t(2\xi_t+D_t\delta_a)+2\beta^Te_T.\notag
+\end{align}
+The primitive coefficients are independent of the computed labels. The leading number of innovation evaluations in target formation is
+\begin{equation}\label{eq:workseparated49}
+ T(N+1)^d(K+1)M.
+\end{equation}
+The compiled continuation additionally incurs its corner-evaluation and preprocessing costs. Pilot selection, policy extraction, verification, arithmetic bit lengths and output are separate charged components.
+\end{proposition}
+\begin{proof}
+Insert the state and action radii and \eqref{eq:query49} into the feasible-witness loss bound. The selected-policy upper account contributes the second copy of $e_t$, not a second action-search allowance. Collecting the coefficients of $N^{-1},K^{-1},M^{-1}$ gives \eqref{eq:coefficients49}. There are $(N+1)^d$ state nodes, $K+1$ actions per node and $M$ innovation representatives per action at each nonterminal date. No independence of fitting errors is used.
+\end{proof}
+
+The account explains why a common further state rung need not be a diagonal refinement. In the $T=3,p=4,d=2$ cell, the exact primitive coefficients are approximately $a=51.1569$, $b=2.3650$ and $q=1.0486$. The choice $(N,K,M)=(128,16,8)$ has account about $0.6786+\eta$, below target one when the numerical remainder fits the remaining budget. The diagonal choice $(128,128,128)$ is more accurate, but its target-generation innovation count at that same state grid is $129\cdot128/(17\cdot8)$ times larger. This is an arithmetic comparison of two declared allocations, not an observation of the unexecuted diagonal service or a runtime ratio. Both witness and conventional FVI receive the separated allocation in the experiment.
+
+\subsection{The optimal continuous allocation and its boundary cases}
+A useful planning problem minimizes the leading product $N^dKM$ subject to \eqref{eq:separated49}. This proxy isolates the primitive evaluation term; it is not the entire operation count or the measured wall clock. Write $E=\varepsilon-\eta>0$ and suppose first that $a,b,q$ are positive and all optimal resources exceed their required lower bounds.
+
+\begin{proposition}[Error shares and clipped allocation]\label{prop:allocation49}
+The unique interior minimizer of the continuous proxy has
+\begin{equation}\label{eq:shares49}
+ \frac aN=\frac d{d+2}E,\qquad
+ \frac bK=\frac1{d+2}E,\qquad
+ \frac qM=\frac1{d+2}E.
+\end{equation}
+For lower resource bounds $r_i\ge\underline r_i>0$, put
+$c=(a,b,q)$, $p=(d,1,1)$ and $\bar x_i=c_i/\underline r_i$.
+If $E<\sum_i\bar x_i$, there is a unique positive $\lambda$ such that
+\begin{equation}\label{eq:clipped49}
+ x_i=\min\{\bar x_i,p_i\lambda\},\qquad \sum_i x_i=E;
+ \quad r_i=c_i/x_i.
+\end{equation}
+These resources minimize the constrained continuous proxy. If $E\ge\sum_i\bar x_i$, all lower resource bounds suffice. Coordinates with zero error coefficient remain at their resource lower bound. When dyadic lower bounds are used, rounding each optimal resource upward to a power of two preserves the error guarantee and multiplies this proxy by less than $2^{d+2}$.
+\end{proposition}
+\begin{proof}
+Set $x_i=c_i/r_i$. Minimizing the resource product is equivalent to maximizing $\sum_i p_i\log x_i$ over $0<x_i\le\bar x_i$ and $\sum_i x_i\le E$. Strict concavity and the multiplier conditions give $p_i/x_i$ equal on unconstrained coordinates and larger on capped coordinates. This is precisely \eqref{eq:clipped49}. The sum of its right sides is strictly increasing until all caps bind. The unconstrained case yields \eqref{eq:shares49}. Upward dyadic rounding never enlarges an error term and multiplies $N^dKM$ by less than the stated factor. Neither argument bounds rational-arithmetic bit cost or computer time.
+\end{proof}
+
+The optimization is a standard separable resource-allocation calculation. Its role here is to expose the error coefficients of the actual own-future policy construction, including integration and implementation, rather than to claim novelty for the multiplier argument. A finite experimental menu need not contain the continuous optimum. The prototype uses a common, frozen dyadic menu for all generators and records all of it. It does not describe this menu as a globally optimal tuning policy for either FVI or the witness method.
+
+\subsection{A complete tolerance frontier}
+For method $m$, let a prospectively fixed ladder return certificates $g_{m,r}$ and cumulative costs $w_{m,r}$, including failed earlier rungs. Define
+\begin{equation}\label{eq:frontier49}
+ r_m(\varepsilon)=\min\{r:g_{m,r}\le\varepsilon\},\qquad
+ W_m(\varepsilon)=w_{m,r_m(\varepsilon)}.
+\end{equation}
+An empty set is a capped failure, not an interpolated success. Sort the finite union of all certificate values and zero. On each left-closed, right-open interval between successive values, every method's first crossing and complete work are constant. Evaluating the first-crossing rule at the left endpoint therefore reconstructs the entire positive-tolerance frontier exactly, even when successive certificates are not monotone. An unbounded final interval is retained. Repetitions have separate costs, while their mathematical checkpoints must be checked for identity.
+
+This finite partition supplies the appropriate interpretation of a threshold advantage. At a fixed resolution the witness method may cost more. At a tolerance where it crosses one rung earlier, the smaller certificate may more than offset that cost. Whether this happens, and over which tolerance interval, is determined by \eqref{eq:frontier49}; it is not determined by a favorable single threshold. Under an additional homogeneous model $g_m(n)=A_m/n$ and $w_m(n)=C_m n^\kappa$, the continuous frontier ratio is $(C_W/C_F)(A_W/A_F)^\kappa$. This last expression is a conditional explanation, not a fitted scaling law for the experiments. The release supplies the exact finite partition, sensitivity around one, complete prefixes and separate fixed-resolution observations.

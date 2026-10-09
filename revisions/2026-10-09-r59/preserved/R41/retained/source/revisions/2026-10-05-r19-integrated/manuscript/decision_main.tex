@@ -1,0 +1,229 @@
+\section{From a Learned Continuation to Economic Accuracy}\label{sec:r19decision}
+\subsection{Centered approximation error and the selected decision}
+Fix an anchor continuation $S_0$ and its approximation $\widehat S_0$.
+For each task, let $e=\widehat S_0-S_0$ and
+$\Delta_\theta=S_\theta-S_0$. The implemented action $\widehat a$ satisfies
+\begin{equation}
+ r_\theta(s,\widehat a)+\widehat S_0(T_\theta(s,\widehat a))
+ \geq \sup_{a\in A_\theta(s)}
+ \{r_\theta(s,a)+\widehat S_0(T_\theta(s,a))\}-\delta_\theta(s).
+ \label{eq:r19greedy}
+\end{equation}
+Here $\delta_\theta(s)\geq0$ is an actual optimization allowance, not a
+training-loss tolerance. For a function on the feasible actions, write
+$\operatorname{osc}_A f=\sup_A f-\inf_A f$.
+
+\begin{proposition}[Continuation error, transport, and decision loss]
+\label{prop:r19decision}
+Suppose the suprema in \eqref{eq:r19objective} and
+\eqref{eq:r19greedy} are finite. Then
+\begin{equation}
+ L_\theta(s,\widehat a)\leq\delta_\theta(s)
+  +\operatorname{osc}_{A_\theta(s)}(e\circ T_\theta)
+  +\operatorname{osc}_{A_\theta(s)}(\Delta_\theta\circ T_\theta).
+ \label{eq:r19osc}
+\end{equation}
+For a finite action set $\{a_1,\ldots,a_m\}$ with $m\geq2$ and fixed
+positive weights $\pi_j$ summing to one, define
+\begin{align*}
+ R_\pi(s)&=\sum_j\pi_j(e(T_\theta(s,a_j))-\bar e_\pi(s))^2,\\
+ \bar e_\pi(s)&=\sum_j\pi_j e(T_\theta(s,a_j)),
+ &C_\pi&=\max_{i\ne j}(\pi_i^{-1}+\pi_j^{-1}).
+\end{align*}
+If $|\Delta_\theta|\leq b_\theta$ on the queried postdecision set, then
+\begin{equation}
+ L_\theta(s,\widehat a)\leq\delta_\theta(s)
+                       +\sqrt{C_\pi R_\pi(s)}+2b_\theta.
+ \label{eq:r19riskloss}
+\end{equation}
+Both inequalities hold for each fitted object and each realized cache.
+Expectations over training or cache randomness may subsequently be taken.
+\end{proposition}
+
+The proof is in Section~\ref{app:r19proofs}. An additive continuation error
+common to all feasible actions has no effect on the decision. This is why
+an absolute squared prediction error may be large even when decisions are
+accurate. Conversely, the risk at only the NBO/reference action pair cannot
+control the losses of another method choosing elsewhere. Our new diagnostic
+uses a common exogenous action set and, separately, the arguments selected
+by each predictor. Inequality~\eqref{eq:r19riskloss} is a bound for the common
+finite set; it is not applied to the entire scalar interval using just three
+sampled actions.
+
+If the true finite-menu best action has gap $g>0$ from every competitor,
+then a bound strictly smaller than $g$ implies that the implemented action
+is best. Without such a margin, arbitrarily small centered prediction error
+can change the identity of the selected action. Neither statement orders two
+methods' realized payoffs from their risks alone.
+
+\subsection{A nontrivial reuse region when the future changes}
+Let $X_{k+1}^\theta=F_{\theta,k}(X_k^\theta,Z_k)$ describe the future
+under the policy being evaluated. A common-innovation coupling need not
+make the transition maps identical. On an invariant state domain, assume
+\begin{align}
+ \|F_{0,k}(x,z)-F_{0,k}(x',z)\|&\leq L_k\|x-x'\|,
+ &\|F_{\theta,k}(x,z)-F_{0,k}(x,z)\|&\leq\epsilon_{\theta,k},\notag\\
+ |g_{0,k}(x)-g_{0,k}(x')|&\leq H_k\|x-x'\|,
+ &|g_{\theta,k}(x)-g_{0,k}(x)|&\leq\eta_{\theta,k}.
+ \label{eq:r19transportassumptions}
+\end{align}
+These bounds concern future rewards and transitions, not just the current
+task. Include the terminal payoff as $g_{\theta,K}$ and use nonnegative
+reward weights $\omega_k$. The initial postdecision state is shared.
+
+\begin{theorem}[Continuation transport and refresh]
+\label{thm:r19transport}
+Set $d_0=0$ and
+$d_{k+1}=L_kd_k+\epsilon_{\theta,k}$. Under
+\eqref{eq:r19transportassumptions}, uniformly on the common postdecision
+domain,
+\begin{equation}
+ |S_\theta-S_0|\leq
+ b_\theta:=\sum_{k=0}^{K}\omega_k
+                   (\eta_{\theta,k}+H_kd_k).
+ \label{eq:r19transport}
+\end{equation}
+Thus the anchor may be reused at a task whenever the right side of
+\eqref{eq:r19osc}, or the applicable finite-menu bound
+\eqref{eq:r19riskloss}, is at most the desired economic tolerance.
+
+More generally, suppose a recursive evaluation on a common invariant utility
+domain has maps $V_{\theta,k}=\mathcal G_{\theta,k}(V_{\theta,k+1})$.
+If these maps are sup-norm Lipschitz with constants $\beta_k$ on that domain,
+$\|\mathcal G_{\theta,k}(v)-\mathcal G_{0,k}(v)\|_\infty\leq\nu_{\theta,k}$,
+and $\|V_{\theta,K}-V_{0,K}\|_\infty\leq b_K$, then
+\begin{equation}
+ \|V_{\theta,0}-V_{0,0}\|_\infty\leq
+ \sum_{k=0}^{K-1}\left(\prod_{j=0}^{k-1}\beta_j\right)\nu_{\theta,k}
+       +\left(\prod_{j=0}^{K-1}\beta_j\right)b_K.
+ \label{eq:r19recursive}
+\end{equation}
+Empty products equal one.
+\end{theorem}
+
+The theorem supplies a class of tasks with genuinely different futures.
+For example, uniformly bounded transition and reward perturbations of an
+anchor economy satisfy it on any verified invariant compact domain with
+bounded Lipschitz constants. A single learned continuation then supports a
+whole neighborhood of counterfactuals until its economic error allowance is
+spent. The neighborhood is conditional on the displayed stability bounds;
+it is not a distribution-free assertion about all future policies. When
+future rewards, constraints, or opponents' policies violate those bounds,
+the evaluated continuation must be recomputed or its transport allowance
+reestablished. For recursive utility the common utility domain is essential:
+a local Lipschitz constant cannot be extended across a singular utility
+boundary. For games, this comparison evaluates a specified deviation problem;
+it does not replace the fixed-point or best-response conditions in the
+Economic Applications companion.
+
+\subsection{An explicit amortization class}
+The preceding inequalities give a sufficient class in which a shared scalar
+continuation supports a cheaper declared accuracy procedure, not just a
+post hoc interpretation of successful cells. Fix a finite exogenous query
+family with $K$ distinct postdecision arguments and a common continuation
+$S(x)=\phi(x)^{\mathsf T}\beta$. The feature map $\phi:\mathcal X\to\R^p$
+may be a frozen neural dictionary or a conventional basis. Its construction
+cost is charged, and it is fixed before the fitting noises below. At design
+points $x_i$, observe $Y_i=S(x_i)+\xi_i$, where the noises are conditionally
+independent, mean zero, and $\sigma$-sub-Gaussian. Let $\Phi$ have rows
+$\phi(x_i)^{\mathsf T}$ and assume
+\[
+ G_n=\Phi^{\mathsf T}\Phi\text{ is invertible},\qquad
+ \max_{x\text{ queried}}\phi(x)^{\mathsf T}G_n^{-1}\phi(x)\leq\ell/n.
+\]
+For example, $G_n/n\succeq cI$ and $\|\phi(x)\|^2\leq B_\phi^2$
+imply $\ell=B_\phi^2/c$. These are checkable design conditions, not a
+claim about an arbitrary trained representation.
+
+\begin{corollary}[A sufficient learned-continuation work advantage]
+\label{cor:r19amortization}
+Fix $\varepsilon>\delta\geq0$ and $0<\alpha<1$. Least-squares continuation
+fitting and $\delta$-accurate finite-menu maximization have loss at most
+$\varepsilon$ on every query with probability at least $1-\alpha/2$ if
+\begin{equation}
+ n\geq \frac{8\sigma^2\ell}{(\varepsilon-\delta)^2}
+                    \log\frac{4K}{\alpha},
+ \label{eq:r19learnbudget}
+\end{equation}
+provided the displayed full-rank and leverage conditions hold. Direct
+sample-average predictions of the same continuation have the same guarantee
+when they use at least
+$t=\lceil8\sigma^2\log(4K/\alpha)/(\varepsilon-\delta)^2\rceil$
+observations per distinct argument, under the analogous scalar noise bound.
+Common innovations across arguments are allowed.
+
+Suppose the complete declared learned procedure costs
+$F(n)+Kc_N+C(q)$ and the declared direct procedure costs
+$C_0(t)+Kt c_R+C(q)$, with all fitting, caching, selection and verification
+included. Both procedures meet the target jointly with probability at least
+$1-\alpha$, and the learned procedure is strictly cheaper whenever
+\begin{equation}
+ K(t c_R-c_N)>F(n)-C_0(t).
+ \label{eq:r19explicitadvantage}
+\end{equation}
+Repeated identical arguments are counted once in $K$. If verification or
+selection costs differ, their actual difference enters the right side.
+\end{corollary}
+
+The class contains nonlinear continuations represented by finite smooth
+neural features, not only linear economic models. The leverage bound keeps
+fitting accuracy uniform as queries are reused. A bounded representation
+bias or transported future adds its explicit allowance to the decision bound
+and reduces the available margin in \eqref{eq:r19learnbudget}. The result
+compares two fully specified sufficient-accuracy procedures; it is not a
+lower bound on the best possible simulation method. A Raw procedure may
+itself fit a surrogate, and then belongs to the learned comparison class.
+In particular, this corollary neither certifies the assumptions for the
+experiment's jointly trained network nor asserts that its conventional
+surrogates must be slower. It provides an analytical reuse class that the
+numerical results need not be asked to establish by extrapolation.
+
+\subsection{Actual stopping and the amortization threshold}
+Consider a feasible scalar action in $[\ell,u]$ and a twice differentiable
+true objective with $Q''\leq-\kappa<0$. Define the directional residual
+\[
+ r(a)=\begin{cases}
+ \max\{Q'(a),0\},&a=\ell,\\
+ \max\{-Q'(a),0\},&a=u,\\
+ |Q'(a)|,&\ell<a<u.
+ \end{cases}
+\]
+An interval enclosure of $Q'(a)$ and a lower bound on $\kappa$ give a
+computable upper bound $U(a)$ in the following statement.
+\begin{proposition}[Certified stopping and complete work]\label{prop:r19stopping}
+For every feasible scalar action,
+\begin{equation}
+ \sup_{b\in[\ell,u]}Q(b)-Q(a)\leq\frac{r(a)^2}{2\kappa}.
+ \label{eq:r19residual}
+\end{equation}
+For a finite sequence of candidate-fitting stages, let a service stop at the
+first stage whose mean outward bound is at most $\varepsilon$. If each bound
+is a deterministic enclosure for the true task objectives, the returned
+service satisfies the target regardless of the preceding failed checks.
+If checks instead have conditional error allocations $\alpha_j$ given the
+past and $\sum_j\alpha_j\leq\alpha$, the analogous conclusion holds with
+probability at least $1-\alpha$.
+
+The realized cost of a service stopping at stage $J$ is the sum of all
+initialization, fitting or cache construction, querying, verification, and
+durable-record costs through $J$. In an exact fixed-plus-linear cost model
+$W_m(q)=F_m+q c_m$, where $c_m$ includes marginal verification and all
+attempted stages, two methods that both meet the same target satisfy
+\begin{equation}
+ W_N(q)<W_R(q)\quad\Longleftrightarrow\quad
+ q(c_R-c_N)>F_N-F_R.
+ \label{eq:r19break}
+\end{equation}
+When $c_R>c_N$, this gives the strict break-even threshold. If only cost
+intervals are available, a guaranteed ranking requires an upper bound for
+one method below a lower bound for the other, not two upper bounds.
+\end{proposition}
+
+The cost model is an interpretation, not an imposed shape for the measured
+frontier. Fitting stages may change with query volume, and verification can
+dominate marginal prediction work. We therefore execute every volume rather
+than extrapolate a line from a single 384-query comparison. The new experiment
+runs each method's frozen stage sequence; it does not search globally for a
+winner and then claim to have paid only that winner's bill. All comparison
+services and shared startup are reported separately from the service that
+an economist would deploy after choosing a method.

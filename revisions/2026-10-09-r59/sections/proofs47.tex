@@ -1,0 +1,124 @@
+\section{Acquired states and implementable witnesses}\label{supp:acquisition47}
+This section supplies the implementation and statistical details for the new acquisition-aware results. The earlier proofs remain in force on their stated domains. To avoid conflating economic objects, the constrained study and the direct scalar comparison are separate experiments: the former constructs new two-state policies, while the latter evaluates the actual scalar policies previously constructed.
+
+\subsection{Causal information and the one-sided comparison}
+Let $\mathcal H_t$ contain the primitive history and the observations available before date-$t$ action. The observation process is causal and preserves the stipulated conditional law, or conditional recursive evaluator, for the next primitive innovation. This condition permits state errors to depend arbitrarily on the available past. It does not permit a sensor to reveal a future innovation without changing the economic information structure. The full-information optimum is over feasible policies adapted to this permitted history. Uniform one-step inequalities therefore apply to observation-dependent actions as well as exact-state Markov selectors.
+
+Suppose $f_t-\mathcal T_tf_{t+1}\le u_t$, and suppose every permitted observation and true state obey $\mathcal T_t^{\widehat\pi}f_{t+1}-f_t\le d_t$. If $\ell_T\le f_T-g\le u_T$, induction gives
+\[
+ V_t^*\ge f_t-\sum_{j=t}^{T-1}B_{t,j}u_j-B_{t,T}u_T,
+ \qquad
+ J_t^{\widehat\pi}\le f_t+\sum_{j=t}^{T-1}B_{t,j}d_j-B_{t,T}\ell_T.
+\]
+The second inequality is interpreted on $\mathcal H_t$ when the policy uses the observation history. Monotonicity and cash invariance justify every induction step on the common evaluation domain. Subtraction yields the sum of $u_j+d_j$ and terminal width; no actor continuity is used. A date shift $f_t\mapsto f_t+s_t$ adds $s_t-\beta_ts_{t+1}$ to $u_t$ and subtracts the same quantity from $d_t$. The policy-loss account is invariant.
+
+At a selected node, retain the original action $a_{t,i}$ and a label whose numerical error is at most $e_t$. For a feasible deployed action $\widehat a$, state and action transport give
+\[
+ Q_t(f_{t+1};x,\widehat a)
+ \le y_{t,i}+e_t+A_t^Q\|x-x_{t,i}\|_1
+                  +D_t^Q\|\widehat a-a_{t,i}\|_1.
+\]
+Substitute the robust-repair inequality and $L_t=A_t^Q+D_t^QK_t^A$. The cone at $x$ is within $L_tr_t$ of its value at the acquired state $\widehat x$. An index with numerical excess $\nu_t$ is within $\nu_t$ of the envelope there. Finally the envelope, being a minimum of $L_t$-Lipschitz functions, is $L_t$-Lipschitz, adding another $L_tr_t$. Hence
+\[
+ Q_t(f_{t+1};x,\widehat a)-f_t(x)
+ \le e_t+\nu_t+2L_tr_t+D_t^Q\zeta_t^{\rm acq}.
+\]
+Combining this with the optimal-residual upper bound $D_t^Qk_t+e_t+2L_th_t$ proves the main theorem. This proof charges an objective excess even when two selected actions differ substantially at a boundary.
+
+For a capacity interval, exact repair at the true state has displacement $(a_i-\kappa(x))_+\le K^A\|x-x_i\|_1$. Replacing capacity by a nonnegative certified lower value changes the repaired action by at most $\kappa(x)-\underline\kappa(\widehat x)$. Downward quantization adds less than $\Delta$. These inequalities prove both feasibility and the stated displacement bound. In the executed affine-capacity economy the acquisition box has coordinate endpoints $\max(0,\widehat x_j-\eta)$ and $\min(1,\widehat x_j+\eta)$. Its minimum capacity is computed at the lower corner. All these quantities are dyadic, so that the capacity and downward action rounding are exact at the specified resolutions.
+
+\subsection{Finite-precision indices and the identical envelope}
+The scalar and two-state experiments store labels on a dyadic lattice. In the acquired-state deployment, nodes and measured coordinates have the declared dyadic denominators; their coordinate differences and the sum of two absolute differences are exactly representable in binary64. No overflow or underflow occurs in the evaluated range. For a cone $v_i=y_i+L\|\widehat x-x_i\|_1$, let $\widetilde L$ denote the binary64 slope and $\widetilde v_i$ its computed score. The standard product-and-sum bound, with unit roundoff $u=2^{-53}$, gives
+\[
+ |\widetilde v_i-v_i|
+ \le d|\widetilde L-L|+\gamma_2(Y+d|\widetilde L|)=\tau,
+ \qquad \gamma_2=\frac{2u}{1-2u},\quad Y=\max_i|y_i|.
+\]
+If $i$ minimizes the computed scores and $j$ minimizes the exact scores, then $v_i\le\widetilde v_i+\tau\le\widetilde v_j+\tau\le v_j+2\tau$. Thus $\nu=2\tau$ works regardless of a tie. More general state formats must charge the formation of distances too; that cost is not suppressed by this dyadic example.
+
+An affine--ReLU minimum gate is $a-(a-b)_+$. For exact inputs it equals the native minimum. Attaching the same index and the same tie rule proves equality of the witness actor, including feasible repair. The proof is algebraic and covers all states, not only the measurement grid. The scalar implementation's compiled right-cell tie convention is held fixed in this control.
+
+Ordinary rounded ReLU gates need not agree bit for bit with native minima. If the exact intermediate minima have absolute value at most $M$, input errors are at most $E$, and two subtractions implement one gate, a conservative next-level bound is
+\[
+ E_{\rm next}\le E+6u(M+E)
+\]
+under the preceding finite-range conditions. Indeed the first subtraction contributes at most $2u(M+E)$, the positive-part map is nonexpansive, and the last subtraction contributes at most $u(3+2u)(M+E)$. The exact minimum is nonexpansive in its two arguments. Iteration from the leaf conversion bound controls a balanced circuit. The retained diagnostic checks all 24 scalar witness checkpoints on 1,025 dyadic points against this budget. Its gate-evaluation clock excludes construction and is not a method-level speed comparison. The native representation and the ReLU representation share parameters; they are not counted as independent trained policies.
+
+\section{Explicit constrained primitives and resource allocation}\label{supp:constrained47}
+For the new two-state economy, the action lies in $[0,1/4]$. Bounding the nonnegative state terms separately gives $F_1\in[1/32,29/32]$ and $F_2\in[1/32,27/32]$. These bounds already establish invariance before any numerical enclosure is intersected with the domain. The two state-column sums of the transition Jacobian are $11/16-x_2/8$ and $11/16-x_1/8$; every term used in these sums is nonnegative. The induced $\ell^1$ state modulus is therefore $11/16$. The action column has norm $1/2+1/4=3/4$. Capacity has gradient $(1/16,1/16)$ and hence $\ell^1$ Lipschitz constant $1/16$.
+
+Let $s=(1/2-x_1-x_2)_+$. The first state derivative of stage cost is $2(x_1-5/8)+(x_1-x_2)/2-4s$; the second is the symmetric expression. On each of the two shortage regions these derivatives are affine. At the vertices of the resulting polygons their absolute values are at most $13/4$. Doubling the squared-target part changes this bound to $9/2$ for terminal cost. The action derivative $2pa+16a^3$ is nonnegative and at most $p/2+1/4$. These are constants for the primitive equations, not estimates from the evaluation grid.
+
+For a uniform tensor grid, each coordinate is within $1/(2N)$ of a node, giving $h=1/N$. The maximum feasible interval length is $1/4$, so a uniform $N$-subdivision feasible net has radius at most $1/(8N)$. At different states the capacity intervals have Hausdorff distance at most $(1/16)\|x-x'\|_1$. The map $a\mapsto\min\{a,\kappa(x)\}$ is measurable and feasible, with the displacement bound proved above. Thus neither an unspecified covering oracle nor an unspecified feasible projection is used here.
+
+A shock cell has length $1/(16M)$. Its conditional mean distance to the midpoint is $1/(64M)$. The transition's shock derivative is $(1,-1)$, of $\ell^1$ norm two. Consequently a future continuation of modulus $L$ has midpoint expectation error at most $L/(32M)$. The program encloses numerical evaluation at all midpoints, averages outward, adds this continuous-law remainder, and discounts it. Labels are dyadic rounded centers with an error enclosing the full numerical query. The economic law remains continuous; this is not a proof for a substituted finite-state shock process.
+
+\subsection{The strengthened bilinear comparator}
+Write $\lambda_i(x)$ for the four bilinear interpolation weights in a tensor cell. They are nonnegative, sum to one and reproduce the two coordinates. In one coordinate, at relative position $q\in[0,1]$, the weighted distance to the two endpoints is $2q(1-q)/N\le1/(2N)$. Adding coordinates gives $\sum_i\lambda_i(x)\|x-x_i\|_1\le1/N$. If the nodal Bellman labels have lower error $-e_t$ and upper error $D_t^Qk_t+e_t$, the graph-Lipschitz Bellman target therefore obeys
+\[
+ -e_t-L_t/N\le f_t(x)-\mathcal T_tf_{t+1}(x)
+ \le D_t^Qk_t+e_t+L_t/N.
+\]
+The interpolant's own Lipschitz modulus is $N$ times the largest adjacent nodal difference in absolute value. Each partial derivative is a convex combination of two adjacent differences. In this execution the differences are dyadic with sufficiently few significant bits to be represented exactly; the computed modulus is consequently an upper bound without a hidden downward rounding.
+
+For the nearest-node actor, each closed Voronoi cell is split at its node coordinates. On each of the at most four resulting rectangles the absolute-distance term is affine, and the continuation is a single bilinear polynomial. Fixing one coordinate makes the difference affine in the other. Successively maximizing both coordinates therefore attains a maximum at a vertex. The union contains at most nine points. Evaluating every point outward bounds the complete supremum, including boundary ties. This proves the selected-policy allowance used by the comparator rather than comparing a sharpened witness bound to an unnecessarily separated baseline.
+
+\subsection{Sufficient caps versus executed caps}
+For the cone generator,
+\[
+ L_t=C_x+K^AC_a+\beta(F_x+K^AF_a)L_{t+1}.
+\]
+Here $b=\beta(F_x+K^AF_a)=705/1024<1$, giving the horizon-uniform bound $\overline L=\max\{L_g,(C_x+K^AC_a)/(1-b)\}$. The action modulus is at most $\overline D=C_a+\beta F_a\overline L$. With $M=N$, nonterminal label error is at most $\beta\overline L/(32N)+\xi$. Substituting into the one-sided loss bound yields exactly
+\[
+ \mathcal G_N\le\frac{S_T(\overline D/8+2\overline L+\beta\overline L/16)+2\beta^TL_g}{N}
+                      +2S_T\xi+2\beta^T\xi_T.
+\]
+Choosing the spatial and numerical allocations as in the article proves the sufficient cap. It is not a statement that the fixed ladder $4,8,16$ contains that cap, nor that the labels rounded to a fixed lattice support arbitrary tolerances. Acquisition, quantization and selector excess are additional summands in the same budget.
+
+There are $(N+1)^2$ nodes, $N+1$ feasible actions per node, $N$ shock midpoints per query and $T$ backward dates. A direct cone query evaluates $(N+1)^2$ pieces, while a bilinear query evaluates one local patch. The resulting operation bounds are $O(TN^6)$ and $O(TN^4)$, respectively. These formulas include label formation, not only verification. Actor storage and critic-label storage are $O(TN^2)$. Circuit compilation, cell verification, selector queries, feasible repair, numerical enclosure, coefficient conversion and serialization are separately counted or bounded in the stated implementation. Arbitrary precision multiplies arithmetic counts by the cost of the chosen bit operations and requires enough guard precision to meet the query error. These are upper bounds for the specified routines, not lower bounds against alternative algorithms. In general dimension the original state and action covering factors remain visible. No computational saving follows from relabeling the identical envelope as a neural circuit.
+
+\section{Direct policy values with numerical and sampling error}\label{supp:direct47}
+\subsection{Identity and deterministic support}
+For a fixed policy $m$ and its own fitted continuation, let
+\begin{align*}
+ Z_m={}&f_0^m(X_0)+B_T(g(X_T)-f_T^m(X_T))\\
+ &+\sum_{t<T}B_t\{c_t(X_t,A_t^m)+\beta_t\E[f_{t+1}^m(X_{t+1})\mid\mathcal H_t]-f_t^m(X_t)\}.
+\end{align*}
+Conditional expectation and telescoping show $\E Z_m=J_m$ for either a fixed or random initial state. Policies in a pair may be driven by common shocks; preservation of each marginal law is sufficient. The innovation dependence between the two policies changes variance, not this identity.
+
+For $f_t^m-\mathcal T_tf_{t+1}^m\le u_t^m$ and $\mathcal T_t^{\pi_m}f_{t+1}^m-f_t^m\le d_t^m$, the realized conditional residual is in $[-u_t^m,d_t^m]$. The lower bound follows because a feasible action cannot be below the Bellman infimum. Adding the ranges of these residuals, the terminal differences, and the initial difference gives the deterministic support in the article. For a common random initial state the initial difference is piecewise affine on the union of the two knot sets; extrema occur at those knots. For fixed initial states it is evaluated exactly as a rational number. Initial randomness is therefore not replaced by an unsupported average over four hand-selected points.
+
+The frozen scalar terminal allowance is reconstructed from its stored width. If terminal node error is $e_T$, a cone continuation gives $g-f_T\in[-e_T-2L_gh_T,e_T]$, and a spline gives $g-f_T\in[-e_T-L_gh_T,e_T+L_gh_T]$. All signs are retained when forming pair support. Subtracting separate regret bounds would not give this estimand.
+
+\subsection{Bins, discontinuities, and endpoint statistics}
+Each independent uniform integer specifies one of $2^{40}$ equal innovation bins, and, for the uniform initial-state law, one such initial bin. The lower and upper path computation encloses every continuous point of that bin. Conditional uniform randomization within each independent bin recovers the original continuous uniform law. It need not be explicitly generated because every such value is already enclosed.
+
+At a selector boundary, stored rational cuts are enclosed outward. Binary search obtains the first and last cells intersecting the state interval. The action interval is the hull of all actions in those cells, not merely its two endpoint actions. Propagating the hull may be conservative but is valid even for a nonmonotone actor. No path is removed. Intersections with the proved invariant state domain and deterministic score support preserve enclosure. The stored ambiguity counts quantify this part of the computation. These endpoint observations are independent across paths under the stated sampling model, even though endpoints and contrasts within a path are dependent.
+
+Here are the numerical details of the empirical Bernstein calculation. For a binary64 endpoint sample $x_1,\ldots,x_n\in[a,b]$, let $M=\max(|a|,|b|)$ and $\gamma=(n+4)u/(1-(n+4)u)$. Denote the computed mean and mean square by $\widetilde\mu,\widetilde q$. The exact moments obey
+\[
+ \mu\in[\widetilde\mu-\gamma M,\widetilde\mu+\gamma M],\qquad
+ q\in[\widetilde q-\gamma M^2,\widetilde q+\gamma M^2].
+\]
+The bound allows sequential summation, multiplication and division and is conservative for the implementation's pairwise sums. Rational arithmetic constructs these intervals from the exact binary64 outputs. There is no uncharged empirical-variance rounding. If $[\mu_-,\mu_+]$ is the mean enclosure, then
+\[
+ V^+=\frac{n}{n-1}\left[q_+-\min_{v\in[\mu_-,\mu_+]}v^2\right]_+
+\]
+is an upper bound for the unbiased sample variance. The minimum is zero if the mean interval contains zero and otherwise the smaller squared endpoint.
+
+There are $K=120$ contrasts, each with two one-sided tails, and total error $\alpha=0.01$. The bound of \citet{maurer2009} uses $\log(4K/\alpha)=\log(48000)<11$. The inequality is verified by the exact positive sum $\sum_{j=0}^{40}11^j/j!>48000$. A valid endpoint radius is
+\[
+ R(V^+)=\sqrt{2V^+\,11/n}+\frac{7(b-a)\,11}{3(n-1)}.
+\]
+The code rounds the square-root result upward until its exact rational square is at least the radicand. All remaining additions are rational. Subtract this radius from the lower endpoint's mean lower bound and add it to the upper endpoint's mean upper bound. Intersect with known support, then round the final reported display outward. This proves simultaneous coverage with probability at least $0.99$ conditional on the fixed-policy, independent-bin model. A seed supplies reproducibility, not evidence that a pseudorandom generator satisfies a mathematical independence axiom.
+
+\subsection{Decision margins and selection}
+The protocol fixed the superiority threshold at zero and the separate decision tolerance at $1/1024$ before the new comparison. Thus a full interval inside $[-1/1024,1/1024]$ establishes two-sided cost proximity in the normalized units on the joint coverage event. It does not establish equality, a signed ranking, or a calibrated welfare equivalence. The theorem for choosing among a finite catalogue is a direct inequality on this same event: $J_{\widehat m}-J_b\le U_{\widehat m}$ and $U_m\le J_m-J_b+U_m-L_m$. Minimizing $U_m+k_m$ gives the stated oracle inequality. Charges are known inputs to that decision problem; converting observed seconds to an economic charge requires an additional model and is not performed here.
+
+The complete cost intervals follow. The same fixed policy may appear under distinct target labels; its identity is retained in every row. A timing repetition is not a new trained policy. All lower and upper endpoint moments, supports, seeds, stream hashes, ambiguity counts and input checkpoint hashes are deposited with the result records.
+\input{tables/direct-full47}
+
+\section{Complete frontiers and experiment records}\label{supp:frontiers47}
+For each method, the first-crossing function is constant between adjacent values of its recorded certified bounds. Partitioning the positive tolerance axis by the union of both methods' bounds therefore gives the exact comparison everywhere, with left endpoints included because attainment is weak inequality. The full-prefix Bellman count charges every earlier failed rung. Above the largest breakpoint both methods use their first rung. An interval in which only one method attains is distinguished from an interval in which both attain with different query counts. This descriptive reconstruction is not a new experimental target design.
+\input{tables/frontier-full47}
+\input{tables/constrained-full47}

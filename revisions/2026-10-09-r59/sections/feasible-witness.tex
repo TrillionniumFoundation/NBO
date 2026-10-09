@@ -1,0 +1,51 @@
+\section{State-dependent constraints and feasible witnesses}\label{sec:feasible46}
+Investment opportunities often depend on current capital, collateral or remaining capacity. The common-action construction above does not by itself authorize transporting a node's action to a state where that action is inadmissible. We now incorporate a feasible repair into the same neural Bellman construction. The original controlled economy, rather than a relaxed control problem, remains the comparison object.
+
+Use the invariant state domain, numerical-query conditions and common evaluation functional of Section~\ref{sec:constructive45}. Replace its common action set by nonempty compact sets $A_t(x)$ satisfying
+\begin{equation}\label{eq:hausdorff46}
+ d_H(A_t(x),A_t(z))\le K_t^A\|x-z\|_1,
+\end{equation}
+where $d_H$ is Hausdorff distance in the action norm. The primitive inequalities~\eqref{eq:primitive45} are now required for pairs of feasible state--action points; neither costs nor dynamics need to be evaluated at infeasible actions. Assume effective finite $k_t$-nets of $A_t(x_{t,i})$ and a feasible Borel repair $\Gamma_{t,i}(x)\in A_t(x)$ of each stored action $a_{t,i}$, with
+\begin{equation}\label{eq:repair46}
+ \|\Gamma_{t,i}(x)-a_{t,i}\|_1
+ \le K_t^A\|x-x_{t,i}\|_1+\zeta_t.
+\end{equation}
+The nonnegative $\zeta_t$ is a certified displacement allowance, not permission to violate feasibility. Exact nearest-point selection gives $\zeta_t=0$ when available. The effective repair and feasible-net procedures are additional computational inputs, whose work must be charged.
+
+Starting with $L_T=L_g$, define
+\begin{align}\label{eq:graphmod46}
+ A_t^Q&=C_{x,t}+\beta_tF_{x,t}L_{t+1},\\
+ D_t^Q&=C_{a,t}+\beta_tF_{a,t}L_{t+1},\\
+ L_t&=A_t^Q+D_t^QK_t^A.\notag
+\end{align}
+At each state node, minimize the certified queries over its own feasible action net. Retain the original minimizing action with its numerical label $y_{t,i}$. Form the same cone network $f_t(x)=\min_i\{y_{t,i}+L_t\|x-x_{t,i}\|_1\}$. Let $i_t(x)$ attain this minimum and return $\pi_t(x)=\Gamma_{t,i_t(x)}(x)$.
+
+\begin{theorem}[Feasible-witness transport]\label{thm:feasible46}
+Under these conditions and the Bellman comparison hypotheses of Section~\ref{sec:economy}, the constructed continuation is $L_t$-Lipschitz, and the returned policy is feasible and measurable. Uniformly on the original state domain,
+\begin{align}\label{eq:graphres46}
+ -e_t&\le f_t-\mathcal T_tf_{t+1}
+       \le D_t^Qk_t+e_t+2L_th_t,\\
+ \mathcal T_t^\pi f_{t+1}-f_t&\le e_t+D_t^Q\zeta_t.\notag
+\end{align}
+Consequently its loss relative to the optimum over all admissible adapted policies is at most
+\begin{equation}\label{eq:graphgap46}
+ \sum_{t<T}B_t\{D_t^Qk_t+2e_t+2L_th_t+D_t^Q\zeta_t\}
+       +B_T(2e_T+2L_gh_T).
+\end{equation}
+No optimal continuation is supplied to the label generator. The bound concerns the policy after feasible repair, not the possibly infeasible array of unmodified node actions.
+\end{theorem}
+\begin{proof}
+The primitive inequalities imply a modulus $A_t^Q$ in the state and $D_t^Q$ in the action for feasible pairs. Given an action at $x$, the Hausdorff condition supplies an action at $z$ within $K_t^A\|x-z\|_1$. Comparing the two objectives and reversing the roles of $x,z$ shows that $\mathcal T_tf_{t+1}$ is $L_t$-Lipschitz. The feasible node net therefore gives $-e_t\le y_{t,i}-\mathcal T_tf_{t+1}(x_{t,i})\le D_t^Qk_t+e_t$. The cone argument proves the first enclosure. For the attaining index, transport between the two feasible pairs and~\eqref{eq:repair46} give
+\[
+ Q_t(f_{t+1};x,\Gamma_{t,i}(x))
+ \le y_{t,i}+e_t+L_t\|x-x_{t,i}\|_1+D_t^Q\zeta_t.
+\]
+The cone equals $f_t(x)$. Apply Proposition~\ref{prop:onesided46} and the unchanged terminal enclosure.
+\end{proof}
+
+This result closes a constructive route for a class of endogenous constraints within the original model. It does not assume that all feasible correspondences have a finite Hausdorff modulus. With $s=\varepsilon/\sum_{t=0}^TB_t$, sufficient nonterminal allocations are $e_t\le s/8$, $D_t^Qk_t\le s/4$, $L_th_t\le s/8$ and $D_t^Q\zeta_t\le s/4$. Together with the earlier terminal allocation, they imply finite termination at tolerance $\varepsilon$ when all listed operations are effective. Zero coefficients impose no restriction. When exact repair is available, the larger query allowance of Corollary~\ref{cor:witness46} is again sufficient. Setting $K_t^A=\zeta_t=0$ recovers the common-action witness theorem.
+
+\paragraph{A capacity-constrained investment rule.}
+For two nonnegative state coordinates on $[0,1]^2$, let $A(x)=[0,(x_1+x_2)/2]$. This is a state-dependent capital-capacity constraint with $K^A=1/2$ in the $\ell^1$ state norm. The repair $\Gamma_i(x)=\min\{a_i,(x_1+x_2)/2\}$ is feasible, satisfies~\eqref{eq:repair46} with $\zeta=0$, and has an elementary affine--ReLU representation for each fixed witness. Thus changing capacity changes the actor and the constructive state modulus through an explicit term $D^Q/2$. The index selector remains a finite comparison procedure. The supplement provides exact rational checks for this example; these are checks of the theorem and admissibility contract, not an additional multidimensional performance study.
+
+Neither feasible-net construction nor repair is free. With $J_{t,i}$ node actions, target-query work is summed over $\sum_iJ_{t,i}$ rather than a common $K_tJ_t$. Each deployed query also incurs the selected repair's work and storage. Under imperfect state acquisition, repair must be certified feasible at the true state, or throughout the acquisition set for a robust implementation. An error allowance for the objective cannot substitute for that feasibility condition.
