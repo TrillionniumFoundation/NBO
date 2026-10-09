@@ -8,11 +8,11 @@ permissions:
   contents: write
 concurrency:
   group: nbo-r61-complete-publication
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   complete:
     runs-on: ubuntu-latest
-    timeout-minutes: 70
+    timeout-minutes: 40
     env:
       PYTHONDONTWRITEBYTECODE: '1'
       OMP_NUM_THREADS: '1'
@@ -38,10 +38,11 @@ jobs:
           git fetch --filter=blob:none --depth=80 origin 0fc885e133f9d566b0a49081f41e9766a868a79a 714f5c8a39c2a4481fd05029b0fb62cfb667d1e5
           git merge --no-edit 0fc885e133f9d566b0a49081f41e9766a868a79a
           git merge --no-edit 714f5c8a39c2a4481fd05029b0fb62cfb667d1e5
-      - name: Install publication and verification dependencies
+      - name: Install signed publication dependencies with bounded network waits
+        timeout-minutes: 6
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sympy python3-sklearn python3-pil g++ libboost-dev pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+          sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update -qq
+          sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 install -y --no-install-recommends python3-numpy python3-scipy python3-sympy python3-sklearn python3-pil g++ libboost-dev pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
       - name: Commit complete ordinary sources with readable tables and distinct appendix numbering
         run: |
           /usr/bin/python3 revisions/2026-10-09-r61/code/layout61.py
