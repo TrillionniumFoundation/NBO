@@ -1,25 +1,30 @@
 # Neural Bellman Operators
 
-**Authoritative complete referee revision: R59.**
+**Current complete referee revision: R61.**
 
-Canonical branch: `revision/econometrica-nbo-r59-review-ready-2026-10-09`.
+Canonical branch: `revision/econometrica-nbo-r61-review-ready-2026-10-09`.
 
-[Main paper](revisions/2026-10-09-r59/build/ECTA.pdf) · [Technical supplement](revisions/2026-10-09-r59/build/supp.pdf) · [Point-by-point response](revisions/2026-10-09-r59/build/response.pdf)
+[Main article](revisions/2026-10-09-r61/build/ECTA.pdf) · [Technical supplement](revisions/2026-10-09-r61/build/supp.pdf) · [Referee response](revisions/2026-10-09-r61/build/response.pdf)
 
-[Revision guide](revisions/2026-10-09-r59/README.md) · [Complete development](revisions/2026-10-09-r59/build/complete.pdf) · [Complete proofs](revisions/2026-10-09-r59/build/complete-supp.pdf)
+[Revision guide](revisions/2026-10-09-r61/README.md) · [Complete development](revisions/2026-10-09-r61/build/complete.pdf) · [Full proof companion](revisions/2026-10-09-r61/build/complete-supp.pdf)
 
-R59 retains the original title, economic laws, constructive own-future backend,
-feasible witnesses and Bellman-accuracy objective. It adds proved lossless
-trained-neural action screening and prospective transcript invariance, then
-integrates the separately frozen R58 matched 36-service execution. Both exact
-solvers, all certificates, unique original-law paths and every stopping decision
-are reconstructed. Unsuccessful targets and conventional-policy comparisons
-remain visible. Publication creates no new training or independent samples.
+The title, economic primitives, original Bellman objective, trained backend,
+broader applications and adverse evidence remain intact. R61 integrates a
+root-free exact action witness, a constrained multi-action extension, stable
+Bellman enclosures, complete original-policy revalidation and a fresh native
+two-by-two experiment with explicit batching and crossover results.
 
-Seven ordinary-source documents, the inherited and new verification chain,
-protected source/label checks and clean offline archive reproduction are bound
-by `revisions/2026-10-09-r59/audit/FINAL_DELIVERY59.json`.
-Earlier revision and review branches are unchanged. Equal-policy computation
-savings and superiority over different policies are explicitly distinct claims.
+The R59 advisory report, complete R60 source freezes and successful and failed
+records are preserved. R61 adds no training service or independent policy-cost
+sample. Its fresh factorial observations concern implementation work.
+All 96 original prospective returns, including 16 exhausted budgets, remain in
+the registry. Cold compilation, complete return work, original policy cost and
+additional original-optimum verification have separate accounting boundaries.
 
-Offline build: `python3 revisions/2026-10-09-r59/code/build59.py`.
+The seven-document build, inherited and new tests, source preservation and
+clean offline rebuild are bound by
+`revisions/2026-10-09-r61/audit/FINAL_DELIVERY61.json`.
+Historical revision and review branches are unchanged.
+
+Offline ordinary-source build:
+`python3 revisions/2026-10-09-r61/code/build61.py`.
