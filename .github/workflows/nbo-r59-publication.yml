@@ -1,0 +1,78 @@
+name: NBO R59 complete referee publication
+on:
+  push:
+    branches: [revision/econometrica-nbo-r59-referee-revision-2026-10-09]
+    paths: [.github/workflows/nbo-r59-publication.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r59-complete-publication
+  cancel-in-progress: false
+jobs:
+  publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      SOURCE_DATE_EPOCH: '1791504000'
+      FORCE_SOURCE_DATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-09-r58/
+            /revisions/2026-10-09-r59/
+            /README.md
+            /ECTA.tex
+          sparse-checkout-cone-mode: false
+      - name: Install scientific and journal-publication dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sympy python3-sklearn pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Preserve pinned inputs and commit ordinary revised sources
+        run: |
+          /usr/bin/python3 revisions/2026-10-09-r59/code/prepare59.py
+          git fetch --depth=1 origin adf1256cff9cde365246a3db2dac90c72fda3b13
+          mkdir -p reviews/2026-10-09-econometrica-numerical-methods-r54
+          git show adf1256cff9cde365246a3db2dac90c72fda3b13:reviews/2026-10-09-econometrica-numerical-methods-r54/referee_report.md > reviews/2026-10-09-econometrica-numerical-methods-r54/referee_report.md
+          /usr/bin/python3 revisions/2026-10-09-r59/code/assemble59.py
+          /usr/bin/python3 - <<'PY'
+          import ast
+          from pathlib import Path
+          for p in Path('revisions/2026-10-09-r59/code').glob('*.py'):
+              ast.parse(p.read_bytes(),filename=str(p))
+          PY
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-09-r59
+          if ! git diff --cached --quiet; then
+            git commit -m 'R59: integrate ordinary original-paper sources, all historical evidence and the controlling referee report'
+          fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r59-referee-revision-2026-10-09 HEAD:refs/heads/revision/econometrica-nbo-r59-source-2026-10-09
+      - name: Reconstruct all scientific evidence, run all tests, compile seven documents
+        run: |
+          mkdir -p revisions/2026-10-09-r59/audit/build-logs
+          /usr/bin/python3 revisions/2026-10-09-r59/code/build59.py > revisions/2026-10-09-r59/audit/build-logs/publication59.log 2>&1
+          cat revisions/2026-10-09-r59/audit/build-logs/publication59.log
+      - name: Clean offline archive reproduction and verified remote publication
+        run: /usr/bin/python3 revisions/2026-10-09-r59/code/publish59.py
+      - name: Show publication failure details
+        if: failure()
+        run: tail -n 140 revisions/2026-10-09-r59/audit/build-logs/publication59.log || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r59-paper-and-verification
+          path: |
+            revisions/2026-10-09-r59/build/*.pdf
+            revisions/2026-10-09-r59/build/*.txt
+            revisions/2026-10-09-r59/audit/*59.json
+            revisions/2026-10-09-r59/audit/build-logs/
+          retention-days: 30
+          compression-level: 1
