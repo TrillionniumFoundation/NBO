@@ -1,0 +1,53 @@
+name: NBO R61 pinned input audit
+on:
+  push:
+    branches: [revision/econometrica-nbo-r61-referee-revision-2026-10-09]
+    paths: [.github/workflows/nbo-r61-inputs.yml]
+permissions:
+  contents: read
+jobs:
+  pinned-inputs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-09-r59/
+            /revisions/2026-10-09-r60/
+          sparse-checkout-cone-mode: false
+      - name: Extract immutable text and new numerical records
+        run: |
+          git fetch --filter=blob:none --depth=1 origin e94a8b867d6136ce14ba9697fc2288e0c7a7bc48 16d90ad07879c61dacd63c6f79162d0f2303f7ad 8f56a3ae24ef3ce4383d0e9d1d757bd3ed7378c6
+          mkdir -p /tmp/nbo61-export/centered /tmp/nbo61-export/theory /tmp/nbo61-export/review
+          git archive e94a8b867d6136ce14ba9697fc2288e0c7a7bc48 revisions/2026-10-09-r60 | tar -x -C /tmp/nbo61-export/centered
+          git archive 16d90ad07879c61dacd63c6f79162d0f2303f7ad revisions/2026-10-09-r60/sections | tar -x -C /tmp/nbo61-export/theory
+          git archive 8f56a3ae24ef3ce4383d0e9d1d757bd3ed7378c6 reviews/2026-10-09-econometrica-numerical-methods-r59 | tar -x -C /tmp/nbo61-export/review
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,zipfile
+          out=Path('/tmp/nbo61-export')
+          manifest={}
+          with zipfile.ZipFile('/tmp/nbo61-inputs.zip','w',zipfile.ZIP_DEFLATED,compresslevel=3) as z:
+              for prefix,root in [('science',Path('revisions/2026-10-09-r60')),('centered',out/'centered/revisions/2026-10-09-r60'),('theory',out/'theory'),('review',out/'review')]:
+                  for p in root.rglob('*'):
+                      if not p.is_file() or '__pycache__' in p.parts:continue
+                      rel=p.relative_to(root)
+                      text=p.suffix in {'.py','.cpp','.md','.tex','.bib','.bst','.cls','.cfg','.json','.log','.csv'}
+                      numeric=rel.parts[0].startswith('results60')
+                      if not(text or numeric):continue
+                      name=prefix+'/'+str(rel);raw=p.read_bytes();z.writestr(name,raw)
+                      manifest[name]=hashlib.sha256(raw).hexdigest()
+              for p in Path('revisions/2026-10-09-r59/build').glob('*.pdf'):
+                  z.write(p,'r59-pdfs/'+p.name)
+              z.writestr('INPUT_MANIFEST.json',json.dumps(manifest,indent=2))
+          print('exported',len(manifest),'files')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r61-pinned-inputs
+          path: /tmp/nbo61-inputs.zip
+          retention-days: 30
+          compression-level: 0
