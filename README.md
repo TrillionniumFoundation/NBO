@@ -1,15 +1,15 @@
 # Neural Bellman Operators
 
-**Authoritative complete referee revision: R56.**
+**Authoritative complete referee revision: R57.**
 
-Canonical branch: `revision/econometrica-nbo-r56-review-ready-2026-10-09`.
+Canonical branch: `revision/econometrica-nbo-r57-review-ready-2026-10-09`.
 
-[Main paper](revisions/2026-10-09-r56/build/ECTA.pdf) · [Supplement](revisions/2026-10-09-r56/build/supp.pdf) · [Referee response](revisions/2026-10-09-r56/build/response.pdf)
+[Main paper](revisions/2026-10-09-r57/build/ECTA.pdf) · [Technical supplement](revisions/2026-10-09-r57/build/supp.pdf) · [Referee response](revisions/2026-10-09-r57/build/response.pdf)
 
-[Revision guide](revisions/2026-10-09-r56/README.md) · [Complete development](revisions/2026-10-09-r56/build/complete.pdf) · [Complete proofs](revisions/2026-10-09-r56/build/complete-supp.pdf)
+[Revision guide](revisions/2026-10-09-r57/README.md) · [Complete development](revisions/2026-10-09-r57/build/complete.pdf) · [Complete proofs](revisions/2026-10-09-r57/build/complete-supp.pdf)
 
-R56 retains the original NBO title, economic laws, constructive Bellman-accuracy target and resource account. It adds exact action-lattice witnesses for trained ReLU continuations, non-tensor verification, signed-reference stability and work bounds, prospective stopping and confidence-qualified learned structure. The separately frozen R55 execution is integrated without new cost samples or overwritten service clocks.
+R57 continues the original NBO title, economic laws, constructive own-future backend and Bellman-accuracy target. It adds a fitted-witness transfer theorem, explicit action-sensitive neural moduli, and a new prospective experiment actually deploying exact trained neural action search. Ninety separately reconstructed target services and eighteen independent returned-policy comparison sets are retained with their frozen protocol and source.
 
-The seven-document release, saved-model certificate reintegration, exact moment checks, complete service replay, historical preservation and clean publication rebuild are bound by `revisions/2026-10-09-r56/audit/FINAL_DELIVERY56.json`.
+The seven-document publication, exact solver and full certificate/path replay, inherited verification, complete service registry and clean archive reproduction are bound by `revisions/2026-10-09-r57/audit/FINAL_DELIVERY57.json`.
 
-Earlier revision and review branches are unchanged. The development companions retain all prior theory, applications and unfavorable evidence.
+Earlier revision and review branches are unchanged. Prior theory, applications, failed attempts and adverse comparisons remain in the development companions and preserved sources. Exact fitted minimization, stricter verification endpoints and identified economic superiority are reported as distinct claims.
