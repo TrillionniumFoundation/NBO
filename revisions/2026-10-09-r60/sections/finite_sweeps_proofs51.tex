@@ -1,0 +1,87 @@
+\section{Proofs for Finite-Sweep Accuracy}\label{app:finite-sweeps51}
+\begin{proof}[Proof of Theorem~\ref{M-thm:finite-sweeps51}]
+Fix a pass, date, and state, and suppress their indices. Write $J$ for the
+incumbent continuation, $h$ for its approximator, $\pi$ for the incumbent
+action, and $v$ for the proposal. By the signed evaluation band, for every
+feasible action $a$,
+\[
+ \beta a_{t+1}\leq Q(J;x,a)-Q(h;x,a)\leq\beta b_{t+1}.
+\]
+Consequently, the incumbent-relative advantage of the proposal is at most
+$\overline d+\beta w_{t+1}$. An accepted proposal therefore does not raise
+the incumbent-continuation Bellman cost, while rejection retains exactly that
+cost. Backward induction gives $J^{\pi^{k+1}}\leq J^{\pi^k}$ at every
+date. This induction uses the new continuation for the implemented new
+policy; the comparison itself uses the old continuation.
+
+For an accepted proposal, approximate greediness and the band imply
+\[
+ Q(J;x,v)\leq (T_th)(x)+\alpha+\beta b_{t+1}
+ \leq (T_tJ)(x)+\alpha+\beta w_{t+1}.
+\]
+For a rejected proposal, $\overline d+\beta w_{t+1}>0$ and
+$\overline d\leq d+\zeta$. Thus
+\[
+ Q(h;x,\pi)<Q(h;x,v)+\zeta+\beta w_{t+1}
+ \leq(T_th)(x)+\alpha+\zeta+\beta w_{t+1}.
+\]
+Transferring this inequality from $h$ to $J$ adds at most one further
+$\beta w_{t+1}$. Both cases therefore yield
+\begin{equation}\label{eq:approx-greedy-old51}
+ T_t^{\pi^{k+1}}J_{t+1}^{\pi^k}
+ \leq T_tJ_{t+1}^{\pi^k}+\epsilon_t^k.
+\end{equation}
+The already proved policy nonincrease, monotonicity of
+$T_t^{\pi^{k+1}}$, and \eqref{eq:approx-greedy-old51} give
+\[
+ J_t^{\pi^{k+1}}\leq T_t^{\pi^{k+1}}J_{t+1}^{\pi^k}
+ \leq T_tJ_{t+1}^{\pi^k}+\epsilon_t^k.
+\]
+The Bellman operator is $\beta_t$-Lipschitz in the supremum norm. Subtracting
+$V_t^*=T_tV_{t+1}^*$ and using feasibility proves
+\eqref{M-eq:sweep-recursion51}. Repeated substitution proves
+\eqref{M-eq:sweep-unroll51}; at $m=T-t$ its terminal term vanishes.
+Nonincrease of $E_t^k$ in further passes then gives
+\eqref{M-eq:sweep-final51}. The exact case has zero error at every date.
+\end{proof}
+
+\begin{proof}[Proof of Proposition~\ref{M-prop:cell-greedy51}]
+Fix $x\in C$ and any feasible $a\in A_t(x)$. Choose $m\in M_C$ with
+$\|a-m\|\leq\delta_{A,C}$. Then
+\begin{align*}
+ Q_t(h;x,v_C)&\leq Q_t(h;x_C,v_C)+L_tr_C\\
+ &\leq Q_t(h;x_C,m)+\eta_C+L_tr_C\\
+ &\leq Q_t(h;x,a)+\eta_C+2L_tr_C+D_t\delta_{A,C}.
+\end{align*}
+Taking an infimum over $a$ proves the assertion without assuming that the
+infimum is attained. Menu feasibility is uniform on $C$ by hypothesis.
+\end{proof}
+
+\begin{proof}[Proof of Proposition~\ref{M-prop:sharp-width51}]
+Take $T=1$, zero stage cost, $\beta_0=1$, and two deterministic actions
+leading to different terminal states $y_0,y_1$. Let $w>0$ and
+$0<\delta<w$. Set
+\[
+ h_1(y_0)=w,\quad h_1(y_1)=\delta,\qquad
+ g(y_0)=2w,\quad g(y_1)=\delta.
+\]
+The exact terminal error lies in $[0,w]$. The incumbent chooses $y_0$ and
+the exact $h_1$-greedy proposal chooses $y_1$. Its exact contrast is
+$d=\delta-w$, with $\alpha=\zeta=0$. The safe upper comparison is
+$d+w=\delta>0$, so the gate retains the incumbent. Its actual optimality
+gap is $2w-\delta$. Sending $\delta$ down to zero establishes sharpness.
+This example also shows why rejecting an uncertified proposal is not evidence
+that the proposal lacks a true economic benefit.
+\end{proof}
+
+\paragraph{Computed verification and logical scope.}
+The source-bound exact-rational tests use finite transition matrices, signed
+residual propagation, and independently evaluated policy and optimal costs.
+They verify policy nonincrease, both gate cases, the one-pass recurrence,
+constant-shift invariance, finite-horizon exact termination, and the two-action
+sharpness construction. They are regression tests for the implementation of
+the displayed formulas; the preceding arguments, rather than enumeration,
+prove the theorems for the stated model class. When bands are statistical,
+all passes and proposed comparisons require a common simultaneous coverage
+event or a valid sequential error allocation. Reusing a confidence interval
+outside its stated family does not satisfy the hypotheses.

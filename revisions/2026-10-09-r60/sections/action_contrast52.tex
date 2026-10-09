@@ -1,0 +1,65 @@
+\section{Policy-relevant continuation errors}\label{sec:contrast52}
+A continuation error matters for an investment decision through the actions it changes. The signed-width account above removes a datewise level error. It can nevertheless charge for a nonconstant error that has the same conditional expectation under every feasible action. We now obtain a sharper account without changing the Bellman optimum, the acquisition contract, or the incumbent-preserving rule.
+
+Write $P_t^a f(x)=\mathbb E[f(X_{t+1})\mid x,a]$, and at pass $k$ put $e_t^k=J_t^{\pi^k}-h_t^k$. An \emph{action-contrast certificate} is a measurable nonnegative bound $R_t^k(x;a,b)$ satisfying
+\begin{equation}\label{eq:contrast-certificate52}
+ |(P_t^a-P_t^b)e_{t+1}^k(x)|\le R_t^k(x;a,b)\le\chi_t^k
+ \qquad(a,b\in A_t(x)).
+\end{equation}
+Both inequalities are required uniformly over true states and feasible actions. The scalar certificate $R_t^k=w_{t+1}^k$ always remains available. A bound computed for the selected proposal alone is sufficient for safety, but not for the accuracy conclusion, which compares with the entire feasible infimum.
+
+\begin{theorem}[Contrast-certified finite-sweep improvement]\label{thm:contrast52}
+In the expectation model of Theorem~\ref{thm:finite-sweeps51}, retain the feasible proposal and comparison-enclosure assumptions \eqref{eq:sweep-greedy51}--\eqref{eq:sweep-enclosure51}. Suppose \eqref{eq:contrast-certificate52} holds. Accept $v_t^k(x)$ precisely when
+\begin{equation}\label{eq:contrast-gate52}
+ \overline d_t^k(x)+\beta_tR_t^k(x;v_t^k(x),\pi_t^k(x))\le0;
+\end{equation}
+otherwise retain the exact incumbent. On an acquired cell, the proposal, acceptance decision, feasibility, and all enclosures must be valid on the whole cell. Then every pass is nonworsening at every state and date. Moreover,
+\begin{equation}\label{eq:contrast-recursion52}
+ E_t^{k+1}\le\beta_t E_{t+1}^k+\tilde\epsilon_t^k,
+ \qquad \tilde\epsilon_t^k=\alpha_t^k+\zeta_t^k+2\beta_t\chi_t^k.
+\end{equation}
+The finite-sweep unrolling and $T$-pass bound of Theorem~\ref{thm:finite-sweeps51} hold with $\epsilon$ replaced by $\tilde\epsilon$. In particular, exact greedy search and comparisons with $\chi_t^k=0$ give an optimal policy after at most $T$ passes, even when the global evaluation widths are positive. The coefficient two remains sharp over this class of certificates.
+\end{theorem}
+
+The theorem concerns expected discounted cost. It does not silently extend the linear action-kernel difference to a nonlinear recursive preference. The earlier monotone-recursion safety results remain in force under their own hypotheses. Nor does a small sampled action contrast establish \eqref{eq:contrast-certificate52}. The next result constructs an upper bound using residuals and couplings with verified marginals; it never calls the unknown policy value.
+
+\begin{proposition}[Coupled residual certificate]\label{prop:coupled52}
+Fix a policy $\pi$ and critic $h$. Let $r_T=g-h_T$ and $r_t=\mathcal T_t^\pi h_{t+1}-h_t$, and let $w_t$ be valid signed-residual widths. For every pair of states let $\Lambda_t^\pi(x,y)$ be a measurable coupling of $P_t^{\pi_t(x)}(x,\cdot)$ and $P_t^{\pi_t(y)}(y,\cdot)$. Suppose verified nonnegative functions $H_t$ enclose $|r_t(x)-r_t(y)|$. Define
+\begin{align}\label{eq:coupled-residual52}
+ D_T(x,y)&=\min\{w_T,H_T(x,y)\},\notag\\
+ D_t(x,y)&=\min\left\{w_t,H_t(x,y)+\beta_t
+       \int D_{t+1}(u,v)\,d\Lambda_t^\pi(x,y)(u,v)\right\}.
+\end{align}
+Then $|e_t(x)-e_t(y)|\le D_t(x,y)$. For any measurable coupling $\Lambda_t(x;a,b)$ of the two feasible action kernels,
+\begin{equation}\label{eq:coupled-action52}
+ R_t(x;a,b)=\min\left\{w_{t+1},
+           \int D_{t+1}(u,v)\,d\Lambda_t(x;a,b)(u,v)\right\}
+\end{equation}
+is a valid action-contrast certificate. Replacing either integral by a verified nonnegative upper enclosure preserves validity. No optimal-transport minimizer or smooth incumbent is required.
+\end{proposition}
+
+The construction includes the work needed to enclose residual differences, transport them, and take the action supremum. It is an alternative certificate, not a free evaluation oracle. In a finite model, a common-uniform coupling gives an explicit terminating implementation. In a continuous model, an available common innovation gives a coupling directly, but integration and cellwise certification still have to be supplied. With coarse enclosures the minimum in \eqref{eq:coupled-action52} returns the original scalar guarantee.
+
+\subsection{Action-null components and neural realizations}
+Define the action-null space at date $t$ by
+\[
+ \mathcal N_t=\{n:(P_t^a-P_t^b)n(x)=0
+                 \text{ for every }x\text{ and }a,b\in A_t(x)\}.
+\]
+This is a linear space of bounded measurable functions, not a statement about the accuracy of a training procedure. Constants belong to it; exogenous payoff components can make it larger. Values differing by an element of $\mathcal N_t$ have identical action contrasts at date $t$, although their levels and state dependence need not agree.
+
+\begin{corollary}[Certified removal of action-null error]\label{cor:null52}
+Suppose $e_{t+1}^k=n_{t+1}^k+u_{t+1}^k$, where membership $n_{t+1}^k\in\mathcal N_t$ is established and $u_{t+1}^k$ has a verified range of width $v_{t+1}^k$. Then $R_t^k\le v_{t+1}^k$ is available, independently of the amplitude of $n_{t+1}^k$. A constructive way to obtain this width is to evaluate the corrected critic $h^k+n^k$ by the original signed-residual recursion. The action comparisons using $h_{t+1}^k$ and $h_{t+1}^k+n_{t+1}^k$ coincide.
+\end{corollary}
+
+The qualification ``established'' is important. Arbitrarily declaring part of a fit to be null invalidates the certificate. If an exact null component is known, symbolic cancellation before interval arithmetic avoids subtracting two large levels. If it is only approximately null, its verified nonzero action contrast must be added to the allowance.
+
+\begin{proposition}[A nonconstant ReLU component in the original economy]\label{prop:investment-null52}
+In the investment dynamics \eqref{eq:investment49}, for each declared dimension $d\ge2$, every bounded measurable function of $y_1-2y_2$ is action-null under the common innovation. In particular,
+\[
+ n_M(y)=M(y_1-2y_2+1)_+,\qquad M\ge0,
+\]
+is a one-unit ReLU realization with oscillation $2M$ on the state cube. At the final date, the critic $h_T=g-n_M$ has global evaluation width $2M$ but zero action-contrast error. The contrast-aware terminal policy is therefore exactly the unperturbed policy of Corollary~\ref{cor:terminal50}; its statewise cost guarantee is unchanged for every $M$.
+\end{proposition}
+
+This result supplies a representation-level robustness property of NBO, not an identified advantage over a native encoding of the same continuation. It also identifies an avoidable source of conservatism in a global critic-error account. It does not remove an economically relevant continuation error, a capacity constraint, or an information floor. Full proofs and an exact finite-state reference implementation are in the supplement.
