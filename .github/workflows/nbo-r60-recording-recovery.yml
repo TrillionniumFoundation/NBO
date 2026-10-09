@@ -1,0 +1,158 @@
+name: NBO R60 amended complete-service execution
+on:
+  push:
+    branches: [revision/econometrica-nbo-r60-referee-revision-2026-10-09]
+    paths: [.github/workflows/nbo-r60-recording-recovery.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: nbo-r60-recording-recovery
+  cancel-in-progress: false
+env:
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  preserve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      sha: ${{ steps.freeze.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: revisions/2026-10-09-r60
+      - name: Merge immutable scientific source without overwriting manuscript additions
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git fetch --depth=50 origin revision/econometrica-nbo-r60-source-2026-10-09
+          git merge --no-edit FETCH_HEAD
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 37926934557
+          name: nbo-r60-worker-0
+          path: revisions/2026-10-09-r60/attempts/R60-first-run/worker0
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 37926934557
+          name: nbo-r60-worker-1
+          path: revisions/2026-10-09-r60/attempts/R60-first-run/worker1
+      - name: Retain completed substudies and failed attempted services byte for byte
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil,json,hashlib
+          root=Path('revisions/2026-10-09-r60');copied={}
+          for worker in (0,1):
+              old=root/'attempts/R60-first-run'/f'worker{worker}';new=root/'results60'/f'worker{worker}';new.mkdir(parents=True,exist_ok=True)
+              for name in ('stress','two-control','bellman'):
+                  assert json.loads((old/name/'summary.json').read_text())['status']=='passed'
+                  shutil.copytree(old/name,new/name)
+              shutil.copy2(old/'host-setup.json',new/'host-setup.json')
+          for p in (root/'attempts/R60-first-run').rglob('*'):
+              if p.is_file():copied[str(p.relative_to(root))]=hashlib.sha256(p.read_bytes()).hexdigest()
+          record=dict(status='retained',source_run=37926934557,failure='Exclusive-create aggregate parent ledger reused after second completed child',files_sha256=copied,completed_substudies_reexecuted=False)
+          (root/'audit/FIRST_ATTEMPT60.json').write_text(json.dumps(record,sort_keys=True,indent=2)+'\n')
+          print(json.dumps({k:v for k,v in record.items() if k!='files_sha256'},indent=2))
+          PY
+      - name: Install verification dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sympy python3-sklearn
+      - name: Bind amended recorder before reexecution
+        id: freeze
+        run: |
+          /usr/bin/python3 revisions/2026-10-09-r60/code/services60b.py --freeze
+          git add -f revisions/2026-10-09-r60
+          git commit -m 'R60: retain failed recording attempt and completed substudies; freeze corrected exclusive checkpoints'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r60-amended-source-2026-10-09
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  workers:
+    needs: preserve
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        worker: [0,1]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.preserve.outputs.sha }}
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: revisions/2026-10-09-r60
+      - name: Install exact dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends g++ libboost-dev python3-numpy python3-scipy python3-sympy python3-sklearn
+      - name: Verify both freezes and compile on current prospective-service host
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import sys,pathlib
+          root=pathlib.Path('revisions/2026-10-09-r60');sys.path.insert(0,str(root/'code'))
+          import services60b,search60
+          print(services60b.verify(),flush=True)
+          print(search60.compile_native(),flush=True)
+          PY
+      - name: Execute all 48 original-design services with amended durable recorder
+        run: /usr/bin/python3 revisions/2026-10-09-r60/code/services60b.py --worker ${{ matrix.worker }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r60-prospective-${{ matrix.worker }}
+          path: revisions/2026-10-09-r60/results60/worker${{ matrix.worker }}/prospective/
+          retention-days: 30
+          compression-level: 1
+  collect:
+    needs: [preserve,workers]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.preserve.outputs.sha }}
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: revisions/2026-10-09-r60
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r60-prospective-0
+          path: revisions/2026-10-09-r60/results60/worker0/prospective
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r60-prospective-1
+          path: revisions/2026-10-09-r60/results60/worker1/prospective
+      - name: Bind complete scientific output and its failed predecessor
+        run: |
+          python3 - <<'PY'
+          import pathlib,json,hashlib,os
+          root=pathlib.Path('revisions/2026-10-09-r60');rows=[]
+          for worker in (0,1):
+              p=root/'results60'/f'worker{worker}'
+              stress=json.loads((p/'stress/summary.json').read_text());multi=json.loads((p/'two-control/summary.json').read_text());bellman=json.loads((p/'bellman/summary.json').read_text());cohort=json.loads((p/'prospective/cohort.json').read_text())
+              assert stress['cases']==90 and multi['cases']==16 and cohort['services']==48
+              rows.append(dict(worker=worker,stress_cases=90,two_control_cases=16,services=48,bellman_targets=bellman['targets'],prospective_environment=cohort['environment']))
+          files={str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in (root/'results60').rglob('*') if p.is_file()}
+          result=dict(status='executed',workflow_run_id=os.environ['GITHUB_RUN_ID'],first_run_id=37926934557,source_commit=os.environ['FROZEN_SHA'],workers=rows,files_sha256=files,scope='Original substudies retained; complete services executed with explicit recording amendment. Independent numerical replay is a separate publication gate.')
+          (root/'audit/SCIENCE_EXECUTION60.json').write_text(json.dumps(result,sort_keys=True,indent=2)+'\n')
+          print(json.dumps({k:v for k,v in result.items() if k!='files_sha256'},indent=2))
+          PY
+        env:
+          FROZEN_SHA: ${{ needs.preserve.outputs.sha }}
+      - name: Push complete evidence without changing historical branches
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-09-r60/results60 revisions/2026-10-09-r60/audit/SCIENCE_EXECUTION60.json
+          git commit -m 'R60: complete optimized-conventional and neural service comparison with all failed recording evidence retained'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r60-science-2026-10-09
+          git rev-parse HEAD
