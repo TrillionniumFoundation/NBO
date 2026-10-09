@@ -1,0 +1,128 @@
+name: NBO R58 lossless neural-search execution
+on:
+  push:
+    branches: [revision/econometrica-nbo-r58-referee-revision-2026-10-09]
+    paths: [.github/workflows/nbo-r58-science.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r58-science
+  cancel-in-progress: false
+env:
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      sha: ${{ steps.source.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: |
+            revisions/2026-10-09-r57
+            revisions/2026-10-09-r58
+      - name: Install scientific dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sympy python3-sklearn
+      - name: Bind the unchanged prior paper and new protocol before production
+        id: source
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          /usr/bin/python3 revisions/2026-10-09-r58/code/prepare58.py
+          rm -rf revisions/2026-10-09-r58/build
+          mkdir -p revisions/2026-10-09-r58/build
+          /usr/bin/python3 revisions/2026-10-09-r58/code/tests58.py 2>&1 | tee revisions/2026-10-09-r58/audit/TESTS58_BEFORE_PRODUCTION.log
+          /usr/bin/python3 revisions/2026-10-09-r58/code/study58.py --freeze
+          git add -f revisions/2026-10-09-r58
+          git commit -m 'R58: freeze exact screened neural solver, matched-work protocol and inherited evidence'
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r58-referee-revision-2026-10-09 HEAD:refs/heads/revision/econometrica-nbo-r58-source-2026-10-09
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  execute:
+    needs: freeze
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        task: [{d: 2, T: 2}, {d: 4, T: 4}, {d: 8, T: 6}]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.freeze.outputs.sha }}
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: revisions/2026-10-09-r58
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sympy python3-sklearn
+      - name: Execute complete paired services sequentially on one core
+        run: /usr/bin/python3 revisions/2026-10-09-r58/code/study58.py --d ${{ matrix.task.d }} --T ${{ matrix.task.T }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r58-results-d${{ matrix.task.d }}-T${{ matrix.task.T }}
+          path: revisions/2026-10-09-r58/results58/
+          compression-level: 1
+          retention-days: 30
+  collect:
+    needs: [freeze, execute]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.freeze.outputs.sha }}
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: revisions/2026-10-09-r58
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nbo-r58-results-*
+          merge-multiple: true
+          path: revisions/2026-10-09-r58/results58
+      - name: Retain every completed service on a new execution branch
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          python3 - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          root=Path('revisions/2026-10-09-r58')
+          services=list((root/'results58/services').glob('*/service.json'))
+          if len(services)!=36:raise AssertionError(('Incomplete production',len(services)))
+          clocks=list((root/'results58').glob('process-clocks-*.json'))
+          if len(clocks)!=3:raise AssertionError('Incomplete process clocks')
+          for f in clocks:
+              j=json.loads(f.read_text())
+              if len(j['runs'])!=12 or any(x['returncode'] for x in j['runs']):raise AssertionError('Failed or missing service')
+          files={str(f.relative_to(root)):hashlib.file_digest(f.open('rb'),'sha256').hexdigest() for f in (root/'results58').rglob('*') if f.is_file()}
+          (root/'audit/EXECUTION58.json').write_text(json.dumps({'status':'success','services':36,'workflow_run_id':os.getenv('GITHUB_RUN_ID'),'files_sha256':files},sort_keys=True,indent=2)+'\n')
+          PY
+          git add -f revisions/2026-10-09-r58
+          git commit -m 'R58: retain all 36 prospective target services, failures and complete clocks'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r58-science-executed-2026-10-09
+      - name: Export new sources and evidence for independent publication replay
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile
+          root=Path('revisions/2026-10-09-r58')
+          with zipfile.ZipFile('nbo-r58-new-evidence.zip','w',compression=zipfile.ZIP_DEFLATED,compresslevel=1) as z:
+              for f in root.rglob('*'):
+                  if f.is_file() and (f.relative_to(root).parts[0]=='results58' or '58' in f.name):z.write(f,str(f.relative_to(root)))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r58-new-evidence
+          path: nbo-r58-new-evidence.zip
+          compression-level: 0
+          retention-days: 30
