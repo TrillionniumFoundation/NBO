@@ -1,0 +1,81 @@
+name: NBO R57 complete referee revision
+on:
+  push:
+    branches: [revision/econometrica-nbo-r57-referee-revision-2026-10-09]
+    paths: [.github/workflows/nbo-r57-publication.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r57-complete-publication
+  cancel-in-progress: false
+jobs:
+  publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      SOURCE_DATE_EPOCH: '1791507600'
+      FORCE_SOURCE_DATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 60
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-09-r56/
+            /revisions/2026-10-09-r57/
+            /README.md
+            /ECTA.tex
+          sparse-checkout-cone-mode: false
+      - name: Merge the pinned complete scientific execution without rewriting history
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git fetch --filter=blob:none --depth=60 origin 5410568809d1fd1ed03d0cc050dc73a41aed8633
+          git merge --no-ff --no-edit 5410568809d1fd1ed03d0cc050dc73a41aed8633
+      - name: Install numerical and publication dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sympy python3-sklearn pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Commit ordinary manuscript and response before verification
+        run: |
+          /usr/bin/python3 revisions/2026-10-09-r57/code/assemble57.py
+          /usr/bin/python3 - <<'PY'
+          import ast
+          from pathlib import Path
+          for p in Path('revisions/2026-10-09-r57/code').glob('*.py'):
+              ast.parse(p.read_bytes(),filename=str(p))
+          PY
+          git add -f revisions/2026-10-09-r57
+          if ! git diff --cached --quiet; then
+            git commit -m 'R57: integrate ordinary original-paper sources and preserve the complete prior development'
+          fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r57-referee-revision-2026-10-09
+      - name: Reintegrate complete science, rerun tests and compile seven documents
+        run: /usr/bin/python3 revisions/2026-10-09-r57/code/build57.py
+      - name: Clean archive reproduction and atomic remote delivery
+        run: /usr/bin/python3 revisions/2026-10-09-r57/code/publish57.py
+      - name: Retain manuscript sources, documents and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r57-paper-audits-and-logs
+          path: |
+            revisions/2026-10-09-r57/build/*.pdf
+            revisions/2026-10-09-r57/build/*.txt
+            revisions/2026-10-09-r57/audit/*57*
+            revisions/2026-10-09-r57/audit/build-logs/
+            revisions/2026-10-09-r57/code/*57.py
+            revisions/2026-10-09-r57/sections/*57.tex
+            revisions/2026-10-09-r57/tables/*57*
+            revisions/2026-10-09-r57/ECTA.tex
+            revisions/2026-10-09-r57/supp.tex
+            revisions/2026-10-09-r57/response.md
+            revisions/2026-10-09-r57/response57.md
+            revisions/2026-10-09-r57/README.md
+          retention-days: 30
+          compression-level: 1
