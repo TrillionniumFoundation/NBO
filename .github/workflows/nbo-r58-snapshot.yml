@@ -1,0 +1,44 @@
+name: NBO R58 pinned manuscript inputs
+on:
+  push:
+    branches: [revision/econometrica-nbo-r58-referee-revision-2026-10-09]
+    paths: [.github/workflows/nbo-r58-snapshot.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            revisions/2026-10-09-r57
+            reviews/2026-10-09-econometrica-numerical-methods-r54
+      - name: Export pinned sources and evidence without standalone fonts
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,subprocess,zipfile
+          forbidden={'.ttf','.otf','.woff','.woff2','.pfb','.pfa','.afm','.tfm'}
+          paths=['revisions/2026-10-09-r57','reviews/2026-10-09-econometrica-numerical-methods-r54']
+          manifest={'head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'files':{}}
+          with zipfile.ZipFile('nbo-r58-pinned-inputs.zip','w',compression=zipfile.ZIP_DEFLATED,compresslevel=1) as z:
+              for base in paths:
+                  for p in sorted(Path(base).rglob('*')):
+                      if p.is_file() and '__pycache__' not in p.parts:
+                          if p.suffix.lower() in forbidden:raise RuntimeError('Standalone font: '+str(p))
+                          manifest['files'][str(p)]=hashlib.file_digest(p.open('rb'),'sha256').hexdigest()
+                          z.write(p,str(p))
+              z.writestr('SNAPSHOT58.json',json.dumps(manifest,sort_keys=True,indent=2)+'\n')
+          print(json.dumps({'files':len(manifest['files']),'bytes':Path('nbo-r58-pinned-inputs.zip').stat().st_size,'head':manifest['head']}))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r58-pinned-inputs
+          path: nbo-r58-pinned-inputs.zip
+          compression-level: 0
+          retention-days: 7
