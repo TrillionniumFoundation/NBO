@@ -1,0 +1,26 @@
+name: NBO R59 prepare and inspect
+on:
+  push:
+    branches: [revision/econometrica-nbo-r59-referee-revision-2026-10-09]
+    paths: [.github/workflows/nbo-r59-prepare.yml]
+permissions:
+  contents: write
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: |
+            revisions/2026-10-09-r58
+            revisions/2026-10-09-r59
+      - name: Preserve sources and inspect complete frozen service catalogue
+        run: |
+          python3 revisions/2026-10-09-r59/code/prepare59.py
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-09-r59
+          git commit -m 'R59: preserve all R58 source and evidence bytes with full recorded-outcome inspection'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r59-inspection-2026-10-09
