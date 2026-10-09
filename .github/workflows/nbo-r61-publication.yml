@@ -1,0 +1,83 @@
+name: NBO R61 complete referee publication
+on:
+  push:
+    branches: [revision/econometrica-nbo-r61-referee-revision-2026-10-09]
+    paths: [.github/workflows/nbo-r61-publication.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r61-complete-publication
+  cancel-in-progress: false
+jobs:
+  complete:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      SOURCE_DATE_EPOCH: '1791504000'
+      FORCE_SOURCE_DATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 80
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-09-r59/build/
+            /revisions/2026-10-09-r61/
+            /README.md
+            /ECTA.tex
+          sparse-checkout-cone-mode: false
+      - name: Merge exact pinned completed evidence without rewriting any historical branch
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git fetch --filter=blob:none --depth=80 origin 0fc885e133f9d566b0a49081f41e9766a868a79a 714f5c8a39c2a4481fd05029b0fb62cfb667d1e5
+          git merge --no-edit 0fc885e133f9d566b0a49081f41e9766a868a79a
+          git merge --no-edit 714f5c8a39c2a4481fd05029b0fb62cfb667d1e5
+      - name: Install publication and verification dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sympy python3-sklearn python3-pil g++ libboost-dev pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Materialize ordinary authored sources and full predecessor reading copies
+        run: |
+          /usr/bin/python3 - <<'PY'
+          from pathlib import Path
+          import ast,shutil
+          root=Path('revisions/2026-10-09-r61')
+          for f in (root/'code').glob('*61.py'):ast.parse(f.read_bytes(),filename=str(f))
+          target=root/'preserved/R59-before-R61/pdf';target.mkdir(parents=True,exist_ok=True)
+          for f in Path('revisions/2026-10-09-r59/build').glob('*.pdf'):shutil.copy2(f,target/f.name)
+          PY
+          /usr/bin/python3 revisions/2026-10-09-r61/code/tables61.py > revisions/2026-10-09-r61/audit/TABLE_GENERATION61.log
+          /usr/bin/python3 revisions/2026-10-09-r61/code/assemble61.py
+          git add -f revisions/2026-10-09-r61
+          if ! git diff --cached --quiet; then git commit -m 'R61: integrate ordinary manuscript, all original reading copies and verified new evidence'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r61-referee-revision-2026-10-09
+      - name: Run inherited and new tests, fixed-policy replay and all seven document gates
+        run: /usr/bin/python3 revisions/2026-10-09-r61/code/build61.py
+      - name: Clean archive reproduction and atomic final remote delivery
+        run: /usr/bin/python3 revisions/2026-10-09-r61/code/publish61.py
+      - name: Retain unsuccessful publication diagnostics without claiming review readiness
+        if: failure()
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-09-r61/audit revisions/2026-10-09-r61/tables
+          if ! git diff --cached --quiet; then git commit -m 'R61: retain incomplete publication diagnostics'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r61-publication-attempt-${{ github.run_id }}-${{ github.run_attempt }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r61-paper-and-publication-audit
+          path: |
+            revisions/2026-10-09-r61/build/*.pdf
+            revisions/2026-10-09-r61/build/*.txt
+            revisions/2026-10-09-r61/audit/*61.json
+            revisions/2026-10-09-r61/audit/*61.log
+            revisions/2026-10-09-r61/audit/build-logs/
+          retention-days: 30
+          compression-level: 1
