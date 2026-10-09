@@ -1,0 +1,38 @@
+name: NBO R56 source inspection
+on:
+  push:
+    branches: [revision/econometrica-nbo-r56-referee-revision-2026-10-09]
+    paths: [.github/workflows/nbo-r56-source-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-09-r55/
+          sparse-checkout-cone-mode: false
+      - name: Export sources without scientific reruns
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil,json,hashlib,subprocess
+          root=Path('revisions/2026-10-09-r55');out=Path('/tmp/nbo-r56-sources');out.mkdir()
+          excluded={'results','results52','results53','results53-extension','results55','results55-tube','evidence','inputs','attempts','build','preserved'}
+          forbidden={'.ttf','.otf','.woff','.woff2','.pfa','.pfb','.tfm','.afm'}
+          files={}
+          for p in root.rglob('*'):
+              rel=p.relative_to(root)
+              if p.is_file() and rel.parts[0] not in excluded and p.suffix.lower() not in forbidden and '__pycache__' not in rel.parts:
+                  q=out/rel;q.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(p,q);files[str(rel)]=hashlib.sha256(p.read_bytes()).hexdigest()
+          (out/'SNAPSHOT56.json').write_text(json.dumps({'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'source_baseline':'7f4de488134e93b6cfb5dd95a3e6d7e14b45ac2a','files':files},indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r56-pinned-ordinary-sources
+          path: /tmp/nbo-r56-sources/
+          retention-days: 30
