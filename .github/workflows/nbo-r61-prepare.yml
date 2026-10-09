@@ -1,0 +1,46 @@
+name: NBO R61 ordinary-source preparation
+on:
+  push:
+    branches: [revision/econometrica-nbo-r61-referee-revision-2026-10-09]
+    paths: [.github/workflows/nbo-r61-prepare.yml]
+permissions:
+  contents: write
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 30
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-09-r59/
+            /revisions/2026-10-09-r60/
+            /revisions/2026-10-09-r61/
+            /README.md
+            /ECTA.tex
+          sparse-checkout-cone-mode: false
+      - name: Retrieve pinned complementary records without moving historical refs
+        run: |
+          git fetch --filter=blob:none --depth=1 origin e94a8b867d6136ce14ba9697fc2288e0c7a7bc48 16d90ad07879c61dacd63c6f79162d0f2303f7ad 8f56a3ae24ef3ce4383d0e9d1d757bd3ed7378c6
+          mkdir -p /tmp/nbo61/centered /tmp/nbo61/theory /tmp/nbo61/review
+          git archive e94a8b867d6136ce14ba9697fc2288e0c7a7bc48 revisions/2026-10-09-r60/code/centered60.py revisions/2026-10-09-r60/code/tests_centered60.py revisions/2026-10-09-r60/CENTERED_BELLMAN_AMENDMENT60.md revisions/2026-10-09-r60/audit/SOURCE_FREEZE60C.json revisions/2026-10-09-r60/results60-centered | tar -x -C /tmp/nbo61/centered
+          git archive 16d90ad07879c61dacd63c6f79162d0f2303f7ad revisions/2026-10-09-r60/sections | tar -x -C /tmp/nbo61/theory
+          git archive 8f56a3ae24ef3ce4383d0e9d1d757bd3ed7378c6 reviews/2026-10-09-econometrica-numerical-methods-r59 | tar -x -C /tmp/nbo61/review
+          python3 revisions/2026-10-09-r61/code/prepare61.py /tmp/nbo61
+      - name: Commit complete new revision sources and inspectable evidence
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-09-r61
+          git commit -m 'R61: preserve original R59 paper, complete R60 science and separately frozen centered Bellman execution'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r61-referee-revision-2026-10-09
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r61-preparation
+          path: revisions/2026-10-09-r61/audit/*61.json
+          retention-days: 30
