@@ -1,0 +1,212 @@
+\section{Arithmetic, Dimension, and the Neural Verification Account}
+\label{app:r41arithmetic}
+This appendix supplies the arithmetic and work details for
+Section~\ref{sec:r41direct} of the article. The trained functions at both
+successive dates are inputs to the certificate. Approximation of those
+functions by their former training targets is not an allowed operation.
+
+\subsection{Exact activation regions and the terminal discrepancy}
+Write the stored scalar network as
+\[
+ f(x)=b_0+\sum_{j=1}^m v_j(w_jx+b_j)_+.
+\]
+All coefficients are rational when read as the exact values of their binary
+representations. Units with $w_j=0$ contribute constants. For the remaining
+units, order and deduplicate the rational roots $-b_j/w_j$ in $[0,1]$.
+Between consecutive roots the active set is constant, and summing its
+coefficients gives an exact affine function $A_kx+B_k$. Negative slopes do
+not require a separate approximation rule. The maximum of $|A_k|$ over
+nonempty regions is an all-state Lipschitz bound. This maximum can be much
+smaller than the sum of absolute weights.
+
+\begin{proposition}[Evaluation after rational region compilation]
+\label{prop:r41compile}
+Suppose every rounded root differs from its exact root by at most $e_r$,
+while order is retained. Let $L=\max_k|A_k|$. If region selection at $x$
+uses the rounded roots, evaluating the selected exact affine extension
+instead of $f(x)$ makes an error no larger than $2Le_r$. If several rounded
+roots coincide, the same bound holds provided every displaced boundary
+between the chosen and true regions lies within $e_r$ of $x$. Outward
+coefficient evaluation at a midpoint $x_c$ of an input interval $I$ and an
+additional $L\operatorname{rad}(I)$ then enclose $f(I)$, after charging
+midpoint rounding as well.
+\end{proposition}
+\begin{proof}
+An incorrectly selected region is separated from the true one only by
+roots whose rounded comparisons differ at $x$. Such roots are within
+$e_r$ of $x$. Choose the boundary of the selected region closest to $x$;
+call it $r$. The selected affine function equals $f$ at $r$ by continuity.
+Both $f$ and that affine function have Lipschitz constant at most $L$.
+Their difference at $x$ is therefore at most $2L|x-r|\leq2Le_r$.
+For an interval, add the Lipschitz variation from its midpoint and the
+outward arithmetic enclosure of the selected affine evaluation.
+\end{proof}
+
+For the terminal primitive, split further at the cost kink $3/8$.
+On every resulting interval $f_T-g$ is a quadratic polynomial with rational
+coefficients. A continuous quadratic achieves its extrema at an endpoint
+or at its stationary point if that point is in the interval. Testing those
+points gives rational global endpoints. The terminal error is generally
+nonzero. In the executed study, 66 candidates yield a terminal interval
+approximately $[-0.000668000,0.000410383]$ for every economy, because the
+terminal network and terminal primitive are shared.
+
+\subsection{Rounding the specified execution graph}
+A range-error pair consists of an exact range $[a,b]$ and a nonnegative
+rational error $e$. It means that an ideal node $y$ lies in $[a,b]$ and its
+implemented value differs by at most $e$. Put $M([a,b])=\max(|a|,|b|)$.
+For separate round-to-nearest binary32 operations, use
+$u=2^{-24}$ and $\alpha=2^{-150}$. If a sum has pre-rounding propagated
+error $e_s=e_1+e_2$ and ideal range $I_s$, its new error is
+\[
+ e_s+u\{M(I_s)+e_s\}+\alpha.
+\]
+For a product, first put
+\[
+ e_p=M(I_1)e_2+M(I_2)e_1+e_1e_2;
+\]
+then add $u\{M(I_1I_2)+e_p\}+\alpha$. These formulae follow by expanding
+$(y_1+\delta_1)(y_2+\delta_2)-y_1y_2$ and applying the elementary rounding
+inequality. Rational range propagation is performed separately. Conversion
+of the state, action, price, and shock is included at the input nodes.
+Clipping to a representable closed interval is nonexpansive and cannot
+increase this error.
+
+The deposited implementation applies these recurrences to the operation
+order used in the binary32 transition, cost, and terminal routines.
+Its verification test compares 1,032 native executions with exact rational
+execution of the corresponding ideal graphs. Those finite tests detect
+implementation mistakes; the range induction, not the tests, supplies the
+all-state guarantee. The maximum observed error is less than $0.224$ of
+the corresponding uniform allowance. No conclusion is drawn for a fused
+multiply-add implementation or a platform that flushes subnormals to zero.
+
+Nearest-node policy selection deserves a separate argument because the
+actor is discontinuous. For a true state $x$ and acquired state
+$\widehat x$, a node selected nearest to $\widehat x$ is at most
+$h_x+|\widehat x-x|$ from $x$. The chosen-action and Bellman-minimum
+comparisons each pay $L_x|\widehat x-x|$. There is consequently no need
+for an unjustified Lipschitz bound on the actor itself. At the dyadic grids
+in this study, stored action values and state cutpoints are exactly
+representable in binary32; that fact does not remove errors in state
+acquisition, transition, or cost evaluation.
+
+\subsection{Continuous innovations and multidimensional verification}
+\label{app:r41work}
+The direct certificate is not tied to scalar states or finite-support
+uncertainty. This extension states explicitly what additional work is
+required; it does not identify a grid verifier with a dimension-free
+method. Let $X\subset\mathbb R^{d_x}$, $A\subset\mathbb R^{d_a}$, and
+$Z\subset\mathbb R^{d_z}$ be compact. The innovation has a known law and
+admits a deterministic quantizer $q$ with
+$\|Z-q(Z)\|\leq h_z$ almost surely. The probabilities of the quantizer
+cells are supplied exactly or by enclosing arithmetic. Take a law-invariant,
+monotone, cash-invariant one-step risk functional, evaluated conditionally
+on the current state and action. Expectation and entropic risk satisfy this
+requirement. Suppose the transition is Lipschitz in the innovation with
+constant $L_{Fz,t}$. If stage costs also depend on the innovation, add their
+innovation Lipschitz contribution in the definition below.
+
+\begin{theorem}[A dimension-explicit neural certificate with quantized innovations]
+\label{thm:r41dimension}
+Let the hypotheses of the direct neural certificate hold on $X$ and $A$.
+Put $\zeta_t=\beta_t L_{t+1}L_{Fz,t}h_z$. Construct nodal intervals using
+$q(Z)$ rather than $Z$. If $(\ell_t,u_t,\eta_t)$ are computed from these
+intervals, then
+\[
+ (\ell_t-\zeta_t,\ u_t+\zeta_t,\ \eta_t+2\zeta_t)
+\]
+are valid residual and actor bounds for the unquantized economy. The global
+policy certificate increases by at most $4\sum_{t<T}B_t\zeta_t$.
+
+Let $K_x,K_a,m$ be the numbers of state nodes, action nodes, and quantizer
+cells. Let $P_t$ count scalar arithmetic operations in a forward network
+evaluation, $C_{F,t}$ the transition and cost evaluation work, and
+$C_{\rho,t}(m,p)$ the work to enclose one risk evaluation at precision $p$.
+In units of certified precision-$p$ arithmetic, a streaming direct
+verification uses
+\begin{align*}
+ W\leq C\sum_{t<T}K_xK_a
+ \{m(C_{F,t}+P_{t+1})+C_{\rho,t}(m,p)\}
+ +C\sum_{t\leq T}K_xP_t+W_T+W_{\rm io}.
+\end{align*}
+Here $W_T$ certifies the terminal discrepancy and $W_{\rm io}$ includes
+serialization and the durable evidence writes. For a batch of $b$ state
+nodes, its working storage, in scalar words, is at most
+\[
+ O\!\left(\sum_{t\leq T}P_t+TK_xd_a+md_z+
+ bK_am\,w_{\max}+K_x\right),
+\]
+where $w_{\max}$ bounds the largest network layer width and $b\leq K_x$.
+The policy output itself requires $TK_xd_a$ words. Tensor covers of bounded
+boxes can be chosen with
+\[
+ K_x=O(h_x^{-d_x}),\qquad K_a=O(h_a^{-d_a}),\qquad
+ m=O(h_z^{-d_z}).
+\]
+The hidden constants depend on the domains and the norm, not on training
+convergence. A finite refinement schedule is charged by summing these
+bounds over every attempted resolution, not just the accepted resolution.
+\end{theorem}
+\begin{proof}
+Couple $Z$ and $q(Z)$ on their defining probability space. The two future
+network values differ almost surely by at most
+$L_{t+1}L_{Fz,t}h_z$. Monotonicity and cash invariance bound the difference
+of their risk evaluations by the same number. Law invariance identifies
+the quantized risk evaluation with its finite-support calculation.
+Multiplication by $\beta_t$ gives a uniform $Q$ discrepancy $\zeta_t$.
+Taking an infimum does not increase a uniform error. A residual therefore
+pays $\zeta_t$ at each endpoint; a chosen-action excess pays $2\zeta_t$.
+The residual oscillation and actor allowance together pay $4\zeta_t$.
+Backward induction gives the stated policy bound.
+
+For each of the $TK_xK_a$ state-action pairs the program evaluates $m$
+transitions and networks and then one risk aggregate. Current networks
+are evaluated at the state nodes as well. Streaming over state batches
+retains only the batch's forward activations, the nodal extrema and stored
+actors, the innovation support, and the network coefficients. This proves
+the operation and storage counts. An equally spaced tensor cover proves
+the node bounds. Exact enumeration of a policy's innovation tree at $Q$
+initial queries adds, separately, order
+$Q\sum_{t=0}^Tm^t$ evaluations and a depth-first stack of order $T$ times
+the stored state and risk-aggregation data. This exponential query cost is
+not hidden inside the Bellman verification count.
+\end{proof}
+
+The notation $C_{\rho,t}(m,p)$ is intentional. A native addition is not an
+exact exponential, logarithm, or certified inverse. Bit costs require a
+specified arithmetic implementation and must multiply the appropriate
+operation counts by its precision-dependent costs. The complete-step
+matrix result in the article similarly exposes its lower spectral bound
+and residual enclosure rather than suppressing conditioning in an
+unspecified constant. Neural Lipschitz bounds, risk-evaluation ranges,
+terminal verification, and the admissible condition margins must be
+reported before either count is used numerically.
+
+A refinement reduces verification slack; it cannot force a fixed inaccurate
+network to satisfy an arbitrary policy target. More precisely, suppose
+current-value and quantized $Q$ nodal intervals have widths at most
+$w_{f,t}$ and $w_{q,t}$. Choosing a minimum-upper-endpoint action gives the
+following useful upper bound on the certificate:
+\begin{align*}
+ E_f\leq &\sum_{t<T}B_t\operatorname{osc}(f_t-T_tf_{t+1})
+       +B_T\operatorname{osc}(f_T-g)\\
+ &+\sum_{t<T}B_t\{(2L_t+4L_{x,t})h_x+3L_{a,t}h_a
+              +4\zeta_t+2w_{f,t}+3w_{q,t}\}.
+\end{align*}
+To check the coefficients, the grid minimum differs from the continuous
+minimum by between zero and $L_{a,t}h_a$. The residual range therefore
+pays at most $2L_{a,t}h_a+2w_{f,t}+2w_{q,t}$, in addition to its state
+cover. The selected action pays at most one further $L_{a,t}h_a+w_{q,t}$
+and its two state movements. Quantization supplies the four allowances
+already proved. Thus the refinement tends to the network's residual and
+terminal oscillations, not automatically to zero.
+
+For prescribed verification slack, this theorem specifies its dependence
+on state, action and innovation dimension, horizon, network size, precision,
+and the problem's Lipschitz and conditioning data. It does not establish a
+competitive high-dimensional work frontier. The new executed nonlinear
+certificate below remains scalar; the higher dimensions in the quadratic
+study do not change that fact. A coupled nonlinear scaling comparison with
+strong sparse, projection, or fitted dynamic-programming baselines remains
+an empirical question distinct from this extension theorem.

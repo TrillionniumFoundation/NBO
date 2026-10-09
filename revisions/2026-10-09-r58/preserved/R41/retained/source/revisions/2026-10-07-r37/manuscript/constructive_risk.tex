@@ -1,0 +1,156 @@
+\section{Training to a Recursive Policy Target}\label{sec:r31constructive}
+The policy certificate and the training procedure answer different questions.
+A certificate assesses a returned policy. A constructive training statement
+must determine an admissible budget before observing that policy's evaluation
+target. This section joins the two statements for the trainable square critic
+in the recursive capital economy of Section~\ref{sec:r27entropic}. The original
+smooth-network and controlled-diffusion formulations remain unchanged.
+
+\subsection{Evaluation without interval expansion}
+Let $C_T=Q_f$ and let $C_t$ be arbitrary symmetric numerical proposals for the
+coefficients of the returned policy's own value. They need not be computed by
+an optimal-control recursion. Write $F_t=A_t-B_tK_t$ and suppose that the
+following residual and matrix norms are enclosed from above:
+\[
+ \rho_t\geq\|C_t-Q_t-K_t'R_tK_t-
+                  \beta F_t'\Psi_\theta(C_{t+1})F_t\|_2.
+\]
+Starting at $e_T=0$, define
+\begin{align}
+ p_{t+1}&=\|C_{t+1}\|_2+e_{t+1},&
+ \gamma_t&=1-2\theta\sigma p_{t+1},\notag\\
+ e_t&=\rho_t+\beta\|F_t\|_2^2e_{t+1}/\gamma_t^2,
+ \label{eq:r31tube}
+\end{align}
+where $\sigma\geq\|\Sigma\|_2$. Norms in a numerical implementation mean
+certified upper bounds, and the computed $\gamma_t$ is a lower bound.
+
+\begin{proposition}[Residual-centered evaluation]\label{prop:r31tube}
+If every margin in \eqref{eq:r31tube} is positive, the returned policy's
+recursive value is finite and its exact coefficients satisfy
+$\|P_t-C_t\|_2\leq e_t$. Moreover, a valid bound on its full-action residual is
+\begin{equation}
+ \zeta_t=
+ \|R_tK_t-\beta B_t'\Psi_\theta(C_{t+1})F_t\|_F
+ +\beta\|B_t\|_2\|F_t\|_F e_{t+1}/\gamma_t^2.
+ \label{eq:r31defect}
+\end{equation}
+These quantities can be inserted directly into
+Theorem~\ref{thm:r27entropic} and its implementation account.
+\end{proposition}
+
+The result is independent of the proposal algorithm. An inaccurate proposal
+increases its checked Bellman residual; it does not become a valid evaluation
+merely because it is labeled as one. Propagating a scalar spectral radius
+around each newly evaluated center avoids feeding an expanding componentwise
+box through successive matrix inverses. This changes neither the economic
+criterion nor the stopping tolerance. The certificate remains uniform over
+real states and full vector deviations, rather than over a stored catalogue.
+
+\subsection{A budget chosen from economic primitives}
+Fix a reference feedback $L_t$ and a positive slack $\eta$. This feedback is a
+feasibility witness, not an optimal solution or a training label. Let
+$Q_t\succeq q_tI\succ0$, $R_t\succeq r_tI\succ0$, and set
+$q_* =\min_{t<T}q_t$. Construct a scalar coefficient envelope backward:
+\begin{align}
+ \bar p_T&\geq\|Q_f\|_2,&
+ \bar\gamma_t&=1-2\theta\sigma\bar p_{t+1}>0,\notag\\
+ \bar p_t&\geq\|Q_t+L_t'R_tL_t+\eta Q_t\|_2
+ +\beta\|A_t-B_tL_t\|_2^2\bar p_{t+1}/\bar\gamma_t.
+ \label{eq:r31primitive}
+\end{align}
+The entire envelope is computed before any policy target or critic fit.
+For $t<T-1$, put
+\[
+ m_t=dq_{t+1},\qquad M_t^{\rm ub}=d\bar p_{t+1}/\bar\gamma_t,
+ \qquad
+ f_t=\|A_t\|_2\left(1+
+        \frac{\beta\|B_t\|_2^2M_t^{\rm ub}}{dr_t}\right).
+\]
+Use the same expression for $f_{T-1}$ with the terminal coefficient bound.
+Let $b_t\geq\|B_t\|_2$ and $\tau\geq\operatorname{tr}\Sigma$. Define
+\begin{align}
+ \widetilde f_t&=f_t+\frac{b_t}{r_t}
+       \left(\sqrt{\eta r_tq_t}
+                +\frac{\beta b_tf_tq_*}{\bar\gamma_t^2}\right),\notag\\
+ \lambda_T&=\mu_T=0,\qquad
+ \lambda_t=q_t\mathbf1_{\{t<T-1\}}
+           +\frac{\beta\widetilde f_t^2}{\bar\gamma_t^2}\lambda_{t+1},
+ \notag\\
+ \mu_t&=\beta\left(\mu_{t+1}
+                +\frac{\tau\lambda_{t+1}}{\bar\gamma_t}\right).
+ \label{eq:r31weights}
+\end{align}
+For initial states satisfying $\|x_0\|^2\leq b_0$, write
+$W_0=b_0\lambda_0+\mu_0$. Choose $s>0$ such that
+\begin{equation}
+ s\leq\eta,\qquad s\lambda_t\leq q_*\ (1\leq t<T),\qquad
+ sW_0\leq\varepsilon_{\rm train}.
+ \label{eq:r31allocate}
+\end{equation}
+Zero weights impose no restriction. The remaining allowance
+$\varepsilon-\varepsilon_{\rm train}$ is reserved for numerical implementation;
+it is not presumed sufficient until independently checked.
+
+At date $t<T-1$, the finalized future policy supplies the own-policy target
+$M_t=d\Psi_\theta(P_{t+1})$. Train the scalar continuation
+$\widehat U_{t+1}(x)=\|W_tx\|^2/d+\widehat c_{t+1}$ by
+\begin{equation}
+ W^{(j+1)}=W^{(j)}-\alpha_tW^{(j)}
+          \big((W^{(j)})'W^{(j)}-M_t\big),\quad
+ W^{(0)}=\sqrt{c_t}\,O_t,
+ \label{eq:r31training}
+\end{equation}
+where $O_t$ is orthogonal, $0<c_t\leq m_t$ and
+$0<\alpha_t\leq1/(4M_t^{\rm ub})$. All entries of $W$ are updated.
+For $\beta b_tf_t>0$, the required Gram error is
+\begin{equation}
+ a_t=\frac{d\sqrt{s r_tq_t}}{\beta b_tf_t},\qquad
+ \|(W^{(j)})'W^{(j)}-M_t\|_F\leq a_t.
+ \label{eq:r31trainingtarget}
+\end{equation}
+A continuation-independent action needs no such fit. The terminal actor uses the known transformed coefficient
+$\Psi_\theta(Q_f)$ without a factor fit, as in \eqref{eq:r32terminal}. Every actor minimizes its fitted full quadratic action
+objective, and its own future is then evaluated for the preceding date.
+
+\begin{theorem}[Primitive-budget neural policy construction]
+\label{thm:r31constructive}
+Suppose the primitive envelope \eqref{eq:r31primitive} exists with positive
+margins. In exact arithmetic, the backward construction just specified
+terminates after finitely many hidden-weight updates and returns a policy
+with
+\begin{equation}
+ 0\leq J_0^\pi(x)-J_0^*(x)
+       \leq s\{\lambda_0\|x\|^2+\mu_0\}
+       \leq\varepsilon_{\rm train},\qquad \|x\|^2\leq b_0.
+ \label{eq:r31constructivegap}
+\end{equation}
+It suffices to take, at each fitted date,
+\begin{equation}
+ k_t=\left\lceil
+ \frac{\log^+(\sqrt d\,M_t^{\rm ub}/a_t)}
+      {-\log(1-\alpha_tc_t)}\right\rceil
+ \label{eq:r31cap}
+\end{equation}
+updates. Neither an optimal value nor an already-fitted target is an input
+to the envelope, tolerance, step size, initialization scale, or cap.
+The comparator in \eqref{eq:r31constructivegap} is the full adapted
+finite-recursive-cost class in the declared economy.
+\end{theorem}
+
+Section~\ref{sec:r31proofs} proves the theorem by joint backward induction on
+the policy envelope and the critic target. This removes a circular use of a
+successful fitted policy to justify its own training budget. The conclusion
+is architecture-specific: it concerns a trainable square factor with a
+controlled initialization, not a frozen feature dictionary, arbitrary
+nonconvex initialization, or every network used in the original applications.
+The class admits an inexpensive structural solution; that comparator remains
+part of the numerical experiment. Finite neural trainability is not itself
+a claim that neural training is the least expensive way to solve this class.
+
+The implemented procedure uses conservative caps, retains every failed
+threshold, and checks the rounded returned policy by
+Proposition~\ref{prop:r31tube}. Its final acceptance rule is the original
+full-policy tolerance, including execution error. Thus the constructive
+real-arithmetic theorem does not silently promote a rounded training trace
+to an economic certificate.
