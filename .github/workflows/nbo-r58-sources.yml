@@ -1,0 +1,46 @@
+name: NBO R58 current source inputs
+on:
+  push:
+    branches: [revision/econometrica-nbo-r58-referee-revision-2026-10-09]
+    paths: [.github/workflows/nbo-r58-sources.yml]
+permissions:
+  contents: read
+jobs:
+  sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            revisions/2026-10-09-r57
+            reviews/2026-10-09-econometrica-numerical-methods-r54
+      - name: Export current sources and last execution
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,subprocess,zipfile
+          forbidden={'.ttf','.otf','.woff','.woff2','.pfb','.pfa','.afm','.tfm'}
+          old={'results53','results53-extension','results55','results55-tube','attempts','evidence','inputs'}
+          root=Path('revisions/2026-10-09-r57')
+          record={'head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'files':{},'omitted':[]}
+          with zipfile.ZipFile('nbo-r58-current-sources.zip','w',compression=zipfile.ZIP_DEFLATED,compresslevel=1) as z:
+              for p in sorted(root.rglob('*')):
+                  if not p.is_file() or '__pycache__' in p.parts:continue
+                  rel=p.relative_to(root)
+                  if p.suffix.lower() in forbidden:raise RuntimeError('Standalone font')
+                  if rel.parts[0] in old:record['omitted'].append(str(p));continue
+                  record['files'][str(p)]=hashlib.file_digest(p.open('rb'),'sha256').hexdigest();z.write(p,str(p))
+              for p in Path('reviews/2026-10-09-econometrica-numerical-methods-r54').rglob('*'):
+                  if p.is_file():z.write(p,str(p))
+              z.writestr('SOURCE_INPUTS58.json',json.dumps(record,sort_keys=True,indent=2)+'\n')
+          print(json.dumps({'files':len(record['files']),'bytes':Path('nbo-r58-current-sources.zip').stat().st_size,'omitted':len(record['omitted'])}))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r58-current-sources
+          path: nbo-r58-current-sources.zip
+          compression-level: 0
+          retention-days: 7
