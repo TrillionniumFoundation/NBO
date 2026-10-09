@@ -46,8 +46,17 @@ jobs:
         run: |
           /usr/bin/python3 - <<'PY'
           from pathlib import Path
-          import ast,shutil
+          import ast,hashlib,json,shutil
           root=Path('revisions/2026-10-09-r61')
+          p=root/'code/tables61.py';raw=p.read_text();backslash=chr(92)
+          needle="r'"+backslash+'providecommand{'+backslash+"'+key"
+          replacement='('+repr(backslash+'providecommand{')+'+chr(92)+key)'
+          fixed=raw.replace(needle,replacement)
+          fixed=fixed.replace("x['maximum_operand_bits'],x['largest_pair_array_bytes']", "(x['maximum_operand_bits'] or '--'),(x['largest_pair_array_bytes'] or '--')")
+          ast.parse(fixed,filename=str(p))
+          if fixed!=raw:
+              p.write_text(fixed)
+              (root/'audit/TYPOGRAPHY_SOURCE_FIX61.json').write_text(json.dumps(dict(before_sha256=hashlib.sha256(raw.encode()).hexdigest(),after_sha256=hashlib.sha256(fixed.encode()).hexdigest(),scope='Derived table macro escaping and unreported diagnostic display only; no mathematical or statistical source or result changed'),indent=2)+'\n')
           for f in (root/'code').glob('*61.py'):ast.parse(f.read_bytes(),filename=str(f))
           target=root/'preserved/R59-before-R61/pdf';target.mkdir(parents=True,exist_ok=True)
           for f in Path('revisions/2026-10-09-r59/build').glob('*.pdf'):shutil.copy2(f,target/f.name)
