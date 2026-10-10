@@ -1,0 +1,88 @@
+\section{Operational prediction certificates and readout training}\label{sec:operational67}
+Proposition~\ref{prop:localization65} separates witness accuracy from lower-certificate localization. Its distance to an unknown minimizer is useful for analysis but is not a stopping observable. We now replace that distance by an upper envelope computed from information already purchased. This gives a certificate before an additional Bellman query, a training criterion measured in unresolved verification work, and a constructive neural readout with a computable optimization gap.
+
+\subsection{A decision before the next query}
+Fix a state, a date, and the current action partition. Write $f(a)=Q_t^*(x,a)$, and suppose $f$ is $\mu$-strongly convex on the feasible interval. Let $\overline f_l,\overline f_u$ be verified upper endpoints at two consecutive actions $l<u$. Let $L$ be the current lower bound for the original feasible infimum, including the capacity and arithmetic allowances. For $a=l+s(u-l)$, define
+\begin{equation}\label{eq:screen67}
+ C(a)=(1-s)\overline f_l+s\overline f_u
+       -\frac\mu2 (a-l)(u-a),\qquad 0\le s\le1.
+\end{equation}
+Every symbol in this expression is either a primitive bound or an existing endpoint. No derivative or action at the unknown optimum occurs.
+
+\begin{theorem}[Pre-query closure]\label{thm:screen67}
+Under the preceding conditions, $f(a)\le C(a)$ throughout $[l,u]$. Let $a_\Delta\in[l,u]$ be the actual feasible rounded proposal. An outward upper endpoint $\overline C(a_\Delta)$ satisfying
+\begin{equation}\label{eq:screen-stop67}
+ \overline C(a_\Delta)-L\le\delta
+\end{equation}
+certifies $f(a_\Delta)-\inf_{a\in A(x)}f(a)\le\delta$ without another Bellman query. If the screen does not close, the protected refinement of Theorem~\ref{thm:gated64} retains its validity and finite query bound. The complete acquired policy therefore retains the original-optimum account of Theorem~\ref{thm:query63}.
+
+Equivalently, the union over partition intervals of the sublevel sets $\{a:C(a)-L\le\delta\}$ is a computable certified action set. Each constituent is a quadratic sublevel interval intersected with its partition cell. Endpoints obtained numerically must be rounded inward, or the final action must be checked by \eqref{eq:screen-stop67}.
+\end{theorem}
+\begin{proof}
+Strong convexity gives $f((1-s)l+su)\le(1-s)f(l)+sf(u)-\mu s(1-s)(u-l)^2/2$. Replacing the endpoint values by their upper bounds proves \eqref{eq:screen67}. Subtraction of a valid lower bound proves \eqref{eq:screen-stop67}. A failed screen adds no endpoint to the partition and alters no lower bound. Subsequent protected refinement is therefore covered by the earlier termination proof. A successful screen supplies exactly the local accuracy premise used in the acquired-policy recursion. Finally, $C$ is a convex quadratic in $a$, proving the sublevel-set assertion.
+\end{proof}
+
+The screen is shared by every comparator. In particular, minimizing the quadratic upper envelope is an available conventional proposal. Prediction is valuable only to the extent that its proposed location or evaluation cost improves the observed service. The executed neural rule screens its feasible prediction on the partition interval containing it, even when that location is outside the protected part of the currently critical interval. A failed screen does not authorize an unprotected split.
+
+\subsection{A computable loss for unresolved work}
+A \emph{certificate context} $z$ consists of the state, remaining horizon, tolerance, partition endpoints and their verified bounds. A proposal $a_\theta(z)$ is feasible and is computed without another Bellman query. Define its verified score and a margin loss by
+\begin{align}
+ s_\theta(z)&=\overline C_z(a_\theta(z))-L_z,\label{eq:score67}\\
+ \ell_\tau(z,\theta)&=\min\left\{1,
+       \frac{(s_\theta(z)-\delta_z+\tau)_+^2}{\tau^2}\right\},
+       \qquad \tau>0.\label{eq:work-loss67}
+\end{align}
+Let $K(z)$ be a valid cap on further endpoint queries if the screen fails and the protected fallback is followed. This is a count of endpoint queries at the current state. The recursive cost of each endpoint is charged through the earlier descendant-work recursion. On contexts satisfying the declared precision contract, the real-arithmetic and rational-recovery bounds supply finite such caps.
+
+\begin{theorem}[Certificate loss and additional work]\label{thm:work-loss67}
+If $N_\theta(z)$ is the number of additional endpoint queries after the screen, then
+\begin{equation}\label{eq:work-bound67}
+ N_\theta(z)\le K(z)\mathbf1\{s_\theta(z)>\delta_z\}
+                    \le K(z)\ell_\tau(z,\theta).
+\end{equation}
+Consequently, an achieved margin loss bounds the average additional queries on any specified finite context catalogue, with no unknown minimizing action.
+
+For a distributional assertion, condition on construction of a finite family of $M$ predictors. Suppose $z_1,\ldots,z_n$ are independent validation contexts from a declared predictor-independent law, and $0\le K(z)\le K_{\max}$. With probability at least $1-\alpha$, simultaneously for that family,
+\begin{equation}\label{eq:work-validation67}
+ \mathbb E N_\theta(z)\le
+ \frac1n\sum_{i=1}^n K(z_i)\ell_\tau(z_i,\theta)
+ +K_{\max}\sqrt{\frac{\log(M/\alpha)}{2n}}.
+\end{equation}
+The cost of obtaining and validating contexts and of evaluating the predictor is additional work, not part of $N_\theta$.
+\end{theorem}
+\begin{proof}
+A successful screen returns without an endpoint query. A failed screen invokes a procedure bounded by $K(z)$, and its margin loss equals one. This proves \eqref{eq:work-bound67}. For each fixed predictor the variable $K(z)\ell_\tau(z,\theta)$ lies in $[0,K_{\max}]$. The bounded-sum inequality of \citet{hoeffding1963} and a union bound over the conditionally fixed family give \eqref{eq:work-validation67}.
+\end{proof}
+
+The context-law requirement matters. A stream of recursively generated contexts can depend on earlier predictions; it is not automatically an independent validation sample for \eqref{eq:work-validation67}. The deterministic inequality \eqref{eq:work-bound67} remains valid context by context. The recorded action-label mean squared error is not substituted for \eqref{eq:work-loss67}. The new loss measures a certificate's unresolved work rather than resemblance to an approximate action label.
+
+\subsection{A constructive ReLU readout with an optimization certificate}
+The work loss can be trained without invoking a successful hidden-layer optimizer. Fix a nonnegative affine--ReLU feature map $\phi(z)\in\mathbb R^p$ with $\sum_j\phi_j(z)=1$. Linear hat functions on a fixed coordinate partition are one exact construction; averages of such maps give multivariate features. A box-constrained readout $w\in[0,1]^p$ proposes
+\[
+ a_w(z)=l_z+(u_z-l_z)\phi(z)^\top w.
+\]
+The partition interval and features are fixed before optimizing $w$. Let $\eta_i\ge0$ cover action rounding and evaluation of the score, so that the computed score of the actual rounded action is at most $C_i(a_w(z_i))+\eta_i-L_i$. For example, on lattice-aligned endpoints an action Lipschitz bound gives $\eta_i=\Lambda_i\Delta_a$ for downward rounding. Define
+\begin{equation}\label{eq:readout-loss67}
+ F(w)=\frac1n\sum_i K_i
+ \bigl(C_i(a_w(z_i))+\eta_i-L_i-\delta_i+\tau\bigr)_+^2
+                      +\frac\lambda2\|w\|_2^2,
+ \qquad \lambda\ge0.
+\end{equation}
+Unlike an action-label objective, this loss directly upper-bounds the additional-work account. It trains the upper witness against the current global lower certificate.
+
+\begin{proposition}[Certified readout training]\label{prop:readout67}
+The function $F$ is convex and continuously differentiable on the box. For $g=\nabla F(w)$, put
+\begin{equation}\label{eq:dual-gap67}
+ D(w)=g^\top w-\sum_{j=1}^p\min\{0,g_j\}.
+\end{equation}
+Then $0\le F(w)-\min_{v\in[0,1]^p}F(v)\le D(w)$. On the training contexts the average additional endpoint-query count is at most $F(w)/\tau^2$. If $\lambda>0$, the minimizer $w^*$ is unique and
+\[
+ \|w-w^*\|_2\le\sqrt{2D(w)/\lambda}.
+\]
+All quantities in these conclusions can be bounded by outward arithmetic; they are exact rational quantities when the contexts, features and iterate are rational.
+\end{proposition}
+\begin{proof}
+The chord is a convex quadratic in its normalized action, which is affine in $w$. Squaring the positive part preserves convexity and gives a continuously differentiable function. The nonnegative weighted sum and quadratic penalty preserve these properties. Convexity gives $F(w)-F(v)\le g^\top(w-v)$, and the minimum of $g^\top v$ on the box is $\sum_j\min\{0,g_j\}$. This proves \eqref{eq:dual-gap67}. Every failed screen has squared positive-part residual at least $\tau^2$, while every successful screen uses zero further endpoint queries. Summing the corresponding $K_i$ bounds proves the work claim. Strong convexity with modulus $\lambda$ proves the distance bound.
+\end{proof}
+
+This is a fixed-feature neural construction, not a convergence assertion for unrestricted nonconvex network fitting. The deposited rational implementation uses finite conditional-gradient steps and reports its achieved loss and dual gap. Its regression examples test the proposition; they are not new investment-policy observations. The service comparison below retains the preregistered L-BFGS and conventional fits, rather than relabeling those models as minimizers of \eqref{eq:readout-loss67}. Prediction-dependent optimization has an established literature \citep{sakaue2023warm,sambharya2023}; the additional object here is a computable original-law Bellman certificate that can license an action before another query and supplies a directly auditable training criterion.

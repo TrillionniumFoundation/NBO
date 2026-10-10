@@ -1,0 +1,70 @@
+\section{From returned policies to economic resource decisions}\label{sec:decisions49}
+An all-state upper bound and a comparison of actual policy costs answer different economic questions. We now connect the policies returned by a construction frontier to direct cost inference and then to a choice of implementation resources. The construction data select the policies; independently generated evaluation paths assess them. This separation permits a valid comparison of first-crossing policies with different resolutions.
+
+\subsection{Simultaneous inference after construction}
+Let $\mathcal H$ denote all construction information: primitive inputs, numerical labels, fitted continuations, returned policies and complete certificate ladders. Conditional on $\mathcal H$, fix a finite catalogue of implemented-policy contrasts. Each implementation includes its observation rule, original witness or nearest-node selector, true-state feasible repair and action quantization. For a contrast $i$, let $D_i$ be the difference in expected discounted costs under a specified initial law. A common-innovation path score evaluates the two policies on their own endogenous trajectories. It is not the difference between two regret bounds.
+
+Suppose the initial and innovation uniforms are partitioned into equal bins. Independent uniform bin indices are drawn, and interval simulation encloses the score for every continuous realization inside the drawn bins. All unresolved state, selector and repair branches remain in the enclosure. If $[A_i,B_i]$ is a deterministic support interval, clip the path endpoints to that support. Write $\underline m_i,\overline m_i$ for outward sample-mean bounds on the lower and upper endpoint samples and $v_{i,L},v_{i,U}$ for upper bounds on their unbiased sample variances. For $n\ge2$ define
+\begin{equation}\label{eq:radius49}
+ R_i(v)=\sqrt{2v\ell/n}+\frac{7(B_i-A_i)\ell}{3(n-1)},
+ \qquad \ell\ge\log(4K/\alpha),
+\end{equation}
+where $K$ bounds the number of sampled contrasts.
+
+\begin{theorem}[Construction-conditional economic intervals]\label{thm:conditional49}
+Under the stated independent-bin model, conditional on any valid construction history $\mathcal H$, with probability at least $1-\alpha$ all catalogue contrasts satisfy
+\begin{equation}\label{eq:direct49}
+ D_i\in[l_i,u_i]:=
+ [\max\{A_i,\underline m_i-R_i(v_{i,L})\},
+  \min\{B_i,\overline m_i+R_i(v_{i,U})\}].
+\end{equation}
+The same coverage holds unconditionally. Subsequent selection among these covered contrasts, or evaluation at any deterministic implementation-price vector, needs no additional union bound. This conclusion applies only to policies and initial laws included in the catalogue; it does not create direct-cost observations for every unstudied tolerance or initial state.
+\end{theorem}
+\noindent The proof is in Supplement, Section~\ref{supp:proof-decisions49-1}.
+
+
+In particular, selecting the first policy to meet a specified certificate is permitted when that selection uses construction records rather than the subsequent evaluation paths. Repeated construction clocks are not independent draws from a neural-optimizer population. The statistical randomness here belongs to the evaluation design. A fixed pseudorandom stream implements a reproducible experiment; it is not itself a proof of the independent-bin assumption.
+
+\subsection{Replacement-fee identification}
+Write $D=J^W-J^F$. If witness is installed, replacing it by FVI changes total cost by $k-D$, where $k\ge0$ is the replacement fee. If FVI is installed, the change is $k+D$. Thus the two directional gains before fees are $D$ and $-D$.
+
+\begin{corollary}[The break-even fee frontier]\label{cor:fee49}
+On an event where $D\in[l,u]$, the two directional gains belong to $[l,u]$ and $[-u,-l]$. The unknown absolute cost difference satisfies
+\begin{equation}\label{eq:absolute49}
+ |D|\in[\operatorname{dist}(0,[l,u]),\max\{|l|,|u|\}].
+\end{equation}
+For every $k\ge\max\{0,u,-l\}$ neither replacement strictly lowers expected cost. By contrast, $k\ge\max\{0,l,-u\}$ only removes a \emph{certified} strictly profitable replacement. The two thresholds generally differ. Strict inequalities in the first criterion certify that both replacements strictly increase cost.
+\end{corollary}
+\noindent The proof is in Supplement, Section~\ref{supp:proof-decisions49-2}.
+
+
+The fee frontier is more informative than a conclusion at one generous charge. The earlier $1/64$ replacement decision is retained with its original interpretation and confidence account. The new analysis reports the two directional gain intervals and both thresholds instead of selecting a favorable fee after seeing the data. There is no welfare calibration hidden in the units: a decision maker must supply the economically relevant charge, or use the full frontier to see what remains unidentified.
+
+\subsection{Observation costs on the same bit grid}
+Let $\mathcal B=\{4,\ldots,16\}$ be the available bit precisions. For one fixed returned controller, write $J_b$ for the expected cost of its actual $b$-bit, robustly repaired and quantized implementation. Use $b_0=16$ as a common reference and obtain simultaneous intervals for $D_b=J_b-J_{b_0}$. The identity interval at $b=b_0$ is exactly $[0,0]$. Let $s_b=d b\sum_{t<T}B_t$ be the discounted number of coordinate-bits purchased; the net cost is $J_b+\lambda s_b$.
+
+\begin{theorem}[Certified choice of actual net implementation cost]\label{thm:net49}
+Suppose all $D_b\in[l_b,u_b]$ simultaneously. For any $\lambda\ge0$ define
+\begin{align}\label{eq:net49}
+ L(\lambda)&=\min_b\{l_b+\lambda s_b\},&
+ U(\lambda)&=\min_b\{u_b+\lambda s_b\},\\
+ \widehat b(\lambda)&=\min\arg\min_b\{u_b+\lambda s_b\}.\notag
+\end{align}
+Then, simultaneously for all $\lambda\ge0$,
+\begin{equation}\label{eq:netregret49}
+ 0\le J_{\widehat b}+\lambda s_{\widehat b}
+       -\min_{b\in\mathcal B}(J_b+\lambda s_b)
+ \le U(\lambda)-L(\lambda).
+\end{equation}
+The lower and upper functions are finite piecewise-affine envelopes. All changes in their active lines occur at nonnegative intersections of catalogue lines, with exact comparisons deciding ties. The smallest selected precision $\widehat b(\lambda)$ is weakly decreasing in $\lambda$.
+\end{theorem}
+\noindent The proof is in Supplement, Section~\ref{supp:proof-decisions49-3}.
+
+
+This result makes a statement about \emph{actual} net cost within the declared bit catalogue. It differs from minimizing a uniform all-state loss bound. Both criteria are useful: the latter gives distribution-free protection relative to the full-information optimum, while \eqref{eq:netregret49} uses a specified initial law to compare feasible implementations of one returned policy. Neither criterion gives an optimum over arbitrary sensor technologies or all policies.
+
+For a fair comparison the conventional actor receives its own acquisition allowance. Suppose its nearest-node policy has a certified selected-policy account at a reported state, obtained from the graph modulus $L_t^{\mathrm{gr}}$, and its actual interpolated critic has modulus $L_t^f$. Transporting the same selected node action to the true state, then using cell-wide capacity repair, adds at most
+\begin{equation}\label{eq:fvisensor49}
+ (L_t^{\mathrm{gr}}+L_t^f+2D_tK_t^A)r(b)+D_t\Delta_t.
+\end{equation}
+Indeed, transport the feasible node pair directly to the true state, bound its node distance by the reported-state distance plus $r(b)$, and bound $f_t(\widehat x)-f_t(x)$ by $L_t^fr(b)$. Robust repair adds $D_t(2K_t^Ar(b)+\Delta_t)$. This proves \eqref{eq:fvisensor49} without assuming actor continuity. For a witness critic $L_t^f=L_t^{\mathrm{gr}}$, it reduces to the preceding witness allowance. The empirical comparison therefore evaluates the all-state-account minimizer, the interval upper-net-cost selector, and a descriptive midpoint selector on the \emph{same} integer bit and price grid. The midpoint selector is not called the true optimum.

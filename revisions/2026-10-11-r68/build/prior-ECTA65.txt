@@ -1,0 +1,2740 @@
+                                         Prepared for referee review
+
+1                               NEURAL BELLMAN OPERATORS                                           1
+
+2                                                                                                  2
+
+3
+                                                  Q IAN QI                                         3
+                                              Peking University
+4                                                                                                  4
+
+5                                                                                                  5
+                    This paper develops Neural Bellman Operators as constructive policy-
+6                                                                                                  6
+                 evaluation and feasible-improvement procedures. An own-future neural
+7                                                                                                  7
+                 continuation retains its action witnesses and admits an explicit policy-loss
+8                account. For the original nonlinear investment economy, primitive convex-         8
+
+9                ity and semiconcavity support a second implementation: recursive Bellman          9
+
+10               queries replace the state lattice, while a trained selector routes a query only   10
+                 after its accuracy certificate remains unresolved. We prove uniform original-
+11                                                                                                 11
+                 optimum guarantees for the complete acquired policy, finite safeguarded
+12                                                                                                 12
+                 refinement, and an explicit state-dimension and horizon work account. A
+13               certificate-localization result identifies when an additional prediction is       13
+
+14               sufficient to terminate verification. Two source-frozen catalogues contain        14
+
+15               256 complete-process services in two, eight and sixteen state dimensions.         15
+                 Gating reduces the deployment queries of unconditional prediction inser-
+16                                                                                                 16
+                 tion, but learned services do not beat the conventional controls in cold-start
+17                                                                                                 17
+                 process time on these workloads. Earlier continuous-law comparisons in
+18               which pure fitted policies are worse remain separate evidence. The eco-           18
+
+19               nomic purchase criterion distinguishes policy accuracy, expected gain, and        19
+
+20               the price of computation.                                                         20
+
+21                                                                                                 21
+                    K EYWORDS : Dynamic programming, Neural approximation, Policy cer-
+22                                                                                                 22
+                 tification, Information acquisition, Computational economics.
+23                                                                                                 23
+
+24                                                                                                 24
+
+25                                           1. INTRODUCTION                                       25
+
+26                                                                                                 26
+       A continuation approximation is useful because it helps produce an economic
+27                                                                                                 27
+     decision. Small fitting error, a verified bound on the loss of the implemented policy,
+28                                                                                                 28
+     and inexpensive computation are different achievements. A method that improves
+29                                                                                                 29
+     one need not improve the others. This paper connects these objects within a con-
+30                                                                                                 30
+
+31                                                                                                 31
+
+32     Qian QI: qiqian@pku.edu.cn                                                                  32
+     2
+
+1    structive Neural Bellman Operator (NBO), and studies which role learning can play           1
+
+2    when the decision must satisfy a stated accuracy contract.                                  2
+
+3        The first construction forms each continuation against its own fitted future, retains   3
+
+4    feasible action witnesses, and accounts for state coverage, action search, integration      4
+
+5    and numerical implementation. Its exact affine–ReLU realization does not require            5
+
+6    a successful nonconvex training run. A second, trained implementation uses a                6
+
+7    network to propose an action query. It verifies that query through the original             7
+
+8    Bellman problem rather than taking the network’s output as a value certificate. 8
+9    The latter is an action-selector implementation, not a relabeling of an inaccurate          9
+
+10   fitted-value policy.                                                                        10
+
+11       Our original investment economy has nonlinear transitions, a state-dependent ca- 11
+12   pacity constraint, and continuous innovations. Primitive state curvature dominates          12
+
+13   the transition’s convexity defect. The resulting Lipschitz and semiconcavity bounds         13
+
+14   permit conditional-mean quadrature and lower bounds on the full continuous ac- 14
+15   tion interval. A recursive query obtains a continuation only at the descendants it          15
+
+16   actually needs. It does not construct a conventional policy at every point of a state       16
+
+17   lattice before allowing the neural proposal to act.                                         17
+
+18       The key computational distinction is between the need for another query and             18
+
+19   its proposed location. Both boundary actions are first evaluated. If their certificate      19
+
+20   already meets the requested accuracy, no prediction is evaluated. Otherwise a               20
+
+21   learned proposal can replace a required safeguarded split inside an unresolved              21
+
+22   interval. Its numerical content has no authority over the lower bound, feasibility test,    22
+
+23   or stopping tolerance. A conventional parabolic rule supplies the comparison, and           23
+
+24   an explicitly costed rational recovery handles a failed floating certificate without        24
+
+25   consulting a stored reference policy.                                                       25
+
+26       Theorem 7 connects the resulting query to the complete policy’s own future un- 26
+27   der the original continuous law. Theorem 8 gives its safeguarded termination and            27
+
+28   prediction-free return properties. Proposition 9 further separates two requirements         28
+
+29   for a useful learned query: it must supply a good witness and leave a sufficiently          29
+
+30   localized certificate. These statements concern implementable policies and effec- 30
+31   tive verification, not a presumption that training is successful or that a neural           31
+
+32   representation is uniquely capable of certification.                                        32
+                                 NEURAL BELLMAN OPERATORS                                 3
+
+1      The experiments retain that distinction. The tensor-reference comparison pro- 1
+2    duced twenty pure ReLU policies with strictly higher expected cost than the com- 2
+3    mon policy, while augmented comparisons were unresolved and the common                    3
+
+4    method had the smallest complete work in every attainable task–target cell. We            4
+
+5    preserve those results. The subsequent recursive-query catalogues instead test a dif- 5
+6    ferent computational organization on the same scalar investment primitives. They          6
+
+7    include conventional adaptive parabolic search, bisection, ReLU and quadratic pro- 7
+8    posals, and a matched insertion-versus-gating comparison. Every label, fit, query         8
+
+9    and durable output is charged to its isolated process. The two catalogues contain         9
+
+10   96 and 160 services, respectively; their deterministic workloads are not additional       10
+
+11   independent continuous-law cost observations.                                             11
+
+12     This produces a positive state-storage result without concealing the comparative        12
+
+13   result. Callable policies attain the declared contracts without a stored state lattice,   13
+
+14   including at sixteen state coordinates. Gating removes avoidable prediction work          14
+
+15   and sometimes reduces the number of Bellman queries relative to adaptive conven- 15
+16   tional search. Nevertheless, the learned services remain more expensive at cold start     16
+
+17   on the deposited workload. The value of a fitted query, its acquisition cost, and the     17
+
+18   horizon dependence of verification must therefore be examined together. The work          18
+
+19   account makes these quantities observable rather than substituting a successful           19
+
+20   fallback or a favorable online count for a full service comparison.                       20
+
+21                                                                                             21
+
+22     Relation to existing methods. Lipschitz extension and distance transforms underlie      22
+
+23   the constructive cone and its compiler (McShane, 1934, Felzenszwalb and Hut- 23
+24   tenlocher, 2012). Approximate policy iteration and safe policy improvement have           24
+
+25   established error and performance analyses (Munos, 2003, Pirotta et al., 2013, Scher- 25
+26   rer et al., 2015). Convex Bellman approximation is studied by Yang (2020). Here           26
+
+27   primitive curvature is established for the specified bilinear capacity-constrained        27
+
+28   economy and is carried through actual acquired actions, continuous-action search          28
+
+29   and the policy’s own future. The proof does not assume that an arbitrary fitted           29
+
+30   neural continuation is convex.                                                            30
+
+31     Learning a useful optimization initialization is also not a new principle. Sakaue       31
+
+32   and Oki (2023) develop prediction-dependent warm starts for discrete-convex min- 32
+     4
+
+1    imization, and Agrawal, Barratt, Boyd, and Stellato (2020) learn parameters of                        1
+
+2    optimization-based control policies. Our setting instead requires outward original- 2
+3    law Bellman intervals at recursively queried states. The additional certificate- 3
+4    demand rule delays a prediction until the current information is insufficient; it                     4
+
+5    leaves the correctness argument independent of prediction quality. The compar- 5
+6    isons identify the work of that rule separately from the common analytic terminal                     6
+
+7    kernel and from the cost of fitting.                                                                  7
+
+8                                                                                                          8
+         Organization and scope. Sections 2 and 3 retain the original operator, own-future
+9                                                                                                          9
+     construction and witness-preserving implementation. Section 4 establishes the
+10                                                                                                         10
+     investment primitives and the original-optimum benchmark. Sections 5 and 6
+11                                                                                                         11
+     develop the query implementation; Section 7 identifies its prediction and resource
+12                                                                                                         12
+     conditions. Section 8 states the economic inference contract, and Section 9 reports
+13                                                                                                         13
+     the complete service evidence. The technical supplement supplies independent
+14                                                                                                         14
+     algebraic checks, numerical contracts and complete comparison tables. Exact copies
+15                                                                                                         15
+     of the earlier article, supplement and broader development accompany this paper,
+16                                                                                                         16
+     with a label-level content map. Their diffusion, recursive-preference and game
+17                                                                                                         17
+     results retain their own hypotheses; the expected-cost query theorem is not silently
+18                                                                                                         18
+     extended to them.
+19                                                                                                         19
+
+20                       2. THE ECONOMIC OPERATOR AND ITS POLICY ACCOUNT                                   20
+
+21                                                                                                         21
+         Consider dates t = 0, . . . , T and an invariant compact state domain X ⊂ Rd . At
+22                                                                                                         22
+     date t, the action belongs to a nonempty compact set At ( x ). The transition is
+23                                                                                                         23
+     Ft ( x, a, Zt+1 ), the current cost is ct ( x, a), and the terminal cost is g( x ). Write B0 = 1
+24                                                                                                         24
+     and Bt = ∏ j<t β j , with β j > 0. An implemented policy includes its observation rule,
+25                                                                                                         25
+     action selection and feasible numerical realization, not just its stored parameters.
+26                                                                                                         26
+         For a continuation v, define
+27                                                                                                         27
+
+28        Qt (v; x, a) = ct ( x, a) + β t ρt (v( Ft ( x, a, Z ))),   Tt v( x ) = inf Qt (v; x, a).   (1)   28
+                                                                               a∈ At ( x )
+29                                                                                                         29
+
+30   Throughout the deterministic comparison, the evaluations ρt are monotone and                          30
+
+31   cash invariant on a common domain containing all functions and constant translates                    31
+
+32   used below. They are therefore nonexpansive in the supremum norm. Continuous                          32
+                                       NEURAL BELLMAN OPERATORS                                    5
+
+1    objectives, effective compact feasible correspondences and measurable minimizers,                  1
+
+2    or measurable arbitrarily near-minimizers with their error charged, are assumed. 2
+3    The stipulated conditional recursion gives Bellman comparison against all admis- 3
+4    sible adapted controls. In the experiments ρt is conditional expectation, costs are                4
+
+5    bounded and innovations have their original continuous uniform law. The direct- 5
+6    cost inference in Section 8 is specific to expectation; it is not automatically an                 6
+
+7    inference theorem for nonlinear recursive utility or games.                                        7
+
+8      A Neural Bellman Operator is a construction and evaluation procedure for (1). It                 8
+
+9    forms targets using its own fitted f t+1 , returns a neural continuation and a feasible            9
+
+10   policy, and records an economic error allowance. It does not receive the optimal                   10
+
+11   continuation as a training label. Arbitrary trained networks can be evaluated by the               11
+
+12   first result below. The subsequent constructive backend specifies how a network                    12
+
+13   and its actor are obtained without assuming successful nonconvex optimization.                     13
+
+14                                                                                                      14
+
+15                     2.1. Action-dependent errors and complete-policy loss                            15
+
+16                                                                                                      16
+       Let H ( a) be a true current cost and H
+                                             b ( a) its continuation approximation. If b
+                                                                                       a is
+17                                                                                                      17
+     δ-optimal for Hb on the same feasible action set, then
+18                                                                                                      18
+
+19                                                                                                      19
+                                a) − inf H ( a) ≤ δ + osca { H
+                             H (b                            b ( a) − H ( a)}.                    (2)
+20                                         a                                                            20
+
+21                                                                                                      21
+                     a with an arbitrarily near-optimal true action and cancel the
+     Indeed, compare b
+22                                                                                                      22
+     approximate objectives. The infimum limit gives the result. Additive continuation
+23                                                                                                      23
+     levels cancel; action-dependent discrepancies do not. Under a change in future
+24                                                                                                      24
+     policies, the continuation must be transported to the new economic problem before
+25                                                                                                      25
+     this inequality licenses reuse. The full development edition retains the original
+26                                                                                                      26
+     quantitative transport, recursive-domain and economic-application results. No
+27                                                                                                      27
+     transport bound is presumed valid after an unaccounted change of constraints or
+28                                                                                                      28
+     preferences.
+29                                                                                                      29
+
+30     P ROPOSITION 1—One-sided policy sandwich: Suppose, uniformly in state,                           30
+
+31                                                                                                      31
+
+32              f t − T t f t +1 ≤ u t ,       T t π f t +1 − f t ≤ v t ,   ℓT ≤ f T − g ≤ uT .         32
+     6
+
+1    Then the actual feasible policy satisfies                                                             1
+
+2                                                                                                          2
+
+3
+                            0 ≤ J0π − V0∗ ≤ ∑ Bt (ut + vt ) + BT (u T − ℓ T ).                       (3)   3
+                                               t< T
+4                                                                                                          4
+
+5
+     The bound is invariant to date-specific constant shifts of the fitted continuations, provided         5
+
+6
+     the associated residual accounts are shifted consistently.                                            6
+
+7                                                                                                          7
+         P ROOF : Backward comparison and cash invariance give
+8                                                                                                          8
+
+9                              T −1                                  T −1                                  9
+                  Vt∗ ≥ f t − ∑ Bt,k uk − Bt,T u T ,      Jtπ ≤ f t + ∑ Bt,k vk − Bt,T ℓ T ,
+10                                                                                                         10
+                                k=t                                  k=t
+11                                                                                                         11
+                     −1
+12
+     where Bt,k = ∏kj= t β j . The terminal claim is the stipulated enclosure; applying the                12
+
+13
+     Bellman or fixed-policy operator proves each inductive step. Subtraction gives (3). 13
+
+14
+     A shift f t 7→ f t + c0t adds c0t − β t c0t+1 to ut and subtracts it from vt . The terminal           14
+
+15
+     width is unchanged.                                                                          Q.E.D.   15
+
+16                                                                                                         16
+         A sharper valid residual account for the same continuation and the same de-
+17                                                                                                         17
+     ployed actor sharpens knowledge of the policy. It does not retrain that policy or
+18                                                                                                         18
+     change its realized cost. Conversely, subtracting two upper bounds in (3) does not
+19                                                                                                         19
+     identify the difference in actual costs. These distinctions govern both the historical
+20                                                                                                         20
+     comparisons and the new experiments.
+21                                                                                                         21
+
+22                3. CONSTRUCTING AND COMPILING A FEASIBLE NEURAL POLICY                                   22
+
+23                                                                                                         23
+         Assume the primitive objective has, for feasible state–action pairs, state modulus
+24                                                                                                         24
+     AtQ = Cx,t + β t Fx,t Lt+1 and action modulus Dt = Ca,t + β t Fa,t Lt+1 . Let
+25                                                                                                         25
+
+26
+              d H ( At ( x ), At (z)) ≤ KtA ∥ x − z∥1 ,    Lt = AtQ + Dt KtA ,        LT = Lg .            26
+
+27                                                                                                         27
+
+28   The Hausdorff condition and the primitive moduli imply that Tt f t+1 is Lt -Lipschitz                 28
+
+29   whenever f t+1 is Lt+1 -Lipschitz. All moduli and numerical integration procedures                    29
+
+30   are supplied by the economic primitives, not fitted from successful outcomes.                         30
+
+31       At state nodes xt,i with covering radius ht , form effective feasible k t -nets. Evaluate         31
+
+32   their own-future objectives with certified error at most et . Minimize the computed                   32
+                                       NEURAL BELLMAN OPERATORS                                          7
+
+1    labels and retain the corresponding original action at,i . A Borel repair Γt,i ( x ) is                  1
+
+2    feasible at x and satisfies                                                                              2
+
+3                                                                                                             3
+
+4
+                                  ∥Γt,i ( x ) − at,i ∥1 ≤ KtA ∥ x − xt,i ∥1 + ζ t .                    (4)
+                                                                                                              4
+
+5                                                                                                             5
+     The allowance ζ t concerns displacement; feasibility itself may not fail. Define
+6                                                                                                             6
+
+7      f t ( x ) = min{yt,i + Lt ∥ x − xt,i ∥1 },     it ( x ) = min arg min{yt,i + Lt ∥ x − xt,i ∥1 }. (5)   7
+                   i                                                           i
+8                                                                                                             8
+
+9    Return πt ( x ) = Γt,it ( x) ( x ). Terminal labels approximate g with error eT and use the              9
+
+10   same cone construction with modulus L g .                                                                10
+
+11                                                                                                            11
+       T HEOREM 2—Own-future construction with feasible witnesses: The functions in
+12                                                                                                            12
+     (5) have exact affine–ReLU realizations and Lipschitz moduli Lt independent of label error.
+13                                                                                                            13
+     The returned policy is feasible and measurable. It satisfies
+14                                                                                                            14
+
+15                                −et ≤ f t − Tt f t+1 ≤ Dt k t + et + 2Lt ht ,                        (6)    15
+
+16                                                                                                            16
+                                        T t π f t + 1 − f t ≤ e t + Dt ζ t ,
+17                                                                                                            17
+
+18   and hence                                                                                                18
+
+19                                                                                                            19
+
+20               J0π − V0∗ ≤   ∑ Bt ( Dt kt + 2et + 2Lt ht + Dt ζ t ) + BT (2eT + 2Lg hT ).            (7)    20
+                               t< T
+21                                                                                                            21
+
+22   With effective covers, repairs and certified queries at the prescribed accuracy, allocating              22
+
+23   each nonnegative term a share of a positive economic tolerance gives a terminating finite                23
+
+24   construction. A fixed numerical precision or a capped finite experimental ladder need not                24
+
+25   contain that allocation.                                                                                 25
+
+26                                                                                                            26
+       P ROOF : The selected node label lies between the node Bellman infimum minus et
+27                                                                                                            27
+     and that infimum plus Dt k t + et . The Lipschitz property of the infimum implies that
+28                                                                                                            28
+     every cone lies above it minus et . At a nearest node its cone exceeds the infimum by
+29                                                                                                            29
+     at most Dt k t + et + 2Lt ht . At the attaining original index, the two feasible pairs and
+30                                                                                                            30
+     (4) give
+31                                                                                                            31
+
+32                      Qt ( f t+1 ; x, Γt,i ( x )) ≤ yt,i + et + Lt ∥ x − xt,i ∥1 + Dt ζ t .                 32
+     8
+
+1    This proves (6). The terminal residual belongs to [−eT , eT + 2L g h T ]; Proposition 1                    1
+
+2    gives the loss bound. A finite minimum of equally Lipschitz cones is equally Lips- 2
+3    chitz. The identities |z| = ReLU(z) + ReLU(−z) and min(u, v) = u − ReLU(u − v)                             3
+
+4    give the exact network. Finite lexicographic comparison and Borel repair give mea- 4
+5    surability. Effective refinement of the finitely many positively weighted terms yields                     5
+
+6    the termination assertion.                                                                        Q.E.D.   6
+
+7                                                                                                               7
+         The Lipschitz-extension principle is classical (McShane, 1934). A native min-plus
+8                                                                                                               8
+     envelope and its exact ReLU circuit, using the same labels, witnesses and ties, are
+9                                                                                                               9
+     one method with two encodings. They return the same function and policy. Neither
+10                                                                                                              10
+     Theorem 2 nor a faster representation proves a uniquely neural capability or a
+11                                                                                                              11
+     training-success probability for Adam or L-BFGS. The mathematical increment is
+12                                                                                                              12
+     the complete feasible, own-future construction and implementation account; the
+13                                                                                                              13
+     empirical question is its work and policy value relative to conventional generators.
+14                                                                                                              14
+
+15                                                                                                              15
+                           3.1. Original-owner compilation on a tensor cover
+16                                                                                                              16
+
+17       On a tensor cover X = ∏dj=1 { x j,0 , . . . , x j,n j }, put S = ∏ j (n j + 1). For arbitrary          17
+
+18   labels yi , including inconsistent inexact labels, compute at each grid node v                             18
+
+19                                                                                                              19
+                                    (zv , ov ) = min(yi + L∥v − xi ∥1 , i ).
+20                                                   lex,i                                                      20
+
+21   The index ov is the original label owner, not the transformed node v.                                      21
+
+22                                                                                                              22
+
+23       T HEOREM 3—Continuous original-owner identity: For a closed tensor cell C with                         23
+
+24   corners V (C ), and x ∈ C,                                                                                 24
+
+25                                                                                                              25
+                                      f ( x ) = min (zv + L∥ x − v∥1 ),                                   (8)
+26                                                 v∈V (C )                                                     26
+
+27                        ( f ( x ), i∗ ( x )) =      min        ( y o v + L ∥ x − x o v ∥1 , o v ).            27
+                                                   lex,v∈V (C)
+28                                                                                                              28
+
+29   Coordinatewise forward and backward relaxations compute (z, o ) in O(dS) additions and                     29
+
+30   comparisons and O(S) storage. After locating the cell, a query uses O(d2d ) arithmetic                     30
+
+31   operations. Exact rational comparisons preserve all ties, including L = 0. Using the original              31
+
+32   owner’s repaired action preserves the uncompiled policy, its cost and its certificate exactly.             32
+                                   NEURAL BELLMAN OPERATORS                                  9
+
+1      P ROOF : The triangle inequality bounds f ( x ) above by each corner expression. 1
+2    Choose the lexicographically first attaining site i∗ ( x ). In every coordinate choose the   2
+
+3    cell endpoint between x j and xi∗ ,j . At this corner distances add exactly. An owner of     3
+
+4    strictly smaller transformed value would improve the objective at x; a tied smaller          4
+
+5    owner would contradict the original tie rule. Thus this corner has owner i∗ ( x ),           5
+
+6    proving both identities. Along a coordinate line, forward and backward relaxations           6
+
+7    respectively minimize over sites on either side, always comparing value–original- 7
+8    index pairs. Iterating over coordinates gives the separable distance transform and its       8
+
+9    stated work. Rational arithmetic and unchanged repair complete the claim. Q.E.D.             9
+
+10                                                                                                10
+       The nodal algorithm is the classical distance transform (Felzenszwalb and Hut-
+11                                                                                                11
+     tenlocher, 2012); preserving the original action through continuous off-grid queries
+12                                                                                                12
+     is the policy obligation. If there are Jt,i node actions and Mt integration represen-
+13                                                                                                13
+     tatives, write Qt = Mt ∑i Jt,i . Literal dense cone evaluation costs O(∑t dSt+1 Qt ) in
+14                                                                                                14
+     representation work. Compilation replaces this by O(∑t [dSt+1 + Qt d2d ]), plus cell
+15                                                                                                15
+     location, primitive evaluation, integration, feasible repair, certificate and output.
+16                                                                                                16
+     Rational bit lengths and state boxes crossing many cells incur additional costs. There
+17                                                                                                17
+     is no dimension-free complexity assertion.
+18                                                                                                18
+
+19                                                                                                19
+                           3.2. Acquired states and conventional actors
+20                                                                                                20
+       A b-bit coordinate sensor reports a dyadic cell and its midpoint xb. On the unit
+21                                                                                                21
+     cube, ∥ x − xb∥1 ≤ r (b) = d2−b−1 . For the investment capacity κ ( x ) below, clip the
+22                                                                                                22
+     original action to the smallest capacity throughout that cell and round down to an
+23                                                                                                23
+     action quantum ∆t . This is feasible at every state in the cell. Relative to an exact
+24                                                                                                24
+     true-state repair, its displacement is at most 2KtA r (b) + ∆t . Transporting the witness
+25                                                                                                25
+     cone from xb to x adds at most 2Lt r (b), plus any certified selector objective error νt .
+26                                                                                                26
+     Thus the implemented-policy account adds
+27                                                                                                27
+
+28
+                            ∑ Bt {(2Lt + 2Dt KtA )r(b) + Dt ∆t + νt }.                      (9)   28
+
+29                          t< T                                                                  29
+
+30   No continuity of the discrete owner selector is assumed. At uncertain numeri- 30
+31   cal comparisons the simulator retains all possible actors, rather than choosing a            31
+
+32   favorable one.                                                                               32
+     10
+
+1      For conventional FVI the continuation is multilinear on its realized tensor grid. 1
+2    Its actual modulus is bounded by the largest coordinate edge slope. A nearest-node       2
+
+3    actor uses a feasible node minimizer and true-state repair. Let ht be the largest half- 3
+                      gr
+4    cell ℓ1 radius, Lt the Bellman graph modulus, and et the node query allowance. Its       4
+                                                    gr
+5    optimal residual upper bound is Dt k t + et + Lt ht . Its selected-policy upper bound    5
+
+6    is et + Et , where                                                                       6
+
+7                                                                                             7
+                                              gr
+8                          Et = sup{yi( x) + Lt ∥ x − xi( x) ∥1 − f t ( x )}.                 8
+                                 x
+9                                                                                             9
+
+10                                                                                            10
+     Partitioning cells by nearest-node boundaries makes the expression separately affine
+11
+     in each coordinate. Its maximum is therefore at a partition vertex; the implementa- 11
+12                                                                                            12
+     tion encloses all such vertices. Both uniform and curvature-refined FVI receive this
+13                                                                                            13
+     sharper one-sided account, not an artificially doubled baseline. Their acquired-state
+14                                                                                            14
+     allowance is derived separately in (25).
+15                                                                                            15
+
+16                                                                                            16
+                4. ORIGINAL-OPTIMUM ACCURACY IN THE INVESTMENT ECONOMY
+17                                                                                            17
+
+18     The exact witness theorem answers an implementation question conditional on            18
+
+19   a continuation. An economist also needs to know how close the complete imple- 19
+20   mented policy is to the original optimum. We now establish that connection in the        20
+
+21   investment economy itself. The argument exploits a property not used by the earlier      21
+
+22   cell-range calculation: despite the bilinear transition, the Bellman objective remains   22
+
+23   jointly convex. This permits a second-order interpolation account and transfers          23
+
+24   verified nodal decisions to an implementable policy over the entire state domain. It     24
+
+25   does not assume that a fitted neural continuation is convex.                             25
+
+26                                                                                            26
+
+27     Relation to the preceding two-control query. The earlier query experiment used         27
+
+28   the fixed shared capacity 1/8. The complete dynamic extension below uses the             28
+
+29   original state-dependent capacity c( x ), with the retained exposure columns, action- 29
+30   cost interaction and second shock. Its nesting claim concerns the original scalar        30
+
+31   economic model; it is not an assertion that a full dynamic policy was already present    31
+
+32   in the earlier isolated query.                                                           32
+                                      NEURAL BELLMAN OPERATORS                                    11
+
+1                                4.1. Primitives and Bellman regularity                                  1
+
+2                                                                                                        2
+       Let d ≥ 2 be even, let indices be cyclic, and set β = 15/16. Write
+3                                                                                                        3
+                                                                                        !2
+4                         2                    1                             1 2                         4
+
+5
+               S( x ) =     ∑
+                          d j
+                              ( x j − 5/8)2 +
+                                              4d ∑
+                                                   ( x j − x j +1 )2 + 2
+                                                                             2 d∑
+                                                                              −    xj        ,
+                                                                                                         5
+                                                 j                               j       +
+6                                                                                                        6
+                                2                                     1  1
+               g( x ) = S( x ) + ∑( x j − 5/8)2 ,
+                                                                      8 8d ∑
+7                                                             c( x ) = +     xj.                         7
+                                d j                                        j
+8                                                                                                        8
+
+9    The original scalar control has 0 ≤ a ≤ c( x ), running cost S( x ) + a2 + 4a4 , and                9
+
+10   transition                                                                                          10
+
+11                                                                                                       11
+                                      1  xj x j +1 x j (1 − x j +1 )
+12                   Fj ( x, a, z) =    + +       +                  + Bj a + s j z,                     12
+                                     16  2    8           16
+13                                                                                                       13
+     where ( Bj , s j ) = (1/2, 1) at alternating coordinates and (1/4, −1) at the others, and
+14                                                                                                       14
+     z is uniform on [−1/32, 1/32].
+15                                                                                                       15
+       For the retained two-control extension, a1 , a2 ≥ 0, a1 + a2 ≤ c( x ), the second
+16                                                                                                       16
+     exposure column interchanges 1/2 and 1/4, and the action cost is
+17                                                                                                       17
+
+18                                                                                                       18
+                                 R( a) = a21 + a22 + 4( a41 + a42 ) + a1 a2 /4.
+19                                                                                                       19
+
+20   An independent common-direction uniform innovation of radius 1/64 is added. 20
+21   This is the previously specified extension, nested at a2 = 0 when that innovation is                21
+
+22   disabled. Both models preserve [0, 1]d . Let m ∈ {1, 2} denote the number of controls               22
+
+23   and define                                                                                          23
+
+24                                                                                                       24
+
+25                          Q∗t ( x, a) = S( x ) + R( a) + βEVt∗+1 ( F ( x, a, Z )),                     25
+
+26
+                               Vt∗ ( x ) = min Q∗t ( x, a),       VT∗ = g.                               26
+                                         a∈ A( x )
+27                                                                                                       27
+
+28   All costs and laws in this display are the economic primitives, not a fitted surrogate. 28
+29                                                                                                       29
+
+30     T HEOREM 4—Regularity of the original Bellman problem: For either control speci- 30
+31   fication and every finite horizon, Vt∗ is convex and continuously differentiable in the interior,   31
+
+32   with the corresponding one-sided extension on the cube. It is Gt -Lipschitz in the ℓ1 norm          32
+     12
+
+1    and Mt -semiconcave in the Euclidean norm, where valid constants are                          1
+
+2                                                                                                  2
+                                               1037     47
+                  GT = 10/d,              Gt =      + β Gt+1 ,
+3                                              128d     64                                         3
+                                                                           
+4                                              22    21        9       1                           4
+                  MT = 26/d,              Mt =    +      +β      Mt+1 + Gt+1 .
+5                                              d    256d      16       8                           5
+
+6    In particular, Gt ≤ 27/d and Mt ≤ 54/d. The function Q∗t is jointly strongly convex on        6
+
+7    its convex feasible graph, with state curvature at least 107/(128d) and action curvature at   7
+
+8    least 7/4.                                                                                    8
+
+9      A valid semiconcavity constant along each coordinate line is                                9
+
+10                                                                                                 10
+                            9 16
+11                      DT = + 2 ,                                                                 11
+                            d d
+12                                                                                               12
+                            5 16    21             85   23
+13                      Dt = + 2 +       + βMt+1      +       .                                    13
+                            d d    256d2           256 256d
+14                                                                                                 14
+     Consequently, for the positive multilinear interpolant In on a mesh of spacing 1/n,
+15                                                                                                 15
+
+16                                                                        dDt                      16
+                             0 ≤ In Vt∗ ( x ) − Vt∗ ( x ) ≤ κt ,   κt =       .             (10)
+17                                                                        8n2                      17
+
+18        P ROOF : The state cost has gradient infinity norm at most 8/d, Hessian norm at          18
+
+19   most 22/d, and diagonal second derivatives at most 5/d + 16/d2 . For the terminal             19
+
+20   cost the corresponding bounds are 10/d, 26/d, and 9/d + 16/d2 . They follow by                20
+
+21   differentiating the quadratic terms and the continuously differentiable squared               21
+
+22   shortage. The bound on the cycle Laplacian is four. The shortage Hessian, where it            22
+
+23   exists, is 1611⊤ /d2 ; the same second-difference bound holds across its kink.                23
+
+24     For feasible ( x, a) and (y, b), put w = x − y. The difference between the transition       24
+
+25   at their convex combination and the corresponding combination of transitions                  25
+
+26   is θ (1 − θ )w j w j+1 /16 in coordinate j. Convexity and the Gt+1 Lipschitz bound            26
+
+27   therefore give a convexity defect of at most                                                  27
+
+28                                                                                                 28
+                        βGt+1                               βGt+1
+29                            θ (1 − θ ) ∑ | w j w j +1 | ≤       θ (1 − θ )∥w∥22 .                29
+                         16              j
+                                                             16
+30                                                                                                 30
+
+31   The state cost supplies curvature 4/d, while the two-control action cost has Hessian          31
+
+32   eigenvalues at least 7/4. Thus the state curvature of Q∗t is at least 4/d − βGt+1 /8,         32
+                                 NEURAL BELLMAN OPERATORS                                13
+
+1    which is at least 107/(128d) when Gt+1 ≤ 27/d. Partial minimization over the affine       1
+
+2    capacity graph preserves the state convexity inequality. The minimizing action is         2
+
+3    unique, including at a binding capacity constraint.                                       3
+
+4      To propagate Lipschitz continuity, write a = c( x )u, where u lies in the fixed unit    4
+
+5    simplex. Transfer the same u from x to y. Each action-cost partial derivative has         5
+
+6    absolute value at most 13/16, and ∑ j u j ≤ 1. The action-cost transfer contributes at    6
+
+7    most 13∥ x − y∥1 /(128d). The transition Jacobian at a fixed action has column sums       7
+
+8    at most 11/16; the capacity transfer adds at most 3/64. Comparing a minimizing            8
+
+9    normalized action in both directions gives the stated recursion for Gt . Its right side   9
+
+10   maps 27/d below itself.                                                                   10
+
+11     For a fixed u, the transition as a function of x has Jacobian norm at most 11/16 + 11
+12   1/16 = 3/4. Its second-order composition term is bounded by Gt+1 /8. The action- 12
+13   cost Hessian has norm at most 21/4, and the capacity gradient has squared norm            13
+
+14   1/(64d). These facts give the recursion for Mt . The infimum over u preserves this        14
+
+15   common semiconcavity bound: after subtracting the same quadratic, each fixed-u            15
+
+16   function is concave, and an infimum of concave functions is concave. The right            16
+
+17   side maps 54/d below itself. Convexity together with semiconcavity yields the             17
+
+18   claimed differentiability and gradient regularity; this conclusion does not require a     18
+
+19   differentiable optimizing-action map.                                                     19
+
+20     Along one state coordinate, the fixed-u transition has zero second derivative. 20
+21   The squared norm of its first derivative is at most 85/256 + 23/(256d): the two           21
+
+22   original nonzero entries are bounded by 9/16 and 1/8, and the capacity-induced            22
+
+23   entries are bounded by 1/(16d). Combining this with the diagonal stage-cost bound         23
+
+24   gives Dt . Finally, positive interpolation along one coordinate has error between zero    24
+
+25   and Dt h2 /8. Applying the coordinate interpolations successively and adding the          25
+
+26   bounds proves (10).                                                             Q.E.D.    26
+
+27                                                                                             27
+
+28     The theorem is a structural statement about these economic primitives. It is not a      28
+
+29   claim that every controlled diffusion, recursive preference specification, or game        29
+
+30   in the complete development edition has a convex Bellman problem. Nor does it             30
+
+31   require a signed-weight neural fit to preserve convexity. Convex approximation            31
+
+32   of dynamic programs has an established literature; the additional work here is to         32
+     14
+
+1    verify the needed curvature for the original nonlinear capacity-constrained model                       1
+
+2    and connect it to the actual NBO actor and complete error account.                                      2
+
+3                                                                                                            3
+
+4                                 4.2. Certified nodal Bellman bounds                                        4
+
+5                                                                                                            5
+       Suppose nodal arrays satisfy lt+1 ≤ Vt∗+1 ≤ ut+1 at all grid vertices. Equation (10)
+6                                                                                                            6
+     gives the functions In lt+1 − κt+1 and In ut+1 as valid lower and upper continuations.
+7                                                                                                            7
+     The lower function need not itself be convex; convexity is used for the unknown
+8                                                                                                            8
+     true value and for the comparison argument, not asserted of arbitrary endpoint
+9                                                                                                            9
+     arrays.
+10                                                                                                           10
+       Divide each uniform innovation component into q equal bins and use its condi-
+11                                                                                                           11
+     tional mean. Convexity gives a lower quadrature bound for the true continuation.
+12                                                                                                           12
+     Semiconcavity gives an upper error
+13                                                                                                           13
+
+14                                                 Mt + 1 s 2                                                14
+                                                      2 ∑ r r 2
+                                        ζ t +1 =            ρ ∥ s ∥2 ,                                (11)
+15                                                 6q r=1                                                    15
+
+16                                                                                                           16
+     where s = 1 or 2, ρ1 = 1/32, and ρ2 = 1/64 in the extension. The expectation remains
+17                                                                                                           17
+     the original continuous law. At the terminal date g is evaluated directly, so no
+18                                                                                                           18
+     terminal interpolation allowance is needed.
+19                                                                                                           19
+       At a vertex v, let A A (v) be the capacity simplex lattice with spacing c(v)/A,
+20                                                                                                           20
+     including all its faces. For m = 1, 2, a minimizer can be represented by neighboring
+21                                                                                                           21
+     lattice vertices whose coordinate variances sum to at most mc(v)2 /(4A2 ). A valid
+22                                                                                                           22
+     action smoothness constant is
+23                                                                                                           23
+
+24                    21                                  5d                           9d                    24
+               Ht =      + βMt+1 ∥ B∥22 ,      ∥ B∥22 =      ( m = 1),      ∥ B∥22 =      ( m = 2).
+25
+                       4                                  32                           32                    25
+
+26   Taylor’s inequality and that barycentric representation imply                                           26
+
+27                                                                                                           27
+                                                                             mHt
+28                          0 ≤ min          Q∗t (v, a) − Vt∗ (v) ≤ δt :=         .                   (12)   28
+                                 a∈A A (v)                                  128A2
+29                                                                                                           29
+
+30   The linear Taylor terms cancel even when the optimum lies on a face. This is an                         30
+
+31   error against the continuous feasible optimum, not only against the finite action                       31
+
+32   menu.                                                                                                   32
+                                   NEURAL BELLMAN OPERATORS                                              15
+
+1      Let q−               +
+            t ( v, a ) and qt ( v, a ) include all interpolation, quadrature and arithmetic                    1
+
+2    errors and enclose Q∗t (v, a). Then                                                                       2
+
+3                                                                                                              3
+
+4              lt (v) = max{0, min          q−
+                                             t ( v, a ) − δt },      ut (v) = min         q+
+                                                                                           t ( v, a )   (13)   4
+                                a∈A A (v)                                     a∈A A (v)
+5                                                                                                              5
+
+6    are valid nodal Bellman bounds. The zero truncation uses the nonnegative economic                         6
+
+7    costs. Extra neural or conventional proposals may improve the upper side but do                           7
+
+8    not remove the lower action-cover allowance. Positive interpolation, averaging                            8
+
+9    and minimum maps are monotone and nonexpansive; the separate allowances in                                9
+
+10   (10)–(12) are therefore propagated, rather than being discarded because an endpoint                       10
+
+11   calculation contains the truth.                                                                           11
+
+12                                                                                                             12
+
+13                 4.3. From a fitted witness to the complete implemented policy                               13
+
+14                                                                                                             14
+       Let at (v) ∈ A(v) be the actual action returned at each vertex by any generator.
+15                                                                                                             15
+     It may be selected by the exact neural witness, a conventional fitted continuation,
+16                                                                                                             16
+     or their common verified fallback. Write wv ( x ) for the multilinear weights and
+17                                                                                                             17
+     set π̄t ( x ) = ∑v wv ( x ) at (v). Affineness of capacity makes this action feasible. Let
+18                                                                                                             18
+           +
+     qsel,
+      t      (v) be a verified upper bound on its original-optimum continuation value
+19                                                                                                             19
+     Q∗t (v, at (v)), using the same lower and upper Bellman reference for all generators.
+20                                                                                                             20
+
+21                                                                                                             21
+       T HEOREM 5—Actual-policy, whole-domain certificate: Set
+22                                                                                                             22
+
+                                                +
+                                 et = max{qsel,
+23                                                                                                             23
+                                           t      (v) − lt (v)} + κt .
+                                            v
+24                                                                                                             24
+
+25
+                                    bt is feasible and differs from π̄t by at most bt in action ℓ1
+     Suppose the implemented policy π                                                                          25
+
+26                                                                                                             26
+     norm, uniformly over the state cube. Define
+27                                                                                                             27
+                        13    3d
+28
+                 Λt =      + β Gt+1 ,             DTπ = 0,        Dtπ = et + Λt bt + βDtπ+1 .                  28
+
+29
+                        16     8                                                                               29
+
+30   Then, at every true state and date,                                                                       30
+
+31                                                                                                             31
+
+32                                    0 ≤ Jtπb ( x ) − Vt∗ ( x ) ≤ Dtπ .                                       32
+     16
+
+1    This statement is conditional on the actual recorded policy, not on success of its fitting         1
+
+2    algorithm. It applies equally to a pure fitted policy and to a policy augmented by verified        2
+
+3    common candidates.                                                                                 3
+
+4                                                                                                       4
+
+5         P ROOF : Joint convexity, including the feasible graph, gives                                 5
+
+6                                                                                                       6
+                        Q∗t ( x, π̄t ( x )) ≤ ∑ wv ( x ) Q∗t (v, at (v)) ≤ In qsel,
+                                                                               t
+                                                                                    +
+                                                                                      ( x ).
+7                                                                                                       7
+                                              v
+8                                                                                                       8
+     The lower interpolation bound gives Vt∗ ( x ) ≥ In lt ( x ) − κt . Subtraction proves the
+9                                                                                                       9
+     uniform optimal-advantage bound et . The partial action derivatives of Q∗t are
+10                                                                                                      10
+     bounded by Λt , so feasible implementation error adds at most Λt bt . Adding the
+11                                                                                                      11
+     future policy loss and proceeding backwards proves the recursion. No convexity of
+12                                                                                                      12
+     J πb is used.                                                                             Q.E.D.
+13                                                                                                      13
+
+14                                                                                                      14
+       In the execution, observation is rounded down at forty bits. An acquired state
+15                                                                                                      15
+     y ≤ x has no greater capacity than the true state. Each interpolated action is then
+16                                                                                                      16
+     rounded down at twenty bits using the lower endpoint of its arithmetic enclosure.
+17                                                                                                      17
+     If Lij bounds the derivative of action coordinate i with respect to state coordinate j,
+18                                                                                                      18
+     and η bounds native interpolation error, a valid implementation allowance is
+19                                                                                                      19
+
+20
+                               bt ≤ 2−40 ∑ Lij + m(2−20 + 2η + ηout ).                                  20
+
+21                                           i,j                                                        21
+
+22                                                                                                      22
+     Here Lij is computed from the maximum adjacent nodal difference times n, and ηout
+23                                                                                                      23
+     covers endpoint subtraction. All these numbers are recorded outward. This new
+24                                                                                                      24
+     barycentric acquired actor is explicitly distinguished from the earlier discontinuous
+25                                                                                                      25
+     cell-constant actor; an old actor is not silently replaced during a purported fixed-
+26                                                                                                      26
+     policy revalidation.
+27                                                                                                      27
+
+28                                                                                                      28
+                                     4.4. Arithmetic, work, and scope
+29                                                                                                      29
+
+30     The native interpolation kernel forms nonnegative tensor weights and a weighted                  30
+
+31   sum of at most 2d stored binary64 endpoints. It is compiled without reassociation or               31
+
+32   floating-point contraction. For K = (3d + 4)2d + 32, an explicit conservative absolute             32
+                                  NEURAL BELLMAN OPERATORS                              17
+
+1    allowance is                                                                             1
+
+                                     K2−53
+2                                                                                             2
+
+3
+                              η=             max |zv | + K2−1022 .
+                                          −53 v                                               3
+                                   1 − K2
+4                                                                                             4
+     The final term conservatively covers underflow. Input coordinates, affine indexing,
+5                                                                                             5
+     finite endpoints and the binary64 format are checked. Roundoff expansion and the
+6                                                                                             6
+     ordinary interval cost arithmetic remain separate from the analytic approximation
+7                                                                                             7
+     bounds. Exact rational fixtures compare the native sum with its mathematical tensor
+8                                                                                             8
+     interpolant.
+9                                                                                             9
+       With N = (n + 1)d vertices, K A = A + 1 scalar actions or K A = ( A + 1)( A +
+10                                                                                            10
+     2)/2 two-control actions, the reference calculation uses O( TNK A qs 2d d) elementary
+11                                                                                            11
+     work under the explicit tensor implementation. Stored reference values use O( TN )
+12                                                                                            12
+     words and a policy uses O( TNm) words. Streaming batches avoid a state-pair
+13                                                                                            13
+     table. Proposal fitting, exact rational witness work, actor transfer, serialization,
+14                                                                                            14
+     independent cost inference and compilation are additional costs, not absorbed into
+15                                                                                            15
+     this bound. The analytic errors are second order in state, action and innovation
+16                                                                                            16
+     resolution; the state-count and tensor-evaluation factors still depend exponentially
+17                                                                                            17
+     on dimension. The result supplies a matched original-optimum comparison without
+18                                                                                            18
+     asserting that these costs have disappeared.
+19                                                                                            19
+
+20                                                                                            20
+                    5. NEURAL BELLMAN QUERIES WITHOUT A STATE LATTICE
+21                                                                                            21
+
+22     The preceding construction makes numerical error accountable, but a complete           22
+
+23   tensor reference can absorb the benefit of a fitted continuation. We therefore change    23
+
+24   the computational organization, not the economic problem. A Neural Bellman               24
+
+25   selector proposes an action at the state actually acquired. A recursive interval query   25
+
+26   then bounds the original Bellman value at that state and checks the proposed             26
+
+27   action against the entire continuous feasible interval. No conventional policy is        27
+
+28   precomputed at all states. The controller is the resulting callable algorithm, not the   28
+
+29   unverified proposal alone.                                                               29
+
+30     The distinction matters for attribution. Learning may reduce the work needed           30
+
+31   to locate a useful action. It does not supply the inequalities used to certify that      31
+
+32   action. The adaptive conventional comparator receives the same inequalities and          32
+     18
+
+1    the same original-optimum target. The trained value-fit policies in the preceding                     1
+
+2    study remain distinct from the action-query predictor introduced here.                                2
+
+3                                                                                                          3
+
+4                   5.1. A curvature lower bound on an adaptive action partition                           4
+
+5                                                                                                          5
+       Use the original scalar economy of Section 4, with r dates remaining. Write Vr for
+6                                                                                                          6
+     its optimal value and Qr ( x, a) for the value of a first action followed by the optimal
+7                                                                                                          7
+     future. Let Gr , Mr be the primitive constants in Theorem 4, indexed by remaining
+8                                                                                                          8
+     horizon, and put
+9                                                                                                          9
+                               21        5d                 13        3d
+10                        Hr =    + βMr−1 ,            Λr =    + βGr−1 .                                   10
+                                4        32                 16         8
+11                                                                                                         11
+
+12
+     Thus Hr is an upper curvature bound in the scalar action, and Λr bounds the                           12
+
+13
+     absolute action derivative. Neither depends on a fitted model.                                        13
+
+14                                                                                                         14
+          L EMMA 6—Parabolic minorants: Suppose f is H-semiconcave on [l, u], and Ll ≤
+15                                                                                                         15
+     f (l ), Lu ≤ f (u). For s ∈ [0, 1],
+16                                                                                                         16
+                                                           H
+17                f (l + s(u − l )) ≥ (1 − s) Ll + sLu −     ( u − l )2 s (1 − s ) = : p ( s ).            17
+                                                           2
+18                                                                                                         18
+
+19   Consequently min[0,1] p is a lower bound for the minimum of f on the interval. With                   19
+
+20   K = H (u − l )2 /2 and D = L     u − Ll , this lower bound is Ll if D ≥ K, Lu if D ≤ − K, and         20
+
+21   otherwise                                                                                             21
+                                                               2
+22                                         Ll + Lu K D                                                     22
+                                                  − −    .
+23
+                                              2    4  4K                                                   23
+     The endpoints Ll , Lu need not themselves belong to a convex interpolant. Increasing K
+24                                                                                                         24
+     preserves the lower-bound property.
+25                                                                                                         25
+
+26                                                                                                         26
+          P ROOF : Apply concavity to f ( a) − Ha2 /2 and substitute the two lower end-
+27                                                                                                         27
+     points. The displayed quadratic has derivative D − K + 2Ks. Minimizing it on the
+28                                                                                                         28
+     unit interval gives the three cases. Its coefficient of K is −s(1 − s), which proves the
+29                                                                                                         29
+     last assertion.                                                                              Q.E.D.
+30                                                                                                         30
+
+31     At an acquired state, retain an ordered partition of the feasible action interval and               31
+
+32   an outward value bracket at every partition point. The minimum of the parabolic                       32
+                                   NEURAL BELLMAN OPERATORS                                      19
+
+1    minorants bounds the continuous-action infimum from below. The smallest upper                    1
+
+2    endpoint supplies an actual feasible witness. A neural or polynomial proposal                    2
+
+3    inserts another point into this partition; it cannot remove the endpoints or any part            3
+
+4    of the feasible interval. The running lower bound is the maximum of all previously               4
+
+5    valid global lower bounds, so new information cannot weaken the certificate. The                 5
+
+6    upper bound is the minimum over every evaluated feasible witness.                                6
+
+7                                                                                                     7
+
+8                    5.2. Recursive queries under the original continuous law                         8
+
+9                                                                                                     9
+       For an endpoint action with r > 1, divide the scalar innovation into qr equiproba-
+10                                                                                                    10
+     ble bins and query Vr−1 at each conditional-mean next state. If each child returns
+11                                                                                                    11
+     width at most ηr , the endpoint bracket has width at most
+12                                                                                                    12
+
+13                                             βMr−1 d                                                13
+                                       βηr +           + ωr .                                (14)
+14                                             6144q2r                                                14
+
+15                                                                                                    15
+     Here ωr includes outward primitive arithmetic and the Lipschitz expansion from
+16                                                                                                    16
+     an interval-valued next state to its queried center. Convexity provides the lower
+17                                                                                                    17
+     conditional-mean inequality; semiconcavity and the exact conditional variance
+18
+     provide the upper allowance. The innovation remains continuous. There is no state- 18
+19                                                                                                    19
+     interpolation term because a child value is queried rather than read from a state
+20                                                                                                    20
+     lattice.
+21                                                                                                    21
+       For a requested local gap δ, the implementation sets ηr ≤ δ/(4β) and chooses a
+22                                                                                                    22
+     dyadic qr so that the second term in (14) is at most δ/4. A separate endpoint-width
+23                                                                                                    23
+     guard charges arithmetic and the small capacity-rounding remainder. Failure of
+24                                                                                                    24
+     that guard is a precision failure, not a successful return. The terminal query uses
+25                                                                                                    25
+     analytic integration instead of recursive quadrature.
+26                                                                                                    26
+
+27     T HEOREM 7—A state-grid-free NBO service: Consider the original scalar investment              27
+
+28   economy. At every recursive query, suppose the outward endpoint and capacity-transfer            28
+
+29   accounts give width at most 5δ/8. Let the lower bound be the running maximum described           29
+
+30   above. Refine an interval attaining the smallest current minorant whenever the global            30
+
+31   upper-minus-lower gap exceeds δ. Each new point must lie between one fifth and four fifths       31
+
+32   of that interval. Arbitrary additional learned proposals may be inserted initially. Then:        32
+     20
+
+1       (i) every returned interval [ Lr ( x ), Ur ( x )] contains Vr ( x ), and its returned feasible action   1
+
+2    ar ( x ) satisfies                                                                                         2
+
+3                                                                                                               3
+                               Qr ( x, ar ( x )) − Vr ( x ) ≤ Ur ( x ) − Lr ( x ) ≤ δ;
+4                                                                                                               4
+
+5    (ii) the real-arithmetic refinement terminates. With at most one interior learned proposal, a              5
+
+6    sufficient point budget is                                                                                 6
+                                                                      
+7                                                         q                                                     7
+                                          6 + 5c( x )         Hr /(3δ) ;                                (15)
+8                                                                                                               8
+
+9    (iii) for the policy that calls this service at every subsequent date, the original-law loss               9
+
+10   satisfies                                                                                                  10
+
+11                                                                                                              11
+                                      T −1                                                 
+                                                               11βdGT −t−1
+12
+                  JTπ ( x ) − VT ( x ) ≤ ∑ βt δt + 8 +                     + dGT −t 2−b ,               (16)    12
+
+                                       t =0                        16
+13                                                                                                              13
+
+14                                                                                                              14
+     when the state is acquired downward at b bits per coordinate and every returned action is
+15                                                                                                              15
+     feasible at that acquired state. All action rounding must precede its endpoint evaluation.
+16                                                                                                              16
+     The inequalities hold uniformly in the true initial state, not only at the states used in an
+17                                                                                                              17
+     experiment.
+18                                                                                                              18
+
+19        P ROOF : At r = 1, analytic endpoint enclosures and the minorant lemma give the                       19
+
+20   assertion. Suppose it holds for r − 1. Each child interval encloses the true optimal                       20
+
+21   continuation. If the numerical next state is an interval, expanding the queried center                     21
+
+22   value by Gr−1        times the maximum ℓ1 displacement encloses all its possible values.                   22
+
+23   Conditional-mean lower bounds and the semiconcavity remainder then give valid                              23
+
+24   endpoint brackets for the true Qr . The minorants cover the entire action interval. 24
+25   A downward capacity endpoint can omit only an interval of length equal to the                              25
+
+26   certified capacity-rounding difference; subtracting Λr times that difference accounts                      26
+
+27   for its possible improvement. The minimum upper endpoint is the cost of a feasible                         27
+
+28   first action followed by the optimal future. This proves (i) by induction. Retaining                       28
+
+29   earlier valid lower bounds preserves every conclusion.                                                     29
+
+30      For termination, an interval of length h has minorant at least its smaller lower                        30
+
+31   endpoint minus Hr h2 /8. Its smaller upper endpoint is an available global upper                           31
+                                                                                                  √
+32   bound. With the endpoint-width guard, an interval of length at most hδ =                         3δ/Hr     32
+                                   NEURAL BELLMAN OPERATORS                                   21
+
+1    cannot be responsible for a gap exceeding δ. Every refined parent is therefore                 1
+
+2    longer than hδ . Its children are longer than hδ /5. Apart from the at most two initial        2
+
+3    fragments made by a prediction, disjoint terminal fragments consequently have total            3
+
+4    number at most 5c( x )/hδ , up to endpoint counting. Equation (15) is a conservative           4
+
+5    point budget. Bounded action-quantum rounding of a proposed quarter-to-three- 5
+6    quarter split preserves the one-fifth property whenever the quantum is smaller than            6
+
+7    hδ /20. Otherwise precision must be increased; a fixed-precision run is not allowed            7
+
+8    to ignore this requirement.                                                                    8
+
+9      For (iii), let x̄ be the acquired state. Its downward displacement is at most d2−b           9
+
+10   in ℓ1 , and c( x̄ ) ≤ c( x ) preserves feasibility. At a fixed action the stage cost is 8/d-   10
+
+11   Lipschitz and the transition has column sums at most 11/16. Thus replacing x̄ by               11
+
+12   x changes Qr by at most (8 + 11βdGr−1       /16)2−b . The corresponding value change           12
+
+13   is at most dGr 2−b . Add these two allowances to (i). Substituting the policy’s own            13
+
+14   future yields the usual one-step loss recursion; backward induction gives (16). No             14
+
+15   policy-value oracle and no population claim about fitting are used.                 Q.E.D.     15
+
+16                                                                                                  16
+
+17     The finite-precision contract is explicit. The executed service uses the width guard,        17
+
+18   a 512-point cap, and a 32-bit downward action lattice. A precision or cap failure              18
+
+19   withholds the floating certificate and invokes a separately counted exact-rational             19
+
+20   enumeration. This fallback constructs values only at the required descendants; it              20
+
+21   does not load a precomputed conventional policy. The rational fallback chooses                 21
+
+22   dyadic action and quadrature counts until each cover or quadrature allowance is                22
+
+23   at most one quarter of the request, and requests child width at most one quarter               23
+
+24   divided by the discount. Provided δ > 8Λr 2−32 at every recursive level, its exact             24
+
+25   brackets have width at most three quarters of the request. This proves a finite                25
+
+26   return for every acquired state in the declared tasks, including states absent from            26
+
+27   the workload. Rational bit-operation cost is additional work and is not replaced               27
+
+28   by a unit-cost floating clock. The mathematical point budget is checked against                28
+
+29   the declared tolerance range; termination in an arbitrary floating implementation              29
+
+30   is not inferred merely from the real-arithmetic argument. Fitting convergence is               30
+
+31   unnecessary for validity: any finite prediction, and even its clipped replacement              31
+
+32   when numerically invalid, is only a proposed query.                                            32
+     22
+
+1                             5.3. A certified analytic terminal kernel                       1
+
+2                                                                                             2
+       The last decision admits an especially strong common comparator. Let y =
+3                                                                                             3
+     F ( x, 0, 0), b0 = 1/2 − 2 mean(y), and γ j = Bj . Define
+4                                                                                             4
+                            8                      1
+5
+                   D(x) =     ∑
+                            d j
+                                γ j (y j − 5/8) +
+                                                  2d ∑
+                                                       (γ j − γ j+1 )(y j − y j+1 ).          5
+
+6                                                    j                                        6
+
+7                                                                                             7
+     For every even d, the exact terminal action derivative is
+8                                                                                             8
+                                            
+                                       41β
+9
+                       16a3 + 2 +                a + βD ( x ) − 3β(b0 − 3a/4)+ .       (17)   9
+
+10
+                                        32                                                    10
+
+11   Each branch is a strictly increasing cubic. Its floating closed-form root supplies       11
+
+12   only a candidate. The independently evaluated outward derivative and exact-law           12
+
+13   objective certify that candidate; a safeguarded derivative bracket remains available     13
+
+14   if the candidate is inaccurate.                                                          14
+
+15     For completeness, if f is µ-strongly convex and an outward interval encloses           15
+
+16   f ′ ( a), the largest compatible projected derivative residual R gives                   16
+
+17                                                                                            17
+                                                           2
+18                                   f ( a) − min f ≤ R /(2µ).                                18
+                                                 [0,c]
+19                                                                                            19
+
+20   At zero, a nonnegative derivative has residual zero; at capacity, a nonpositive          20
+
+21   derivative has residual zero. Otherwise the absolute derivative bound is sufficient. 21
+22   This follows by minimizing the strong-convexity supporting quadratic over the            22
+
+23   feasible interval and, conservatively, over the line. Here µ = 2. Equation (17), its     23
+
+24   41/32 and 9/4 coefficients, analytic shock moments, and outward derivatives are          24
+
+25   independently checked against rational formulas. Every method uses this kernel; it       25
+
+26   is not credited to the neural predictor.                                                 26
+
+27                                                                                            27
+
+28                        5.4. Work, prediction, and the economic object                      28
+
+29                                                                                            29
+       Let Ar (δ) be a bound on action endpoints at a query. Excluding training, a scalar
+30                                                                                            30
+     operation account obeys
+31                                                                                            31
+
+32            W1 (δ) = O(dA1 ),        Wr (δ) ≤ CdAr (δ) + Ar (δ)qr Wr−1 (δ/(4β)).            32
+                                 NEURAL BELLMAN OPERATORS                                23
+
+1    The constants dGr , dMr are bounded independently of d, so the declared endpoint          1
+
+2    and quadrature budgets need not grow exponentially with the state dimension. 2
+3    Primitive evaluations still cost O(d). This removes the state lattice, not the hori- 3
+4    zon or shock-tree cost. The executed vectorization batches a query’s innovation           4
+
+5    descendants. Its largest live state batch is reported; it does not claim the smaller      5
+
+6    memory of a fully streamed implementation. Increasing the horizon or the shock di- 6
+7    mension may still be expensive. The new execution is scalar-control; the earlier full     7
+
+8    two-control result is retained rather than relabeled as a query-service experiment.       8
+
+9      A useful prediction can reduce the endpoint count or return its own action              9
+
+10   from the initial partition. An inaccurate prediction can instead add work. This is a      10
+
+11   prediction-dependent algorithm, not a theorem of neural dominance. Learned warm           11
+
+12   starts have their own literature, including Sakaue and Oki (2023); their discrete- 12
+13   convex setting differs from the original-law Bellman intervals here. Convex control       13
+
+14   policies and learned optimization parameters are studied by Agrawal, Barratt,             14
+
+15   Boyd, and Stellato (2020). Our comparison identifies the extra proposal cost and the      15
+
+16   resulting query transcript rather than claiming priority for learning a warm start.       16
+
+17     The purchase is now a complete callable controller with a declared error contract. 17
+18   Its training cost, every subsequent certified query, and its return-time cost belong to   18
+
+19   the same service. A reduction in queried state storage is economically relevant for       19
+
+20   repeated decisions only after these costs are counted. The original cost normalization    20
+
+21   is maintained. Workload seconds and normalized expected-cost loss are reported            21
+
+22   separately; a price per unit of computation can convert the former to the latter only     22
+
+23   as an explicitly specified decision-maker parameter.                                      23
+
+24                                                                                             24
+                            6. CERTIFICATE-GATED NEURAL QUERIES
+25                                                                                             25
+
+26     A prediction of the optimal action and a prediction of a useful numerical query are     26
+
+27   different objects. Inserting a learned action before examining an already available       27
+
+28   certificate charges an extra continuation query even when the two boundary actions        28
+
+29   suffice. We instead make the demand for another query a mathematical decision and         29
+
+30   let a trained NBO selector determine its location only after that demand has been         30
+
+31   established. The underlying continuation recursion and the economic optimum are           31
+
+32   unchanged.                                                                                32
+     24
+
+1      At a recursive state, start with the two feasible action endpoints. Compute the               1
+
+2    global lower bound from the parabolic minorants of Lemma 6, including the capac- 2
+3    ity remainder, and the smallest upper endpoint. Return immediately when their                   3
+
+4    difference is at most the requested tolerance. Otherwise choose a partition interval            4
+
+5    with smallest current minorant. A learned action is used only if it lies in the central         5
+
+6    half of that interval; it then replaces the conventional proposed split. Outside that           6
+
+7    region the safeguarded parabolic split is used. The rounded split must pass the                 7
+
+8    one-fifth interior check before evaluation. A prediction is evaluated at most once at           8
+
+9    each recursive state and is reused only as a proposed location. It supplies neither a           9
+
+10   value endpoint nor a lower bound.                                                               10
+
+11                                                                                                   11
+          T HEOREM 8—Gated prediction and complete-policy validity: Under the assump-
+12                                                                                                   12
+     tions of Theorem 7, the gated service returns the same original-optimum and actual-policy
+13                                                                                                   13
+     guarantees for every supplied prediction, independently of fitting error. In real arithmetic,
+14                                                                                                   14
+     with endpoint-plus-capacity width at most 5δ/8, a sufficient number of endpoint evalua-
+15                                                                                                   15
+     tions at a state is
+16                                                        q                                        16
+
+17                              Ar (δ, x ) = 4 + 5c( x )       Hr /(3δ) .                            17
+
+18                                                                                                   18
+     Each requested evaluation either reduces the unresolved action partition or terminates
+19                                                                                                   19
+     the query; no initial interior evaluation is mandatory. If the boundary certificate suffices,
+20                                                                                                   20
+     no predictor is evaluated at that state. If every prediction is declined at every recursive
+21                                                                                                   21
+     query, the value endpoints and implemented actions coincide with those of the conventional
+22                                                                                                   22
+     parabolic service using the same arithmetic and tie rules.
+23                                                                                                   23
+
+24        P ROOF : A routed action is merely another feasible partition point. The endpoint          24
+
+25   and minorant induction in Theorem 7 therefore applies without change. After each                25
+
+26   evaluation retain the smallest upper endpoint and the maximum of the old and                    26
+
+27   newly valid global lower endpoints. Their difference cannot increase. The stopping              27
+
+28   test uses this difference, not a fitted value or a prediction error.           28
+                 √
+29     Put hδ = 3δ/Hr . A partition interval of length at most hδ has minimum mino- 29
+30   rant at least its smaller lower endpoint minus 3δ/8. The associated upper endpoint,             30
+
+31   with the stipulated width and capacity allowance, is within δ of that minorant. 31
+32   Such an interval cannot be responsible for an unresolved global gap. Every split                32
+                                   NEURAL BELLMAN OPERATORS                              25
+
+1    parent therefore has length greater than hδ . The one-fifth condition makes each of       1
+
+2    its children longer than hδ /5. Starting with one interval, disjoint terminal fragments   2
+
+3    consequently number at most 1 + 5c( x )/hδ . Counting endpoints and allowing for          3
+
+4    rounding of this numerical bound gives the displayed conservative budget. Floating        4
+
+5    failure is handled by the separately charged exact-rational procedure, not by this        5
+
+6    real-arithmetic count.                                                                    6
+
+7      The first assertion about predictor evaluation follows from the order of the stop- 7
+8    ping test and the routing rule. For the last assertion, use backward induction on         8
+
+9    the remaining horizon, with the common analytic terminal kernel as base. At each          9
+
+10   nonterminal query, declined predictions leave the same conventional split, lower          10
+
+11   bound, witness and tie rule. Induction over partition refinements gives the same          11
+
+12   next query and returned endpoints; the induction over dates then gives the same           12
+
+13   implemented policy. Model-evaluation work can still differ, so transcript identity is     13
+
+14   not a zero-cost fitting claim.                                                  Q.E.D.    14
+
+15                                                                                             15
+       This theorem establishes robustness to the numerical content of a fitted prediction,
+16                                                                                             16
+     not that learning is free or always useful. It also does not state that an arbitrary
+17                                                                                             17
+     routed transcript has fewer queries than the adaptive conventional transcript. The
+18                                                                                             18
+     executed comparison records both possibilities. Unlike a policy catalogue with a
+19                                                                                             19
+     stored reference action at every state, neither service constructs a conventional state
+20                                                                                             20
+     lattice before it can return a certified policy.
+21                                                                                             21
+
+22                                                                                             22
+                      6.1. State dimension, working memory, and reliability
+23                                                                                             23
+
+24
+       For the original scalar model, the primitive bounds dGr ≤ 27 and dMr ≤ 54 imply         24
+
+25                            3369             1319     βMr−1 d    135                         25
+                       Hr ≤        ,    Λr ≤        ,           ≤       .
+26                             256              128      6144     16384                        26
+
+27   Thus the action and scalar-innovation budgets at fixed remaining horizon and              27
+
+28   tolerance are independent of the number of state coordinates. Every primitive eval- 28
+29   uation still requires O(d) arithmetic. A width-w one-hidden-layer ReLU prediction         29
+
+30   on the recorded d + 5 features requires O(dw) work and stored parameters; a full          30
+
+31   quadratic prediction on these features uses O(d2 ) terms. Neither cost is included        31
+
+32   for free in the Bellman recursion.                                                        32
+     26
+
+1      Let qr (δ) be the dyadic quadrature count and let Pr (d) be the cost of one predic- 1
+2    tor evaluation. Apart from the separately identified exact-arithmetic recovery, a        2
+
+3    conservative work recursion is                                                           3
+
+4                                                                                             4
+                  Wr (d, δ) ≤ CdAr (δ) + Pr (d) + Ar (δ)qr (δ)Wr−1 (d, δ/(4β)).
+5                                                                                             5
+
+6                                                                                             6
+     The predictor term is absent on a boundary-certified query. This expression removes
+7                                                                                             7
+     the exponential state lattice, not the horizon or innovation-tree dependence. A
+8                                                                                             8
+     depth-first scalar implementation can retain the current action partition and one
+9                                                                                             9
+     innovation child at a time. The executed batched implementation instead reports its
+10                                                                                            10
+     maximum state batch and process peak memory. A zero count of stored state-lattice
+11                                                                                            11
+     nodes does not mean zero storage.
+12                                                                                            12
+       The deterministic certificate is valid for any supplied finite network weights. A
+13
+     failure to fit and return such weights is a separate service event. Our reliability esti- 13
+14                                                                                            14
+     mand is the return count and worst measured complete work over the preregistered
+15                                                                                            15
+     finite seed catalogue, with every repetition retained. Numerical workload paths
+16
+     are not optimizer replications. The real-arithmetic cap and the exact-rational preci- 16
+17                                                                                            17
+     sion condition establish algorithmic termination at admissible tolerances; recorded
+18                                                                                            18
+     processor seconds are descriptive, not a hardware-uniform worst-case bound.
+19                                                                                            19
+
+20                                                                                            20
+                           6.2. An explicit economic purchase criterion
+21                                                                                            21
+       The decision maker buys a callable controller rather than a table of successful
+22                                                                                            22
+     sample decisions. Fix a physical capital numeraire for the normalized state, a
+23                                                                                            23
+     conversion m > 0 dollars per unit of the model’s loss index, a computation charge
+24                                                                                            24
+     p ≥ 0 dollars per measured second, and a fixed deployment fee f ≥ 0 dollars. For n
+25                                                                                            25
+     uses under a specified initial-state law, the monetary objective is
+26                                                                                            26
+
+27
+                             C(π ) = nm E[ J0π ( X0 )] + pW (π ) + f .                        27
+
+28                                                                                            28
+
+29   These are declared preference and service-price parameters, not estimated economic       29
+
+30   primitives. The policy theorem bounds the expected loss under the original continu- 30
+31   ous law for every such initial-state law. The finite dyadic workload below measures      31
+
+32   execution; its average cost is not substituted for that expectation.                     32
+                                  NEURAL BELLMAN OPERATORS                                 27
+
+1      If two policies have an independently valid expected-gain interval [l, u] for             1
+
+2    E[ J0π0 − J0π1 ], and their incremental measured service charge is ∆ = p(W1 − W0 ) + 2
+3    f 1 − f 0 , then the monetary net gain lies in                                              3
+
+4                                                                                                4
+                                       [nml − ∆, nmu − ∆].
+5                                                                                                5
+
+6                                                                                                6
+     This follows by multiplication by the positive numeraire conversion and subtraction
+7                                                                                                7
+     of the same service charge. A positive lower endpoint supports purchase; a negative
+8                                                                                                8
+     upper endpoint rules it out at the stated prices. Uniform regret certificates alone do
+9                                                                                                9
+     not supply a directional expected-gain interval. They instead support a worst-case
+10                                                                                               10
+     accuracy requirement imposed before selecting the least expensive eligible service.
+11                                                                                               11
+       Finally, a forecast of amortized query work is distinguishable from a measured
+12                                                                                               12
+     complete service. With a fixed model and exactly repeated query workload, if
+13                                                                                               13
+     training requires B operations and deployment requires DL rather than DC oper-
+14                                                                                               14
+     ations per workload, then learning uses fewer total operations after k repetitions
+15                                                                                               15
+     precisely when DL < DC and k > B/( DC − DL ). If DL ≥ DC and B ≥ 0, no repeti-
+16                                                                                               16
+     tion of that unchanged workload produces an operation saving. This arithmetic
+17                                                                                               17
+     criterion includes training and cannot be applied to unrelated future states without
+18                                                                                               18
+     a new assumption. The executed catalogue reports its own full process clocks, not a
+19                                                                                               19
+     favorable hypothetical amortization.
+20                                                                                               20
+
+21                 7. WHEN A PREDICTED QUERY COMPLETES THE CERTIFICATE                           21
+
+22
+       The safeguarded theorem is insensitive to the quality of a supplied prediction. 22
+23                                                                                               23
+     A separate question is when that prediction is sufficient to finish verification. The
+24
+     answer must concern both the selected action and the unresolved lower bound. 24
+25                                                                                               25
+     Proximity to a minimizer alone does not make a coarse lower certificate accurate.
+26                                                                                               26
+
+27     P ROPOSITION 9—Witness accuracy and certificate localization: Let f be a differ- 27
+28   entiable, H-semiconcave objective with H ≥ 0 on [0, c], let a∗ minimize f , and suppose     28
+
+29   | f ′ | ≤ Λ. An evaluated proposal b
+                                        a lies in [0, c], where 0 < c ≤ c and c − c ≤ ∆. Each    29
+
+30   endpoint interval is a valid enclosure of f and has width at most w. Suppose the parti- 30
+31                   a covers [0, c] and has maximum interval length h. Let L be its parabolic
+     tion containing b                                                                           31
+
+32   lower certificate with the capacity allowance Λ∆, and let U be the smallest upper end- 32
+     28
+
+1                                                                               a − a∗ | and
+     point, retaining earlier valid bounds as in the query algorithm. With e = |b                          1
+
+2    λ = | f ′ ( a∗ )|,                                                                                    2
+
+3                                                                                                          3
+                                                 Hh2        He2
+4                              U − L ≤ 2w + Λ∆ +     + λe +     .                                  (18)    4
+                                                  8          2
+5                                                                                                          5
+     For an interior minimizer λ = 0. At a boundary the linear term cannot generally be removed.
+6                                                                                                          6
+     Thus the right side at most δ is a sufficient certificate-return condition, not an assumption
+7                                                                                                          7
+     that a trained prediction meets it.
+8                                                                                                          8
+        If old and new valid endpoint records give ( L, U ) and ( L′ , U ′ ) after one additional query,
+9                                                                                                          9
+     with the running maximum lower bound and minimum upper bound, then
+10                                                                                                         10
+
+11
+                          (U − L) − (U ′ − L′ ) = (U − U ′ ) + ( L′ − L) ≥ 0.                      (19)    11
+
+12                                                                                                         12
+
+13   An added prediction may have zero certified progress. The same identities apply to a conven- 13
+14   tional query.                                                                                         14
+
+15                                                                                                         15
+
+16        P ROOF : Every retained lower endpoint is at least its true endpoint value minus                 16
+
+17   w, and hence at least f ( a∗ ) − w. On an interval of length at most h, the parabolic                 17
+
+18   minorant is therefore at least f ( a∗ ) − w − Hh2 /8. Subtracting the omitted-capacity                18
+
+19   allowance gives L ≥ f ( a∗ ) − w − Hh2 /8 − Λ∆; retaining an older, larger valid                      19
+
+20                                                                    a is at most
+     lower bound only improves this inequality. The upper endpoint at b                                    20
+
+21   f (b                                                                     a) − f ( a∗ ) ≤
+        a) + w. Semiconcavity and the one-sided first-order condition give f (b                            21
+
+22   λe + He2 /2. Subtract the lower bound to prove (18). At an interior optimum the                       22
+
+23   derivative is zero. The example f ( a) = a on [0, c] shows that the boundary linear                   23
+
+24   term is needed. Finally, retaining bounds makes U ′ ≤ U and L′ ≥ L; expansion                         24
+
+25   proves (19).                                                                               Q.E.D.     25
+
+26                                                                                                         26
+
+27      This proposition isolates what a fitted representation can contribute without cred- 27
+28   iting it with a conventional solution. It can provide a small-error witness and change                28
+
+29   which unresolved interval is refined. The global partition, endpoint arithmetic and                   29
+
+30   capacity account still have to support that witness. The maximum-width sufficient                     30
+
+31   condition is deliberately conservative; the implemented minimum-minorant rule                         31
+
+32   can stop earlier when only a subset of the partition remains competitive.                             32
+                                    NEURAL BELLMAN OPERATORS                             29
+
+1                    7.1. A complete accuracy contract and its resource dependence             1
+
+2                                                                                              2
+       For T dates and target ϵ, write ST = ∑t<T βt . The recorded service chooses a
+3                                                                                              3
+     common local tolerance by rounding ϵ/(2ST ) to binary64 and verifies the final
+4                                                                                              4
+     outward allowance. Under dGr ≤ 27, a uniform per-date acquisition allowance at
+5                                                                                              5
+     forty bits is
+6                                                                                            6
+                                                297β
+7                                   αb = 8 +         + 27 2−40 .                               7
+                                                 16
+8                                                                                              8
+
+9    The service certifies (δ + αb )ST ≤ ϵ. Each descendant request is δ/(4β), rounded as      9
+
+10   in the actual code and included in its outward endpoint guard. At the smallest re- 10
+11   quest in the two- and three-date catalogues, the declared thirty-two-bit action quan- 11
+12   tum satisfies the exact-recovery condition δr > 8Λr 2−32 . The supplement checks          12
+
+13   this inequality with rationals for every horizon and target, rather than inferring it     13
+
+14   from a successful workload.                                                               14
+
+15     For fixed remaining horizon and accuracy, the bounds on action endpoints and            15
+
+16   scalar-innovation bins are independent of state dimension in this normalized econ- 16
+17   omy. The factors dGr and dMr are bounded, while every transition and cost still           17
+
+18   reads d coordinates. A width-wθ one-layer ReLU predictor has O(dwθ ) parameters           18
+
+19   and evaluation work; a dense quadratic on the same features has O(d2 ) terms. These       19
+
+20   statements identify the absence of a (n + 1)d stored state table. They do not count       20
+
+21   an arbitrary-precision rational operation as a unit-cost floating operation and do        21
+
+22   not suppress the product of descendant query counts as horizon grows.                     22
+
+23     The two fitted implementations and their conventional controls therefore share          23
+
+24   one original-optimum contract, but need not share a transcript, a returned policy         24
+
+25   or a runtime. The completed experiments charge their distinct transcripts. A finite- 25
+26   catalogue reliability statement concerns all specified seeds and repetitions, including   26
+
+27   fitting warnings. It is not a population statement about optimizer success.               27
+
+28                                                                                             28
+                8. FROM RETURNED POLICIES TO ECONOMIC RESOURCE DECISIONS
+29                                                                                             29
+
+30     An all-state upper bound and a comparison of actual policy costs answer different       30
+
+31   economic questions. We now connect the policies returned by a construction frontier       31
+
+32   to direct cost inference and then to a choice of implementation resources. The            32
+     30
+
+1    construction data select the policies; independently generated evaluation paths                   1
+
+2    assess them. This separation permits a valid comparison of first-crossing policies                2
+
+3    with different resolutions.                                                                       3
+
+4                                                                                                      4
+
+5                           8.1. Simultaneous inference after construction                             5
+
+6                                                                                                      6
+       Let H denote all construction information: primitive inputs, numerical labels,
+7                                                                                                      7
+     fitted continuations, returned policies and complete certificate ladders. Conditional
+8                                                                                                      8
+     on H, fix a finite catalogue of implemented-policy contrasts. Each implementation
+9                                                                                                      9
+     includes its observation rule, original witness or nearest-node selector, true-state
+10                                                                                                     10
+     feasible repair and action quantization. For a contrast i, let Di be the difference in
+11                                                                                                     11
+     expected discounted costs under a specified initial law. A common-innovation path
+12                                                                                                     12
+     score evaluates the two policies on their own endogenous trajectories. It is not the
+13                                                                                                     13
+     difference between two regret bounds.
+14
+       Suppose the initial and innovation uniforms are partitioned into equal bins. 14
+15                                                                                                     15
+     Independent uniform bin indices are drawn, and interval simulation encloses the
+16                                                                                                     16
+     score for every continuous realization inside the drawn bins. All unresolved state,
+17                                                                                                     17
+     selector and repair branches remain in the enclosure. If [ Ai , Bi ] is a deterministic
+18                                                                                                     18
+     support interval, clip the path endpoints to that support. Write mi , mi for outward
+19                                                                                                     19
+     sample-mean bounds on the lower and upper endpoint samples and vi,L , vi,U for
+20                                                                                                     20
+     upper bounds on their unbiased sample variances. For n ≥ 2 define
+21                                                                                                     21
+                                    √           7( Bi − Ai )ℓ
+22                     Ri ( v ) =       2vℓ/n +               ,     ℓ ≥ log(4K/α),              (20)   22
+                                                 3( n − 1)
+23                                                                                                     23
+
+24   where K bounds the number of sampled contrasts.                                                   24
+
+25                                                                                                     25
+          T HEOREM 10—Construction-conditional economic intervals: Under the stated
+26                                                                                                     26
+     independent-bin model, conditional on any valid construction history H, with probability
+27                                                                                                     27
+     at least 1 − α all catalogue contrasts satisfy
+28                                                                                                     28
+
+29                                                                                                     29
+                 Di ∈ [li , ui ] := [max{ Ai , mi − Ri (vi,L )}, min{ Bi , mi + Ri (vi,U )}].   (21)
+30                                                                                                     30
+
+31   The same coverage holds unconditionally. Subsequent selection among these covered con- 31
+32   trasts, or evaluation at any deterministic implementation-price vector, needs no additional       32
+                                    NEURAL BELLMAN OPERATORS                                     31
+
+1    union bound. This conclusion applies only to policies and initial laws included in the            1
+
+2    catalogue; it does not create direct-cost observations for every unstudied tolerance or initial   2
+
+3    state.                                                                                            3
+
+4                                                                                                      4
+       P ROOF : For each drawn bin sequence, conditional integration over its continu-
+5                                                                                                      5
+     ous realizations places the exact path expectation between the interval endpoints.
+6                                                                                                      6
+     Uniform mixing over the equal bins recovers the original continuous law. The lower
+7                                                                                                      7
+     endpoint expectation is thus no larger than Di , and the upper endpoint expectation
+8                                                                                                      8
+     is no smaller. Apply the bounded empirical-Bernstein inequality of Maurer and
+9                                                                                                      9
+     Pontil (2009) to the endpoint samples and take the union bound, with outward
+10                                                                                                     10
+     arithmetic included in the mean, variance and radius. Conditional validity for every
+11                                                                                                     11
+     H implies unconditional validity by integration. On this one simultaneous event, all
+12                                                                                                     12
+     ensuing deterministic comparisons of the covered quantities hold together. Q.E.D.
+13                                                                                                     13
+
+14                                                                                                     14
+       In particular, selecting the first policy to meet a specified certificate is permitted
+15                                                                                                     15
+     when that selection uses construction records rather than the subsequent evaluation
+16
+     paths. Repeated construction clocks are not independent draws from a neural- 16
+17                                                                                                     17
+     optimizer population. The statistical randomness here belongs to the evaluation
+18                                                                                                     18
+     design. A fixed pseudorandom stream implements a reproducible experiment; it is
+19                                                                                                     19
+     not itself a proof of the independent-bin assumption.
+20                                                                                                     20
+
+21                                                                                                     21
+                                 8.2. Replacement-fee identification
+22                                                                                                     22
+       Write D = J W − J F . If witness is installed, replacing it by FVI changes total cost
+23                                                                                                     23
+     by k − D, where k ≥ 0 is the replacement fee. If FVI is installed, the change is k + D.
+24                                                                                                     24
+     Thus the two directional gains before fees are D and − D.
+25                                                                                                     25
+
+26     C OROLLARY 11—The break-even fee frontier: On an event where D ∈ [l, u], the                    26
+
+27   two directional gains belong to [l, u] and [−u, −l ]. The unknown absolute cost difference        27
+
+28   satisfies                                                                                         28
+
+29                                                                                                     29
+                                 | D | ∈ [dist(0, [l, u]), max{|l |, |u|}].                    (22)
+30                                                                                                     30
+
+31   For every k ≥ max{0, u, −l } neither replacement strictly lowers expected cost. By contrast,      31
+
+32   k ≥ max{0, l, −u} only removes a certified strictly profitable replacement. The two thresh- 32
+     32
+
+1    olds generally differ. Strict inequalities in the first criterion certify that both replacements   1
+
+2    strictly increase cost.                                                                            2
+
+3                                                                                                       3
+          P ROOF : Subtract the gain intervals from k and compare the resulting interval
+4                                                                                                       4
+     endpoints with zero. Taking the image of [l, u] under the absolute-value map gives
+5                                                                                                       5
+     (22). The assertions hold simultaneously for every nonnegative fee on the original
+6                                                                                                       6
+     coverage event.                                                                         Q.E.D.
+7                                                                                                       7
+
+8
+       The fee frontier is more informative than a conclusion at one generous charge. 8
+9                                                                                                       9
+     The earlier 1/64 replacement decision is retained with its original interpretation
+10
+     and confidence account. The new analysis reports the two directional gain inter- 10
+11
+     vals and both thresholds instead of selecting a favorable fee after seeing the data. 11
+12
+     There is no welfare calibration hidden in the units: a decision maker must sup- 12
+13                                                                                                      13
+     ply the economically relevant charge, or use the full frontier to see what remains
+14                                                                                                      14
+     unidentified.
+15                                                                                                      15
+
+16                             8.3. Observation costs on the same bit grid                              16
+
+17                                                                                                      17
+       Let B = {4, . . . , 16} be the available bit precisions. For one fixed returned con-
+18                                                                                                      18
+     troller, write Jb for the expected cost of its actual b-bit, robustly repaired and quan-
+19                                                                                                      19
+     tized implementation. Use b0 = 16 as a common reference and obtain simultane-
+20                                                                                                      20
+     ous intervals for Db = Jb − Jb0 . The identity interval at b = b0 is exactly [0, 0]. Let
+21                                                                                                      21
+     sb = db ∑t<T Bt be the discounted number of coordinate-bits purchased; the net cost
+22                                                                                                      22
+     is Jb + λsb .
+23                                                                                                      23
+
+24        T HEOREM 12—Certified choice of actual net implementation cost: Suppose all                   24
+
+25   Db ∈ [lb , ub ] simultaneously. For any λ ≥ 0 define                                               25
+
+26                                                                                                      26
+
+27              L(λ) = min{lb + λsb },                        U (λ) = min{ub + λsb },           (23)    27
+                           b                                              b
+28                                                                                                      28
+                b(λ) = min arg min{ub + λsb }.
+                b
+29                                  b                                                                   29
+
+30   Then, simultaneously for all λ ≥ 0,                                                                30
+
+31                                                                                                      31
+
+32
+                           0 ≤ Jbb + λsbb − min( Jb + λsb ) ≤ U (λ) − L(λ).                     (24)    32
+                                            b∈B
+                                   NEURAL BELLMAN OPERATORS                                     33
+
+1    The lower and upper functions are finite piecewise-affine envelopes. All changes in their        1
+
+2    active lines occur at nonnegative intersections of catalogue lines, with exact comparisons       2
+
+3                                                   b(λ) is weakly decreasing in λ.
+     deciding ties. The smallest selected precision b                                                 3
+
+4                                                                                                     4
+
+5
+       P ROOF : Subtract the common Jb0 . The selected implementation has net difference              5
+
+6
+     at most U (λ), and the best catalogue implementation has net difference at least                 6
+
+7
+     L(λ). This proves the regret bound pointwise on the one simultaneous event and                   7
+
+8
+     hence for every λ. A minimum of finitely many affine functions changes its active                8
+
+9
+     affine expression only at an intersection. For λ2 > λ1 , sum the two minimizing                  9
+
+10
+     inequalities to obtain (λ2 − λ1 )(sbb(λ ) − sbb(λ ) ) ≤ 0. Since sb increases strictly with      10
+                                               2       1
+
+11
+     b, the precision comparative static follows.                                           Q.E.D.    11
+
+12                                                                                                    12
+       This result makes a statement about actual net cost within the declared bit cata-
+13                                                                                                    13
+     logue. It differs from minimizing a uniform all-state loss bound. Both criteria are
+14                                                                                                    14
+     useful: the latter gives distribution-free protection relative to the full-information
+15                                                                                                    15
+     optimum, while (24) uses a specified initial law to compare feasible implementa-
+16                                                                                                    16
+     tions of one returned policy. Neither criterion gives an optimum over arbitrary
+17                                                                                                    17
+     sensor technologies or all policies.
+18                                                                                                    18
+       For a fair comparison the conventional actor receives its own acquisition al-
+19                                                                                                    19
+     lowance. Suppose its nearest-node policy has a certified selected-policy account at
+20                                                               gr                                   20
+     a reported state, obtained from the graph modulus Lt , and its actual interpolated
+21                          f                                                                         21
+     critic has modulus Lt . Transporting the same selected node action to the true state,
+22                                                                                                    22
+     then using cell-wide capacity repair, adds at most
+23                                                                                                    23
+                                    gr     f
+24
+                                 ( Lt + Lt + 2Dt KtA )r (b) + Dt ∆t .                          (25)   24
+
+25                                                                                                    25
+
+26   Indeed, transport the feasible node pair directly to the true state, bound its node              26
+                                                                                             f
+27   distance by the reported-state distance plus r (b), and bound f t ( xb) − f t ( x ) by Lt r (b). 27
+28   Robust repair adds Dt (2KtA r (b) + ∆t ). This proves (25) without assuming actor con- 28
+                                    f    gr
+29   tinuity. For a witness critic Lt = Lt , it reduces to the preceding witness allowance. 29
+30   The empirical comparison therefore evaluates the all-state-account minimizer, the                30
+
+31   interval upper-net-cost selector, and a descriptive midpoint selector on the same                31
+
+32   integer bit and price grid. The midpoint selector is not called the true optimum.                32
+     34
+
+1               9. COMPLETE SERVICES IN THE ORIGINAL INVESTMENT ECONOMY                              1
+
+2                                                                                                    2
+       The numerical question is whether the organization of a learned query changes
+3                                                                                                    3
+     the work of delivering an accurate policy. We use the original scalar investment
+4                                                                                                    4
+     primitives, discount factor 15/16, and continuous uniform innovations through-
+5                                                                                                    5
+     out. The returned object is the complete callable controller: at each subsequently
+6                                                                                                    6
+     acquired state it obtains a fresh certificate before implementing its action. A finite
+7                                                                                                    7
+     workload measures its execution. The uniform original-law theorem, rather than an
+8                                                                                                    8
+     extrapolation from that workload, supplies its accuracy guarantee.
+9                                                                                                    9
+
+10                                                                                                   10
+                            9.1. Design, controls and measured objects
+11                                                                                                   11
+
+12     Two protocols were frozen before their respective executions. The first com- 12
+13   pared adaptive parabolic search, bisection, unconditional ReLU insertion and un- 13
+14   conditional quadratic insertion. The second retained those controls and added                   14
+
+15   certificate-gated routing for each fitted predictor. Its insertion and routing services         15
+
+16   independently reconstructed exactly the same fitted model for a matched seed, task              16
+
+17   and repetition. The initial and innovation workloads were also identical within each            17
+
+18   task. This design separates query organization from a change in model parameters                18
+
+19   or evaluated states.                                                                            19
+
+20     The task catalogue is (d, T, N ) = (2, 2, 128), (8, 2, 128), (16, 2, 128), (8, 3, 32), with   20
+
+21   original-optimum targets 1/32 and 1/128. Here N is the number of workload                       21
+
+22   trajectories. Each learned method uses both specified fitting seeds, and every service          22
+
+23   has two isolated-process repetitions. The first protocol therefore contains 96 services         23
+
+24   and the second 160. The fitting seeds are 6301 and 6302 in the first catalogue and              24
+
+25   6401 and 6402 in the second. No successful seed, task, target or repetition is selected         25
+
+26   for publication.                                                                                26
+
+27     Each fitted service pays for its own 96 training states, nested Bellman-generated             27
+
+28   labels, feature construction and fit. The ReLU predictor has one hidden layer of                28
+
+29   width 24 and uses a capped L-BFGS fit. The quadratic predictor uses the same                    29
+
+30   features, their second-order products and regularization. The permitted training                30
+
+31   iterations and function evaluations are fixed in the deposited protocols. At two dates          31
+
+32   the training account records 6,912 Bellman action queries; at three dates it records            32
+                                  NEURAL BELLMAN OPERATORS                               35
+
+1    155,904. These costs are not assigned to a previously solved conventional state           1
+
+2    lattice and are not omitted when a boundary certificate avoids a later prediction.        2
+
+3      The adaptive comparator chooses an unresolved interval using its parabolic              3
+
+4    minorant and a safeguarded proposed split. Bisection supplies an independent              4
+
+5    refinement rule. Both choose their own action partitions and stopping stages; all         5
+
+6    methods use the same analytic terminal kernel, original-law child quadrature and          6
+
+7    precision guard. A fitted model cannot relax these requirements. These are structure- 7
+8    exploiting conventional controls for the scalar action problem, not a sparse-grid         8
+
+9    package relabeled as a neural method.                                                     9
+
+10     Every process is pinned to one CPU, with one numerical-library thread. The              10
+
+11   parent clock starts before launching the child and stops after process exit and join. 11
+12   It includes imports, training labels, fitting, all deployment queries, exact workload- 12
+13   cost reconstruction, serialized arrays, durable summaries and the final clock record. 13
+14   Processor frequency is uncontrolled. We report individual repetitions and machine- 14
+15   independent query counts alongside clocks; small clock differences are not treated        15
+
+16   as statistically identified runtime effects.                                              16
+
+17                                                                                             17
+
+18                                                                                             18
+                            9.2. Complete time and query attribution
+19                                                                                             19
+
+20     Table I reports the second catalogue’s full cold-start process times. A conventional    20
+
+21   method has the smallest median in every task–target cell: bisection in three cells and    21
+
+22   adaptive parabolic search in five. None of the learned services has a smaller median      22
+
+23   complete time. The repeated reconstruction of a fitted model is part of this cold-start   23
+
+24   estimand. A different reuse contract would require a different work account, not          24
+
+25   deletion of the recorded fitting charge.                                                  25
+
+26     The deployment counts in Table II answer a narrower question. Holding each              26
+
+27   fitted model fixed, routing avoids the unconditional interior insertion and instead       27
+
+28   uses a prediction only when a certificate requires another query. There are sixteen       28
+
+29   distinct task–target–seed comparisons for each predictor. Routing reduces deploy- 29
+30   ment Bellman queries in all sixteen ReLU comparisons and all sixteen quadratic            30
+
+31   comparisons. The repeated traces are identical, so repetitions do not turn these 32       31
+
+32   matched comparisons into 64 independent numerical outcomes.                               32
+     36
+
+1                                                      TABLE I                                                     1
+
+2                                       C OMPLETE COLD - START SERVICE TIMES                                       2
+
+3                          d    T          ϵ       A       B     RI    RG      QI        QG                        3
+
+4                          2    2       1/32 0.256 0.252 0.650 0.657 0.614 0.614                                   4
+
+5                          2    2 1/128 0.270 0.282 0.655 0.656 0.624 0.628                                        5
+
+6                          8    2       1/32 0.380 0.360 0.770 0.771 0.741 0.739                                   6
+
+7                          8    2 1/128 0.416 0.441 0.806 0.806 0.754 0.773                                        7
+
+8                          16 2         1/32 0.536 0.496 0.935 0.911 0.891 0.856                                   8
+
+9                          16 2 1/128 0.552 0.622 0.978 0.987 0.913 0.935                                          9
+                           8    3       1/32 0.984 1.031 1.962 1.813 1.840 1.802
+10                                                                                                                 10
+                           8    3 1/128 1.450 1.952 2.435 2.481 2.323 2.285
+11                                                                                                                 11
+
+12   A: adaptive parabolic search; B: bisection; RI and RG: ReLU insertion and gating; QI and QG: quadratic        12
+     insertion and gating. Seconds are parent-observed complete-process times, including imports, training,
+13                                                                                                                 13
+     queries, exact workload costing, durable output and process join. Each conventional median uses two
+14                                                                                                                 14
+     repetitions; each learned median uses two seeds and two repetitions. Single-host descriptive clocks are
+15              not significance tests. All individual observations are retained in the supplement.                15
+
+16                                                                                                                 16
+
+17                                                                                                                 17
+
+18                                                                                                                 18
+                                                       TABLE II
+19                                                                                                                 19
+                     D EPLOYMENT B ELLMAN QUERY COUNTS ON IDENTICAL WORKLOADS
+20                                                                                                                 20
+                     d T            ϵ          A       B       RI      RG           QI         QG
+21                                                                                                                 21
+
+22
+                     2 2       1/32      1,298     1,310   1,427      1,298    1,421          1,295                22
+                     2 2 1/128           2,508     2,658   2,618      2,433    2,623          2,468
+23                                                                                                                 23
+                     8 2       1/32      1,280     1,325   1,472 1,278.5      1,461.5     1,278.5
+24                                                                                                                 24
+                     8 2 1/128           2,373     2,648   2,613 2,375.5       2,588      2,365.5
+25                                                                                                                 25
+                    16 2       1/32      1,286     1,328 1,455.5 1,281.5       1,457          1,283
+26                                                                                                                 26
+                    16 2 1/128           2,318     2,633   2,578      2,358    2,603      2,360.5
+27                                                                                                                 27
+                     8 3       1/32      7,042     8,112   9,014 6,947.5       8,604      7,038.5
+28                   8 3 1/128 31,015 39,768 37,519 31,074 35,295.5 30,898.5                                       28
+
+29                                                                                                                 29
+     Counts exclude training and are not a complete work measure. They include the recursive descendants
+30    and the common terminal kernel. Within a task and tolerance the workload is fixed across methods.            30
+
+31   Half-integer medians arise from two different seed transcripts. Insertion and gating share identical fitted   31
+
+32                               parameters for each matched seed and repetition.                                  32
+                                     NEURAL BELLMAN OPERATORS                                             37
+
+1      Against adaptive parabolic search the result is mixed. The ReLU route uses fewer                        1
+
+2    queries in nine comparisons, the same number in three, and more in four. The                              2
+
+3    quadratic route uses fewer in eleven, the same in two, and more in three. In the                          3
+
+4    two-state, two-date, 1/128 cell, the median ReLU deployment count falls from 2,508                        4
+
+5    for adaptive search to 2,433 for routing. In the sixteen-state counterpart it rises from                  5
+
+6    2,318 to 2,358. The three-date, tighter-target ReLU median also exceeds the adaptive                      6
+
+7    count, despite improving substantially on unconditional insertion. The gate does                          7
+
+8    not claim a pathwise query advantage over a strong conventional split rule.                               8
+
+9                                                                                                              9
+                                                 TABLE III
+10                                                                                                             10
+                       M ATCHED QUERY DIFFERENCES : GATED MINUS COMPARATOR
+11                                                                                                             11
+
+12                         Predictor    Comparator Lower Equal Higher                                          12
+
+13                         Relu         Insertion            16         0         0                            13
+
+14                         Relu         Adaptive               9        3         4                            14
+
+15                         Quadratic Insertion               16         0         0                            15
+
+16                         Quadratic Adaptive                11         2         3                            16
+
+17     One row comparison per task, target and fitting seed: sixteen for each predictor and comparator.        17
+
+18   Repetitions have identical models and numerical transcripts and do not double this count. These are       18
+                  query-count classifications, not signs of expected policy-cost differences.
+19                                                                                                             19
+
+20                                                                                                             20
+       These observations identify an incremental contribution of query organization,
+21                                                                                                             21
+     not a full economic dominance result. A prediction may reduce the upper endpoint,
+22                                                                                                             22
+     improve the lower certificate through localization, or do neither. Proposition 9
+23                                                                                                             23
+     describes the sufficient mathematical conditions; the matched catalogue measures
+24                                                                                                             24
+     their algorithmic consequence without giving the predictor credit for the certificate’s
+25                                                                                                             25
+     common components. Fitting and model evaluation can exceed the value of the
+26                                                                                                             26
+     saved queries. Here the complete clocks show that they do.
+27                                                                                                             27
+
+28                                                                                                             28
+                      9.3. Accuracy, dimension and finite-catalogue reliability
+29                                                                                                             29
+
+30     All 256 declared services returned their required local certificates and uniform                        30
+
+31   policy allowance. The second catalogue contains twenty services at each task– 31
+32   target cell. Its strongest state-dimensional execution is d = 16, T = 2, with target                      32
+     38
+
+1    1/128 and no stored state-lattice nodes. This is different from the earlier eight- 1
+2    dimensional tensor construction, which attained only the coarse target 1/2. The                               2
+
+3    economic primitives and original optimum are unchanged; the computation now                                   3
+
+4    queries descendants instead of filling a state grid.                                                          4
+
+5                                                                                                                  5
+                                                     TABLE IV
+6                                                                                                                  6
+                             A CCURACY, MEMORY AND FINITE - CATALOGUE RETURN
+7                                                                                                                  7
+
+8                      d T Target Returns Gap bound Batch RSS (KiB) Max (s)                                        8
+
+9                      2 2     1/32          20   0.01562501       256        94520      0.945                     9
+
+10                     2 2 1/128             20   0.00390626       512        94496      0.670                     10
+
+11                     8 2     1/32          20   0.01562501       256        94748      0.792                     11
+
+12                     8 2 1/128             20   0.00390626       512        95160      0.824                     12
+                      16 2     1/32          20   0.01562501       256        96040      0.953
+13                                                                                                                 13
+                      16 2 1/128             20   0.00390626       512        96212      1.006
+14                                                                                                                 14
+                       8 3     1/32          20   0.01562501       512        95704      1.964
+15                                                                                                                 15
+                       8 3 1/128             20   0.00390626      2048        98788      2.583
+16                                                                                                                 16
+     Every cell has twenty isolated-process returns: two conventional methods with two repetitions and four
+17                                                                                                                 17
+      learned methods with two seeds and two repetitions. Gap bounds are rounded upward for display;
+18                                                                                                                 18
+     exact binary64 values are retained in the audit and checked against the rational target. RSS is the largest
+19        recorded process peak, not only model storage. No service built a stored state lattice or invoked        19
+
+20                                            exact-rational recovery.                                             20
+
+21                                                                                                                 21
+
+22     The uniform bound is approximately half the stated target plus the explicit acqui- 22
+23   sition allowance, because the fixed design reserves half of the target when selecting                         23
+
+24   the per-date local request. Every exact recorded bound, not its printed decimal, is                           24
+
+25   checked against its rational target. The proof covers true initial states outside the                         25
+
+26   workload. The executed workload alone would not establish that assertion.                                     26
+
+27     Removing a state lattice does not make the problem dimensionless. Each original                             27
+
+28   cost and transition reads all coordinates, the dense quadratic model has a growing                            28
+
+29   feature array, and the batched continuation recursion retains innovation descen- 29
+30   dants. Across both catalogues, the largest live batch is 2,048 states and the largest                         30
+
+31   process peak is 98,860 KiB. The three-date cells reveal the continuation-tree cost; the                       31
+
+32   tight adaptive deployment count rises to 31,015 queries for only 32 trajectories. No                          32
+                                 NEURAL BELLMAN OPERATORS                               39
+
+1    tensor-free two-control or high-dimensional shock execution is inferred from these       1
+
+2    scalar-control, scalar-innovation results. The earlier complete two-control policy       2
+
+3    study remains in the preserved article under its own implementation.                     3
+
+4      Reliability is defined for the frozen finite catalogue. All services returned; the     4
+
+5    worst recorded complete process time is 2.5831 seconds when rounded upward               5
+
+6    to four decimals. There were 104 fitting warnings across the two catalogues, all         6
+
+7    retained. A fitting warning does not forge a returned Bellman certificate, but it        7
+
+8    also cannot be discarded from a training-reliability description. No floating query      8
+
+9    invoked the separately counted exact-rational recovery on these workloads. That          9
+
+10   observation does not eliminate the recovery procedure from the uniform implemen- 10
+11   tation contract or assign zero cost to its possible use elsewhere.                       11
+
+12                                                                                            12
+
+13                                                                                            13
+                            9.4. Policy cost and the purchase decision
+14                                                                                            14
+
+15     The workload starts from fixed twenty-bit dyadic states and uses fixed dyadic          15
+
+16   shocks, with eight named boundary initial states. Every true state transition and        16
+
+17   path cost is reconstructed with rational arithmetic. There are 26,624 path rows and      17
+
+18   55,296 implemented decisions across the two catalogues. These are finite diagnostic      18
+
+19   workloads, not independent draws furnishing new confidence intervals under the           19
+
+20   continuous law. The rational workload mean is retained for exact reproduction and        20
+
+21   is not substituted for the expectation in Section 6.2.                                   21
+
+22     The preceding continuous-law policy comparisons consequently remain im- 22
+23   portant and separate. All twenty pure fitted ReLU policies in the tensor study           23
+
+24   have strictly higher expected cost than the common policy; the twenty common- 24
+25   augmented comparisons are unresolved. The common policy has the smallest                 25
+
+26   complete release work in all twenty attainable task–target cells. The query study        26
+
+27   neither overwrites those observations nor asserts a new expected-cost reversal on        27
+
+28   the basis of finite dyadic averages. A callable query controller, a pure fitted actor,   28
+
+29   and a common-augmented nodal policy are distinct objects.                                29
+
+30     The purchase criterion has two uses. A buyer imposing only a uniform accuracy          30
+
+31   constraint can choose the least expensive eligible observed service for the declared     31
+
+32   workload and hardware. This favors a conventional method in the current cold-start       32
+     40
+
+1    catalogue. A buyer comparing monetary expected gains must additionally supply            1
+
+2    a valid expected-gain interval and the numeraire conversion, computation price           2
+
+3    and fixed fee in Section 6.2. Neither the current clocks nor two regret upper bounds     3
+
+4    provide that directional gain interval. The criterion is a specified decision problem,   4
+
+5    not an empirical calibration of an installation charge.                                  5
+
+6                                                                                             6
+
+7                          9.5. Reproduction and preserved evidence                           7
+
+8      The revision checks every service request, source freeze, model identity, trace,       8
+
+9    exact cost and complete-process receipt. An independently written rational imple- 9
+10   mentation reconstructs the economic trajectories. Re-querying each distinct recorded     10
+
+11   observation reproduces the original numerical endpoints, actions, probe counts           11
+
+12   and operation ledger; byte-identical repetitions are separately checked by identity      12
+
+13   rather than counted as fresh simulations. This is more than checking a table, but        13
+
+14   less than a formal proof-checker verification of arbitrary interval code.                14
+
+15     The present integration creates no new training run, clock observation or in- 15
+16   dependent continuous-law cost sample. The complete individual service tables,            16
+
+17   including fitting warnings and repeated timings, appear in the technical supple- 17
+18   ment. Every earlier manuscript source and its labeled results remain available in        18
+
+19   exact retained copies and four compiled companions. The active reading path brings       19
+
+20   the constructive NBO, primitive theorem, query implementation and economic               20
+
+21   comparison together without deleting an unfavorable experiment or extending a            21
+
+22   theorem beyond its hypotheses.                                                           22
+
+23                                                                                            23
+
+24
+                                       10. CONCLUSION                                         24
+
+25     Neural Bellman Operators connect continuation construction to feasible economic        25
+
+26   decisions. The original witness construction supplies an explicit own-future loss        26
+
+27   account. In the nonlinear investment economy, primitive regularity also supports a       27
+
+28   recursive, state-lattice-free implementation. The trained component proposes where       28
+
+29   to obtain another piece of Bellman information; the certificate determines whether       29
+
+30   that information is needed and whether the returned action is adequate.                  30
+
+31     The resulting policy has a uniform original-optimum account even though only           31
+
+32   a finite workload is executed. That distinction relies on the full continuous-action     32
+                                          NEURAL BELLMAN OPERATORS                                            41
+
+1    cover, original-law quadrature, acquisition allowance and finite recovery contract,                             1
+
+2    not on extrapolating from successful sample states. The cost still grows with the                               2
+
+3    depth of the continuation tree. Removing a tensor state table is not removing                                   3
+
+4    horizon, innovation or arithmetic costs.                                                                        4
+
+5      The matched evidence makes the role of learning assessable. Certificate gating                                5
+
+6    improves the organization of learned queries, but its online savings do not pay                                 6
+
+7    for training on the observed cold-start workloads. This does not invalidate the                                 7
+
+8    construction or change its target; it determines which services the stated decision                             8
+
+9    maker would purchase. Claims about repeated use require explicit saved work                                     9
+
+10   and an amortization condition, and claims about expected policy gain require                                    10
+
+11   independent economic inference. Keeping those obligations separate preserves the                                11
+
+12   substantive NBO objective and makes the next comparison reproducible.                                           12
+
+13                                                                                                                   13
+
+14                                                 REFERENCES                                                        14
+
+15   A GRAWAL , A KSHAY, S HANE B ARRATT, S TEPHEN B OYD , AND B ARTOLOMEO S TELLATO (2020): “Learning               15
+
+16    Convex Optimization Control Policies,” in Proceedings of the 2nd Conference on Learning for Dynamics           16
+      and Control, 120, 361–373. [4, 23]
+17                                                                                                                   17
+     F ELZENSZWALB , P EDRO F. AND D ANIEL P. H UTTENLOCHER (2012): “Distance Transforms of Sampled
+18                                                                                                                   18
+      Functions,” Theory of Computing, 8 (19), 415–428. [3, 9]
+19                                                                                                                   19
+     M AURER , A NDREAS AND M ASSIMILIANO P ONTIL (2009): “Empirical Bernstein Bounds and Sample
+20    Variance Penalization,” in Proceedings of the 22nd Annual Conference on Learning Theory, arXiv:0907.3740. 20
+21    [31]                                                                                                           21
+
+22   M C S HANE , E DWARD J. (1934): “Extension of Range of Functions,” Bulletin of the American Mathematical        22
+      Society, 40 (12), 837–842. [3, 8]
+23                                                                                                                   23
+     M UNOS , R. (2003): “Error Bounds for Approximate Policy Iteration,” in Proceedings of the Twentieth
+24                                                                                                                   24
+      International Conference on Machine Learning, 560–567. [3]
+25
+     P IROTTA , M ATTEO , M ARCELLO R ESTELLI , A LESSIO P ECORINO , AND D ANIELE C ALANDRIELLO (2013): 25
+26    “Safe Policy Iteration,” in Proceedings of the 30th International Conference on Machine Learning, vol. 28 of   26
+
+27    Proceedings of Machine Learning Research, 307–315. [3]                                                         27
+
+28   S AKAUE , S HINSAKU , AND TAIHEI O KI (2023): “Rethinking Warm-Starts with Predictions: Learning                28
+      Predictions Close to Sets of Optimal Solutions for Faster L-/L♮ -Convex Function Minimization,” in
+29                                                                                                                   29
+      Proceedings of the 40th International Conference on Machine Learning, 202, 29760–29776. [3, 23]
+30                                                                                                                   30
+     S CHERRER , B RUNO , M OHAMMAD G HAVAMZADEH , V ICTOR G ABILLON , B ORIS L ESNER , AND
+31    M ATTHIEU G EIST (2015): “Approximate Modified Policy Iteration and its Application to the Game of             31
+
+32    Tetris,” Journal of Machine Learning Research, 16 (49), 1629–1676. [3]                                         32
+     42
+
+1    YANG , I NSOON (2020): “A Convex Optimization Approach to Dynamic Programming in Continuous     1
+
+2     State and Action Spaces,” Journal of Optimization Theory and Applications, 187, 133–157. [3]   2
+
+3                                                                                                    3
+
+4                                                                                                    4
+
+5                                                                                                    5
+
+6                                                                                                    6
+
+7                                                                                                    7
+
+8                                                                                                    8
+
+9                                                                                                    9
+
+10                                                                                                   10
+
+11                                                                                                   11
+
+12                                                                                                   12
+
+13                                                                                                   13
+
+14                                                                                                   14
+
+15                                                                                                   15
+
+16                                                                                                   16
+
+17                                                                                                   17
+
+18                                                                                                   18
+
+19                                                                                                   19
+
+20                                                                                                   20
+
+21                                                                                                   21
+
+22                                                                                                   22
+
+23                                                                                                   23
+
+24                                                                                                   24
+
+25                                                                                                   25
+
+26                                                                                                   26
+
+27                                                                                                   27
+
+28                                                                                                   28
+
+29                                                                                                   29
+
+30                                                                                                   30
+
+31                                                                                                   31
+
+32                                                                                                   32
+
