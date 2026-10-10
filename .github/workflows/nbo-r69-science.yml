@@ -1,0 +1,129 @@
+name: NBO R69 prospective referee experiments
+on:
+  push:
+    branches: [revision/econometrica-nbo-r69-referee-revision-2026-10-11]
+    paths: [.github/workflows/nbo-r69-science.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r69-prospective-science
+  cancel-in-progress: false
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      source: ${{ steps.freeze.outputs.source }}
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+            /revisions/2026-10-10-r64/
+            /revisions/2026-10-10-r67/
+            /revisions/2026-10-11-r69/
+          sparse-checkout-cone-mode: false
+      - name: Install scientific dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn
+      - name: Prepare ordinary sources and run declared smoke regressions
+        run: |
+          /usr/bin/python3 revisions/2026-10-11-r69/code/prepare69.py
+          mkdir -p revisions/2026-10-11-r69/audit/build-logs
+          set -o pipefail
+          /usr/bin/python3 revisions/2026-10-11-r69/code/tests69.py 2>&1 | tee revisions/2026-10-11-r69/audit/build-logs/pre-freeze-tests69.log
+      - name: Freeze and push exact tested scientific sources
+        id: freeze
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          /usr/bin/python3 revisions/2026-10-11-r69/code/science69.py --freeze
+          git add -f revisions/2026-10-11-r69
+          git commit -m 'R69: freeze ordinary scientific sources after exact and interval smoke tests'
+          sha=$(git rev-parse HEAD)
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r69-experiment-source-2026-10-11
+          echo "source=$sha" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r69-preparation
+          path: revisions/2026-10-11-r69/audit/
+          retention-days: 30
+  execute:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [comparison, validation, reuse, inference, vector]
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.source }}
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+            /revisions/2026-10-10-r64/
+            /revisions/2026-10-10-r67/
+            /revisions/2026-10-11-r69/
+          sparse-checkout-cone-mode: false
+      - name: Install scientific dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn
+      - name: Execute every predeclared service in this cohort
+        run: /usr/bin/python3 revisions/2026-10-11-r69/code/science69.py --group ${{ matrix.group }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r69-results-${{ matrix.group }}
+          path: |
+            revisions/2026-10-11-r69/results69/
+            revisions/2026-10-11-r69/receipts69/
+            revisions/2026-10-11-r69/logs69/
+          retention-days: 30
+          compression-level: 1
+  retain:
+    needs: [prepare, execute]
+    if: ${{ always() && needs.prepare.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.source }}
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: /revisions/2026-10-11-r69/
+          sparse-checkout-cone-mode: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nbo-r69-results-*
+          path: revisions/2026-10-11-r69/
+          merge-multiple: true
+      - name: Preserve complete output and failed service evidence remotely
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-11-r69
+          git commit -m 'R69: retain all prospective execution records, parent receipts and failures'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r69-executed-2026-10-11
+          git rev-parse HEAD
