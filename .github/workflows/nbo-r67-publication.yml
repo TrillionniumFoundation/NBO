@@ -45,15 +45,29 @@ jobs:
           git show d548a97f461160296239ed6a973d4a91ef9d1fad:reviews/2026-10-10-econometrica-numerical-methods-r65/referee_report.md > revisions/2026-10-10-r67/inputs/referee-r65.md
           /usr/bin/python3 revisions/2026-10-10-r67/code/prepare_paper67.py
           /usr/bin/python3 - <<'PY'
-          import ast,hashlib,json,pathlib,subprocess
+          import ast,hashlib,json,pathlib
           root=pathlib.Path('revisions/2026-10-10-r67')
+          build=root/'code/build67.py'
+          text=build.read_text()
+          old="+'\\n\\\\end{thebibliography}\\n')"
+          new="+'\\n\\n\\\\end{thebibliography}\\n')"
+          if old in text:
+              assert text.count(old)==1
+              text=text.replace(old,new)
+              build.write_text(text)
+          assert new in text,'Missing final bibliography paragraph break'
+          for name,label in [('ECTA.tex','e67main'),('supp.tex','e67supp')]:
+              path=root/name;text=path.read_text()
+              text=text.replace('ead[label=e1]','ead[label='+label+']')
+              assert 'ead[label='+label+']' in text
+              path.write_text(text)
           for p in (root/'code').glob('*.py'):ast.parse(p.read_text(),filename=str(p))
           report=root/'inputs/referee-r65.md'
-          record={'review_commit':'d548a97f461160296239ed6a973d4a91ef9d1fad','reviewed_manuscript_commit':'34a5ce17dc3ac4681b6d004eca00637f28104e28','corrected_execution_commit':'c3519eb28e1217690daa6120317e7424084e04c6','report_sha256':hashlib.sha256(report.read_bytes()).hexdigest(),'scope':'Pinned original-paper referee revision; prior branches and scientific freezes unchanged'}
+          record={'review_commit':'d548a97f461160296239ed6a973d4a91ef9d1fad','reviewed_manuscript_commit':'34a5ce17dc3ac4681b6d004eca00637f28104e28','corrected_execution_commit':'c3519eb28e1217690daa6120317e7424084e04c6','report_sha256':hashlib.sha256(report.read_bytes()).hexdigest(),'scope':'Pinned original-paper referee revision; prior branches and scientific freezes unchanged; ordinary typesetting fixes committed before testing'}
           (root/'audit/INPUT_BINDINGS67.json').write_text(json.dumps(record,indent=2)+'\n')
           PY
           git add -f revisions/2026-10-10-r67
-          if ! git diff --cached --quiet; then git commit -m 'R67: bind the controlling R65 report and corrected complete scientific execution'; fi
+          if ! git diff --cached --quiet; then git commit -m 'R67: bind corrected execution and finalize ordinary typesetting sources before verification'; fi
           git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r67-referee-revision-2026-10-10 HEAD:refs/heads/revision/econometrica-nbo-r67-source-2026-10-10
       - name: Install publication and verification dependencies
         run: |
