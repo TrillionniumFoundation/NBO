@@ -62,14 +62,15 @@ def main():
             rows.append([names[t['task']],tol,'yes' if common['status']=='attained' else 'no',*(str(counts[k])+'/4' for k in ('relu-pure','relu-guarded','quadratic-pure','quadratic-guarded'))])
     longtable('targets62','Every declared tolerance and finite-seed attainment count','tab:targets62',
         ['$d/m/T$','Tolerance','Common','Pure R','Aug. R','Pure Q','Aug. Q'],rows,
-        'R and Q denote trained ReLU and fitted quadratic proposals. A fraction is an exact count over the four declared seeds; it is not a population probability. The common comparator has no training seed. Every unsuccessful target remains budget exhausted. Exact first-rung identities and the least recorded full-release work among eligible methods are retained in PUBLICATION_FACTS62.json.','rrrrrrr')
+        'R and Q denote trained ReLU and fitted quadratic proposals. A fraction is an exact count over the four declared seeds; it is not a population probability. The common comparator has no training seed. Every unsuccessful target remains budget exhausted. Exact first-rung identities and the least recorded full-release work among eligible methods are retained in the machine-readable publication facts.','rrrrrrr')
     rows=[]
     for t in tasks:
         for r in t['rungs']:
-            rows.append([names[t['task']],r['n'],dec(r['common_gap']),span([r['methods'][f'relu-{s}-pure'] for s in seeds]),span([r['methods'][f'relu-{s}-guarded'] for s in seeds]),span([r['methods'][f'quadratic-{s}-pure'] for s in seeds]),span([r['methods'][f'quadratic-{s}-guarded'] for s in seeds])])
+            for variant in ('pure','guarded'):
+                rows.append([names[t['task']],r['n'],'Pure' if variant=='pure' else 'Augmented',dec(r['common_gap']),span([r['methods'][f'relu-{s}-{variant}'] for s in seeds]),span([r['methods'][f'quadratic-{s}-{variant}'] for s in seeds])])
     longtable('rungs62','All original-optimum refinement rungs','tab:rungs62',
-        ['$d/m/T$','$n$','Common','Pure R','Aug. R','Pure Q','Aug. Q'],rows,
-        'Upper-bound ranges cover every fixed seed. Complete nodal arrays, exact error recursions, interpolation and quadrature allowances, action discretization allowances, and deployment errors are retained for each entry.','rrrcccc')
+        ['$d/m/T$','$n$','Variant','Common','ReLU range','Quadratic range'],rows,
+        'Both variants and every rung are retained. Upper-bound ranges cover every fixed seed. Complete nodal arrays, exact error recursions, interpolation and quadrature allowances, action discretization allowances, and deployment errors are retained for each entry.','rrlrcc')
     rows=[]
     for t in tasks:
         cost=t['costs']
