@@ -1,0 +1,40 @@
+name: NBO R70 catalogue inspection
+on:
+  push:
+    branches: [revision/econometrica-nbo-r70-referee-revision-2026-10-11]
+    paths: [.github/workflows/nbo-r70-inspect.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            revisions/2026-10-10-r62
+            revisions/2026-10-10-r63
+            revisions/2026-10-10-r64
+            revisions/2026-10-10-r65
+            revisions/2026-10-10-r66
+            revisions/2026-10-10-r67
+            revisions/2026-10-11-r69
+            revisions/2026-10-11-r70
+      - run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy
+      - name: Check every frozen receipt and publish inspection
+        run: |
+          /usr/bin/python3 revisions/2026-10-11-r70/code/inspect70.py
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-11-r70/audit
+          git commit -m 'R70: retain complete R69 catalogue identity audit and unfiltered descriptive evidence'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r70-inspected-2026-10-11
