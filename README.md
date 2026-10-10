@@ -1,25 +1,29 @@
 # Neural Bellman Operators
 
-**Current complete referee revision: R65.**
+**Current complete referee revision: R67.**
 
-Canonical branch: `revision/econometrica-nbo-r65-review-ready-2026-10-10`.
+Canonical branch: `revision/econometrica-nbo-r67-review-ready-2026-10-10`.
 
-[Article](revisions/2026-10-10-r65/build/ECTA.pdf) · [Technical supplement](revisions/2026-10-10-r65/build/supp.pdf) · [Response](revisions/2026-10-10-r65/build/response.pdf)
+[Main article](revisions/2026-10-10-r67/build/ECTA.pdf) · [Technical supplement](revisions/2026-10-10-r67/build/supp.pdf) · [Point-by-point response](revisions/2026-10-10-r67/build/response.pdf)
 
-[Revision guide](revisions/2026-10-10-r65/README.md) · [Content-location map](revisions/2026-10-10-r65/CONTENT_MAP65.md)
+[Revision guide](revisions/2026-10-10-r67/README.md) · [Preserved content map](revisions/2026-10-10-r67/CONTENT_MAP67.md)
 
-R65 keeps the original NBO title, constructive operator, investment primitives
-and Bellman optimum. It integrates completed state-lattice-free query services,
-proves a prediction/localization certificate, and reports the matched benefits
-and complete costs of certificate-gated neural routing. All 256 original
-isolated services are retained and replayed. No new optimizer runs or independent
-continuous-law cost observations are created by this publication.
+R67 retains the original NBO title, model, constructive neural operator and
+Bellman optimum. It adds a computable pre-query certificate, a certificate-aware
+ReLU readout with an optimization-gap bound, and a two-control extension.
+The complete corrected 212-process catalogue includes ten same-gate controls,
+eight fitting seeds, prospective cached reuse, continuous-law costs of the
+actual callable policies, and two-control/two-shock scaling through four dates.
 
-The preceding complete article and supplement and their broader companions
-are preserved byte-for-byte in source and compiled separately. Earlier review
-and scientific branches are unchanged. See the four retained PDFs under the
-revision guide rather than treating them as four new empirical studies.
+An independent rational trajectory check detected endpoint aliasing in R66's
+cumulative path account. R67 preserves that counterexample and the entire old
+execution, repairs the accumulator, freezes a separate source version, and
+reruns every declared process. Repeated streams are not additional IID data.
 
-`revisions/2026-10-10-r65/audit/FINAL_DELIVERY65.json` binds the ordinary sources,
-63 tests, complete record replay, seven documents and clean publication rebuild.
-Offline full verification: `python3 revisions/2026-10-10-r65/code/build65.py`.
+The current article, supplement and response and six unchanged historical
+companions are bound by `revisions/2026-10-10-r67/audit/FINAL_DELIVERY67.json`.
+Numerical and mathematical regression tests, all-record replay, source/statement
+preservation and a clean offline archive rebuild are recorded separately.
+The older review and scientific branches remain unchanged.
+
+Full offline verification: `python3 revisions/2026-10-10-r67/code/build67.py`.
