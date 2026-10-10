@@ -1,24 +1,25 @@
 # Neural Bellman Operators
 
-**Current complete referee revision: R62.**
+**Current complete referee revision: R65.**
 
-Canonical branch: `revision/econometrica-nbo-r62-review-ready-2026-10-10`.
+Canonical branch: `revision/econometrica-nbo-r65-review-ready-2026-10-10`.
 
-[Article](revisions/2026-10-10-r62/build/ECTA.pdf) · [Technical supplement](revisions/2026-10-10-r62/build/supp.pdf) · [Response to the referee](revisions/2026-10-10-r62/build/response.pdf)
+[Article](revisions/2026-10-10-r65/build/ECTA.pdf) · [Technical supplement](revisions/2026-10-10-r65/build/supp.pdf) · [Response](revisions/2026-10-10-r65/build/response.pdf)
 
-[Revision guide](revisions/2026-10-10-r62/README.md) · [Complete development](revisions/2026-10-10-r62/build/complete.pdf) · [Complete proof companion](revisions/2026-10-10-r62/build/complete-supp.pdf)
+[Revision guide](revisions/2026-10-10-r65/README.md) · [Content-location map](revisions/2026-10-10-r65/CONTENT_MAP65.md)
 
-R62 preserves the original NBO paper and develops primitive regularity and a
-second-order original-optimum certificate for the actual acquired policy.
-A separately frozen prospective study covers several state dimensions,
-longer horizons and complete two-control economic policies. Pure and
-common-augmented neural and conventional actors retain their own certificates,
-direct policy-cost comparisons and full computational charges.
+R65 keeps the original NBO title, constructive operator, investment primitives
+and Bellman optimum. It integrates completed state-lattice-free query services,
+proves a prediction/localization certificate, and reports the matched benefits
+and complete costs of certificate-gated neural routing. All 256 original
+isolated services are retained and replayed. No new optimizer runs or independent
+continuous-law cost observations are created by this publication.
 
-`revisions/2026-10-10-r62/audit/FINAL_DELIVERY62.json` binds the complete sources,
-scientific records, tests, seven documents and clean offline archive rebuild.
-The controlling R61 review, earlier revision branches and unfavorable results
-are unchanged. The source-freeze and completed-science branches retain their
-separate provenance; they are not additional independent experiments.
+The preceding complete article and supplement and their broader companions
+are preserved byte-for-byte in source and compiled separately. Earlier review
+and scientific branches are unchanged. See the four retained PDFs under the
+revision guide rather than treating them as four new empirical studies.
 
-Offline build: `python3 revisions/2026-10-10-r62/code/build62.py`.
+`revisions/2026-10-10-r65/audit/FINAL_DELIVERY65.json` binds the ordinary sources,
+63 tests, complete record replay, seven documents and clean publication rebuild.
+Offline full verification: `python3 revisions/2026-10-10-r65/code/build65.py`.
