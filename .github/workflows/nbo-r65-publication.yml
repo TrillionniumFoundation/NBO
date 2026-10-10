@@ -1,0 +1,77 @@
+name: NBO R65 original-paper referee revision
+on:
+  push:
+    branches: [revision/econometrica-nbo-r65-referee-revision-2026-10-10]
+    paths: [.github/workflows/nbo-r65-publication.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r65-publication
+  cancel-in-progress: false
+jobs:
+  complete-revision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      SOURCE_DATE_EPOCH: '1791590400'
+      FORCE_SOURCE_DATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+            /revisions/2026-10-10-r64/
+            /revisions/2026-10-10-r65/
+            /README.md
+          sparse-checkout-cone-mode: false
+      - name: Install verification and publication dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Pin the controlling review and materialize unchanged manuscript dependencies
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git fetch --filter=blob:none --depth=1 origin eb02fdb321fe6f26de9caa3afcbe2f84531faef2 cfecc5ffcdeb836b1c70e9b98d1dc87f6f8cd097
+          mkdir -p revisions/2026-10-10-r65/inputs
+          git show eb02fdb321fe6f26de9caa3afcbe2f84531faef2:reviews/2026-10-10-econometrica-numerical-methods-r62/referee_report.md > revisions/2026-10-10-r65/inputs/referee-R62.md
+          /usr/bin/python3 revisions/2026-10-10-r65/code/prepare65.py
+          /usr/bin/python3 - <<'PY'
+          import ast,hashlib,json,pathlib,subprocess
+          root=pathlib.Path('revisions/2026-10-10-r65')
+          manifest=json.loads((root/'audit/PRESERVATION65.json').read_text())
+          for path,expected in manifest['retained_source_sha256'].items():
+              old=subprocess.check_output(['git','show','cfecc5ffcdeb836b1c70e9b98d1dc87f6f8cd097:revisions/2026-10-10-r62/'+path])
+              if hashlib.sha256(old).hexdigest()!=expected:raise AssertionError('Reviewed original changed: '+path)
+          sources={}
+          for path in sorted((root/'code').glob('*.py')):
+              raw=path.read_bytes();ast.parse(raw,filename=str(path));sources[str(path.relative_to(root))]=hashlib.sha256(raw).hexdigest()
+          (root/'audit/SOURCE_SNAPSHOT65.json').write_text(json.dumps({'workflow_head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'publication_sources':sources,'reviewed_source_identity':'passed','scope':'Publication snapshot; not a new scientific protocol or experiment'},sort_keys=True,indent=2)+'\n')
+          PY
+          git add -f revisions/2026-10-10-r65
+          git commit -m 'R65: bind ordinary original-paper sources to the controlling review and exact retained manuscripts'
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r65-referee-revision-2026-10-10 HEAD:refs/heads/revision/econometrica-nbo-r65-source-2026-10-10
+      - name: Replay complete frozen services, run all 63 tests and compile seven documents
+        run: /usr/bin/python3 revisions/2026-10-10-r65/code/build65.py
+      - name: Clean archive publication rebuild and non-forced review-ready push
+        run: /usr/bin/python3 revisions/2026-10-10-r65/code/publish65.py
+      - name: Retain publication and all diagnostic logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r65-paper-audits-and-logs
+          path: |
+            revisions/2026-10-10-r65/build/*.pdf
+            revisions/2026-10-10-r65/build/*.txt
+            revisions/2026-10-10-r65/audit/
+            revisions/2026-10-10-r65/tables/
+          retention-days: 30
+          compression-level: 1
