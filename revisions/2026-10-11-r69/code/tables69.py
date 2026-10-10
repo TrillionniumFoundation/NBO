@@ -1,12 +1,23 @@
 """Generate descriptive tables; retain every failed service in the audit."""
 from pathlib import Path
 from decimal import Decimal,ROUND_FLOOR,ROUND_CEILING
+from fractions import Fraction
 import json,statistics
 R=Path(__file__).resolve().parents[1]
 LABEL={'adaptive':'Adaptive','upper-minimizer':'Chord','hat-relu':'ReLU-C','bernstein4':'Bernstein-C','label-relu':'ReLU-L','quadratic':'Quadratic','simplicial':'Adaptive triangle','uniform':'Uniform triangle','hat-vector':'ReLU vector','quadratic-vector':'Quadratic vector','r67-relu':'R67 ReLU'}
 def fmt(x,n=4):return f'{x:.{n}f}'
 def endpoint(x,lower):return format(Decimal.from_float(float(x)).quantize(Decimal('0.00001'),rounding=ROUND_FLOOR if lower else ROUND_CEILING),'f')
 def interval(x):return '['+endpoint(x[0],True)+', '+endpoint(x[1],False)+']'
+def gap(exact):
+    value=Fraction(exact)
+    if value<0:raise ValueError('Negative dual gap')
+    if not value:return '$0$'
+    exponent=len(str(value.numerator))-len(str(value.denominator))
+    if value<Fraction(10)**exponent:exponent-=1
+    scaled=value*Fraction(10)**(3-exponent)
+    upper=(scaled.numerator+scaled.denominator-1)//scaled.denominator
+    if Fraction(upper,1000)*Fraction(10)**exponent<value:raise AssertionError('Gap display rounded inward')
+    return f'${upper//1000}.{upper%1000:03d}'+r'\times10^{'+str(exponent)+'}$'
 def write(name,text):
     p=R/'tables'/name;p.parent.mkdir(parents=True,exist_ok=True)
     if any(ord(c)<32 and c not in '\n\r\t' for c in text):raise ValueError('Invalid table text')
@@ -26,7 +37,7 @@ def main():
             g=[x for x in good if x['spec']['group']=='comparison' and x['spec']['d']==d and x['spec']['kind']==kind]
             if not g:continue
             times=[x['complete_process_seconds'] for x in g]
-            rows.append([d,T,LABEL[kind],len(g),fmt(median([x['counts']['q_queries'] for x in g]),0),fmt(median(times),3),fmt(min(times),3)+'--'+fmt(max(times),3)])
+            rows.append([d,T,LABEL[kind],len(g),fmt(median([x['counts']['q_queries'] for x in g]),1),fmt(median(times),3),fmt(min(times),3)+'--'+fmt(max(times),3)])
     table('cold69','Complete cold-start services',['$d$','$T$','Method','$n$','Queries','Median (s)','Range (s)'],rows,
           'C is the certificate objective and L action-label loss. Query counts and times are medians over all returned seeds and repetitions. Process clocks include construction, queries, path evaluation, output and shutdown. Four repetitions are descriptive timing evidence, not a population performance guarantee.')
     unique={}
@@ -34,14 +45,14 @@ def main():
         z=x['spec'];key=(z['d'],z['T'],z['kind'],z['seed'],x['r']);v=x['exact_certificate']
         if key in unique and (unique[key]['value_exact']!=v['value_exact'] or unique[key]['dual_gap_exact']!=v['dual_gap_exact']):raise AssertionError('Nonreproducible fitted objective')
         unique[key]=v
-    rows=[[d,T,LABEL[k],seed,r,v['coefficient_count'],fmt(v['value'],7),fmt(v['dual_gap'],7)] for (d,T,k,seed,r),v in sorted(unique.items())]
+    rows=[[d,T,LABEL[k],seed,r,v['coefficient_count'],fmt(v['value'],7),gap(v['dual_gap_exact'])] for (d,T,k,seed,r),v in sorted(unique.items())]
     table('readout69','Achieved convex readout certificates',['$d$','$T$','Method','Seed','$r$','$p$','$F(w)$','$D(w)$'],rows,
-          'Exact rational values and every training endpoint are retained in the audit. Both representations have 5d coefficients and the same information and optimizer budget. The dual gap certifies the returned quantized weights; it does not assume optimizer convergence.')
+          'Exact rational values and every training endpoint are retained. Positive dual gaps are rounded upward in scientific notation; zero denotes an exact zero, not decimal truncation. Both representations have 5d coefficients and the same information and optimizer budget. The gap certifies the returned weights without assuming optimizer convergence.')
     rows=[]
     for x in a['validation']:
         z=x['spec'];rows.append([z['d'],z['T'],LABEL[z['kind']],z['seed'],x['r'],x['screen_returns'],fmt(x['mean_root_queries'],2),fmt(x['distributional_root_upper'],2)])
     table('validation69','Independent context validation',['$d$','$T$','Method','Seed','$r$','Closed','Queries','Upper'],rows,
-          'Each row uses 256 independent acquired-state contexts. Closed counts pre-query returns. Queries and Upper are the observed average root-query count and its declared distributional upper bound. The complete-action mesh recovery is executed; recursive deployment states are not treated as IID contexts.')
+          'Each row uses 256 independent contexts on the frozen sixteen-bit dyadic grid. Closed counts pre-query returns. Queries and Upper are the observed average root-query count and its declared distributional upper bound. The complete-action mesh recovery is executed; recursive deployment states are not treated as IID contexts.')
     rows=[]
     for d,T in ((2,2),(8,3)):
         for kind in ('hat-relu','bernstein4','quadratic'):
