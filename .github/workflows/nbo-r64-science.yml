@@ -36,14 +36,16 @@ jobs:
           set -euo pipefail
           mkdir -p revisions/2026-10-10-r64/audit
           /usr/bin/python3 - <<'PY'
-          import hashlib
+          import hashlib,json
           from pathlib import Path
           root=Path('revisions/2026-10-10-r64')
-          expected={'PROTOCOL64.md':'e64141520cc3e74137f46902a49825b263aec32ae6d2d8f6c2fc518ea27de2bd','code/query64.py':'e42f308ecd552c17f403a7042eac9b0344eba75fb73c7f62d7b324db581017dc','code/science64.py':'d9fd1f790ff3d9f91642f96f0065e6ef5129648bd302ca965a60d48870197e3d','code/tests64.py':'08acab235e767a5139e5f6286924286a4eb2be40270991e3c5b467f32303d242','sections/gated64.tex':'f1cbc359d35866384299394d5adeab21ec02f16265eaba9e8c244f4672a78a50'}
+          expected={'PROTOCOL64.md':'e64141520cc3e74137f46902a49825b263aec32ae6d2d8f6c2fc518ea27de2bd','code/query64.py':'e42f308ecd552c17f403a7042eac9b0344eba75fb73c7f62d7b324db581017dc','code/science64.py':'d9fd1f790ff3d9f91642f96f0065e6ef5129648bd302ca965a60d48870197e3d','code/tests64.py':'1b36ef26922e74dd78fee22f46facf3b6385a5efafd386eed803131f27050460','sections/gated64.tex':'f1cbc359d35866384299394d5adeab21ec02f16265eaba9e8c244f4672a78a50'}
           for path,h in expected.items():
               actual=hashlib.sha256((root/path).read_bytes()).hexdigest()
               if actual!=h:raise AssertionError((path,actual,h))
-          print('All source files equal the locally tested ordinary source bytes.')
+          note={'prior_run':38029463206,'prior_stage':'preproduction source check','production_started':False,'difference':'one blank line before tests64 main entry; algorithms and tests unchanged','resolution':'committed test bytes downloaded, compared and all 17 tests rerun locally before this workflow'}
+          (root/'audit/PREPRODUCTION64.json').write_text(json.dumps(note,indent=2)+'\n')
+          print('All source files equal the locally re-tested ordinary source bytes.')
           PY
           /usr/bin/python3 revisions/2026-10-10-r63/code/tests63.py 2>&1 | tee revisions/2026-10-10-r64/audit/preproduction-retained63.log
           /usr/bin/python3 revisions/2026-10-10-r64/code/tests64.py 2>&1 | tee revisions/2026-10-10-r64/audit/preproduction-tests64.log
