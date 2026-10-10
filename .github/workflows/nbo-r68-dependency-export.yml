@@ -1,0 +1,42 @@
+name: NBO R68 dependency export
+on:
+  push:
+    branches: [revision/econometrica-nbo-r68-referee-revision-2026-10-11]
+    paths: [.github/workflows/nbo-r68-dependency-export.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: eacd3e217ae1e2e9ea6e154b48da7d103159d051
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+            /revisions/2026-10-10-r64/
+            /revisions/2026-10-10-r66/
+          sparse-checkout-cone-mode: false
+      - name: Retain code and numerical records with review input
+        run: |
+          git fetch --depth=1 origin 4b27b56f4514f6c1d77b69fe707f7202f8b06b19
+          git archive 4b27b56f4514f6c1d77b69fe707f7202f8b06b19 reviews/2026-10-11-econometrica-numerical-methods-r67 | tar -x
+          python3 - <<'PY'
+          import pathlib,zipfile
+          with zipfile.ZipFile('dependencies.zip','w',zipfile.ZIP_DEFLATED,compresslevel=1) as z:
+              for p in pathlib.Path('revisions').rglob('*'):
+                  if not p.is_file() or '__pycache__' in p.parts:continue
+                  if p.suffix=='.py' or ('2026-10-10-r62' not in p.parts and p.suffix in {'.json','.npz','.md'}):z.write(p,str(p))
+              for p in pathlib.Path('reviews').rglob('*'):
+                  if p.is_file():z.write(p,str(p))
+          print(pathlib.Path('dependencies.zip').stat().st_size)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r68-dependencies
+          path: dependencies.zip
+          compression-level: 0
+          retention-days: 14
