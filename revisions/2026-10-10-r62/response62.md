@@ -1,0 +1,91 @@
+# Response to the Referee
+
+## Neural Bellman Operators — Revision R62
+
+We thank the referee for identifying the distinction between an exact fitted-action witness and a complete policy certified against the original optimum. We have used that distinction to extend the original Neural Bellman Operators paper. The principal addition is a primitive regularity theorem for the original nonlinear investment economy, followed by a second-order whole-domain certificate for the actual implemented policy. The accompanying prospective catalogue applies that certificate across state dimensions, horizons and a fully implemented two-control economy. The original title, constructive neural backend, economic model and Bellman-accuracy objective remain in place.
+
+This response addresses the advisory report dated 10 October 2026 at review commit `08ca068d318ce159401b36655eccea1e05490d01`, reviewing the canonical R61 manuscript at `19f17cef194b620cfbf9d33e7c78ee051a2dddf0`. It is not represented as a formal editorial decision of Econometrica. All preceding sources, results and adverse comparisons remain in the revision history and preserved companions. New scientific production is distinguished from the later publication replay.
+
+The added main sections are **Original-optimum accuracy in the investment economy** and **Prospective accuracy and complete economic policies**. The former states and proves the new results; the latter reports all-state accuracy, direct policy-cost comparisons and complete release work. The supplement gives every target, refinement rung, seed, policy cost and conventional contrast, as well as numerical semantics and combined resource bounds. The final publication manifest identifies the precise source, scientific records, tests and compiled documents submitted for renewed review.
+
+## M1 and B10: One coherent contribution within the original paper
+
+The revised introduction separates three parts of the NBO method: construction of a continuation from its own fitted future, recovery of a feasible action, and certification of the complete implemented policy. The new contribution completes the third part at the original Bellman optimum, rather than promoting an exact local action solver into a general economic platform. We retain the original core and broader applications under their existing hypotheses, but do not apply the new convexity theorem to a diffusion, nonlinear recursive preference or game merely because it appears elsewhere in the paper.
+
+The reading order places the primitive regularity and actual-policy theorem after the exact witness and fixed-cover stability results. The new experiment then tests that theorem directly. The earlier range-table certificate, unchanged-actor revalidation, initial-law service catalogue and exact query experiments remain separate observations, with their original unfavorable results. This is a development of the same NBO topic, not the differently titled replacement paper suggested in the report.
+
+The full development and proof companions preserve the earlier material. The preservation audit checks inherited labels and scientific source identities. We have not obtained a more favorable contribution claim by removing conventional wins or failed targets. The cumulative companions remain long; the active reading path now identifies the added proof–implementation–economic-cost chain explicitly. No claim is made that formatting alone resolves every editorial question about scope.
+
+## M2: Matched original-optimum accuracy for actual returned policies
+
+All new methods now face the same maximum-over-states-and-dates Bellman-accuracy targets. The lower bound covers the continuous feasible action set, not merely the proposed lattice. The upper action arrays belong to the actual returned controller. The policy theorem adds off-grid interpolation, original continuous-law quadrature, arithmetic, state acquisition, downward action rounding and future policy error. A gain relative to zero investment cannot pass this criterion.
+
+The important mathematical step is to prove joint convexity of the true Bellman objective despite the bilinear transition. The primitive state curvature dominates the nonaffine composition defect at the original discount 15/16. A uniform Lipschitz bound of 27/d and semiconcavity bound of 54/d close the backward induction for every finite horizon. Coordinate bounds then give a second-order positive-interpolation error. This produces nodal Bellman brackets whose error does not contain the entire value range over every reached rectangle.
+
+A separate theorem transfers feasible nodal actions to the actual barycentric acquired actor. Joint convexity bounds its optimal advantage, and backward recursion bounds its complete loss. The fitted critic need not be convex, and the value of the returned policy is not assumed convex. The pure fitted actor and its common-augmented counterpart have different recorded upper arrays and different certificates; neither receives the other's accuracy by attribution.
+
+The reported frontier retains both first-crossing verification prefixes and full catalogue-release costs. Every method is charged the entire common reference calculation, its own primitive fitting and verification, all preceding rungs, serialization, full shared inference and cold compilation. We do not call a prefix without inference the complete cost of an unexecuted stopping algorithm.
+
+## M3 and B7: Prospective execution beyond two states and two dates
+
+The new protocol was committed before production. It fixes five economic cells, state/action/innovation ladders, four fitting seeds, the complete timing boundary and five original-optimum tolerances. The cells include a four-state, three-date economy and an eight-state economy, in addition to the two-state cases. All actual pure and augmented fitted actors are included. Every unsuccessful target remains budget exhausted; no extra rung is chosen after seeing a failure.
+
+The earlier centered calculation remains a disclosed follow-up to an earlier failed range calculation. It is not retrospectively described as prospective. The new experiment is a separately frozen design based on the new regularity theorem. Nor is the actor change hidden: the new barycentric acquired actor differs from the previous discontinuous cell-constant actor. R61 remains the fixed-actor revalidation experiment; R62 states and verifies its new implementation contract directly.
+
+A disjoint compatibility fixture caught a draft discount mismatch before the source freeze or any economic production observation. We corrected the ordinary theorem and code to the inherited 15/16, recomputed the regularity constants, and retained the failed fixture and correction record. The completed source freeze includes the corrected theorem and an explicit code assertion that the discount matches the original primitives. This preproduction correction is neither an undisclosed change of economic model nor a rerun selected on favorable policy costs.
+
+## M4 and B8: A complete two-control economic service
+
+The two-control extension now constructs, deploys and evaluates complete policies at both dates. It retains the two exposure columns, cross-action cost and additional independent continuous shock of the preceding extension. The full dynamic model uses the original state-dependent capacity simplex. The earlier isolated query's fixed capacity is not a claim that an entire two-control economy had already been executed. Setting the second action and second shock to zero recovers the original scalar model.
+
+The new run includes own-future neural and quadratic fitting, actual constrained proposals, all-state original-optimum verification, a common Bellman comparator and direct expected-cost intervals under the full two-control law. Its reported outcomes are complete-policy outcomes, not query counts. The earlier exact adaptive-query timings remain unfavorable and unchanged.
+
+There is also an explicit solver distinction. The preceding exact two-control extension is retained as an exact finite-lattice theorem and query experiment. The new production proposal uses conventional multistart SLSQP, records every termination message, repairs feasibility by downward quantum rounding and receives a separate rigorous original-optimum postcheck. We do not relabel that approximate proposal as an exact two-control minimizer.
+
+## M5: Strong conventional treatment rather than a neural-only verifier
+
+The retained R61 factorial already compares language- and representation-matched native exhaustive and root-free scalar solvers, as well as interval and symbolic alternatives. Those results remain in the paper, including short-lattice reversals. The new full-policy study adds a mature constrained optimization routine for the two-control proposals and gives conventional quadratic and neural continuations the same postcheck. The common Bellman lattice is evaluated through the same positive native interpolation kernel and original-law arithmetic.
+
+The comparison therefore does not assign an implementation advantage to neural labeling. The continuous optimum is bounded through a proved action-cover allowance, and conventional proposals can attain the same contract. A universal comparison with every optimized sparse-grid, mixed-integer or high-dimensional constrained solver has not been executed. The new tables describe the exact comparison set and do not present a two-control SLSQP run as evidence of superiority in arbitrary action dimension.
+
+## M6: Is the fitted witness economically active?
+
+Every fine-grid nodal proposal is retained, together with its original-continuation upper endpoint and the common candidate. The augmented policy records a change only when the added proposal strictly lowers that endpoint. The publication replay reconstructs every selection and counts all additional-witness node cases. These counts measure actual nodal influence, not a predicted benefit from an exact fitted objective.
+
+The pure and augmented policies are both evaluated on the same new original-law paths, and each is also compared with the common Bellman policy. The direct contrasts are the economic endpoint. A tighter certificate, a changed witness or an exact fitted-lattice improvement does not imply lower true policy cost. The tables retain every seed and every unresolved interval. Any identified replacement gain is stated for the actual pair of policies and its coverage event; it is not generalized into neural dominance over conventional dynamic programming.
+
+The capacity-proportional transfer and barycentric implementation are also explicit. An exact coarse fitted witness need not remain the fitted optimum after transfer. The new theorem certifies the transferred nodal action actually recorded. This keeps exact recovery, deployment and economic evaluation as three distinct, connected obligations.
+
+## M7: Timing, memory and complete service boundaries
+
+The new timing account charges all reference rungs, primitive fitting, proposal construction, verified node evaluations, actor transfer, serialization, full shared cost inference and cold compilation. Shared work is charged in full to each method rather than assigned an unmeasured marginal cost. Pure and augmented variants are produced jointly, and each is conservatively charged that joint verification work. The complete frontier is therefore a finite catalogue-release account, not a claimed minimum-work sequential schedule.
+
+The native interpolation kernel exposes its tensor weights, arithmetic count and logical arrays. The records include observed platform, processor affinity, numerical-library versions, compilation receipts and peak resident memory of the full process. They do not claim controlled processor frequency, hardware performance counters, measured memory-bus traffic or independent per-method peak-memory measurements. A multi-architecture randomized timing experiment is not added in this release. The earlier paired native timings remain the relevant replicated implementation evidence, while the new complete-service clocks are explicitly descriptive.
+
+## M8: Bit complexity and its role in the full algorithm
+
+The supplement combines the retained scalar exact-search operation bound and operand-length bound with the new verification cost. Its parameters include continuation width, lattice cardinality and denominator, input coefficient bit length, coarse proposal leaves, state dimension, action dimension, shock dimension, horizon and numerical resolutions. The second-order accuracy allowances specify how state, action and integration resolutions enter the original-optimum contract. The tensor-state and shock-product factors remain visible.
+
+The exact scalar bound multiplies rational operation counts by an explicit rational-arithmetic cost function. The recorded native operands and request/response counters remain bound to the actual fitted services. They are not described as measurements of every temporary denominator or every normalization allocation inside Boost. The new floating-point interpolation kernel has its own proved error bound and strict compilation contract; it is not charged as unit-cost exact rational arithmetic.
+
+Thus the operational result is a combined, auditable cost decomposition and a concrete error-to-resolution account. Exhaustive instrumentation of every rational temporary and a claim that the conservative bit bound is attained in practice remain outside the observed evidence. The response does not eliminate bit dependence by silently treating arbitrary-precision operations as constant time.
+
+## M9 and B9: Deterministic correctness and fitting reliability
+
+The exact witness theorem remains deterministic conditional on a stored continuation. The new policy theorem remains deterministic conditional on its valid primitive enclosures and actual feasible actor. Fitting reliability is evaluated separately over the four seeds fixed before execution. All fitted states, own-future labels, weights, proposals and solver messages are preserved.
+
+The attainment table reports the exact fraction out of four for each task, tolerance and pure/augmented variant. A pure fitted policy that fails a target stays a failure even when its common-augmented version succeeds. These are finite-catalogue counts, not estimates of a universal optimizer-success probability or a population of future economies. Fresh path rows concern policy-cost inference; they do not multiply the number of independent fitting seeds or economic designs.
+
+## M10: A decision based on a complete policy, without invented calibration
+
+The new study supplies direct costs for complete controllers, including the two-control economy. The installation decision is made from a simultaneous paired gain interval. If replacement gain is in [l,u], then a fee tau gives net gain in [l-tau,u-tau]; all nonnegative fees below a positive l are supported, fees above u are ruled out, and the intermediate region is unresolved. The calculation is applied both to zero investment versus a complete controller and to pure versus augmented fitted control, using their actual recorded policies.
+
+This is a decision in the original normalized investment family. It does not estimate an institutional fee, a hardware purchase price or a calibrated welfare magnitude. We have not invented empirical inputs to make the example appear calibrated. The substantive additional object is the complete implementable policy with an original-optimum certificate, direct expected-cost comparison and full computational charge. Whether that numerical-economic contribution meets the journal's broader significance threshold remains a substantive assessment for the referee, not a conclusion of the build system.
+
+## Verification, preservation and renewed review
+
+The publication procedure verifies the frozen corrected scientific sources, inherited scientific files, every nodal actor transfer, every common-augmented selection, feasibility and each complete policy-error recursion. It recomputes all declared cost intervals from saved path endpoints and reintegrates a fixed, outcome-independent subset of primitive nodal queries. It does not claim that stored-endpoint replay independently repeats every production integral. The inherited tests and the new regularity, interpolation, action-cover and deployment fixtures are run without new fitting or new path draws.
+
+The ordinary article, technical supplement, response and all inherited companion roles are compiled and checked for unresolved references, duplicate labels, missing characters and overfull boxes. A clean archive rebuild regenerates current tables and documents before the review-ready branch is updated. The final manifest records exact identities and the scope of each check. Compilation and regression tests are not represented as an external mathematical proof or editorial acceptance.
+
+The positive addition submitted for review is an original-model regularity theorem and an actual-policy original-optimum certificate, executed prospectively across dimensions and horizons and in a complete two-control economy. Its conventional comparisons, unsuccessful pure fits, timing limits and unresolved economic rankings remain part of the evidence, while the original NBO research objective and prior substantive development are preserved.
