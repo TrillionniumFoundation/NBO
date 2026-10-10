@@ -1,0 +1,71 @@
+name: NBO R64 certificate-gated prospective services
+on:
+  push:
+    branches: [revision/econometrica-nbo-r64-referee-revision-2026-10-10]
+    paths: [.github/workflows/nbo-r64-science.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r64-science
+  cancel-in-progress: false
+jobs:
+  prospective:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 20
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+            /revisions/2026-10-10-r64/
+          sparse-checkout-cone-mode: false
+      - name: Install numerical dependencies
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn
+      - name: Verify locally tested source bytes and both query test suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p revisions/2026-10-10-r64/audit
+          /usr/bin/python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          root=Path('revisions/2026-10-10-r64')
+          expected={'PROTOCOL64.md':'e64141520cc3e74137f46902a49825b263aec32ae6d2d8f6c2fc518ea27de2bd','code/query64.py':'e42f308ecd552c17f403a7042eac9b0344eba75fb73c7f62d7b324db581017dc','code/science64.py':'d9fd1f790ff3d9f91642f96f0065e6ef5129648bd302ca965a60d48870197e3d','code/tests64.py':'08acab235e767a5139e5f6286924286a4eb2be40270991e3c5b467f32303d242','sections/gated64.tex':'f1cbc359d35866384299394d5adeab21ec02f16265eaba9e8c244f4672a78a50'}
+          for path,h in expected.items():
+              actual=hashlib.sha256((root/path).read_bytes()).hexdigest()
+              if actual!=h:raise AssertionError((path,actual,h))
+          print('All source files equal the locally tested ordinary source bytes.')
+          PY
+          /usr/bin/python3 revisions/2026-10-10-r63/code/tests63.py 2>&1 | tee revisions/2026-10-10-r64/audit/preproduction-retained63.log
+          /usr/bin/python3 revisions/2026-10-10-r64/code/tests64.py 2>&1 | tee revisions/2026-10-10-r64/audit/preproduction-tests64.log
+      - name: Commit and push the source freeze before production
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          /usr/bin/python3 revisions/2026-10-10-r64/code/science64.py --freeze
+          git add -f revisions/2026-10-10-r64
+          git commit -m 'R64: freeze all sources, original-model theorem and 160-service catalogue before execution'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r64-source-2026-10-10
+      - name: Execute every matched service and retain every repetition
+        run: /usr/bin/python3 revisions/2026-10-10-r64/code/science64.py --run
+      - name: Deposit complete new scientific evidence without rewriting predecessor branches
+        run: |
+          git add -f revisions/2026-10-10-r64
+          git commit -m 'R64: deposit 160 isolated insert-route services, exact trajectories and complete process clocks'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r64-science-2026-10-10
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r64-gated-science
+          path: revisions/2026-10-10-r64/
+          retention-days: 30
+          compression-level: 1
