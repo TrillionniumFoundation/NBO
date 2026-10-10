@@ -1,0 +1,73 @@
+\section{Policy-cost inference at the scale of verified regret}\label{sec:centered69}
+The query certificate and a direct cost experiment answer different questions. Nevertheless, a certificate can improve the experiment without replacing its estimand. The relevant observation is a sum of optimal Bellman advantages along the actual policy trajectory. Its expectation is policy loss, while its range is controlled by the local accuracy contract rather than by the range of economic costs. All conditional expectations used to construct this observation must themselves be evaluated and charged.
+
+Write $V_t$ for the original Bellman optimum, $V_T=g$, $b_0=1$, and $b_t=\prod_{j<t}\beta_j$. For a feasible frozen policy $\pi$, define
+\[
+ a_t^\pi(x)=c_t(x,\pi_t(x))+\beta_tP_t^{\pi_t(x)}V_{t+1}(x)-V_t(x),
+ \qquad Z^\pi=\sum_{t<T}b_t a_t^\pi(X_t^\pi).
+\]
+The symbol $a_t^\pi$ denotes an advantage, not an action. Assume a verified local bound $0\le a_t^\pi(x)\le e_t^\pi$ for every true state, including the acquisition allowance. Put $G_\pi=\sum_{t<T}b_t e_t^\pi$. A sample contains the actual trajectory of each compared controller under the original law; common initial states and common innovations may couple the controllers. Different sample rows are independent conditional on the frozen construction.
+
+\begin{theorem}[Bellman-centered cost comparison]\label{thm:centered69}
+For two such controllers $\pi,\nu$ with a common initial law $\lambda$, let $D=Z^\pi-Z^\nu$. Then
+\begin{equation}\label{eq:centered-identity69}
+ \mathbb E D=\mathbb E_\lambda[J_0^\pi-J_0^\nu],
+ \qquad -G_\nu\le D\le G_\pi.
+\end{equation}
+Suppose deterministic computation encloses $D_i$ by $[L_i,U_i]\subseteq[-G_\nu,G_\pi]$ on every sampled continuous bin, including every compatible acquired action. For a conditionally fixed finite family of $M$ contrasts, put $R=G_\pi+G_\nu$ and
+\[
+ h_n=R\sqrt{\frac{\log(2M/\alpha)}{2n}}.
+\]
+With probability at least $1-\alpha$, simultaneously for the family,
+\begin{equation}\label{eq:centered-ci69}
+ \mathbb E_\lambda[J_0^\pi-J_0^\nu]
+ \in\left[\frac1n\sum_iL_i-h_n,\frac1n\sum_iU_i+h_n\right].
+\end{equation}
+The interval may be intersected with $[-G_\nu,G_\pi]$. Its width is the mean numerical enclosure width plus $2h_n$. More generally, any valid endpoint-sample concentration bound may replace the bounded-sum radius.
+\end{theorem}
+\begin{proof}
+Conditional expectation and $b_{t+1}=b_t\beta_t$ imply
+\[
+ \mathbb E\sum_{t<T}b_t a_t^\pi(X_t^\pi)
+ =\mathbb E\left[\sum_{t<T}b_tc_t(X_t^\pi,\pi_t(X_t^\pi))
+                  +b_Tg(X_T^\pi)-V_0(X_0^\pi)\right].
+\]
+The intermediate value terms cancel. Subtracting the two expectations cancels the initial value under the common initial law, proving the identity. Summing the pointwise local bounds proves the range. Applying the bounded-sum inequality to each lower and upper endpoint sample, with failure allocation $\alpha/(2M)$, and taking a union bound proves \eqref{eq:centered-ci69}. Endpoint containment supplies the comparison between endpoint expectations and the target. The width identity follows by subtraction. No pathwise identity between $D$ and the realized cumulative-cost difference is asserted.
+\end{proof}
+
+The construction is related to martingale control variates and sequential value-based evaluation, including \citet{jiang2016}. It is not an off-policy importance-weighting argument and does not assume that a fitted value is correct. The additional requirements here are an original-optimum advantage enclosure, a true-state local regret bound, and a paid numerical evaluation of the conditional value. The target in \eqref{eq:centered-ci69} is the original expected cost difference, not the difference between two regret certificates. The realized centered observation generally differs from the realized cash-cost difference; their expectations agree by the displayed identity.
+
+\subsection{Numerical construction and a target-precision rule}
+The returned action is fixed before evaluation. At a center $\bar x$ of a true-state box, let $[Q_L,Q_U]$ enclose $Q_t^*(\bar x,\pi_t(x))$ for that fixed action and let $[V_L,V_U]$ enclose $V_t(\bar x)$. If $L_Q,L_V$ are state Lipschitz bounds and $\rho$ bounds $\|x-\bar x\|$, then
+\begin{equation}\label{eq:advantage-box69}
+ [Q_L-V_U-(L_Q+L_V)\rho,
+   Q_U-V_L+(L_Q+L_V)\rho]\cap[0,e_t^\pi]
+\end{equation}
+is a valid advantage enclosure. An empty intersection stops verification. Actions must be feasible at every state used by the endpoint queries. If the box crosses an acquisition boundary, one may enumerate all compatible acquired actions, or use $[0,e_t^\pi]$ for the unresolved part. The latter is conservative and its width remains in the reported numerical account. It is not permissible to discard that trajectory.
+
+For the scalar investment economy, at $r$ remaining dates we use
+\[
+ L_Q=\frac8d+\frac{11\beta}{16}G_{r-1},\qquad L_V=G_r,
+ \qquad e_t^\pi=\delta_t+d(L_Q+L_V)2^{-b},
+\]
+from the original acquisition argument. The evaluator queries the optimum with its own, smaller tolerance; it does not retrain the policy or change the action being evaluated. Original-law quadrature, action-cover error and arithmetic are already included in $[Q_L,Q_U]$ and $[V_L,V_U]$. They must not be omitted or counted again as independent random noise.
+
+\begin{corollary}[Precision and noninferiority]\label{cor:precision69}
+Fix a numerical half-width allocation $v>0$ and a sampling allocation $s>0$ before observing the new contrasts. If $n^{-1}\sum_i(U_i-L_i)\le2v$ and
+\[
+ n\ge\frac{R^2\log(2M/\alpha)}{2s^2},
+\]
+then the interval in \eqref{eq:centered-ci69} has half-width at most $v+s$. For a prespecified loss margin $m>0$, an upper endpoint at most $m$ establishes noninferiority at that margin; containment in $[-m,m]$ establishes the corresponding two-sided equivalence statement on the same event. Neither statement identifies a strict advantage.
+\end{corollary}
+\begin{proof}
+The sample-size condition implies $h_n\le s$. Insert this and the numerical-width condition into the width identity. The final claims are set inclusions for the simultaneous confidence interval.
+\end{proof}
+
+Both $n$ and evaluator precision have costs. The deposited design fixes them prospectively and reports failure to meet the width allocation rather than increasing the sample after inspecting a favorable sign. The actual numerical width is decomposed into the conditional Bellman enclosure, the state-bin Lipschitz expansion, unresolved acquisition branches and endpoint arithmetic. The conditional Bellman component includes its action-cover and continuous-shock quadrature work. A smaller statistical support is therefore not advertised as a free runtime improvement.
+
+\subsection{The adoption decision after inference}
+Let $[l,u]$ enclose $\mathbb E[J^\pi-J^\nu]$, let $W_\pi,W_\nu$ be measured complete deployment work under a declared boundary, and let $p\ge0$ be a decision maker's price per unit of that work. Replacing $\nu$ by $\pi$ at fee $f\ge0$ has net-cost difference in
+\[
+ [l+p(W_\pi-W_\nu)+f,\ u+p(W_\pi-W_\nu)+f].
+\]
+A negative upper endpoint licenses the replacement under those declared prices. A noninferiority finding permits a separate assessment of computational savings; it does not convert a normalized loss margin into an estimated monetary value. This keeps the original economic purchase question while making its statistical precision and its required price inputs explicit.
