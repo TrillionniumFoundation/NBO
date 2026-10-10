@@ -9,7 +9,7 @@ R60 or R61 prospective.
 ## Economic objects and fixed catalogue
 
 The original even-dimensional cyclic investment primitives, price p=1 and
-beta=3/4 are unchanged. The second-control extension is exactly the previously
+beta=15/16 are unchanged. The second-control extension is exactly the previously
 specified capacity simplex with exposure columns (1/2,1/4) and (1/4,1/2),
 running action cost a1^2+a2^2+4(a1^4+a2^4)+a1*a2/4, and an additional independent
 uniform common-direction shock of radius 1/64. Setting a2 and that second

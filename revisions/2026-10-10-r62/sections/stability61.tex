@@ -1,0 +1,66 @@
+\section{Stable enclosures and certification of a returned policy}\label{sec:stability61}
+A valid one-step interval and a stable recursion are different requirements. The first establishes a runtime bracket; the second controls how an approximation allowance propagates when the next-date input changes. We make the distinction explicit and then apply the common-reference construction to a policy that has already been returned by a prospective service.
+
+\subsection{Fixed-cover stability}
+At a fixed approximation level, hold the state cells, action covers, candidate actions, innovation bins and their probabilities fixed. An endpoint map may take minima or maxima over the cells intersecting a transition box, average those endpoints with nonnegative weights of total mass one, add a stage-cost endpoint and finally minimize over a fixed finite family of action intervals or feasible candidates. A reference-shifted endpoint map may additionally add a fixed signed reference advantage. These operations describe the exact endpoint maps beneath the outward arithmetic used here.
+
+\begin{lemma}[Stability of the executable endpoint maps]\label{lem:stable61}
+Every such exact endpoint map $\mathcal E_t$ is order preserving and satisfies
+\begin{equation}\label{eq:endpoint-stability61}
+ \|\mathcal E_t f-\mathcal E_t g\|_\infty
+       \le\beta_t\|f-g\|_\infty.
+\end{equation}
+Before intersection with an independent bound, it also satisfies
+$\mathcal E_t(f+c)=\mathcal E_t f+\beta_t c$ for constants $c$. Intersecting a lower endpoint with an independently valid lower bound by taking a maximum, or an upper endpoint with an independently valid upper bound by taking a minimum, preserves order and the nonexpansive estimate when the independent bound is fixed. A numerical endpoint perturbation with verified uniform magnitude $\delta_t$ enters the propagated error as an additional local allowance, rather than being presumed nonexpansive because it is outward.
+\end{lemma}
+\begin{proof}
+For any nonempty finite index set $I$, both $\min_{i\in I}f_i$ and $\max_{i\in I}f_i$ are order preserving and one-Lipschitz in the supremum norm. A nonnegative weighted average of total mass one has the same properties. A fixed additive term does not alter a difference, and multiplication by $\beta_t\ge0$ supplies the factor in \eqref{eq:endpoint-stability61}. The final minimum over actions is again one-Lipschitz. Each of these operations commutes with addition of a constant in the stated way. Finally, $x\mapsto\min\{x,c\}$ and $x\mapsto\max\{x,c\}$ are monotone and one-Lipschitz. A separate numerical perturbation is bounded by the triangle inequality.
+\end{proof}
+
+Consequently, the consistency clause of Theorem~\ref{thm:bellman-bracket60} applies to the fixed-cover maps actually used in the computation. If the ideal lower and upper maps at the true next Bellman value have errors at most $\alpha_t$, and their numerical evaluation has uniformly bounded endpoint error $\delta_t$ on the relevant range of inputs, put $\eta_t=\alpha_t+\delta_t$. Then the two one-sided errors satisfy
+\[
+ e_t^-\le\eta_t+\beta_te_{t+1}^- ,\qquad
+ e_t^+\le\eta_t+\beta_te_{t+1}^+ .
+\]
+Their sum gives the displayed two-sided finite-horizon bound. Different approximation levels may use different covers; the stability comparison is within each fixed level. Arbitrarily small tolerances require all nonvanishing sources of error to be refined, including the action quantum when it is a binding discretization. A finite ladder at quantum $1/4096$ is not, by itself, an executed zero-error limit.
+
+Inclusion alone would not justify this step. In a one-state example with continuation $v\ge0$ and discount $\beta$, the endpoint $\beta v+v^2$ is a valid upper bound on $\beta v$ and is exact at $v=0$. Its variation from $0$ to $1$ nevertheless exceeds $\beta$. Thus an ideal error statement only at the true continuation cannot replace \eqref{eq:endpoint-stability61}. The present proof supplies the needed property for the actual min--max and probability-average maps; it does not assume stability of every conceivable enclosing procedure.
+
+\subsection{The original optimum and the actual returned actor}
+Let $h_t=J_t^0$ denote the value of the installed zero-investment policy in the original model. A common-reference Bellman calculation supplies a function $\ell_t$ satisfying
+\[
+ \ell_t(x)\le J_t^*(x)-h_t(x).
+\]
+Now fix a complete, previously returned acquired policy $\pi$. Its observation partition and quantum action indices are part of its identity and are not changed by verification. On a verification cell $C$, let $R_t(C)$ contain every action actually taken by $\pi_t$ at a state in $C$. Such a rectangle is an outer enclosure of the graph of the fixed policy, not a proposal to implement every action in that rectangle. In particular, its endpoints need not be feasible throughout $C$; the actual policy must remain feasible at each actual state, and the primitive formulas used on the outer enclosure must remain valid there.
+
+Suppose $\mathcal V_t(C)$ is an outward enclosure, for all actual graph points $(x,\pi_t(x))$ with $x\in C$, of
+\begin{equation}\label{eq:fixed-excess61}
+ A_t^0(x,\pi_t(x))+
+       \beta_t P_t^{\pi_t(x)}u_{t+1}(x),
+\end{equation}
+where $A_t^0(x,a)=c_t(x,a)+\beta_tP_t^a h_{t+1}(x)-h_t(x)$ and $u_T=0$. Define $\widetilde u_t(C)$ as the upper endpoint of $\mathcal V_t(C)$.
+
+\begin{proposition}[Paid revalidation of an unchanged policy]\label{prop:fixed-policy61}
+If the stored actor is feasible and the enclosures in \eqref{eq:fixed-excess61} include every reached state and the original innovation law, the recursion $u_t=\widetilde u_t$ gives
+\[
+ \ell_t(x)\le J_t^*(x)-h_t(x)
+       \le J_t^\pi(x)-h_t(x)\le u_t(x).
+\]
+If an independent whole-domain policy certificate has established $J_t^\pi\le h_t$ at every date, the recursion may instead use
+\begin{equation}\label{eq:monotone-intersection61}
+ u_t(C)=\min\{\widetilde u_t(C),0\}.
+\end{equation}
+In either case, an outward maximum of $u_t(C)-\ell_t(C)$ bounds the loss of this particular returned actor against the original continuous-action Bellman optimum. Verification does not change the actor or require a policy-cost sampling event.
+\end{proposition}
+\begin{proof}
+The identity
+\[
+ J_t^\pi-h_t=A_t^0(\cdot,\pi_t)
+       +\beta_tP_t^{\pi_t}(J_{t+1}^\pi-h_{t+1})
+\]
+holds under the original kernels. Starting from the common terminal value, monotonicity of expectation and the whole-graph enclosure prove the upper inequality by backward induction. The lower inequality is the previously established Bellman lower bound; feasibility gives the middle inequality. When $J_t^\pi-h_t\le0$ has been independently proved, intersection with zero preserves the upper bound at each induction step. Subtracting the two bounds cancels the same $h_t(x)$ pointwise. No difference between extrema at unrelated states is substituted for this cancellation.
+\end{proof}
+
+The independent property used in \eqref{eq:monotone-intersection61} is obtained here by reconstructing the original reference-advantage gate at every acquired cell and date. Its nonpositive upper endpoints imply $A_t^0(x,\pi_t(x))\le0$ throughout the domain, and backward policy improvement gives $J_t^\pi\le J_t^0$. The revalidation also retains the entirely unclipped upper recursion and its final gaps. This permits the reader to distinguish a justified independent bound from a numerically favorable truncation. A record of nonpositive values at sampled centers would not supply the required property.
+
+The verification grid is finer than the actor's acquisition partition. Actor ranges include all leaves intersecting each closed verification cell, including both sides of a discontinuity. Rectangle extrema and original-law innovation bins then enclose the continuation. These calculations have a real cost: the common lower-table construction, each fixed-actor upper recursion and the whole-process return overhead are separate measured services. They do not retroactively reduce a prospective service's original stopping cost or certify an unexecuted high-dimensional case.

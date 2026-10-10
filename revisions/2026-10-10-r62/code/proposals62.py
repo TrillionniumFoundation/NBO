@@ -31,7 +31,7 @@ def train_two(kind,T,seed):
     for t in reversed(range(T)):
         x=rng.random((512,2));cap=c.cap_points(x);labels=np.full(512,np.inf)
         for frac in c.fractions_menu(2,8):
-            a=cap[:,None]*np.array(frac);labels=np.minimum(labels,point_stage(x,a)+.75*expected_two(critics[t+1],x,a))
+            a=cap[:,None]*np.array(frac);labels=np.minimum(labels,point_stage(x,a)+float(c.B)*expected_two(critics[t+1],x,a))
         start=time.perf_counter();critics[t]=n.fit(kind,x,labels,seed+100+t,width=32,epochs=120)
         logs.append(dict(date=t,training_seed=seed,fitting_seed=seed+100+t,training_states=x.tolist(),training_labels=labels.tolist(),fit_seconds=time.perf_counter()-start,training_mse=float(np.mean((critics[t].point(x)-labels)**2)),label_action_simplex_subdivisions=8,label_shock_midpoints_per_component=4,scope='own-future approximate training labels; not a value certificate'))
     return critics,logs
@@ -48,7 +48,7 @@ def make(kind,d,m,T,seed):
         for t in range(T):
             for leaf,x in enumerate(part.centers):
                 cap=int(part.capindex[leaf])/4096
-                def objective(a):return float(point_stage(x[None,:],np.asarray(a)[None,:])[0]+.75*expected_two(critics[t+1],x[None,:],np.asarray(a)[None,:])[0])
+                def objective(a):return float(point_stage(x[None,:],np.asarray(a)[None,:])[0]+float(c.B)*expected_two(critics[t+1],x[None,:],np.asarray(a)[None,:])[0])
                 starts=((0.,0.),(cap,0.),(0.,cap),(cap/3,cap/3));candidates=list(starts);runs=[]
                 for a0 in starts:
                     fit=minimize(objective,np.array(a0),method='SLSQP',bounds=((0.,cap),(0.,cap)),constraints=[{'type':'ineq','fun':lambda a,cap=cap:cap-float(np.sum(a))}],options={'ftol':1e-12,'maxiter':100})
