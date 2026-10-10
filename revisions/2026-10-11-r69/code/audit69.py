@@ -86,8 +86,8 @@ def inference(root,summary):
                     bounds=list(map(F,account['local_bounds_exact']))
                     need(sum(r.B**t*v for t,v in enumerate(bounds))==G[kind],'Local-to-global support')
     rows=[]
-    for a,b in itertools.combinations(summary['arms'],2):
-        name=a+'-minus-'+b;diff=r.I(lo[a],hi[a])-r.I(lo[b],hi[b])
+    for name in summary['centered']:
+        a,b=name.split('-minus-');diff=r.I(lo[a],hi[a])-r.I(lo[b],hi[b])
         result=center.bounded_interval(diff.lo,diff.hi,-G[b],G[a]);need(result==summary['centered'][name],'Centered interval replay '+name)
         raw=r.I(cashlo[a],cashhi[a])-r.I(cashlo[b],cashhi[b]);H=old.support(summary['T'])
         expected=old.infer_interval(np.maximum(-r.q.up(H),raw.lo),np.minimum(r.q.up(H),raw.hi),2*H)

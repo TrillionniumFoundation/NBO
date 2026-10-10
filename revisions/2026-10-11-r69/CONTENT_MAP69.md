@@ -1,0 +1,77 @@
+# R67 to R69 content map
+
+All R67 source files remain unchanged; the complete R69 edition retains its whole main-text content. The active article relocates proofs and the full old study instead of deleting them.
+
+The original numerical study is `sections/study67.tex`, included unchanged in `complete.tex`. Operational and vector proofs are in `sections/relocated69.tex` for the active supplement and in the `-full.tex` sections for the complete edition. All original main labels are checked against the complete R69 source.
+
+- `cor:fee49`
+- `eq:absolute49`
+- `eq:acquire49`
+- `eq:action-cover62`
+- `eq:center49`
+- `eq:certificate-progress65`
+- `eq:compile49`
+- `eq:cone49`
+- `eq:constructionloss49`
+- `eq:cubic63`
+- `eq:direct49`
+- `eq:dual-gap67`
+- `eq:dual-triangle67`
+- `eq:enclosures49`
+- `eq:fvisensor49`
+- `eq:interpolation62`
+- `eq:localization65`
+- `eq:net49`
+- `eq:netregret49`
+- `eq:nodal62`
+- `eq:operator49`
+- `eq:purchase67`
+- `eq:quadrature62`
+- `eq:querycap63`
+- `eq:querypolicy63`
+- `eq:querywidth63`
+- `eq:radius49`
+- `eq:readout-loss67`
+- `eq:repair49`
+- `eq:sandwich49`
+- `eq:score67`
+- `eq:screen-stop67`
+- `eq:screen67`
+- `eq:triangle67`
+- `eq:two-shock67`
+- `eq:vector-work67`
+- `eq:work-bound67`
+- `eq:work-loss67`
+- `eq:work-validation67`
+- `lem:parabolic63`
+- `prop:localization65`
+- `prop:readout67`
+- `prop:sandwich49`
+- `sec:accuracy62`
+- `sec:conclusion65`
+- `sec:construction49`
+- `sec:core49`
+- `sec:decisions49`
+- `sec:gated64`
+- `sec:introduction65`
+- `sec:localization65`
+- `sec:operational67`
+- `sec:purchase64`
+- `sec:query63`
+- `sec:study67`
+- `sec:vector67`
+- `tab:comparison67`
+- `tab:cost67`
+- `tab:reuse67`
+- `tab:vector67`
+- `thm:compile49`
+- `thm:conditional49`
+- `thm:construct49`
+- `thm:gated64`
+- `thm:net49`
+- `thm:policy62`
+- `thm:query63`
+- `thm:regularity62`
+- `thm:screen67`
+- `thm:vector67`
+- `thm:work-loss67`
