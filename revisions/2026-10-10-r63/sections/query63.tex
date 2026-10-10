@@ -1,0 +1,103 @@
+\section{Neural Bellman queries without a state lattice}\label{sec:query63}
+The preceding construction makes numerical error accountable, but a complete tensor reference can absorb the benefit of a fitted continuation. We therefore change the computational organization, not the economic problem. A Neural Bellman selector proposes an action at the state actually acquired. A recursive interval query then bounds the original Bellman value at that state and checks the proposed action against the entire continuous feasible interval. No conventional policy is precomputed at all states. The controller is the resulting callable algorithm, not the unverified proposal alone.
+
+The distinction matters for attribution. Learning may reduce the work needed to locate a useful action. It does not supply the inequalities used to certify that action. The adaptive conventional comparator receives the same inequalities and the same original-optimum target. The trained value-fit policies in the preceding study remain distinct from the action-query predictor introduced here.
+
+\subsection{A curvature lower bound on an adaptive action partition}
+Use the original scalar economy of Section~\ref{sec:accuracy62}, with $r$ dates remaining. Write $V_r$ for its optimal value and $Q_r(x,a)$ for the value of a first action followed by the optimal future. Let $G_r,M_r$ be the primitive constants in Theorem~\ref{thm:regularity62}, indexed by remaining horizon, and put
+\[
+ H_r=\frac{21}{4}+\beta M_{r-1}\frac{5d}{32},
+ \qquad \Lambda_r=\frac{13}{16}+\beta G_{r-1}\frac{3d}{8}.
+\]
+Thus $H_r$ is an upper curvature bound in the scalar action, and $\Lambda_r$ bounds the absolute action derivative. Neither depends on a fitted model.
+
+\begin{lemma}[Parabolic minorants]\label{lem:parabolic63}
+Suppose $f$ is $H$-semiconcave on $[l,u]$, and $L_l\le f(l)$, $L_u\le f(u)$. For $s\in[0,1]$,
+\[
+ f(l+s(u-l))\ge (1-s)L_l+sL_u
+                 -\frac H2(u-l)^2s(1-s)=:p(s).
+\]
+Consequently $\min_{[0,1]}p$ is a lower bound for the minimum of $f$ on the interval. With $K=H(u-l)^2/2$ and $D=L_u-L_l$, this lower bound is $L_l$ if $D\ge K$, $L_u$ if $D\le-K$, and otherwise
+\[
+ \frac{L_l+L_u}{2}-\frac K4-\frac{D^2}{4K}.
+\]
+The endpoints $L_l,L_u$ need not themselves belong to a convex interpolant. Increasing $K$ preserves the lower-bound property.
+\end{lemma}
+\begin{proof}
+Apply concavity to $f(a)-Ha^2/2$ and substitute the two lower endpoints. The displayed quadratic has derivative $D-K+2Ks$. Minimizing it on the unit interval gives the three cases. Its coefficient of $K$ is $-s(1-s)$, which proves the last assertion.
+\end{proof}
+
+At an acquired state, retain an ordered partition of the feasible action interval and an outward value bracket at every partition point. The minimum of the parabolic minorants bounds the continuous-action infimum from below. The smallest upper endpoint supplies an actual feasible witness. A neural or polynomial proposal inserts another point into this partition; it cannot remove the endpoints or any part of the feasible interval. The running lower bound is the maximum of all previously valid global lower bounds, so new information cannot weaken the certificate. The upper bound is the minimum over every evaluated feasible witness.
+
+\subsection{Recursive queries under the original continuous law}
+For an endpoint action with $r>1$, divide the scalar innovation into $q_r$ equiprobable bins and query $V_{r-1}$ at each conditional-mean next state. If each child returns width at most $\eta_r$, the endpoint bracket has width at most
+\begin{equation}\label{eq:querywidth63}
+ \beta\eta_r+\frac{\beta M_{r-1}d}{6144q_r^2}+\omega_r.
+\end{equation}
+Here $\omega_r$ includes outward primitive arithmetic and the Lipschitz expansion from an interval-valued next state to its queried center. Convexity provides the lower conditional-mean inequality; semiconcavity and the exact conditional variance provide the upper allowance. The innovation remains continuous. There is no state-interpolation term because a child value is queried rather than read from a state lattice.
+
+For a requested local gap $\delta$, the implementation sets $\eta_r\le\delta/(4\beta)$ and chooses a dyadic $q_r$ so that the second term in \eqref{eq:querywidth63} is at most $\delta/4$. A separate endpoint-width guard charges arithmetic and the small capacity-rounding remainder. Failure of that guard is a precision failure, not a successful return. The terminal query uses analytic integration instead of recursive quadrature.
+
+\begin{theorem}[A state-grid-free NBO service]\label{thm:query63}
+Consider the original scalar investment economy. At every recursive query, suppose the outward endpoint and capacity-transfer accounts give width at most $5\delta/8$. Let the lower bound be the running maximum described above. Refine an interval attaining the smallest current minorant whenever the global upper-minus-lower gap exceeds $\delta$. Each new point must lie between one fifth and four fifths of that interval. Arbitrary additional learned proposals may be inserted initially. Then:
+
+(i) every returned interval $[L_r(x),U_r(x)]$ contains $V_r(x)$, and its returned feasible action $a_r(x)$ satisfies
+\[
+ Q_r(x,a_r(x))-V_r(x)\le U_r(x)-L_r(x)\le\delta;
+\]
+(ii) the real-arithmetic refinement terminates. With at most one interior learned proposal, a sufficient point budget is
+\begin{equation}\label{eq:querycap63}
+ 6+\left\lceil5c(x)\sqrt{H_r/(3\delta)}\right\rceil;
+\end{equation}
+(iii) for the policy that calls this service at every subsequent date, the original-law loss satisfies
+\begin{equation}\label{eq:querypolicy63}
+ J_T^{\pi}(x)-V_T(x)
+ \le\sum_{t=0}^{T-1}\beta^t
+ \left[\delta_t+
+ \left(8+\frac{11\beta dG_{T-t-1}}{16}
+                  +dG_{T-t}\right)2^{-b}\right],
+\end{equation}
+when the state is acquired downward at $b$ bits per coordinate and every returned action is feasible at that acquired state. All action rounding must precede its endpoint evaluation. The inequalities hold uniformly in the true initial state, not only at the states used in an experiment.
+\end{theorem}
+\begin{proof}
+At $r=1$, analytic endpoint enclosures and the minorant lemma give the assertion. Suppose it holds for $r-1$. Each child interval encloses the true optimal continuation. If the numerical next state is an interval, expanding the queried center value by $G_{r-1}$ times the maximum $\ell^1$ displacement encloses all its possible values. Conditional-mean lower bounds and the semiconcavity remainder then give valid endpoint brackets for the true $Q_r$. The minorants cover the entire action interval. A downward capacity endpoint can omit only an interval of length equal to the certified capacity-rounding difference; subtracting $\Lambda_r$ times that difference accounts for its possible improvement. The minimum upper endpoint is the cost of a feasible first action followed by the optimal future. This proves (i) by induction. Retaining earlier valid lower bounds preserves every conclusion.
+
+For termination, an interval of length $h$ has minorant at least its smaller lower endpoint minus $H_rh^2/8$. Its smaller upper endpoint is an available global upper bound. With the endpoint-width guard, an interval of length at most
+$h_\delta=\sqrt{3\delta/H_r}$ cannot be responsible for a gap exceeding $\delta$. Every refined parent is therefore longer than $h_\delta$. Its children are longer than $h_\delta/5$. Apart from the at most two initial fragments made by a prediction, disjoint terminal fragments consequently have total number at most $5c(x)/h_\delta$, up to endpoint counting. Equation~\eqref{eq:querycap63} is a conservative point budget. Bounded action-quantum rounding of a proposed quarter-to-three-quarter split preserves the one-fifth property whenever the quantum is smaller than $h_\delta/20$. Otherwise precision must be increased; a fixed-precision run is not allowed to ignore this requirement.
+
+For (iii), let $\bar x$ be the acquired state. Its downward displacement is at most $d2^{-b}$ in $\ell^1$, and $c(\bar x)\le c(x)$ preserves feasibility. At a fixed action the stage cost is $8/d$-Lipschitz and the transition has column sums at most $11/16$. Thus replacing $\bar x$ by $x$ changes $Q_r$ by at most $(8+11\beta dG_{r-1}/16)2^{-b}$. The corresponding value change is at most $dG_r2^{-b}$. Add these two allowances to (i). Substituting the policy's own future yields the usual one-step loss recursion; backward induction gives \eqref{eq:querypolicy63}. No policy-value oracle and no population claim about fitting are used.
+\end{proof}
+
+The finite-precision contract is explicit. The executed service uses the width guard, a 512-point cap, and a 32-bit downward action lattice. A precision or cap failure withholds the floating certificate and invokes a separately counted exact-rational enumeration. This fallback constructs values only at the required descendants; it does not load a precomputed conventional policy. The rational fallback chooses dyadic action and quadrature counts until each cover or quadrature allowance is at most one quarter of the request, and requests child width at most one quarter divided by the discount. Provided $\delta>8\Lambda_r2^{-32}$ at every recursive level, its exact brackets have width at most three quarters of the request. This proves a finite return for every acquired state in the declared tasks, including states absent from the workload. Rational bit-operation cost is additional work and is not replaced by a unit-cost floating clock. The mathematical point budget is checked against the declared tolerance range; termination in an arbitrary floating implementation is not inferred merely from the real-arithmetic argument. Fitting convergence is unnecessary for validity: any finite prediction, and even its clipped replacement when numerically invalid, is only a proposed query.
+
+\subsection{A certified analytic terminal kernel}
+The last decision admits an especially strong common comparator. Let $y=F(x,0,0)$, $b_0=1/2-2\operatorname{mean}(y)$, and $\gamma_j=B_j$. Define
+\[
+ D(x)=\frac8d\sum_j\gamma_j(y_j-5/8)
+   +\frac1{2d}\sum_j(\gamma_j-\gamma_{j+1})(y_j-y_{j+1}).
+\]
+For every even $d$, the exact terminal action derivative is
+\begin{equation}\label{eq:cubic63}
+ 16a^3+\left(2+\frac{41\beta}{32}\right)a
+ +\beta D(x)-3\beta(b_0-3a/4)_+.
+\end{equation}
+Each branch is a strictly increasing cubic. Its floating closed-form root supplies only a candidate. The independently evaluated outward derivative and exact-law objective certify that candidate; a safeguarded derivative bracket remains available if the candidate is inaccurate.
+
+For completeness, if $f$ is $\mu$-strongly convex and an outward interval encloses $f'(a)$, the largest compatible projected derivative residual $R$ gives
+\[
+ f(a)-\min_{[0,c]}f\le R^2/(2\mu).
+\]
+At zero, a nonnegative derivative has residual zero; at capacity, a nonpositive derivative has residual zero. Otherwise the absolute derivative bound is sufficient. This follows by minimizing the strong-convexity supporting quadratic over the feasible interval and, conservatively, over the line. Here $\mu=2$. Equation~\eqref{eq:cubic63}, its $41/32$ and $9/4$ coefficients, analytic shock moments, and outward derivatives are independently checked against rational formulas. Every method uses this kernel; it is not credited to the neural predictor.
+
+\subsection{Work, prediction, and the economic object}
+Let $A_r(\delta)$ be a bound on action endpoints at a query. Excluding training, a scalar operation account obeys
+\[
+ W_1(\delta)=O(dA_1),\qquad
+ W_r(\delta)\le C d A_r(\delta)+
+ A_r(\delta)q_r W_{r-1}(\delta/(4\beta)).
+\]
+The constants $dG_r,dM_r$ are bounded independently of $d$, so the declared endpoint and quadrature budgets need not grow exponentially with the state dimension. Primitive evaluations still cost $O(d)$. This removes the state lattice, not the horizon or shock-tree cost. The executed vectorization batches a query's innovation descendants. Its largest live state batch is reported; it does not claim the smaller memory of a fully streamed implementation. Increasing the horizon or the shock dimension may still be expensive. The new execution is scalar-control; the earlier full two-control result is retained rather than relabeled as a query-service experiment.
+
+A useful prediction can reduce the endpoint count or return its own action from the initial partition. An inaccurate prediction can instead add work. This is a prediction-dependent algorithm, not a theorem of neural dominance. Learned warm starts have their own literature, including \citet{sakaue2023warm}; their discrete-convex setting differs from the original-law Bellman intervals here. Convex control policies and learned optimization parameters are studied by \citet{agrawal2020control}. Our comparison identifies the extra proposal cost and the resulting query transcript rather than claiming priority for learning a warm start.
+
+The purchase is now a complete callable controller with a declared error contract. Its training cost, every subsequent certified query, and its return-time cost belong to the same service. A reduction in queried state storage is economically relevant for repeated decisions only after these costs are counted. The original cost normalization is maintained. Workload seconds and normalized expected-cost loss are reported separately; a price per unit of computation can convert the former to the latter only as an explicitly specified decision-maker parameter.
