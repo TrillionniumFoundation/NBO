@@ -1,0 +1,99 @@
+# Response to the Referee
+
+## Neural Bellman Operators — Revision R65
+
+We thank the referee for identifying both the successful original-optimum policy theorem and the remaining contribution problem in R62. We have revised the original Neural Bellman Operators paper rather than substituting a different title or economic topic. The revision connects the original own-future construction with a state-lattice-free recursive implementation, a certificate-gated learned query, a new prediction/localization proposition, and complete isolated-process comparisons. The active manuscript now has one reading path through that chain. The earlier article, supplement and broader complete editions remain available without deleting their theory, applications or adverse evidence.
+
+The controlling report is the advisory report of 10 October 2026 on R62, review commit `eb02fdb321fe6f26de9caa3afcbe2f84531faef2`, which reviewed commit `cfecc5ffcdeb836b1c70e9b98d1dc87f6f8cd097`. The subsequent R63 and R64 scientific executions were already deposited at commits `7128155b146d647adc39b0accd1ba483877853cc` and `2b84410c8f2b77839340fb46d6e8b741e3e497fc`. They had not been integrated into a new complete article. R65 supplies that integration, independently replays the records and adds the localization result and its tests. It does not treat those earlier executions as newly collected observations, nor the advisory report as an editorial decision of the Econometric Society.
+
+## M1 / B2 / B6. Separate the learned generator from its verifier
+
+The revised introduction distinguishes three objects. The original constructive continuation has a witness-preserving neural realization with an explicit own-future loss account. The trained query predictor proposes a location at which to obtain Bellman information. The verifier supplies original-law endpoint and continuous-action lower bounds independently of that predictor. A pure fitted-value policy and a complete query controller are therefore not the same economic object.
+
+The inherited primitive regularity and actual-policy theorem remains in the article. Its role is now explicit: convexity, semiconcavity and Lipschitz bounds are properties of the original scalar investment problem, not assumptions silently imposed on a fitted ReLU output. The new recursive controller uses those bounds to evaluate descendants only when they are requested. It does not build or retain a conventional action at every state before allowing a neural proposal to participate.
+
+This change addresses the common-fallback concern without making the certificate specifically neural. The learned content can change the query transcript and returned action; it cannot change the feasible action set, tolerance, economic kernels or validity inequalities. The conventional methods receive the same verifier. The new result concerns a concrete trained implementation of the original NBO procedure, not priority for generic coupling, safe improvement or warm starts.
+
+## M2 / B1 / B3 / B4. Preserve the adverse prospective findings prominently
+
+The abstract and introduction state that the earlier pure fitted policies are adverse evidence and that the new learned services do not win the complete cold-start comparisons. The study explicitly retains R62's twenty strictly positive pure-ReLU-minus-common cost intervals, its unresolved augmented comparisons, and the common method's twenty wins among attainable complete-work cells. The new query workload is not presented as reversing those expected-cost findings.
+
+There is nevertheless a measurable incremental result. In R64's matched models, gating reduces deployment Bellman queries relative to unconditional insertion in all sixteen ReLU task–target–seed comparisons and all sixteen quadratic comparisons. Against adaptive parabolic search, the ReLU route uses fewer queries in nine comparisons, the same in three and more in four; the quadratic route uses fewer in eleven, the same in two and more in three. Complete median process time is smallest for a conventional method in every one of the eight task–target cells: five for adaptive parabolic search and three for bisection.
+
+These are different comparisons with different endpoints. The manuscript does not turn an online query reduction into a cold-start advantage, an unchanged model into another independent training run, or a fixed dyadic workload cost into a continuous-law expected-cost interval. The adverse evidence is part of the result, not an ancillary caveat or a reason to abandon the original paper.
+
+## M3 / B8. Add structure-exploiting conventional controls
+
+The query implementation is compared with adaptive parabolic branch-and-bound over the full continuous feasible action interval and with bisection. Each conventional method chooses its own refinement points and stopping stages using the same curvature information. The final decision uses a common analytic terminal kernel based on the original objective's monotone cubic branches and outward derivative certification. Its contribution is not credited to a network.
+
+A full quadratic learned selector supplies an additional non-neural representation on the same features and labels. Every fit pays for its training states, primitive labels, regularization and all preceding work. The matched insertion/routing study holds each fitted model fixed while changing only how it is used.
+
+These controls are stronger than an uninformed tensor search for the scalar action problem actually executed. They do not constitute a benchmark of every sparse-grid, low-rank or dimension-adaptive package mentioned in the report. We identify the scope precisely: the new method removes state interpolation by querying a continuation recursively, whereas the adaptive comparison refines actions at requested states. We do not mislabel it as a comparison among sparse state-grid libraries.
+
+## M4. Identify what a learned representation adds without a stored reference policy
+
+The new theorem establishes a callable controller with no stored state lattice. The learned selector is consulted only after available endpoint information fails the certificate, and its proposed action can replace a necessary safeguarded split. If a boundary certificate suffices, no prediction is evaluated. The mathematical bounds remain valid for arbitrary supplied finite predictions. A bad prediction therefore cannot manufacture a successful certificate.
+
+R65 adds a separate localization proposition. For a predicted witness at distance $e$ from an optimum, endpoint width $w$, remaining partition mesh $h$, capacity remainder $\Delta$, action semiconcavity constant $H$ and derivative envelope $\Lambda$, the certificate gap is bounded by
+
+$$
+2w+\Lambda\Delta+Hh^2/8+|f'(a^*)|e+He^2/2.
+$$
+
+The first-order term vanishes at an interior optimum but is necessary at a boundary. The proposition identifies why an accurate prediction alone may not suffice: the lower certificate must also be localized. It gives a sufficient return condition and an exact decomposition of the progress from an added query into upper-witness and lower-certificate improvements. It makes no assumption that an actual trained model meets an unobserved error threshold.
+
+The matched counts show that routing can save required deployment queries in the original economy without retaining a solved reference action at every state. They also show that those savings do not pay for the fit on these cold-start workloads. This is the completed incremental result; a full neural service advantage is not established and is not asserted.
+
+## M5 / B7. Specify the reliability estimand and retain failures and warnings
+
+Both scientific protocols fixed their task catalogue, targets, fitting seeds, training caps, repeats and source identities before execution. The reliability estimand is return and worst observed complete work over that finite initialization catalogue, not a probability over unspecified future initializations. R63 has 96 isolated services and R64 has 160. All 256 returned their stated contract. The maximum recorded complete process time is 2.5831 seconds, rounded upward to four decimals.
+
+There are 104 retained fitting warnings across the two catalogues. They are reported with the individual service records. A warning does not invalidate an independently verified returned policy, but omitting it would distort the fitting history. The workload rows are not optimizer replications. Two repetitions of the same seed have identical fitted parameters and traces; their distinct clocks are retained rather than interpreted as new training draws.
+
+The theorem's finite refinement and exact-recovery account is separate from that finite empirical reliability statement. It supplies validity for arbitrary supplied predictions and a return procedure at the declared precision/tolerance regime. It does not give a hardware-uniform wall-clock upper bound for arbitrary neural training.
+
+## M6. Replace residual allocation with isolated complete-process clocks
+
+Every new scientific service runs in its own process with single-CPU affinity and one numerical-library thread. The parent clock begins before process launch and ends after exit and join. It includes imports, construction of training labels, fitting, all queries for the actual complete policy, exact rational workload costing, serialized outputs, durable summaries and the final clock record. There is no post hoc unallocated residual added to each method.
+
+Two process repetitions accompany every service configuration. All individual clocks and fitting warnings are printed in the supplement. Machine-independent counts separate training Bellman queries, deployment Bellman queries, refinement, routed and declined predictions, prediction-free returns, terminal calls, maximum batch, stored state-grid nodes and exact-rational recovery. CPU frequency remains uncontrolled. Consequently the paper treats small clock differences as descriptive, not statistically identified runtime effects or hardware-general rankings.
+
+The publication replay has its own cost and is not substituted for a scientific service's original clock. No record is retimed or overwritten in R65.
+
+## M7. Supply independent mathematical and implementation checks
+
+The article includes the complete primitive regularity, recursive-query, gated refinement and localization arguments. The supplement gives a compact independent algebraic account of the curvature margin, dimension-normalized regularity recurrence, terminal derivative constants, midpoint conditional variance, barycentric capacity feasibility and boundary optimality signs.
+
+The retained query suite has 24 tests, the gating suite 17 and the new independent suite 22. The new suite checks exact rational localization inequalities, the necessity of the boundary linear term, a good-witness/coarse-certificate counterexample, all parabolic-minimum cases, simplex faces, domain corners, the exact recovery precision condition, purchase arithmetic and deliberately corrupted trajectory records. The exact-rational trajectory implementation is written independently of the original interval primitive code. It checks the true evolving state rather than substituting the acquired state into the economic path cost.
+
+The replay binds and validates all 55,296 policy-decision records. It re-queries 27,648 distinct recorded decision observations and checks byte-identical repetitions through their separate request, receipt, source, model and trace identities. Every endpoint, selected action, local gap, probe count and aggregate query ledger reproduces. This is independent algebraic/trajectory checking plus numerical implementation replay, not a proof-checker verification of all possible interval executions. We maintain that distinction.
+
+## M8 / B5. Quantify state-grid-free scaling and remaining resource dependence
+
+The new execution reaches dimensions two, eight and sixteen with targets $1/32$ and $1/128$, and includes both two-date and three-date controllers. All services have zero stored state-lattice nodes. In particular, the sixteen-state, two-date controller returns the $1/128$ contract without the tensor node array used in R62. The uniform theorem covers the initial states absent from the finite workload; the experiment itself does not extrapolate its observations into such a theorem.
+
+The primitive bounds make the action and scalar-innovation budgets independent of state dimension at fixed horizon and tolerance in this normalized economy. Costs and transitions still require linear work in the number of coordinates; ReLU parameters scale with dimension times width, while a dense quadratic grows quadratically. The continuation tree remains expensive as horizon or innovation dimension grows. The recorded maximum live batch is 2,048 states, and the largest peak process memory is 98,860 KiB.
+
+The new query study is scalar-control with a scalar innovation. The full two-control original-policy result remains preserved from R62, but is not mislabeled as a tensor-free query execution. Likewise, zero stored lattice nodes is not zero storage, and exact-rational recovery is not a unit-cost floating operation. The revision improves the state-dimensional implementation while leaving those distinct claims distinguishable.
+
+## M9 / B9. Specify the economic objective and units
+
+The decision maker purchases a callable controller. The article states a capital normalization, a positive dollar conversion per model-loss unit, a computation price per measured second and a fixed deployment charge. For a stated number of uses under a specified initial-state law, the objective is expected monetary policy loss plus the complete computation and deployment charge.
+
+A valid expected-gain interval can then be multiplied by the positive loss conversion and number of uses, and reduced by the incremental service charge. A positive lower monetary gain supports purchase. In contrast, a uniform regret certificate supports an ex ante accuracy constraint, not a directional expected-gain claim. The current dyadic workload mean is not inserted into the monetary expectation as though it were independently estimated under the continuous law.
+
+These are declared economic preferences and prices, not estimated primitives or an empirical welfare calibration. The paper also states the exact arithmetic amortization condition for a fixed model and repeated identical workload. It does not claim unmeasured amortized timings or that unrelated future states will deliver the same savings. At the observed cold-start contract, a conventional service is the least expensive eligible purchase in every median comparison.
+
+## M10 / B10. Improve exposition without changing the paper or deleting its substance
+
+The active article now moves from the original economic operator and constructive witness theorem to primitive regularity, recursive NBO queries, certificate gating, prediction localization and complete service evidence. The original title and economic target are unchanged. The corresponding proofs sit with their statements. The supplement contains implementation details and the complete individual service tables rather than repeated chronological narratives.
+
+Every prior manuscript source is copied byte-for-byte under `retained62/`. The content-location map covers 760 distinct prior labels across 378 retained text sources. The earlier active article and supplement and their complete broader editions are compiled as four separate companions. Historical applications and unfavorable experiments are thus preserved as available manuscript content, not silently discarded. Their own assumptions remain explicit; the new scalar expected-cost theorem is not used to validate a different nonlinear recursive application.
+
+We have not followed the suggestion to replace Neural Bellman Operators with a differently titled paper. We have instead acted on the substantive request for an identifiable theorem–algorithm–evidence chain within the original work. The reader can evaluate the completed constructive and query results without treating the broad historical development as one newly validated numerical experiment.
+
+## Release scope
+
+The revision is based on immutable R62 manuscript and R63/R64 scientific commits. The build checks all source bindings and retained text identities, runs the 63 specified tests, replays the complete two-cohort record set, derives all tables and compiles seven documents. A clean publication rebuild removes generated tables and PDFs and compares the reconstructed document text and page counts. Publication checks do not constitute external mathematical approval.
+
+The remaining comparative distinction is substantive: the learned routes can reduce deployment queries, but no cold-start neural service advantage is shown here. No population optimizer reliability, new independent continuous-law query-policy gain interval, empirical calibration, tensor-free multi-control execution or hardware-general speedup is inferred from the results. The completed advance submitted for renewed review is the original NBO construction together with a rigorously accounted, state-lattice-free learned-query implementation and a direct, falsifiable attribution of its benefits and costs.
