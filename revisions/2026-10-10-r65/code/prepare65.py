@@ -12,6 +12,8 @@ def main():
         rel=p.relative_to(BASE);out=R/'retained62'/rel;out.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(p,out);kept[str(rel)]=sha(p)
     for name in ('preamble.tex','econsocart.cfg','econsocart.cls','ecta-fullname.bst','references.bib'):
         shutil.copy2(BASE/name,R/name)
+    preamble=R/'preamble.tex'
+    preamble.write_text(preamble.read_text()+'\n\\setcounter{secnumdepth}{2}\n')
     for name in ('core49','accuracy62-print','decisions49'):
         shutil.copy2(BASE/'sections'/(name+'.tex'),R/'sections'/(name+'.tex'))
     for rev,name in ((63,'query63'),(64,'gated64')):
