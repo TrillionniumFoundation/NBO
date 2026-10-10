@@ -1,0 +1,147 @@
+\section{Original-optimum accuracy in the investment economy}\label{sec:accuracy62}
+The exact witness theorem answers an implementation question conditional on a continuation. An economist also needs to know how close the complete implemented policy is to the original optimum. We now establish that connection in the investment economy itself. The argument exploits a property not used by the earlier cell-range calculation: despite the bilinear transition, the Bellman objective remains jointly convex. This permits a second-order interpolation account and transfers verified nodal decisions to an implementable policy over the entire state domain. It does not assume that a fitted neural continuation is convex.
+
+\subsection{Primitives and Bellman regularity}
+Let $d\ge2$ be even, let indices be cyclic, and set $\beta=3/4$. Write
+\begin{align*}
+ S(x)&=\frac2d\sum_j(x_j-5/8)^2+
+       \frac1{4d}\sum_j(x_j-x_{j+1})^2+
+       2\left(\frac12-\frac2d\sum_jx_j\right)_+^2,\\
+ g(x)&=S(x)+\frac2d\sum_j(x_j-5/8)^2,\qquad
+ c(x)=\frac18+\frac1{8d}\sum_jx_j.
+\end{align*}
+The original scalar control has $0\le a\le c(x)$, running cost $S(x)+a^2+4a^4$, and transition
+\[
+ F_j(x,a,z)=\frac1{16}+\frac{x_j}{2}+\frac{x_{j+1}}8+
+       \frac{x_j(1-x_{j+1})}{16}+B_ja+s_jz,
+\]
+where $(B_j,s_j)=(1/2,1)$ at alternating coordinates and $(1/4,-1)$ at the others, and $z$ is uniform on $[-1/32,1/32]$.
+
+For the retained two-control extension, $a_1,a_2\ge0$, $a_1+a_2\le c(x)$, the second exposure column interchanges $1/2$ and $1/4$, and the action cost is
+\[
+ R(a)=a_1^2+a_2^2+4(a_1^4+a_2^4)+a_1a_2/4.
+\]
+An independent common-direction uniform innovation of radius $1/64$ is added. This is the previously specified extension, nested at $a_2=0$ when that innovation is disabled. Both models preserve $[0,1]^d$. Let $m\in\{1,2\}$ denote the number of controls and define
+\[
+ Q_t^*(x,a)=S(x)+R(a)+\beta\mathbb E V_{t+1}^*(F(x,a,Z)),
+ \qquad V_t^*(x)=\min_{a\in A(x)}Q_t^*(x,a),\quad V_T^*=g.
+\]
+All costs and laws in this display are the economic primitives, not a fitted surrogate.
+
+\begin{theorem}[Regularity of the original Bellman problem]\label{thm:regularity62}
+For either control specification and every finite horizon, $V_t^*$ is convex and continuously differentiable in the interior, with the corresponding one-sided extension on the cube. It is $G_t$-Lipschitz in the $\ell^1$ norm and $M_t$-semiconcave in the Euclidean norm, where valid constants are
+\begin{align*}
+ G_T&=10/d,&G_t&=\frac{1037}{128d}+\beta\frac{47}{64}G_{t+1},\\
+ M_T&=26/d,&M_t&=\frac{22}{d}+\frac{21}{256d}
+             +\beta\left(\frac9{16}M_{t+1}+\frac18G_{t+1}\right).
+\end{align*}
+In particular, $G_t\le19/d$ and $M_t\le42/d$. The function $Q_t^*$ is jointly strongly convex on its convex feasible graph, with state curvature at least $71/(32d)$ and action curvature at least $7/4$.
+
+A valid semiconcavity constant along each coordinate line is
+\begin{align*}
+ D_T&=\frac9d+\frac{16}{d^2},\\
+ D_t&=\frac5d+\frac{16}{d^2}+\frac{21}{256d^2}
+ +\beta M_{t+1}\left(\frac{85}{256}+\frac{23}{256d}\right).
+\end{align*}
+Consequently, for the positive multilinear interpolant $I_n$ on a mesh of spacing $1/n$,
+\begin{equation}\label{eq:interpolation62}
+ 0\le I_nV_t^*(x)-V_t^*(x)\le\kappa_t,
+ \qquad \kappa_t=\frac{dD_t}{8n^2}.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The state cost has gradient infinity norm at most $8/d$, Hessian norm at most $22/d$, and diagonal second derivatives at most $5/d+16/d^2$. For the terminal cost the corresponding bounds are $10/d$, $26/d$, and $9/d+16/d^2$. They follow by differentiating the quadratic terms and the continuously differentiable squared shortage. The bound on the cycle Laplacian is four. The shortage Hessian, where it exists, is $16\mathbf1\mathbf1^\top/d^2$; the same second-difference bound holds across its kink.
+
+For feasible $(x,a)$ and $(y,b)$, put $w=x-y$. The difference between the transition at their convex combination and the corresponding combination of transitions is $\theta(1-\theta)w_jw_{j+1}/16$ in coordinate $j$. Convexity and the $G_{t+1}$ Lipschitz bound therefore give a convexity defect of at most
+\[
+ \frac{\beta G_{t+1}}{16}\theta(1-\theta)
+                 \sum_j|w_jw_{j+1}|
+ \le\frac{\beta G_{t+1}}{16}\theta(1-\theta)\|w\|_2^2.
+\]
+The state cost supplies curvature $4/d$, while the two-control action cost has Hessian eigenvalues at least $7/4$. Thus the state curvature of $Q_t^*$ is at least $4/d-\beta G_{t+1}/8$, which is at least $71/(32d)$ when $G_{t+1}\le19/d$. Partial minimization over the affine capacity graph preserves the state convexity inequality. The minimizing action is unique, including at a binding capacity constraint.
+
+To propagate Lipschitz continuity, write $a=c(x)u$, where $u$ lies in the fixed unit simplex. Transfer the same $u$ from $x$ to $y$. Each action-cost partial derivative has absolute value at most $13/16$, and $\sum_j u_j\le1$. The action-cost transfer contributes at most $13\|x-y\|_1/(128d)$. The transition Jacobian at a fixed action has column sums at most $11/16$; the capacity transfer adds at most $3/64$. Comparing a minimizing normalized action in both directions gives the stated recursion for $G_t$. Its right side maps $19/d$ below itself.
+
+For a fixed $u$, the transition as a function of $x$ has Jacobian norm at most $11/16+1/16=3/4$. Its second-order composition term is bounded by $G_{t+1}/8$. The action-cost Hessian has norm at most $21/4$, and the capacity gradient has squared norm $1/(64d)$. These facts give the recursion for $M_t$. The infimum over $u$ preserves this common semiconcavity bound: after subtracting the same quadratic, each fixed-$u$ function is concave, and an infimum of concave functions is concave. The right side maps $42/d$ below itself. Convexity together with semiconcavity yields the claimed differentiability and gradient regularity; this conclusion does not require a differentiable optimizing-action map.
+
+Along one state coordinate, the fixed-$u$ transition has zero second derivative. The squared norm of its first derivative is at most $85/256+23/(256d)$: the two original nonzero entries are bounded by $9/16$ and $1/8$, and the capacity-induced entries are bounded by $1/(16d)$. Combining this with the diagonal stage-cost bound gives $D_t$. Finally, positive interpolation along one coordinate has error between zero and $D_t h^2/8$. Applying the coordinate interpolations successively and adding the bounds proves \eqref{eq:interpolation62}.
+\end{proof}
+
+The theorem is a structural statement about these economic primitives. It is not a claim that every controlled diffusion, recursive preference specification, or game in the complete development edition has a convex Bellman problem. Nor does it require a signed-weight neural fit to preserve convexity. Convex approximation of dynamic programs has an established literature; the additional work here is to verify the needed curvature for the original nonlinear capacity-constrained model and connect it to the actual NBO actor and complete error account.
+
+\subsection{Certified nodal Bellman bounds}
+Suppose nodal arrays satisfy $l_{t+1}\le V_{t+1}^*\le u_{t+1}$ at all grid vertices. Equation~\eqref{eq:interpolation62} gives the functions $I_nl_{t+1}-\kappa_{t+1}$ and $I_nu_{t+1}$ as valid lower and upper continuations. The lower function need not itself be convex; convexity is used for the unknown true value and for the comparison argument, not asserted of arbitrary endpoint arrays.
+
+Divide each uniform innovation component into $q$ equal bins and use its conditional mean. Convexity gives a lower quadrature bound for the true continuation. Semiconcavity gives an upper error
+\begin{equation}\label{eq:quadrature62}
+ \zeta_{t+1}=\frac{M_{t+1}}{6q^2}
+                      \sum_{r=1}^{s}\rho_r^2\|s_r\|_2^2,
+\end{equation}
+where $s=1$ or $2$, $\rho_1=1/32$, and $\rho_2=1/64$ in the extension. The expectation remains the original continuous law. At the terminal date $g$ is evaluated directly, so no terminal interpolation allowance is needed.
+
+At a vertex $v$, let $\mathcal A_A(v)$ be the capacity simplex lattice with spacing $c(v)/A$, including all its faces. For $m=1,2$, a minimizer can be represented by neighboring lattice vertices whose coordinate variances sum to at most $m c(v)^2/(4A^2)$. A valid action smoothness constant is
+\[
+ H_t=\frac{21}{4}+\beta M_{t+1}\|B\|_2^2,
+ \quad \|B\|_2^2=\frac{5d}{32}\ (m=1),\quad
+ \|B\|_2^2=\frac{9d}{32}\ (m=2).
+\]
+Taylor's inequality and that barycentric representation imply
+\begin{equation}\label{eq:action-cover62}
+ 0\le\min_{a\in\mathcal A_A(v)}Q_t^*(v,a)-V_t^*(v)
+       \le\delta_t:=\frac{mH_t}{128A^2}.
+\end{equation}
+The linear Taylor terms cancel even when the optimum lies on a face. This is an error against the continuous feasible optimum, not only against the finite action menu.
+
+Let $q_t^-(v,a)$ and $q_t^+(v,a)$ include all interpolation, quadrature and arithmetic errors and enclose $Q_t^*(v,a)$. Then
+\begin{equation}\label{eq:nodal62}
+ l_t(v)=\max\{0,\min_{a\in\mathcal A_A(v)}q_t^-(v,a)-\delta_t\},
+ \qquad
+ u_t(v)=\min_{a\in\mathcal A_A(v)}q_t^+(v,a)
+\end{equation}
+are valid nodal Bellman bounds. The zero truncation uses the nonnegative economic costs. Extra neural or conventional proposals may improve the upper side but do not remove the lower action-cover allowance. Positive interpolation, averaging and minimum maps are monotone and nonexpansive; the separate allowances in \eqref{eq:interpolation62}--\eqref{eq:action-cover62} are therefore propagated, rather than being discarded because an endpoint calculation contains the truth.
+
+\subsection{From a fitted witness to the complete implemented policy}
+Let $a_t(v)\in A(v)$ be the actual action returned at each vertex by any generator. It may be selected by the exact neural witness, a conventional fitted continuation, or their common verified fallback. Write $w_v(x)$ for the multilinear weights and set $\bar\pi_t(x)=\sum_vw_v(x)a_t(v)$. Affineness of capacity makes this action feasible. Let $q_t^{\mathrm{sel},+}(v)$ be a verified upper bound on its original-optimum continuation value $Q_t^*(v,a_t(v))$, using the same lower and upper Bellman reference for all generators.
+
+\begin{theorem}[Actual-policy, whole-domain certificate]\label{thm:policy62}
+Set
+\[
+ e_t=\max_v\{q_t^{\mathrm{sel},+}(v)-l_t(v)\}+\kappa_t.
+\]
+Suppose the implemented policy $\widehat\pi_t$ is feasible and differs from $\bar\pi_t$ by at most $b_t$ in action $\ell^1$ norm, uniformly over the state cube. Define
+\[
+ \Lambda_t=\frac{13}{16}+\beta\frac{3d}{8}G_{t+1},\qquad
+ D_T^\pi=0,\quad D_t^\pi=e_t+\Lambda_tb_t+\beta D_{t+1}^\pi.
+\]
+Then, at every true state and date,
+\[
+ 0\le J_t^{\widehat\pi}(x)-V_t^*(x)\le D_t^\pi.
+\]
+This statement is conditional on the actual recorded policy, not on success of its fitting algorithm. It applies equally to a pure fitted policy and to a policy augmented by verified common candidates.
+\end{theorem}
+
+\begin{proof}
+Joint convexity, including the feasible graph, gives
+\[
+ Q_t^*(x,\bar\pi_t(x))\le\sum_vw_v(x)Q_t^*(v,a_t(v))
+       \le I_nq_t^{\mathrm{sel},+}(x).
+\]
+The lower interpolation bound gives $V_t^*(x)\ge I_nl_t(x)-\kappa_t$. Subtraction proves the uniform optimal-advantage bound $e_t$. The partial action derivatives of $Q_t^*$ are bounded by $\Lambda_t$, so feasible implementation error adds at most $\Lambda_tb_t$. Adding the future policy loss and proceeding backwards proves the recursion. No convexity of $J^{\widehat\pi}$ is used.
+\end{proof}
+
+In the execution, observation is rounded down at forty bits. An acquired state $y\le x$ has no greater capacity than the true state. Each interpolated action is then rounded down at twenty bits using the lower endpoint of its arithmetic enclosure. If $L_{ij}$ bounds the derivative of action coordinate $i$ with respect to state coordinate $j$, and $\eta$ bounds native interpolation error, a valid implementation allowance is
+\[
+ b_t\le 2^{-40}\sum_{i,j}L_{ij}
+           +m(2^{-20}+2\eta+\eta_{\mathrm{out}}).
+\]
+Here $L_{ij}$ is computed from the maximum adjacent nodal difference times $n$, and $\eta_{\mathrm{out}}$ covers endpoint subtraction. All these numbers are recorded outward. This new barycentric acquired actor is explicitly distinguished from the earlier discontinuous cell-constant actor; an old actor is not silently replaced during a purported fixed-policy revalidation.
+
+\subsection{Arithmetic, work, and scope}
+The native interpolation kernel forms nonnegative tensor weights and a weighted sum of at most $2^d$ stored binary64 endpoints. It is compiled without reassociation or floating-point contraction. For $K=(3d+4)2^d+32$, an explicit conservative absolute allowance is
+\[
+ \eta=\frac{K2^{-53}}{1-K2^{-53}}\max_v|z_v|+K2^{-1022}.
+\]
+The final term conservatively covers underflow. Input coordinates, affine indexing, finite endpoints and the binary64 format are checked. Roundoff expansion and the ordinary interval cost arithmetic remain separate from the analytic approximation bounds. Exact rational fixtures compare the native sum with its mathematical tensor interpolant.
+
+With $N=(n+1)^d$ vertices, $K_A=A+1$ scalar actions or $K_A=(A+1)(A+2)/2$ two-control actions, the reference calculation uses $O(TNK_Aq^s2^d d)$ elementary work under the explicit tensor implementation. Stored reference values use $O(TN)$ words and a policy uses $O(TNm)$ words. Streaming batches avoid a state-pair table. Proposal fitting, exact rational witness work, actor transfer, serialization, independent cost inference and compilation are additional costs, not absorbed into this bound. The analytic errors are second order in state, action and innovation resolution; the state-count and tensor-evaluation factors still depend exponentially on dimension. The result supplies a matched original-optimum comparison without asserting that these costs have disappeared.
