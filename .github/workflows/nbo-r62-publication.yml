@@ -1,0 +1,72 @@
+name: NBO R62 complete original-paper publication
+on:
+  push:
+    branches: [revision/econometrica-nbo-r62-referee-revision-2026-10-10]
+    paths: [.github/workflows/nbo-r62-publication.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r62-complete-publication
+  cancel-in-progress: false
+jobs:
+  publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      SOURCE_DATE_EPOCH: '1791590400'
+      FORCE_SOURCE_DATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 80
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /README.md
+            /ECTA.tex
+          sparse-checkout-cone-mode: false
+      - name: Merge pinned completed science without changing prior branches
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git fetch --filter=blob:none --depth=80 origin d868cb5bc113e521be134cb9f50f04b5c68b3493
+          git merge --no-edit d868cb5bc113e521be134cb9f50f04b5c68b3493
+      - name: Install numerical and publication dependencies
+        timeout-minutes: 8
+        run: |
+          sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=30 update -qq
+          sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=30 install -y --no-install-recommends python3-numpy python3-scipy python3-sympy python3-sklearn python3-pil g++ libboost-dev pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Integrate and commit ordinary article, proofs and point-by-point response
+        run: |
+          /usr/bin/python3 revisions/2026-10-10-r62/code/assemble62.py
+          git add -f revisions/2026-10-10-r62
+          if ! git diff --cached --quiet; then git commit -m 'R62: integrate corrected original-model proofs and complete prospective science into ordinary manuscript sources'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r62-referee-revision-2026-10-10
+      - name: Full source preservation, inherited/new tests, all-record replay and seven documents
+        run: /usr/bin/python3 revisions/2026-10-10-r62/code/build62.py
+      - name: Clean archive reproduction and verified atomic remote publication
+        run: /usr/bin/python3 revisions/2026-10-10-r62/code/publish62.py
+      - name: Retain unsuccessful publication diagnostics without concealing failure
+        if: failure()
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-10-r62
+          if ! git diff --cached --quiet; then git commit -m 'R62: retain incomplete publication diagnostics'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r62-publication-attempt-${{ github.run_id }}-${{ github.run_attempt }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r62-paper-and-complete-publication-audit
+          path: |
+            revisions/2026-10-10-r62/build/*.pdf
+            revisions/2026-10-10-r62/build/*.txt
+            revisions/2026-10-10-r62/audit/*62.json
+            revisions/2026-10-10-r62/audit/build-logs/
+          retention-days: 30
+          compression-level: 1
