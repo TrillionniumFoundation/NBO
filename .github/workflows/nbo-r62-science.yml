@@ -32,12 +32,13 @@ jobs:
         run: |
           sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=30 update -qq
           sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=30 install -y --no-install-recommends python3-numpy python3-scipy python3-sympy python3-sklearn g++ libboost-dev
-      - name: Prepare preserved predecessor and exercise disjoint correctness fixtures
+      - name: Prepare preserved predecessor and exercise original-primitive correctness fixtures
         run: |
           git config user.name 'NBO revision verification'
           git config user.email 'nbo-revision@users.noreply.github.com'
           git switch -c revision/econometrica-nbo-r62-science-2026-10-10
           /usr/bin/python3 revisions/2026-10-10-r62/code/prepare62.py
+          /usr/bin/python3 revisions/2026-10-10-r62/code/correct_primitives62.py
           mkdir -p revisions/2026-10-10-r62/audit/build-logs
           /usr/bin/python3 revisions/2026-10-10-r62/code/tests62.py 2>&1 | tee revisions/2026-10-10-r62/audit/build-logs/preproduction62.log
         shell: bash --noprofile --norc -eo pipefail {0}
@@ -45,7 +46,7 @@ jobs:
         run: |
           /usr/bin/python3 revisions/2026-10-10-r62/code/science62.py --freeze
           git add -f revisions/2026-10-10-r62
-          git commit -m 'R62: freeze tested source, theory and prospective full-policy protocol before execution'
+          git commit -m 'R62: freeze original-discount tested source, theory and prospective full-policy protocol'
           git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r62-science-2026-10-10 HEAD:refs/heads/revision/econometrica-nbo-r62-source-2026-10-10
       - name: Execute every declared task, fitting seed, accuracy rung and original-law cost family
         run: /usr/bin/python3 revisions/2026-10-10-r62/code/science62.py
