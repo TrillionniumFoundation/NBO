@@ -1,0 +1,40 @@
+name: NBO R68 pinned source export
+on:
+  push:
+    branches: [revision/econometrica-nbo-r68-referee-revision-2026-10-11]
+    paths: [.github/workflows/nbo-r68-source-export.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: eacd3e217ae1e2e9ea6e154b48da7d103159d051
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-10-r67/
+            /revisions/2026-10-10-r65/
+          sparse-checkout-cone-mode: false
+      - name: Export exact source and evidence without historical font files
+        run: |
+          python3 - <<'PY'
+          import pathlib,zipfile,hashlib,json
+          root=pathlib.Path('revisions'); records={}
+          with zipfile.ZipFile('nbo-r68-pinned-inputs.zip','w',zipfile.ZIP_DEFLATED,compresslevel=1) as z:
+              for p in sorted(root.rglob('*')):
+                  if not p.is_file() or '__pycache__' in p.parts or p.suffix.lower() in {'.ttf','.otf','.woff','.woff2','.pfb','.pfa','.afm','.tfm'}:continue
+                  if 'build' in p.parts and p.suffix not in {'.pdf','.txt'}:continue
+                  z.write(p,str(p)); records[str(p)]=hashlib.sha256(p.read_bytes()).hexdigest()
+              z.writestr('INPUT_SHA256.json',json.dumps(records,sort_keys=True,indent=2))
+          print(len(records),'files',pathlib.Path('nbo-r68-pinned-inputs.zip').stat().st_size,'bytes')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r68-pinned-inputs
+          path: nbo-r68-pinned-inputs.zip
+          compression-level: 0
+          retention-days: 14
