@@ -12,9 +12,9 @@ class R62Tests(unittest.TestCase):
     def test_uniform_regularities(self):
         for d,m,T in itertools.product((2,4,8,16),(1,2),(1,2,3,10,100)):
             k=c.constants(d,m,T,4,16,4)
-            self.assertTrue(all(z<=F(19,d) for z in k['G']))
-            self.assertTrue(all(z<=F(42,d) for z in k['M']))
-            self.assertTrue(all(F(4,d)-c.B*z/8>=F(71,32*d) for z in k['G']))
+            self.assertTrue(all(z<=F(27,d) for z in k['G']))
+            self.assertTrue(all(z<=F(54,d) for z in k['M']))
+            self.assertTrue(all(F(4,d)-c.B*z/8>=F(107,128*d) for z in k['G']))
     def test_native_signed_interpolation_exact_rationals(self):
         rng=np.random.default_rng(620099)
         for d,sub in ((2,4),(4,2),(8,2)):
@@ -72,7 +72,7 @@ class R62Tests(unittest.TestCase):
                 xx=c.I.point(x);aa=c.I.point(a)
                 return (c.stage(xx,aa)+c.rat(c.B)*c.terminal(c.transition(xx,aa,0.,0.))).midpoint()
             lhs=fun(theta*x+(1-theta)*y,theta*a+(1-theta)*b)
-            rhs=theta*fun(x,a)+(1-theta)*fun(y,b)-theta*(1-theta)*(float(F(71,64*d))*np.sum((x-y)**2,axis=1)+7/8*np.sum((a-b)**2,axis=1))
+            rhs=theta*fun(x,a)+(1-theta)*fun(y,b)-theta*(1-theta)*(float(F(107,256*d))*np.sum((x-y)**2,axis=1)+7/8*np.sum((a-b)**2,axis=1))
             self.assertTrue(np.all(lhs<=rhs+1e-11))
     def test_known_cost_support(self):
         for d,m in itertools.product((2,4,8),(1,2)):

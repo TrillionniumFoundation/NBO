@@ -1,0 +1,120 @@
+\section{Direct Neural Evidence and Activated Precision Adaptation}
+\label{sec:r41evidence}
+The direct certificate changes both the verified continuation and the
+returned policy. At each date it evaluates the trained current network
+against a Bellman update using the trained next network, then stores an
+action minimizing an upper interval endpoint. The terminal fit is included.
+We subsequently evaluate that newly constructed policy on its own shock
+tree. Its displayed values are not values of the former spline policy or
+of the previously selected neural actor.
+
+\subsection{Resolution, policy accuracy, and the economic comparison}
+The design retains the four investment economies, with prices $P=1,4$ and
+risk parameters $\theta=0,1$. It uses the frozen trained networks and tries
+state--action resolutions $(256,128)$, $(1024,512)$, $(2048,1024)$, and,
+if necessary, $(4096,2048)$. Refinement stops at the first mesh at which the
+maximum certified loss at the four displayed initial states is at most
+$0.02$. The first two meshes fail that query target in every economy;
+the third passes in every economy. These are twelve new post-training
+verification services, not twelve new training runs.
+
+\begin{table}[htbp]\centering\small
+\caption{Direct certificates for the stored neural continuations}\label{tab:r41direct}
+\begin{tabular}{rrrrrr}\toprule
+$P$ & $\theta$ & All-state bound & Query bound & Execution allowance & All refinements (s)\\\midrule
+1 & 0 & 0.043092 & 0.016279 & 9.719 & 8.978\\
+1 & 1 & 0.043334 & 0.016402 & 9.751 & 32.091\\
+4 & 0 & 0.045472 & 0.017829 & 10.235 & 8.464\\
+4 & 1 & 0.045813 & 0.017781 & 10.266 & 31.319\\
+\bottomrule\end{tabular}
+\par\smallskip\begin{minipage}{.97\textwidth}\footnotesize Notes: The query column is the maximum certified loss at $x=1/8,1/4,1/2,3/4$, not an all-state bound. The execution allowance is in units of $10^{-6}$ and covers rounded state acquisition, transition, and costs. Every final mesh has 2,048 state cells and 1,024 action cells; the clocks sum all three attempted meshes through the result-file flush and synchronization. They exclude the inherited training service and are not an end-to-end speed comparison.\end{minipage}\end{table}
+
+The all-state loss remains between approximately $0.0431$ and $0.0459$.
+The sharper displayed-state bounds, below $0.0179$, use independently
+computed own-policy upper values and the direct neural lower bound on the
+optimal value. They must not be extrapolated to unreported states. The
+nonzero numerical-execution allowance is approximately $10^{-5}$; it is
+added to the appropriate global comparison, not silently discarded.
+
+At the accepted resolution we independently construct a conventional
+spline policy and evaluate it at the same initial states. The supplement
+reports each interval for neural cost minus this newly optimized spline
+cost. All sixteen lie inside $[-0.001,0.001]$. Fourteen have strictly positive
+lower endpoints; none has a strictly negative upper endpoint, and two
+contain zero. Thus a small descriptive cost margin is established at these
+states, while the conventional policy still has strictly smaller verified
+cost in fourteen comparisons. Interval overlap is not used as a test of
+equivalence. The margin is an explicit descriptive accounting tolerance,
+not a preregistered economic indifference threshold or a population claim.
+
+For $P=4$, gains over continuing the former $P=1$ rule have positive lower
+endpoints at all eight displayed state--risk pairs, ranging from about
+$0.0233$ to $0.0988$. The largest displayed-state near-optimality upper
+bound is smaller than the smallest of these gain lower bounds. This
+establishes that the direct neural policy's certified regret at the reported
+states is smaller than the verified benefit of reoptimization there. It
+does not make the price change, the benefit of reoptimization, or the
+conventional competitor specific to NBO. All earlier adverse structural,
+spline, and finite-law comparisons remain in the article and companion.
+
+\subsection{When binary32 is no longer sufficient}
+The earlier factorial correctly separates precision from caching, but its
+adaptive paths never require binary64. A separate pressure catalogue now
+crosses dimensions $2,8$, target condition numbers $1,16$, and policy targets
+$10^{-10},10^{-12},10^{-14}$. The horizon is four, innovation scale is
+$0.001$, and risk sensitivity is $0.1$. The inherited acceptance gates are
+unchanged. Every proposed factor records its precision, input and output
+hashes, acceptance decision, and target identity. A rejected binary32
+proposal is charged even when a binary64 proposal subsequently succeeds.
+
+\begin{table}[htbp]\centering\small
+\caption{Precision pressure: accepted updates and rejected attempts}\label{tab:r41precision}
+\begin{tabular}{lrrrrr}\toprule
+Method & Certified / 12 & Accept 32 & Accept 64 & Reject 32 & Reject 64\\\midrule
+adaptive cached & 12 & 116 & 42 & 42 & 0\\
+fixed32 cached & 2 & 49 & 0 & 10 & 0\\
+fixed64 cached & 12 & 0 & 158 & 0 & 0\\
+tuned cached & 12 & 49 & 147 & 10 & 0\\
+\bottomrule\end{tabular}
+\par\smallskip\begin{minipage}{.97\textwidth}\footnotesize Notes: Twelve objects cross dimension and conditioning with three economic targets, $10^{-10}$, $10^{-12}$, and $10^{-14}$. Failed fixed32 services are retained. Counts for tuned precision include unsuccessful trials before restarting at the higher precision. One execution per object identifies operation of the mechanism, not a timing distribution.\end{minipage}\end{table}
+
+Ten of the twelve adaptive services use both precisions; the other two
+succeed using binary32 alone. Fixed binary32 certifies only two objects.
+Adaptive and fixed binary64 each certify all twelve. The adaptive path
+accepts 116 binary32 and 42 binary64 proposals and rejects 42 binary32
+proposals. These observations identify actual precision escalation rather
+than inferring adaptation from the controller's name. They do not establish
+that adaptive complete work is smaller than the best fixed native precision:
+extra attempts and verification have real costs, and this pressure catalogue
+has one clock per object. A stable efficiency ranking requires a separate
+matched-work study.
+
+\subsection{Provenance and what the work comparison measures}
+The source-and-result records identify the R39 reviewed article and the
+partially executed R40 development attempt separately. The latter stopped
+when a deserialized policy's list-valued knots were used as a numerical
+array. The new driver restores both knots and actors to arrays before
+repricing the old policy. It reruns the entire catalogue in a fresh directory;
+it neither overwrites the failed-run outputs nor substitutes new clocks
+for the 315 earlier services. The inherited protocol predates this replay,
+but some R40 outcomes had already been observed. We therefore do not call
+the replay a new blinded or independently prospective experiment.
+
+All three attempted mesh clocks, failed precision attempts, interval
+verification, independent queries, result serialization, and the result
+file's synchronization are retained. CPU affinity and one-thread execution
+are recorded; frequency is not controlled. The inherited reference-label
+construction and neural training costs are not part of the new
+post-training clocks and cannot be forgotten in a from-scratch comparison.
+The conventional comparison is made at the accepted mesh, not at a
+separately optimized common stopping target. Accordingly neither set of
+new clocks is a claim of neural end-to-end acceleration.
+
+Theorem~\ref{thm:r41dimension} in the supplement gives the explicit cost of
+multidimensional verification and continuous-innovation quantization,
+including the additional own-policy query tree. This theorem extends the
+certificate's domain and makes its dimensional cost visible. The new
+executed nonlinear example remains one-dimensional. The evidence therefore
+establishes a direct neural continuation certificate and an activated native
+precision mechanism, not yet a competitive high-dimensional nonlinear
+performance frontier.

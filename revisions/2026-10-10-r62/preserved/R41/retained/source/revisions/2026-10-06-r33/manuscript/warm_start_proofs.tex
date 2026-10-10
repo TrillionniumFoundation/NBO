@@ -1,0 +1,72 @@
+\section{Proofs for Certified Warm Starts}\label{sec:r33proofs}
+\subsection{A noncommuting Gram contraction}
+Let $E=H-M$ and suppose $\|E\|_F\leq r$. Then
+$(m-r)I\preceq H\preceq(L+r)I=bI$. The ideal, unperturbed factor step has
+Gram error
+\begin{equation}\label{eq:r33gramidentity}
+ E^+=E-\alpha(EH+HE)+\alpha^2EHE.
+\end{equation}
+Diagonalize $H$, solely for this argument, with eigenvalues
+$h_i\in[m-r,b]$. The linear map
+$E\mapsto E-\alpha(EH+HE)$ multiplies each matrix entry in that basis by
+$1-\alpha(h_i+h_j)$. These multipliers lie between zero and
+$1-2\alpha(m-r)$ because $2\alpha b\leq1$. Frobenius invariance and
+$\|EHE\|_F\leq br\|E\|_F$ give
+\[
+ \|E^+\|_F\leq
+ \{1-2\alpha(m-r)+\alpha^2br\}\|E\|_F.
+\]
+Since $\alpha b\leq1/2$ and $r\leq m/2$,
+\[
+ 2(m-r)-\alpha br\geq2m-\tfrac52r\geq\tfrac34m.
+\]
+Thus $\|E^+\|_F\leq q\|E\|_F$, with $q$ as in
+\eqref{eq:r33noise}. Notice that $0<q<1$ and that the diagonalizing basis
+is that of the current $H$, not a common basis for $H$ and $M$. This is why
+no commutation assumption has entered the proof.
+
+\subsection{Perturbations and the finite cap}
+Write $U=W(I-\alpha E)$. Since $\|W\|_2^2=\|H\|_2\leq b$,
+$\|U\|_2\leq\sqrt b(1+\alpha r)$. Adding $\Delta$ to the factor changes
+the Gram matrix by
+\[
+ U'\Delta+\Delta'U+\Delta'\Delta.
+\]
+Its Frobenius norm is at most
+$2\|U\|_2\|\Delta\|_F+\|\Delta\|_F^2\leq z$.
+This estimate is valid for every rectangular $p\times d$ factor.
+Consequently, while the radius condition holds,
+$\|H_{j+1}-M\|_F\leq q\|H_j-M\|_F+z$.
+The scalar recursion with initial value $e_0$ has the exact solution
+$f+q^j(e_0-f)$. Each value is a convex combination of $e_0$ and $f$, both
+at most $r$. Induction therefore proves that the radius condition continues
+to hold and establishes \eqref{eq:r33envelope}. If $f<a<e_0$, solving the
+scalar inequality for $j$ yields \eqref{eq:r33cap}. If $e_0\leq a$, the
+initial factor already meets the requested Gram threshold.
+
+\subsection{Transport and economic residuals}
+The triangle inequality proves \eqref{eq:r33gate}. For an inexact target,
+$\|W'W-M^\pi\|_2\leq\|W'W-\widetilde M\|_F+
+\|\widetilde M-M^\pi\|_2$, proving \eqref{eq:r33eval}.
+Finally,
+\[
+ D_t-Z_t=\beta B_t'\{\widehat P_t-\Psi_\theta(P_{t+1}^\pi)\}F_t.
+\]
+The inequality $\|B'EF\|_F\leq\|B\|_2\|E\|_2\|F\|_F$ proves
+\eqref{eq:r33policy}. All state and action quantifiers, Gaussian moment
+margins, lower-subsolution positivity checks, and implementation allowances
+are those of Theorem~\ref{thm:r27entropic}; none is inferred from the
+training gate. In particular, a residual against an old regime's continuation
+must first pay its own-policy evaluation discrepancy.
+
+\subsection{Numerical interpretation of the error account}
+For a routine that computes the ideal matrix expression exactly and then
+rounds each entry to a grid of spacing $h$, nearest rounding gives
+$\nu\leq h\sqrt{pd}/2$. A floating-point implementation that also rounds
+matrix products must add enclosures for those operations before invoking
+this bound. The exact-rational regression tests use the former, explicitly
+specified routine. Their success does not validate an unenclosed BLAS
+roundoff account. Similarly, the stored scalar cap is checked by exact
+rational comparison rather than trusting a rounded logarithm at a ceiling
+boundary. This verification concerns the cap arithmetic, not the economic
+model's unknown evaluation radius.

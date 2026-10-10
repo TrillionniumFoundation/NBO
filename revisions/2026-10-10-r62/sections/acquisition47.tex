@@ -1,0 +1,79 @@
+\section{From acquired states to feasible policies}\label{sec:acquired47}
+A policy is implemented at an acquired state, not at an exact real number available without cost. This distinction matters for a witness selector: a small change in the state can change its index discontinuously. The appropriate object is therefore an objective allowance for the selected witness together with feasibility at the true state. A Lipschitz assumption on the actor would replace, rather than solve, this problem.
+
+At date $t$, an observation $\widehat x$ specifies a nonempty acquisition set $\mathcal D_t(\widehat x)\subset X$ containing the true state, with $\|x-\widehat x\|_1\le r_t$ for every $x\in\mathcal D_t(\widehat x)$. Use the feasible-witness data of Section~\ref{sec:feasible46}. Suppose the numerical selector returns an index $i$ such that
+\begin{equation}\label{eq:index47}
+ y_{t,i}+L_t\|\widehat x-x_{t,i}\|_1\le f_t(\widehat x)+\nu_t.
+\end{equation}
+The implemented action $\widehat a_t(\widehat x)$ must belong to $A_t(x)$ for every $x$ in the acquisition set. Assume, on that entire set,
+\begin{equation}\label{eq:robustrepair47}
+ \|\widehat a_t(\widehat x)-a_{t,i}\|_1
+ \le K_t^A\|x-x_{t,i}\|_1+\zeta_t^{\rm acq}.
+\end{equation}
+The observation and selection rules are measurable and causal. Enlarging the history by these observations leaves the stipulated conditional innovation evaluation unchanged; otherwise the full-information comparator must be defined on the enlarged information structure. The allowances are uniform, not fitted to a favorable sample of observation errors.
+
+\begin{theorem}[Acquisition-aware feasible realization]\label{thm:acquired47}
+Under the hypotheses of Theorem~\ref{thm:feasible46}, the implemented action satisfies, uniformly over every permitted observation and true state,
+\begin{equation}\label{eq:acquiredres47}
+ Q_t(f_{t+1};x,\widehat a_t(\widehat x))-f_t(x)
+ \le e_t+\nu_t+2L_tr_t+D_t^Q\zeta_t^{\rm acq}.
+\end{equation}
+Consequently the original full-information optimum bounds the implemented policy's value below, and its loss is bounded above by
+\begin{equation}\label{eq:acquiredgap47}
+ \sum_{t<T}B_t\{D_t^Qk_t+2e_t+2L_th_t
+       +\nu_t+2L_tr_t+D_t^Q\zeta_t^{\rm acq}\}
+       +B_T(2e_T+2L_gh_T).
+\end{equation}
+The result requires no continuity of the index or actor and no probabilistic independence of measurement error. It applies to the common monotone, cash-invariant recursive evaluation under its original comparison assumptions.
+\end{theorem}
+\begin{proof}
+Transport from the original feasible node action to the implemented feasible action gives
+\[
+ Q_t(f_{t+1};x,\widehat a_t)
+ \le y_{t,i}+e_t+L_t\|x-x_{t,i}\|_1+D_t^Q\zeta_t^{\rm acq}.
+\]
+The cone at $x$ is at most its value at $\widehat x$ plus $L_tr_t$. Apply~\eqref{eq:index47}, then use $f_t(\widehat x)\le f_t(x)+L_tr_t$. This proves~\eqref{eq:acquiredres47}. Backward order comparison, conditional also on the observation history when necessary, proves~\eqref{eq:acquiredgap47}. Feasibility permits comparison with the optimum over all admissible adapted policies. The proof does not compare distances between the two selected actions at nearby states.
+\end{proof}
+
+\begin{corollary}[Capacity, measurement, and action quantization]\label{cor:capacity47}
+Let $A_t(x)=[0,\kappa_t(x)]$, where $\kappa_t$ is nonnegative and $K_t^A$-Lipschitz. Suppose a computed lower capacity satisfies
+\[
+ 0\le\underline\kappa_t(\widehat x)\le\kappa_t(x),\qquad
+ \kappa_t(x)-\underline\kappa_t(\widehat x)\le 2K_t^Ar_t+\chi_t
+ \quad(x\in\mathcal D_t(\widehat x)).
+\]
+For an action spacing $\Delta_t>0$, implement
+\[
+ \widehat a_t=\Delta_t\left\lfloor
+   \frac{\min\{a_{t,i},\underline\kappa_t(\widehat x)\}}{\Delta_t}
+ \right\rfloor.
+\]
+It is feasible on the whole acquisition set and satisfies~\eqref{eq:robustrepair47} with
+$\zeta_t^{\rm acq}=2K_t^Ar_t+\chi_t+\Delta_t$.
+Exact, unquantized robust repair uses $\Delta_t=0$ and the minimum itself.
+\end{corollary}
+\begin{proof}
+The downward quantization preserves nonnegativity and the lower capacity. Since $a_{t,i}\le\kappa_t(x_{t,i})$, exact repair at $x$ displaces the node action by at most $K_t^A\|x-x_{t,i}\|_1$. Replacing true capacity by its certified lower bound adds at most $2K_t^Ar_t+\chi_t$; downward quantization adds less than $\Delta_t$. Summing proves the displacement inequality.
+\end{proof}
+
+\subsection{Ordinary numerical comparisons}
+The execution in Section~\ref{sec:constrained47} uses binary64 scores at dyadic acquired states. Stored labels and the coordinate distances are exactly representable at the declared input resolutions. Put $u=2^{-53}$, $\gamma_2=2u/(1-2u)$, $Y_t=\max_i|y_{t,i}|$, and let $\widetilde L_t$ be the represented slope. In state dimension $d$, each computed cone score differs from its exact score by at most
+\begin{equation}\label{eq:leaf47}
+ \tau_t=d|\widetilde L_t-L_t|+
+        \gamma_2\{Y_t+d|\widetilde L_t|\}.
+\end{equation}
+The first term charges coefficient conversion; the second charges multiplication and addition. A minimum of the computed scores satisfies~\eqref{eq:index47} with $\nu_t=2\tau_t$, including ties. The supplement states the representability and arithmetic conditions and proves the error account. The general theorem also permits other certified score enclosures.
+
+This implementation does not round a rational switchpoint and assume that its original cell is unchanged. For the scalar comparisons, all cells intersecting a state enclosure are retained. For acquired constrained deployment, a numerical index has the objective allowance~\eqref{eq:leaf47} and its action is repaired against the entire acquisition set. Both routes address discontinuity directly.
+
+\subsection{The identical non-neural envelope}
+The envelope construction must be separated from the language used to encode it. The classical Lipschitz extension \citep{mcshane1934}, a native minimum computation, and an exact ReLU realization can represent the same function.
+
+\begin{proposition}[Representation control]\label{prop:representation47}
+Fix the node locations, labels, slopes, original action witnesses, and selector tie rule. A conventional min-plus implementation and the affine--ReLU implementation of the same envelope return the same mathematical continuation and policy. They have the same exact policy certificate and direct policy cost. A balanced realization uses $O(dK)$ arithmetic and comparison gates for $K$ cones and depth $O(\log K+\log d)$. Merely changing the representation does not improve the covering or Bellman-query factors.
+\end{proposition}
+\begin{proof}
+For every pair of real numbers, $\min\{a,b\}=a-(a-b)_+$. Applying this identity through a balanced reduction tree proves equality of the continuation. Carrying the same attaining index, with the prescribed tie rule, proves equality of the action witness and repaired action. The certificates and costs concern these mathematical objects. The gate count includes the coordinate absolute values and their sums. The supplement separately bounds floating-point gate errors; exact equality is not asserted for unchecked rounded evaluations.
+\end{proof}
+
+We execute this non-neural control on all 24 distinct scalar witness checkpoints. It shares the defining data rather than masquerading as an independently trained competitor. The native selector and its ReLU encoding are thus one construction with two representations. The learned hidden-location methods studied earlier are different candidate generators. Their assessment, and that of the deterministic backend, remains a comparison of actual policies and complete computational work.

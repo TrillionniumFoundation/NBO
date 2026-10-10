@@ -5,7 +5,8 @@ from pathlib import Path
 import ctypes,hashlib,itertools,json,math,subprocess,time
 import numpy as np
 import neural55 as n
-I=n.I;B=F(3,4);R=Path(__file__).resolve().parents[1]
+I=n.I;B=F(15,16);R=Path(__file__).resolve().parents[1]
+if F(n.BETA)!=B:raise AssertionError('R62 discount differs from the unchanged inherited economic primitives')
 TASKS=((2,1,2,(8,16,32,64),16,4),(2,1,3,(8,16,32,64),16,4),(4,1,3,(4,8,16),16,4),(8,1,2,(2,4),8,2),(2,2,2,(8,16,32,64),16,4))
 SEEDS=(6201,6202,6203,6204);TOLS=(F(1,2),F(1,4),F(1,8),F(1,16),F(1,32));BATCH=4096
 
@@ -34,7 +35,7 @@ def constants(d,m,T,sub,A,q):
     action=[m*(F(21,4)+B*M[t+1]*norm)/(128*A*A) for t in range(T)]
     shock=[M[t+1]*d*(F(1,1024)+(F(1,4096) if m==2 else F(0)))/(6*q*q) for t in range(T)]
     lam=[F(13,16)+B*F(3*d,8)*G[t+1] for t in range(T)]
-    need(all(g<=F(19,d) for g in G) and all(v<=F(42,d) for v in M),'Regularity constants')
+    need(all(g<=F(27,d) for g in G) and all(v<=F(54,d) for v in M),'Regularity constants')
     return dict(G=G,M=M,D=D,kappa=kap,action=action,shock=shock,Lambda=lam)
 def const_payload(c):return {k:[str(v) for v in vals] for k,vals in c.items()}
 
