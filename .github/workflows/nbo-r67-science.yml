@@ -1,0 +1,63 @@
+name: NBO R67 corrected prospective execution
+on:
+  push:
+    branches: [revision/econometrica-nbo-r67-referee-revision-2026-10-10]
+    paths: [.github/workflows/nbo-r67-science.yml]
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r67-science
+  cancel-in-progress: false
+jobs:
+  science:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: |
+            revisions/2026-10-10-r62
+            revisions/2026-10-10-r63
+            revisions/2026-10-10-r64
+            revisions/2026-10-10-r65
+            revisions/2026-10-10-r66
+            revisions/2026-10-10-r67
+      - name: Install numerical dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn
+      - name: Materialize, test and commit corrected ordinary scientific sources
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          /usr/bin/python3 revisions/2026-10-10-r67/code/prepare_science67.py
+          /usr/bin/python3 revisions/2026-10-10-r67/code/tests67.py > revisions/2026-10-10-r67/audit/PREFLIGHT67.log 2>&1
+          git add -f revisions/2026-10-10-r67
+          git commit -m 'R67: ordinary corrected scientific sources and independent rational path regression'
+          export GITHUB_SHA=$(git rev-parse HEAD)
+          /usr/bin/python3 revisions/2026-10-10-r67/code/science67.py --freeze
+          git add -f revisions/2026-10-10-r67/audit/SOURCE_FREEZE67.json
+          git commit -m 'R67: freeze the complete corrected catalogue before execution'
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r67-referee-revision-2026-10-10 HEAD:refs/heads/revision/econometrica-nbo-r67-science-source-2026-10-10
+      - name: Execute every declared corrected process and retain failures
+        run: /usr/bin/python3 revisions/2026-10-10-r67/code/science67.py --run
+      - name: Commit executed evidence on its separate scientific branch
+        if: always()
+        run: |
+          git add -f revisions/2026-10-10-r67
+          if ! git diff --cached --quiet; then git commit -m 'R67: retain all corrected process receipts, path endpoints and failures'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r67-science-executed-2026-10-10
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r67-corrected-science
+          path: revisions/2026-10-10-r67/
+          compression-level: 1
+          retention-days: 30
