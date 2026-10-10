@@ -1,0 +1,43 @@
+name: NBO R65 pinned source inspection
+on:
+  push:
+    branches: [revision/econometrica-nbo-r65-referee-revision-2026-10-10]
+    paths: [.github/workflows/nbo-r65-source-export.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+            /revisions/2026-10-10-r64/
+          sparse-checkout-cone-mode: false
+      - name: Export source and frozen metadata without changing prior revisions
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,pathlib,zipfile
+          root=pathlib.Path('.')
+          allowed={'.tex','.bib','.cls','.bst','.sty','.py','.md','.json','.npz'}
+          records={}
+          with zipfile.ZipFile('nbo-r65-inputs.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for name in ('2026-10-10-r62','2026-10-10-r63','2026-10-10-r64'):
+                  for p in sorted((root/'revisions'/name).rglob('*')):
+                      if not p.is_file() or p.suffix not in allowed or '__pycache__' in p.parts or 'build' in p.parts:continue
+                      if name.endswith('r62') and p.suffix=='.npz':continue
+                      data=p.read_bytes();z.writestr(str(p),data);records[str(p)]=hashlib.sha256(data).hexdigest()
+              z.writestr('SOURCE_EXPORT65.json',json.dumps({'base_commit':'2b84410c8f2b77839340fb46d6e8b741e3e497fc','source_sha256':records},sort_keys=True,indent=2)+'\n')
+          print('Exported',len(records),'files')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r65-inputs
+          path: nbo-r65-inputs.zip
+          retention-days: 30
+          compression-level: 0
