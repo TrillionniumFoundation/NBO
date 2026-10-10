@@ -87,14 +87,14 @@ def trajectories(policy,initial,randoms,T,target,evaluation_tol):
         unresolved_acquisition_width=ambiguous_width,final_arithmetic_width=rounding_width)
     return arrays,dict(local_bounds_exact=list(map(str,e)),center_upper_exact=str(G),
         deployed_local_tolerance=tol,evaluation_tolerance=evaluation_tol,
-        ambiguous_paths=int((~active).sum()),dates=dates,policy_work=policy.counts,evaluation_work=evaluator.counts,
+        ambiguous_paths=int((~active).sum()),dates=dates,policy_work=policy.counts.copy(),evaluation_work=evaluator.counts.copy(),
         mean_center_enclosure_width=float((I.point(advantage.hi)-I.point(advantage.lo)).hi.mean()),
         mean_raw_conditional_width=float(raw_conditional.mean()),mean_state_expansion=float(state_expansion.mean()),
         mean_unresolved_acquisition_width=float(ambiguous_width.mean()),mean_final_arithmetic_width=float(rounding_width.mean()),
         ledger_scope='Raw component widths are before valid [0,e] intersections; state expansion includes bin width and propagated state arithmetic, not separately identified estimates')
 
 def bounded_interval(lo,hi,support_lo,support_hi,log=LOG):
-    N=len(lo);R=F(support_hi)-F(support_lo)
+    N=len(lo);support_lo=-q.up(-F(support_lo));support_hi=q.up(F(support_hi));R=F(support_hi)-F(support_lo)
     if N<2 or R<0 or np.any(lo>hi):raise ValueError('Inference inputs')
     lo=np.maximum(float(support_lo),lo);hi=np.minimum(q.up(support_hi),hi)
     meanlo=q.n.s.isum(I.point(lo))/N;meanhi=q.n.s.isum(I.point(hi))/N
