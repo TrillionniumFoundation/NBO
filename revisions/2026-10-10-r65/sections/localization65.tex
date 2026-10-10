@@ -1,0 +1,35 @@
+\section{When a predicted query completes the certificate}\label{sec:localization65}
+The safeguarded theorem is insensitive to the quality of a supplied prediction. A separate question is when that prediction is sufficient to finish verification. The answer must concern both the selected action and the unresolved lower bound. Proximity to a minimizer alone does not make a coarse lower certificate accurate.
+
+\begin{proposition}[Witness accuracy and certificate localization]\label{prop:localization65}
+Let $f$ be a differentiable, $H$-semiconcave objective with $H\ge0$ on $[0,c]$, let $a^*$ minimize $f$, and suppose $|f'|\le\Lambda$. An evaluated proposal $\widehat a$ lies in $[0,\underline c]$, where $0<\underline c\le c$ and $c-\underline c\le\Delta$. Each endpoint interval is a valid enclosure of $f$ and has width at most $w$. Suppose the partition containing $\widehat a$ covers $[0,\underline c]$ and has maximum interval length $h$. Let $L$ be its parabolic lower certificate with the capacity allowance $\Lambda\Delta$, and let $U$ be the smallest upper endpoint, retaining earlier valid bounds as in the query algorithm. With $e=|\widehat a-a^*|$ and $\lambda=|f'(a^*)|$,
+\begin{equation}\label{eq:localization65}
+ U-L\le 2w+\Lambda\Delta+\frac{Hh^2}{8}
+                         +\lambda e+\frac{He^2}{2}.
+\end{equation}
+For an interior minimizer $\lambda=0$. At a boundary the linear term cannot generally be removed. Thus the right side at most $\delta$ is a sufficient certificate-return condition, not an assumption that a trained prediction meets it.
+
+If old and new valid endpoint records give $(L,U)$ and $(L',U')$ after one additional query, with the running maximum lower bound and minimum upper bound, then
+\begin{equation}\label{eq:certificate-progress65}
+ (U-L)-(U'-L')=(U-U')+(L'-L)\ge0.
+\end{equation}
+An added prediction may have zero certified progress. The same identities apply to a conventional query.
+\end{proposition}
+\begin{proof}
+Every retained lower endpoint is at least its true endpoint value minus $w$, and hence at least $f(a^*)-w$. On an interval of length at most $h$, the parabolic minorant is therefore at least $f(a^*)-w-Hh^2/8$. Subtracting the omitted-capacity allowance gives
+$L\ge f(a^*)-w-Hh^2/8-\Lambda\Delta$; retaining an older, larger valid lower bound only improves this inequality. The upper endpoint at $\widehat a$ is at most $f(\widehat a)+w$. Semiconcavity and the one-sided first-order condition give
+$f(\widehat a)-f(a^*)\le\lambda e+He^2/2$. Subtract the lower bound to prove \eqref{eq:localization65}. At an interior optimum the derivative is zero. The example $f(a)=a$ on $[0,c]$ shows that the boundary linear term is needed. Finally, retaining bounds makes $U'\le U$ and $L'\ge L$; expansion proves \eqref{eq:certificate-progress65}.
+\end{proof}
+
+This proposition isolates what a fitted representation can contribute without crediting it with a conventional solution. It can provide a small-error witness and change which unresolved interval is refined. The global partition, endpoint arithmetic and capacity account still have to support that witness. The maximum-width sufficient condition is deliberately conservative; the implemented minimum-minorant rule can stop earlier when only a subset of the partition remains competitive.
+
+\subsection{A complete accuracy contract and its resource dependence}
+For $T$ dates and target $\epsilon$, write $S_T=\sum_{t<T}\beta^t$. The recorded service chooses a common local tolerance by rounding $\epsilon/(2S_T)$ to binary64 and verifies the final outward allowance. Under $dG_r\le27$, a uniform per-date acquisition allowance at forty bits is
+\[
+ \alpha_b=\left(8+\frac{297\beta}{16}+27\right)2^{-40}.
+\]
+The service certifies $(\delta+\alpha_b)S_T\le\epsilon$. Each descendant request is $\delta/(4\beta)$, rounded as in the actual code and included in its outward endpoint guard. At the smallest request in the two- and three-date catalogues, the declared thirty-two-bit action quantum satisfies the exact-recovery condition $\delta_r>8\Lambda_r2^{-32}$. The supplement checks this inequality with rationals for every horizon and target, rather than inferring it from a successful workload.
+
+For fixed remaining horizon and accuracy, the bounds on action endpoints and scalar-innovation bins are independent of state dimension in this normalized economy. The factors $dG_r$ and $dM_r$ are bounded, while every transition and cost still reads $d$ coordinates. A width-$w_\theta$ one-layer ReLU predictor has $O(dw_\theta)$ parameters and evaluation work; a dense quadratic on the same features has $O(d^2)$ terms. These statements identify the absence of a $(n+1)^d$ stored state table. They do not count an arbitrary-precision rational operation as a unit-cost floating operation and do not suppress the product of descendant query counts as horizon grows.
+
+The two fitted implementations and their conventional controls therefore share one original-optimum contract, but need not share a transcript, a returned policy or a runtime. The completed experiments charge their distinct transcripts. A finite-catalogue reliability statement concerns all specified seeds and repetitions, including fitting warnings. It is not a population statement about optimizer success.
