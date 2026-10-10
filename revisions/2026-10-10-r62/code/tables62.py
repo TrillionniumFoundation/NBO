@@ -45,9 +45,9 @@ def main():
     for t in tasks:
         w=t['full_catalogue_release_work_seconds'];rl=[w[f'relu-{s}-guarded'] for s in seeds];ql=[w[f'quadratic-{s}-guarded'] for s in seeds]
         rows.append([names[t['task']],dec(w['common'],d=2),span(rl),span(ql),dec(t['reference_cumulative_seconds'],d=2)])
-    table('release-work62','Recorded work through complete catalogue release','tab:release-work62',
+    table('release-work62','Conservative complete-production work charges','tab:release-work62',
         ['$d/m/T$','Common (s)','ReLU (s)','Quadratic (s)','Reference (s)'],rows,
-        'Every method is charged the entire shared reference, all preceding rungs, its own fitting/proposal and verification work, full shared cost inference, and cold native compilation. Pure and augmented variants are jointly verified and each is conservatively charged the full joint work. This is measured catalogue-release work, not an unexecuted minimal stopping schedule. Times are one-host descriptive measurements; frequency was not controlled.','r r c c r')
+        'Every method is charged the entire shared reference, all preceding rungs, its own fitting/proposal and verification work, full shared cost inference, and cold native compilation. Pure and augmented variants are jointly verified and each is conservatively charged the full joint work. The entire unallocated outer-production residual is additionally charged to every method. These are conservative complete-production charges, not isolated measured method runtimes or an unexecuted minimal stopping schedule. Frequency was not controlled.','r r c c r')
     rows=[];frontier=[]
     for t in tasks:
         for tol in ('1/2','1/4','1/8','1/16','1/32'):
