@@ -17,7 +17,7 @@ def bindings():
         rel=p.relative_to(R)
         if rel.parts[0] in ('build','audit','tables') or str(rel)=='response.tex':continue
         files[str(rel)]=b.digest(p)
-    for name in ('audit/SOURCE_FREEZE62.json','audit/EXECUTION62.json','audit/COMPILER62.json','audit/PREPARATION62.json','audit/PREPRODUCTION_CORRECTION62.json','audit/PRODUCTION_ENVELOPE62.json'):files[name]=b.digest(R/name)
+    for name in ('audit/SOURCE_FREEZE62.json','audit/EXECUTION62.json','audit/COMPILER62.json','audit/PREPARATION62.json','audit/PREPRODUCTION_CORRECTION62.json','audit/PRODUCTION_ENVELOPE62.json','audit/RESULT_INTERPRETATION62.json'):files[name]=b.digest(R/name)
     return files
 
 def main():
@@ -35,8 +35,6 @@ def main():
     b.run(['g++','-O3','-std=c++17','code/search60.cpp','-o','build/native60'],'r62-exact-native-build')
     tests=b.historical()
     for script in SCRIPTS:tests[script[:-3]]=b.tests([sys.executable,'code/'+script],'r62-'+script[:-3])
-    # Explicit unittest discovery exercises the four retained fixtures without
-    # going through their multipurpose scientific-service command-line router.
     tests['native_factorial61']=b.tests([sys.executable,'-m','unittest','discover','-s','code','-p','factorial61.py','-v'],'r62-retained-native-factorial-tests')
     need(tests['native_factorial61']['tests']==4,'All four retained factorial fixtures must execute')
     b.run([sys.executable,'code/extend53.py','--test'],'r62-retained-exact-perturbation')
@@ -49,15 +47,24 @@ def main():
     for name,old in prep['baseline_labels'].items():
         current=set(labels(R,name));missing=sorted(set(old)-current);need(not missing,(name,'Inherited labels missing',missing))
         preservation[name]=dict(inherited_labels=len(old),current_labels=len(current),missing=[])
+    b.write_json(R/'audit/PRECOMPILE_VERIFICATION62.json',dict(status='passed',tests=tests,total_tests=sum(v['tests'] for v in tests.values()),preservation=preservation,source_freeze_sha256=fz))
     b.response();path=R/'response.tex';text=path.read_text()
     abstract='Revision R62 responds to the advisory report of 10 October 2026 on R61. The original Neural Bellman Operators paper gains primitive Bellman regularity, a second-order certificate for the actual acquired policy, and prospective multidimensional and complete two-control economic comparisons. Prior theory, applications and adverse evidence are preserved.'
     text=re.sub(r'(\\begin\{abstract\}).*?(\\end\{abstract\})',lambda m:m[1]+abstract+m[2],text,count=1,flags=re.S)
     text=text.replace(r'\input{preamble}',r'\input{preamble}'+'\n'+r'\setcounter{secnumdepth}{2}',1);path.write_text(text)
-    documents=[]
+    documents=[];failures={}
     for name in DOCS:
-        record=b.compile_document(name);raw=subprocess.check_output(['pdftotext','-layout',str(R/'build'/(name+'.pdf')),'-']);record['extracted_text_sha256']=hashlib.sha256(raw).hexdigest();(R/'build'/(name+'.txt')).write_bytes(raw);documents.append(record)
+        try:
+            record=b.compile_document(name)
+            raw=subprocess.check_output(['pdftotext','-layout',str(R/'build'/(name+'.pdf')),'-'])
+            record['extracted_text_sha256']=hashlib.sha256(raw).hexdigest();(R/'build'/(name+'.txt')).write_bytes(raw);documents.append(record)
+            print(json.dumps(dict(document=name,status='passed',pages=record['pages'])),flush=True)
+        except (RuntimeError,subprocess.CalledProcessError) as error:
+            failures[name]=str(error);print(json.dumps(dict(document=name,status='failed',error=str(error))),flush=True)
+    b.write_json(R/'audit/DOCUMENT_GATES62.json',dict(status='failed' if failures else 'passed',documents=documents,failures=failures))
+    if failures:raise RuntimeError('Publication withheld: '+json.dumps(failures))
     need(before==bindings(),'Ordinary build changed scientific inputs or author sources')
-    if not bindfile.exists():b.write_json(bindfile,dict(files_sha256=before,scope='All ordinary author sources and immutable scientific inputs/outputs, including the observed production-envelope receipt. Current generated tables, PDF outputs and volatile replay logs have separate release bindings.'))
+    if not bindfile.exists():b.write_json(bindfile,dict(files_sha256=before,scope='All ordinary author sources and immutable scientific inputs/outputs, including the production-envelope receipt and the complete-catalogue interpretation. Generated tables, PDF outputs and volatile replay logs have separate release bindings.'))
     try:sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=R,text=True,stderr=subprocess.DEVNULL).strip()
     except subprocess.CalledProcessError:sha=None
     replay=read(R/'audit/SCIENCE_REPLAY62.json');facts=read(R/'audit/PUBLICATION_FACTS62.json');work=read(R/'audit/COMPLETE_WORK62.json')
