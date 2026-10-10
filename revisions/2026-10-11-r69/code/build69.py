@@ -46,7 +46,8 @@ def response(a):
     extra+=f"The complete audit retained {a['receipt_count']} of {a['planned_services']} planned receipts: {successes} returned and {a['failed_or_timed_out']} failed or timed out. The independent rational implementation checked {a['independent_trajectory_checks']:,} represented mid-bin trajectories. The two new inference streams contain {a['new_independent_initial_path_rows']:,} independent initial path rows, conditional on the stated sampling model; policies and replay checks do not multiply this sample size.\n\n"
     extra+=f"Of {len(contrasts)} returned centered contrasts, {sum(x['equivalent_at_margin'] for x in contrasts)} lie inside the prespecified two-sided margin. Of {len(reuse)} matched returned reuse comparisons, {sum(x['complete_process_win'] for x in reuse)} have a lower final complete-process clock and {sum(x['early_persistent_crossing'] for x in reuse)} meet the early persistent-prefix criterion. These counts do not identify a population timing probability or a strict neural policy-cost gain.\n\n"
     extra+='| Task | Cost contrast | Simultaneous centered interval |\n|---|---|---|\n'
-    for x in contrasts:extra+=f"| d={x['d']}, T={x['T']} | {x['contrast']} | [{x['interval'][0]:.8f}, {x['interval'][1]:.8f}] |\n"
+    from tables69 import interval as displayed_interval
+    for x in contrasts:extra+=f"| d={x['d']}, T={x['T']} | {x['contrast']} | {displayed_interval(x['interval'])} |\n"
     (R/'response-execution.md').write_text((R/'response.md').read_text()+extra)
     run(['pandoc','-f','markdown','-t','latex','--wrap=auto','response-execution.md','-o','build/response-body.tex'],'response-convert')
     body=(R/'build/response-body.tex').read_text();body=re.sub(r'\\texttt\{([^{}]*)\}',lambda m:r'\nolinkurl{'+m[1].replace(r'\_','_')+'}',body)
