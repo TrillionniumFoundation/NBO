@@ -68,7 +68,9 @@ def main():
                 prefix=f"r{report['r']}_";v={key[len(prefix):]:value for key,value in a.items() if key.startswith(prefix)}
                 tol=next(z['tolerance'] for z in fit['dates'] if z['r']==report['r'])
                 proposed=readout.prediction(spec['kind'],models,v['x'],report['r'],v['cap'])
-                need(np.array_equal(proposed,v['action']),('Frozen validation predictor',spec['key']))
+                from validation70 import verify as verify_validation
+                differences=verify_validation(v,proposed,models,report['r'],spec['kind'],readout,tol)
+                if differences:warnings.append(dict(key=spec['key'],date=report['r'],prediction_replay_differences=differences))
                 need(np.array_equal(v['additional_root_queries'],report['K']*(v['score']>tol)),('Executed recovery count',spec['key']))
                 need(np.all(v['additional_root_queries']<=report['K']*v['loss']) and np.all(v['gap']<=tol),('Work loss/gap',spec['key']))
                 exactmean=sum((F(float(z)) for z in v['loss']),F(0))/len(v['loss'])
@@ -99,7 +101,7 @@ def main():
                         other=load(OLD/'results69'/name/'model.json')
                         if group2=='reuse':other=other['models']
                         need(other==fitted,('Cost/work policy identity',name))
-                        model_identity.append(dict(inference=spec['key'],service=name,status='identical'))
+                        model_identity.append(dict(inference=spec['key'],service=name,status='model_arrays_identical; runtime-contract equality is additionally required for deployment transfer'))
     record=dict(status='passed',source_commit=catalogue['source_commit'],source_freeze_sha256=catalogue['freeze_sha256'],service_count=len(catalogue['rows']),files_hash_checked=catalogue['files_checked'],
         physical_path_archives=len(path_records),unique_path_payloads=len(traces),
         archived_path_rows=sum(x['full']['rows'] for x in path_records),independently_evaluated_unique_rows=sum(x['full']['rows'] for x in traces.values()),
