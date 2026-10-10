@@ -1,0 +1,31 @@
+name: NBO R66 pinned source export
+on:
+  push:
+    branches: [revision/econometrica-nbo-r66-revision-2026-10-10]
+    paths: [.github/workflows/nbo-r66-source-export.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-10-r65/
+            /reviews/2026-10-10-econometrica-numerical-methods-r65/
+          sparse-checkout-cone-mode: false
+      - name: Export exact pinned bytes
+        run: |
+          mkdir -p /tmp/nbo-r66-inputs
+          git archive HEAD revisions/2026-10-10-r65 reviews/2026-10-10-econometrica-numerical-methods-r65 | gzip -1 > /tmp/nbo-r66-inputs/pinned-source.tar.gz
+          git rev-parse HEAD > /tmp/nbo-r66-inputs/export-head.txt
+          sha256sum /tmp/nbo-r66-inputs/pinned-source.tar.gz > /tmp/nbo-r66-inputs/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r66-pinned-inputs
+          path: /tmp/nbo-r66-inputs/
+          compression-level: 0
+          retention-days: 14
