@@ -1,52 +1,44 @@
-# Neural Bellman Operators — R61
+# Neural Bellman Operators — R62
 
-The current article continues the original NBO paper and responds to the
-9 October 2026 R59 advisory review. The title, economic primitives,
-constructive target, trained backend, original applications and adverse
-observations are retained. Ordinary sources are committed in this directory.
+This is the original NBO paper revised in response to the R61 advisory report.
+The main additions prove primitive Bellman regularity and a second-order
+original-optimum certificate for the actual acquired policy, and execute a
+prospective multidimensional and complete two-control comparison.
 
-## Submission
+Read [the article](build/ECTA.pdf), [technical supplement](build/supp.pdf), and
+[point-by-point response](build/response.pdf). Ordinary sources are ECTA.tex,
+supp.tex and response.md. Complete and development companions preserve the
+preceding theory, applications, failed targets and adverse comparisons.
 
-[Main article](build/ECTA.pdf), [technical supplement](build/supp.pdf), and
-[point-by-point response](build/response.pdf) are the current reading set.
-[Complete article](build/complete.pdf), [complete proof companion](build/complete-supp.pdf),
-[development article](build/development.pdf), and [development proof companion](build/development-supp.pdf)
-retain the full historical development under its original hypotheses.
+## Reproduction
 
-## New results and evidence
+Install Python 3, numpy, scipy, sympy, scikit-learn, g++, Boost headers,
+pandoc, poppler-utils and the LaTeX dependencies used by econsocart. Then run:
 
-The active article integrates the exact finite-difference witness, constrained
-multi-action recovery, fixed-cover stability, original Bellman brackets and
-fixed-policy revalidation. The completed R60 sources and outcomes remain frozen.
-R61 independently reconstructs them, certifies every distinct returned two-date
-actor without changing it, and executes a new C++ two-by-two ablation with all
-four language/representation-matched cells and three batch sizes.
+    python3 revisions/2026-10-10-r62/code/build62.py
 
-All ninety-six prospective returns, eighty attained targets, sixteen exhausted
-budgets, full stress records, failed recording attempts and conventional
-comparisons remain available. Current tables derive from verified records,
-not manually inserted outcomes. New implementation-work observations are not
-new training or independent policy-cost path samples.
+The ordinary build verifies immutable scientific outputs and regenerates
+current tables and seven documents. It does not retrain, resimulate, or retime
+scientific services. PROTOCOL62.md and SOURCE_FREEZE62.json precede production.
+PREPRODUCTION_CORRECTION62.json records the original-discount fixture correction
+made before that freeze. The frozen theorem source remains separate from its
+print-layout copy.
 
-## Reproduction and completion
+## Evidence
 
-Install Python 3 with numpy, scipy, sympy and scikit-learn, g++ with Boost,
-pandoc, poppler-utils, and the LaTeX packages used by econsocart. Then run:
+results62 retains every fitting seed, own-future training record, action array,
+Bellman reference, target, path endpoint and clock. SCIENCE_REPLAY62.json states
+the exact replay scope: all stored selections and error/interval recursions,
+with a fixed subset of primitive nodal queries reintegrated. It is not a claim
+of independently integrating every production endpoint again.
 
-    python3 revisions/2026-10-09-r61/code/build61.py
+RELEASE62.json records tests and document gates. CLEAN_REBUILD62.json records
+the clean offline source reproduction. FINAL_DELIVERY62.json is required for a
+complete release and binds the final deliverables. Font substitutions, if any,
+remain recorded separately from missing-glyph and overflow checks. A visual
+inspection is claimed only when a separate inspection record exists.
 
-The ordinary build checks source/evidence identities, runs inherited and new
-tests, regenerates tables and compiles seven documents without network,
-retraining or new policy-cost samples. Full R60 mathematical reconstruction:
-
-    python3 revisions/2026-10-09-r61/code/audit61.py
-
-That audit recreates exact witnesses, certificates, original-law endpoints and
-Bellman brackets; its newly measured replay duration never replaces an old
-service clock. The fixed-policy and native-factorial protocols state their
-information sets, source freezes and cost boundaries explicitly.
-
-A completed publication requires audit/FINAL_DELIVERY61.json, audit/RELEASE61.json
-and audit/CLEAN_REBUILD61.json. The final delivery manifest binds the ordinary
-sources, all retained evidence and the seven compiled documents. Compilation
-and deterministic reproduction do not constitute an external editorial decision.
+Original-optimum accuracy, actual expected-cost ranking, finite-seed fitting
+reliability and complete release work are distinct claims. No universal neural
+superiority, empirical fee calibration, controlled multi-architecture result,
+or dimension-free runtime is inferred from the finite experiment.
