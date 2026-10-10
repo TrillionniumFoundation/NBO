@@ -56,12 +56,24 @@ The new centered intervals are approximately 165--306 times narrower than the or
     new=old+"\n        run([sys.executable,'code/independent_inference69.py'],'independent-inference69')\n        independent=json.loads((R/'audit/INDEPENDENT_INFERENCE69.json').read_text())\n        receipt=json.loads((R/'audit/INDEPENDENT_INFERENCE_RECEIPT69.json').read_text())\n        if independent['checked_contrasts']!=12 or independent['status']!='passed' or sha(R/'audit/INDEPENDENT_INFERENCE69.json')!=receipt['reproduced_report_sha256']:\n            raise AssertionError('Independent inference replay differs from retained local receipt')"
     if old not in text:raise AssertionError('Full audit anchor')
     build.write_text(text.replace(old,new,1))
-    mapping=R/'CONTENT_MAP69.md';mapping.write_text(mapping.read_text()+'\nThe complete R69 cold-start and vector tables and both Bellman-centered proofs are in `sections/supp69.tex`; the active article references them and retains its theorem statements and quantitative interpretation. All remain inline in the complete development article. Cross-document links import labels without importing bibliography entries. No statement, proof, table, or observation is deleted by this correction.\n')
+    # Clarify the exact context law already fixed by the frozen source.
+    # It is not the continuous path law or the entire 24-bit acquisition grid.
+    for name in ('sections/training69.tex','sections/training69-print.tex','sections/study69.tex','sections/study69-print.tex','sections/supp69.tex','response.md'):
+        p=R/name;wording=p.read_text()
+        wording=wording.replace('new uniform acquired-state context stream','new context stream drawn uniformly from the sixteen-bit dyadic state grid')
+        wording=wording.replace('uniform acquired-state contexts','contexts drawn uniformly from the sixteen-bit dyadic state grid')
+        p.write_text(wording)
+    law=r'''\paragraph{The finite validation law.}
+The frozen source draws each training and validation coordinate as $U/2^{16}$, where $U$ is uniform on $\{0,\ldots,2^{16}-1\}$. These states are exactly representable under the twenty-four-bit policy acquisition contract, but their law is not uniform on the full twenty-four-bit grid. The independent-context work-loss statement concerns this finite law only. The separate policy-cost experiment retains the original continuous initial-state and innovation laws. No source, stream or observation is changed by making this distinction explicit.
+'''
+    supplement.write_text(supplement.read_text()+'\n'+law)
+    response=R/'response.md';response.write_text(response.read_text()+'\n### Exact validation law\n\nThe frozen code draws validation coordinates uniformly as U/2^16 for integer U between zero and 2^16-1. These contexts lie on, but are not uniform over, the full twenty-four-bit policy acquisition grid. The context-law guarantee is for this finite distribution, not the continuous initial-state law used in cost inference or the recursive on-policy state law. This clarification does not alter the frozen source or observations.\n')
+    mapping=R/'CONTENT_MAP69.md';mapping.write_text(mapping.read_text()+'\nThe complete R69 cold-start and vector tables and both Bellman-centered proofs are in `sections/supp69.tex`; the active article references them and retains its statements and quantitative interpretation. All remain inline in the complete development article. Cross-document links import labels without bibliography entries. The sixteen-bit context law is distinguished from the unchanged twenty-four-bit policy acquisition contract. No statement, proof, table or observation is deleted by this correction.\n')
     audit=json.loads((R/'results69/inference-d2-T2-paired-s6901-r0/summary.json').read_text())
     if len(audit['centered'])!=6:raise AssertionError('Unexpected inference catalogue')
     marker.write_text(json.dumps(dict(status='publication_sources_corrected',initial_run=38078116461,
         initial_publication_issue='Shared Hoeffding citation imported from the supplement into the complete edition; active manuscript 46 pages before relocation',
-        corrections=['Use xr-hyper nocite option for external labels','Retain complete work tables and centered proofs in the supplement and complete article','Add actual matched-screen, complete-work and inference-precision interpretation','Run the independent exact-sum/80-digit interval replay in ordinary and clean builds'],
+        corrections=['Use xr-hyper nocite option for external labels','Retain complete work tables and centered proofs in supplement and complete article','Add actual training, complete-work and precision interpretation','Run the independent exact-sum/80-digit interval replay','Specify the frozen sixteen-bit validation law separately from twenty-four-bit policy acquisition'],
         scientific_sources_modified=False,scientific_records_modified=False,prior_source_preservation_gate_retained=True),sort_keys=True,indent=2)+'\n')
     print('Publication-only corrections applied; frozen science unchanged.')
 if __name__=='__main__':main()
