@@ -1,0 +1,135 @@
+\section{A complete-policy certificate on non-tensor acquired states}\label{sec:certificates56}
+For the remainder of the new verification and stopping results, the recursion is the bounded finite-horizon expected-cost model. Let $\mathcal C$ be a finite measurable partition, with closed boxes used only to verify the cells. Boundary ties follow a specified observation rule. A deployed action is constant on each reported cell and feasible at every state in its closure. A verification box meeting several cells must retain every possible future action. The argument does not require a tensor partition or a continuous actor.
+
+Fix a complete incumbent $\pi^k$ and define its true advantage
+\[
+ A_t^k(x,a)=c_t(x,a)+\beta_tP_t^aJ_{t+1}^{\pi^k}(x)-J_t^{\pi^k}(x).
+\]
+The incumbent has advantage zero. For each cell $C$, let $a_i$ be robustly feasible candidates and let $\mathcal B_t(C)$ be a finite interval cover containing every action feasible at every $x\in C$. The cover may include additional actions; its bounds must remain valid on the feasible subset. Suppose verified endpoints satisfy
+\[
+ A_t^k(x,a_i)\le u_i(C),\qquad
+ \ell_B(C)\le A_t^k(x,a)\quad(a\in B\cap A_t(x)).
+\]
+Set $U_t^k(C)=\min\{0,\min_i u_i(C)\}$ and $L_t^k(C)=\min\{0,\min_B\ell_B(C)\}$. Select the candidate attaining $U$, retaining the incumbent on a tie. All dates are computed against the same old policy and adopted simultaneously.
+
+\begin{theorem}[Directed policy improvement]\label{thm:directed56}
+Under these conditions the new policy is feasible and
+\begin{equation}\label{eq:safety56}
+ J_t^{\pi^{k+1}}(x)\le J_t^{\pi^k}(x)
+\end{equation}
+for every state and date. With $E_t^k=\sup_x(J_t^{\pi^k}(x)-J_t^*(x))$ and $\varepsilon_t^k=\max_C(U_t^k(C)-L_t^k(C))$,
+\begin{equation}\label{eq:recursion56}
+ E_t^{k+1}\le\beta_tE_{t+1}^k+\varepsilon_t^k.
+\end{equation}
+For $B_{t,j}=\prod_{i=0}^{j-1}\beta_{t+i}$, $B_{t,0}=1$, and $m=\min\{K,T-t\}$,
+\[
+ E_t^K\le\sum_{j=0}^{m-1}B_{t,j}\varepsilon_{t+j}^{K-1-j}
+              +B_{t,m}E_{t+m}^{K-m}.
+\]
+The final term vanishes when $K\ge T-t$. Exact full-action greedy certificates thus recover the original Bellman optimum within $T$ passes. The coefficient one multiplying the directed error cannot be reduced uniformly.
+\end{theorem}
+\begin{proof}
+The selected advantage is at most $U\le0$. Starting with the common terminal value, backward monotonicity proves \eqref{eq:safety56}. The full-action lower cover gives
+\[
+ A_t^k(x,\pi_t^{k+1}(x))-\inf_{a\in A_t(x)}A_t^k(x,a)
+ \le U_t^k(C)-L_t^k(C).
+\]
+Replacing the new continuation by the old one using safety, and comparing with an arbitrarily near-optimal Bellman action, yields \eqref{eq:recursion56}. Taking the infimum limit avoids an attainment assumption. Iterating the inequality gives the displayed finite-horizon expansion. For sharpness take one decision date, an incumbent costing $\delta>0$, and a feasible unproposed action costing zero. An exact incumbent upper endpoint is zero and an exact covering lower endpoint is $-\delta$. Retaining the incumbent gives both error and directed allowance equal to $\delta$.
+\end{proof}
+
+Theorem~\ref{thm:directed56} restates the original directed result in the partition notation used by the new implementation. It is deliberately representation neutral. Its premise is stronger than checking a finite candidate menu: without the full-action cover, a safe improvement need not have a small gap from the continuous-action optimum. A change of acquisition partition between passes is permitted when the old policy is transferred exactly to its child cells; the complete incumbent remains the same function.
+
+\subsection{A one-state residual and value cache}
+Let $h_T=g$ and $h_t$ be any stored critics, including fitted networks. Write $e_t=J_t^\pi-h_t$ and
+\[
+ r_t=c_t(\cdot,\pi_t)+\beta_tP_t^{\pi_t}h_{t+1}-h_t,
+ \qquad e_t=r_t+\beta_tP_t^{\pi_t}e_{t+1}.
+\]
+A cellwise residual interval $\mathcal R_t(C)$ encloses $r_t$ throughout the cell. If $\mathcal E_{t+1}(C')$ encloses the next error, each innovation bin maps a current box and action into a next-state box. The hull of $\mathcal E_{t+1}(C')$ over all cells intersecting that box encloses every possible next error. Denote the probability-weighted sum of those hulls by $\mathfrak P_t^a\mathcal E_{t+1}(C)$. Bin probabilities refer to the original continuous law, not an empirical law of midpoints.
+
+\begin{proposition}[Cached residual verification]\label{prop:cache56}
+Starting from $\mathcal E_T=\{0\}$, the backward recursion
+\begin{equation}\label{eq:cache56}
+ \mathcal E_t(C)=\mathcal R_t(C)+\beta_t
+                       \mathfrak P_t^{\pi_t}\mathcal E_{t+1}(C)
+\end{equation}
+encloses $e_t$ on every cell. An independently computed direct value interval $\mathcal V_t(C)$ may be intersected with $h_t(C)+\mathcal E_t(C)$, and $\mathcal E_t(C)$ with $\mathcal V_t(C)-h_t(C)$. These intersections preserve containment. For feasible $a,b$ the sum
+\[
+ c_t(C,a)-c_t(C,b)+\beta_t\{(P_t^a-P_t^b)h_{t+1}(C)
+       +\mathfrak P_t^a\mathcal E_{t+1}(C)
+       -\mathfrak P_t^b\mathcal E_{t+1}(C)\}
+\]
+encloses the fixed-incumbent action difference. Intersecting it with the analogous direct-value difference gives a valid directed interval. Identical actions have the exact interval $\{0\}$.
+\end{proposition}
+\begin{proof}
+For every innovation in a bin, the next state belongs to one of the intersected cells; its error lies in the corresponding stored interval and hence in their hull. Integration against the true bin probabilities preserves order. Backward induction in the residual identity proves \eqref{eq:cache56}. Each displayed intersection combines two sets known to contain the same real value. Substituting $J^\pi=h+e$ in the action difference proves the final statement. An empty intersection indicates an invalid numerical calculation and must stop acceptance, rather than licensing a selected midpoint.
+\end{proof}
+
+This construction stores one-state bands rather than a table over state pairs. It sacrifices dependence between two trajectories when taking separate hulls; in particular, actor ambiguity and broad residual ranges can make it conservative. For locally Lipschitz critics, a centered residual evaluation can be intersected with the natural interval. A valid generalized-gradient enclosure suffices for the line-segment mean-value bound of a ReLU critic. This is not permission to differentiate a discontinuous acquired actor. On one cell its action is fixed; across cells the cache explicitly retains the alternative actions.
+
+\subsection{Signed sensitivity of the installed reference}
+The original investment family in Section~\ref{sec:economy56} has a smooth zero-investment reference. Its stage and terminal state costs are continuously differentiable, including the squared shortage term. Let $\mu$ denote the zero-noise drift and $\gamma$ the action exposure. For a state box $X_0$, propagate boxes $X_{j+1}$ containing $\mu(X_j,0)+sZ$ for the complete innovation support. Starting from a terminal gradient enclosure $\mathcal G_r\supset\nabla g(X_r)$, put
+\begin{equation}\label{eq:tube56}
+ \mathcal G_j\supset\nabla c(X_j,0)
+                   +\beta\,D_x\mu(X_j,0)^\top\mathcal G_{j+1}.
+\end{equation}
+The inclusion means outward interval multiplication and addition. It is evaluated backward along forward state tubes, with the true sparse Jacobian.
+
+\begin{proposition}[Signed reference certificate]\label{prop:tube56}
+The interval $\mathcal G_0$ encloses $\nabla J_0^0$ throughout $X_0$. For a nonnegative proposed action $a$, enclose the gradient of the remaining zero policy at every state
+$\mu(x,\theta a)+sZ$, $0\le\theta\le1$. If $[v_-,v_+]$ encloses the average projection $\E[\gamma^\top\nabla J_{t+1}^0]$ over that segment, then
+\begin{equation}\label{eq:advantage-tube56}
+ A_t^0(x,a)\in a^2(1+4a^2)+\beta a[v_-,v_+].
+\end{equation}
+The signed interval may be intersected with Proposition~\ref{prop:cache56}. The construction is valid for the complete zero reference; it does not differentiate a subsequently changed, cellwise constant policy.
+\end{proposition}
+\begin{proof}
+Differentiate the finite fixed-policy recursion. On the invariant compact domain, the derivatives are bounded, so differentiation and the finite conditional expectations may be interchanged. For every shock path the chain rule has the enclosed Jacobian form in \eqref{eq:tube56}; backward induction and expectation preserve the enclosure. The fundamental theorem of calculus along the first action segment gives
+\[
+ (P_t^a-P_t^0)J_{t+1}^0(x)
+ =a\int_0^1\E[\gamma^\top\nabla J_{t+1}^0(\mu(x,\theta a)+sZ)]\,d\theta.
+\]
+The state-only current costs cancel and the remaining current difference is $a^2+4a^4$. This proves \eqref{eq:advantage-tube56}. Partitioning the first innovation into bins and integrating valid projected gradient hulls with their exact probabilities preserves the same argument.
+\end{proof}
+
+\begin{proposition}[Reference stability and computational work]\label{prop:work56}
+In the dimension-normalized investment family, for every $d\ge2$,
+\[
+ \|D_x\mu\|_\infty\le\kappa:=11/16,
+ \quad \|\nabla c(\cdot,0)\|_1\le15/2,
+ \quad \|\nabla g\|_1\le10.
+\]
+Consequently, with $r$ stages remaining,
+\begin{equation}\label{eq:stability56}
+ \operatorname{Lip}_{\infty}(J^0_r)
+ \le\frac{15}{2}\sum_{j=0}^{r-1}(\beta\kappa)^j
+                 +10(\beta\kappa)^r
+ \le\frac{1920}{91},\qquad \beta=15/16.
+\end{equation}
+For a partition with $N$ leaves, $A$ candidate and covering intervals per leaf, and $q$ innovation bins, the literal cached range-query implementation uses
+\[
+ O(TAqN^2d)
+\]
+cell-membership work, in addition to primitive and critic evaluation. Signed reference tubes over a full sweep use $O(ANqdT^2)$ work and can stream their innovation children. Their working state storage is $O(NdT)$ in addition to stored critics, cached bands and retained $O(TAN)$ endpoint records. No $q^T$ recursion or full state-pair table is required.
+\end{proposition}
+\begin{proof}
+In row $j$, the only state derivatives of the drift are $1/2+(1-x_{j+1})/16$ and $1/8-x_j/16$, both nonnegative. Their sum is at most $11/16$. The target, cyclic imbalance and shortage terms have gradient $\ell^1$ bounds $5/2$, $1$ and $4$ for current cost; the terminal target bound is $5$. This gives the stated constants. The chain rule yields $L_r\le15/2+\beta\kappa L_{r-1}$ with $L_0\le10$. Its geometric expansion and $\beta\kappa=165/256$ prove \eqref{eq:stability56}.
+
+A queried next-state box is tested against $N$ leaves in $d$ coordinates. There are $O(TANq)$ such root-bin queries. The backward cache therefore has the displayed membership cost. Each gradient tube with $r$ remaining dates visits $O(Nr)$ state rows and $O(Ndr)$ Jacobian coordinates for one first-innovation bin. Summing $r$ across current dates gives $O(ANqdT^2)$. Streaming bins requires storage for one forward tube and its backward gradients, not all future shock combinations.
+\end{proof}
+
+The stability constant is a bound for this smooth reference, not a dimension-free complexity theorem for solving arbitrary dynamic programs. Resolving a desired policy or all-state accuracy may require the leaf count, network width and action cover to grow. The membership bound explicitly charges a quadratic leaf-count dependence. The executed locally split partition removes a tensor-product representation; it does not prove that a fixed 32-leaf partition resolves every eight-dimensional economic policy.
+
+\subsection{What a tighter interval establishes}
+For fixed candidates, let $C_t(C)$ be the greater of $L_t(C)$ and the minimum of their lower endpoints, including the incumbent's zero. Then
+\begin{equation}\label{eq:decompose56}
+ U-L=(U-C)+(C-L),\qquad U-C\ge0,\quad C-L\ge0.
+\end{equation}
+The first term measures uncertainty remaining between candidate lower information and the selected upper bound; the second measures the additional continuous-cover allowance. Their maxima need not add to the maximum of their sum. Actor ambiguity, acquisition width, innovation enclosures and arithmetic can enter both terms, so these are not separately estimated causal error components.
+
+More detailed refinement can be recorded without such a causal interpretation. Keep the candidate actions fixed, replace each candidate upper bound by the minimum of its old and refined bounds, and replace the global lower bound by the maximum of its old and refined bounds. Then $U_r\le U_{r-1}$, $L_r\ge L_{r-1}$, and the certificate improvement at step $r$ is exactly
+\[
+ (U_{r-1}-L_{r-1})-(U_r-L_r)
+ =(U_{r-1}-U_r)+(L_r-L_{r-1})\ge0.
+\]
+State subdivision, action-cover subdivision, innovation refinement and higher-precision arithmetic can each supply an independent valid refinement. The present execution records the cache-to-signed-tube refinement and both terms of \eqref{eq:decompose56}; it does not label an unexecuted six-way refinement experiment as measured evidence.

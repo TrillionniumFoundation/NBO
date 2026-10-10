@@ -1,0 +1,68 @@
+\section{Witness-preserving compilation of the neural operator}\label{sec:compiler48}
+The cost of a Bellman construction depends on how its continuation is evaluated. A literal evaluation of the cone network in Theorem~\ref{thm:feasible46} visits every state label at every action--innovation query. Repeating that scan is unnecessary on a tensor cover. The following result compiles the same continuation and original action witnesses; it neither changes the fitted function nor substitutes a newly optimized policy.
+
+Let $\mathcal X=\prod_{j=1}^d\{x_{j,0},\ldots,x_{j,n_j}\}$, with strictly increasing coordinates and $S=\prod_j(n_j+1)$. The rectangular domain is the product of the coordinate intervals. Index the nodes lexicographically. For arbitrary real labels $y_i$ and $L\ge0$, write
+\begin{equation}\label{eq:envelope48}
+ f(x)=\min_{i\le S}\{y_i+L\|x-x_i\|_1\},\qquad
+ i_*(x)=\min\mathop{\rm argmin}_{i\le S}\{y_i+L\|x-x_i\|_1\}.
+\end{equation}
+Each original index carries a feasible node action $a_i$. Labels need not be Lipschitz-consistent: the numerical errors allowed in the earlier construction are permitted here without alteration. Define the transformed label and its original owner at a grid node $v$ by
+\begin{equation}\label{eq:transform48}
+ z_v=\min_i\{y_i+L\|v-x_i\|_1\},\qquad
+ o_v=\min\mathop{\rm argmin}_i\{y_i+L\|v-x_i\|_1\}.
+\end{equation}
+The owner is an original label index, not the index of the node at which its transformed value is stored.
+
+\begin{theorem}[Continuous compilation with original witnesses]\label{thm:compiler48}
+For every closed tensor cell $C$ and every $x\in C$, let $\mathcal V(C)$ be its corner set. Then
+\begin{align}\label{eq:corner48}
+ f(x)&=\min_{v\in\mathcal V(C)}\{z_v+L\|x-v\|_1\},\\
+ (f(x),i_*(x))&=\min_{\rm lex}\left\{
+ \left(y_{o_v}+L\|x-x_{o_v}\|_1,o_v\right):v\in\mathcal V(C)\right\}.
+ \label{eq:owner48}
+\end{align}
+Forward and backward relaxations along each coordinate line compute all pairs $(z_v,o_v)$ using $O(dS)$ additions and comparisons and $O(S)$ stored values and indices. After cell location, a value or exact witness query uses at most $2^d$ corner pairs and $O(d2^d)$ arithmetic operations. A binary search locates the cell in $O(\sum_j\log(n_j+1))$ comparisons; a uniform grid permits direct location.
+
+When node coordinates, labels and $L$ are rational, exact rational preprocessing and comparisons implement these identities, including zero slopes, inconsistent labels and ties. Applying the same repair map to the original returned action gives exactly the same feasible policy and policy cost as the uncompiled construction. The residual and acquisition bounds of Theorems~\ref{thm:feasible46} and~\ref{thm:acquired47} are unchanged.
+\end{theorem}
+\begin{proof}
+The triangle inequality gives $f(x)\le z_v+L\|x-v\|_1$. Choose an attaining original site $x_i$. In each coordinate choose the corner coordinate lying between $x_j$ and $x_{i,j}$. The resulting $v\in\mathcal V(C)$ satisfies $\|x-x_i\|_1=\|x-v\|_1+\|v-x_i\|_1$, proving~\eqref{eq:corner48}. Choose now $i=i_*(x)$. At this corner an owner with a strictly smaller transformed value would improve the objective at $x$; an owner with the same value and a smaller original index would contradict the prescribed tie rule. Hence $o_v=i_*(x)$ for a suitable corner. Every candidate in~\eqref{eq:owner48} is an original cone, so its lexicographic minimum is the desired pair. Coordinatewise forward and backward minimizations evaluate the separable $\ell^1$ transform; keeping original indices in each lexicographic comparison preserves ties. The supplement gives the line invariant, operation account and numerical enclosure details.
+\end{proof}
+
+The nodal distance transform is classical; the linear-time coordinate algorithm is described by \citet{felzenszwalb2012}. We use it for a different computational obligation: continuous off-grid Bellman queries must retain the original feasible action and the specified tie rule. Equation~\eqref{eq:corner48} alone does not authorize using the action attached to $v$; it is~\eqref{eq:owner48} that licenses the policy. The result belongs to the cone-based NBO construction, but an identical native min-plus implementation can use the same compiler. It does not establish a computational property exclusive to a neural encoding. Proposition~\ref{prop:representation47} remains an equality statement, not a comparison between independently trained methods.
+
+\subsection{Complete construction work}
+Let $J_{t,i}$ denote the size of the feasible action net at state node $i$, and let $M_t$ be the number of integration points in a certified query. Put $Q_t=M_t\sum_iJ_{t,i}$. For a tensor implementation, the representation part of a backward construction changes from $O(\sum_t dS_{t+1}Q_t)$ to
+\begin{equation}\label{eq:work48}
+ O\!\left(\sum_t\left[dS_{t+1}
+ +Q_t\left\{d2^d+\sum_j\log(n_{t+1,j}+1)\right\}\right]\right).
+\end{equation}
+Primitive evaluation, feasible-net construction, integration, error accounting, actor formation, repair and output are additional terms. Exact arithmetic has a bit cost; the count in~\eqref{eq:work48} is not a claim that rational comparisons have unit physical cost. Our records therefore report coefficient bit lengths, storage and complete process and CPU times alongside the component counts.
+
+In the two-state investment study, $S=(N+1)^2$, $J=N+1$ and $M=N$. At fixed dimension and horizon, compiling removes the extra state-cover factor from the dense representation workload: $O(TN^6)$ becomes $O(TN^4)$, plus the explicitly charged setup and output. This does not remove the tensor cover, the action cover, or the innovation factor. In dimension $d$, both $S$ and the $2^d$ corner factor remain visible. The four-dimensional stress cases below are executions of this finite-dimensional construction, not evidence that the curse of dimensionality has disappeared.
+
+
+\begin{corollary}[A resource allocation for implemented policy accuracy]\label{cor:work-accuracy48}
+In the two-state economy of Section~\ref{sec:constrained47}, let $C_{T,p}$ be the explicit primitive constant in~\eqref{eq:explicitcap47}, $S_T=\sum_{t<T}\beta^t$, and choose a dyadic $N$ with
+\[
+ N\ge 4C_{T,p}/\varepsilon,\qquad
+ \xi,\xi_T\le\frac{\varepsilon}{8(S_T+\beta^T)}.
+\]
+Let $A$ be the acquisition coefficient in~\eqref{eq:priced48} and $K=\sum_{t<T}\beta^tD_t^Q$. With exact witness selection, a $b$-bit sensor and a common downward action spacing $\Delta$ satisfying
+\[
+ A2^{-b}\le\varepsilon/4,\qquad K\Delta\le\varepsilon/4,
+\]
+the constructed implemented policy has loss at most $\varepsilon$ against the full-information optimum. A zero coefficient imposes no corresponding precision restriction. An observation fee adds its explicit discounted charge to this loss account.
+
+For fixed primitive parameters and horizon, choosing the smallest sufficient dyadic resolution gives $N=O(\varepsilon^{-1})$. The compiled algebraic construction uses $O(TN^4)$ operations, versus $O(TN^6)$ for the literal dense cone evaluation, and stores $O(TN^2)$ labels, owners and actions. Executing the full dyadic ladder to this resolution has the same orders, with all preceding attempts charged. Numerical precision, coefficient bit lengths, uncertainty-box work and physical output latency remain separate costs; these orders are not a precision-free or machine-independent timing claim.
+\end{corollary}
+\begin{proof}
+The first two allocations make the right side of~\eqref{eq:explicitcap47} at most $\varepsilon/2$. The acquisition and quantization terms add at most another $\varepsilon/2$ by~\eqref{eq:priced48}. Compilation preserves the selected policy, so it does not change this account. On the dyadic ladder, the sum of every positive power of the earlier resolutions is bounded by a constant times that power of its largest resolution. Summing the complete algebraic operation counts and retained arrays proves the resource assertions. Effective certified queries at the prescribed accuracy, rather than unchecked fixed-precision evaluations, are part of the hypotheses.
+\end{proof}
+
+The corollary turns the compiler into a sufficient work-to-economic-accuracy allocation. A finite experimental ladder can still end before the sufficient resolution; its failure must remain a failure. Nor does more precise observation eliminate construction error: the two portions of the budget are distinct.
+
+\subsection{Certified numerical queries and selector ambiguity}
+The executable compiler computes $(z_v,o_v)$ in rational arithmetic. A value query encloses each corner expression outward and takes the minima of lower and upper endpoints. For a state box contained in one cell, the possible original actors are among its corner owners; for a box crossing cells, the union of their corner owners is used. An owner is discarded only when its lower objective enclosure exceeds another candidate's upper enclosure. Exact ambiguous point queries use rational comparisons and the original lexicographic rule. Uncertain-state queries retain the hull of all remaining actions and propagate that hull through repair and the dynamics.
+
+Thus a floating-point tie is not silently assigned to a convenient policy. A numerical implementation that deliberately returns a nonattaining index instead has to pay the $\nu_t$ allowance in~\eqref{eq:index47}. The present frozen-object checks separate exact identities from outward-rounding diagnostics. Overlapping machine intervals are useful checks; the identity theorem, rather than that overlap, proves that the compiler represents the original policy.

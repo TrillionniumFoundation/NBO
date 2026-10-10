@@ -1,0 +1,72 @@
+\section{Priced observation and direct constrained-policy decisions}\label{sec:economic48}
+A state-error radius is an economic input when acquiring more precise information is costly. We specify a finite-bit observation technology and a controller replacement charge. These are primitives of a theoretical decision problem in resource units, not estimates from a calibrated economy. They permit a decision interpretation without treating an interval containing zero as equality or treating an all-state regret bound as a ranking of two policies.
+
+\subsection{Choosing the observation precision}
+On $[0,1]^d$, a $b$-bit sensor reports, in each coordinate, the containing dyadic interval and its midpoint. The right endpoint $1$ belongs to the last interval. The resulting acquisition set has $\ell^1$ radius
+\begin{equation}\label{eq:sensor-radius48}
+ r(b)=d\,2^{-(b+1)}.
+\end{equation}
+For $A_t(x)=[0,\kappa_t(x)]$, use the lowest capacity on the reported box, then round the selected action downward to spacing $\Delta_t$. Feasibility holds throughout that box. In the affine capacity economy this lower capacity is computed exactly from the lower box coordinates. The acquisition repair therefore has $\chi_t=0$ in Corollary~\ref{cor:capacity47}.
+
+Suppose the same $b$ is chosen before date zero and each coordinate-bit costs $\lambda>0$ per date. The observation fee is paid in the same additive resource units as the objective. With $B_t=\prod_{s<t}\beta_s$, it is $C b$, where $C=\lambda d\sum_{t<T}B_t$. Write $G$ for the full-information witness loss certificate with exact selector and repair. The acquisition theorem implies an augmented loss bound, relative to the full-information optimum without the observation fee,
+\begin{align}\label{eq:priced48}
+ J^{\pi,b}(x)+Cb-V^*(x)
+ &\le G+K_\Delta+A2^{-b}+Cb,\\
+ A&=d\sum_{t<T}B_t(L_t+D_t^QK_t^A),\qquad
+ K_\Delta=\sum_{t<T}B_tD_t^Q\Delta_t.\notag
+\end{align}
+A known selector allowance is added to $G$ when necessary. The fee is a deterministic date cost, so the same argument also applies to a common cash-invariant recursive evaluation for which the earlier comparison theorem holds. Direct sampling below is, separately, expectation-specific.
+
+\begin{proposition}[Optimal precision for the certified economic account]\label{prop:sensor48}
+On a declared integer range $b_{\min}\le b\le b_{\max}$, the smallest minimizer of the right side of~\eqref{eq:priced48} is characterized by the neighboring inequalities
+\begin{equation}\label{eq:bits-opt48}
+ C\le A2^{-b}\quad\hbox{if }b>b_{\min},\qquad
+ C\ge A2^{-(b+1)}\quad\hbox{if }b<b_{\max},
+\end{equation}
+with the smallest minimizer selected when equality gives two. The criterion can be decided by rational comparisons, without an unverified logarithm. It minimizes a proved upper account; it need not minimize the unknown actual policy cost as a function of precision.
+\end{proposition}
+\begin{proof}
+The difference between the accounts at $b+1$ and $b$ is $C-A2^{-(b+1)}$, which is nondecreasing in $b$. The two neighboring comparisons are therefore necessary and sufficient, with the indicated endpoint convention. Equation~\eqref{eq:priced48} follows by substituting~\eqref{eq:sensor-radius48} and $\zeta_t^{\rm acq}=2K_t^Ar(b)+\Delta_t$ into~\eqref{eq:acquiredgap47}.
+\end{proof}
+
+This calculation provides an explicit information-price comparative static: an increase in $\lambda$ weakly decreases the smallest minimizing precision, while an increase in the sensitivity account $A$ weakly increases it. The result concerns the guarantee, not a fitted distribution of measurement errors. The executed curves use every $b=4,\ldots,16$ and every $\lambda\in\{1/16384,1/4096,1/1024\}$. All curves and endpoint choices are retained, rather than reporting only an attractive radius.
+
+\subsection{The actual constrained-policy cost}
+Fix the two-state witness and bilinear-FVI policies stored at the finest original R47 resolution, $N=16$. In each economic cell, the two policies are evaluated with the same observation contract: exact state, six bits per coordinate, or ten bits per coordinate. The finite-bit policies use robust capacity repair and action spacing $1/4096$; the exact-state policies are unquantized. Thus there are three distinct pairs of implemented policies, not three observations of an assumed continuous actor.
+
+For an initial law $\mu$, the estimand is
+\begin{equation}\label{eq:rawcost48}
+ D_{\mu,b}=\E_\mu\!\left[
+ \sum_{t<T}\beta^t\{c(X_t^W,A_t^W)-c(X_t^F,A_t^F)\}
+ +\beta^T\{g(X_T^W)-g(X_T^F)\}\right].
+\end{equation}
+The observation fees cancel within a pair because its two controllers use the same sensor. The paired policies share innovations but follow their own endogenous state paths. This is their actual cost difference, not a difference of regret certificates. A raw path score is used here; the earlier own-continuation score remains a valid alternative when its signed support is sharper.
+
+For the two-state primitives, $0\le c\le(99+4p)/64$ and $0\le g\le37/16$. Consequently the path difference belongs to $[-H,H]$, with
+\begin{equation}\label{eq:support48}
+ H=\frac{99+4p}{64}\sum_{t<T}\beta^t+\frac{37}{16}\beta^T.
+\end{equation}
+This uniform support is conservative. It is independent of the observed contrast and is fixed before simulation.
+
+\begin{theorem}[Interval simulation and replacement decisions]\label{thm:decision48}
+For each of $K$ fixed policy-pair tasks, partition the underlying initial and innovation uniforms into equal bins and draw independent uniform bin indices. Suppose a numerical path routine returns bounded random endpoints $L_j,U_j$ enclosing the exact path difference for every continuous realization inside the selected bins, including every possible actor, observation and repair branch. Let $[a,b]$ be a deterministic support enclosure and clip endpoints to it. For $n\ge2$, let $\underline m_L,\overline m_U$ enclose their sample means and $s_L^2,s_U^2$ upper-bound their unbiased sample variances. Put
+\begin{equation}\label{eq:bern48}
+ R(s^2)=\sqrt{\frac{2s^2\ell}{n}}
+       +\frac{7(b-a)\ell}{3(n-1)},\qquad
+ \ell\ge\log(4K/\alpha).
+\end{equation}
+Then, under the independent-bin sampling model, simultaneously for all $K$ tasks with probability at least $1-\alpha$,
+\begin{equation}\label{eq:confidence48}
+ D_{\mu,b}\in
+ [\max\{a,\underline m_L-R(s_L^2)\},
+   \min\{b,\overline m_U+R(s_U^2)\}].
+\end{equation}
+If replacing either installed controller costs $k>0$ once at date zero, an interval strictly inside $(-k,k)$ proves that neither replacement recoups that fee in expected resource cost for that task. An interval with upper endpoint below zero ranks the witness policy below FVI; a lower endpoint above zero ranks it above FVI. Containing zero does not establish equality.
+\end{theorem}
+\begin{proof}
+Conditional on a bin sequence, integrating the continuous uniform variables gives a conditional path expectation between its enclosing endpoints. Averaging over uniform bin indices reproduces the original continuous law, so $\E L_j\le D_{\mu,b}\le\E U_j$. Apply the empirical-Bernstein inequality of \citet{maurer2009} to the lower and upper endpoint samples, with a union bound across $2K$ one-sided assertions; certified moment and arithmetic allowances enlarge, rather than shrink, the intervals. Finally, switching from FVI to witness changes cost by $D_{\mu,b}+k$, while switching in the opposite direction changes it by $k-D_{\mu,b}$. Both are positive when $|D_{\mu,b}|<k$.
+\end{proof}
+
+The experiment fixes $K=48$, $n=262144$ and $\alpha=0.01$ before execution. An exact rational exponential bound verifies that $\ell=10$ is sufficient. Forty-bit bins cover the continuous initial and innovation laws. The initial laws are independent uniform coordinates and the three fixed vectors $(1/8,1/8)$, $(1/2,1/2)$ and $(7/8,7/8)$, crossed with all four horizon--price cells and three sensors. A fixed pseudorandom stream makes the records reproducible; it is not a proof that those indices are independent random variables.
+
+The replacement fee is $k=1/64$, one quarter of the maximal quadratic investment expenditure at $p=1$. It is an explicit theoretical transaction charge. We do not calibrate it to welfare data, choose it after inspecting the intervals, or infer an all-state ranking from the four initial laws. Reporting the zero threshold separately keeps the decision statement distinct from a claim of neural superiority.
