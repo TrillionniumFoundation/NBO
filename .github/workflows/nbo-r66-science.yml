@@ -1,0 +1,81 @@
+name: NBO R66 prospective scientific execution
+on:
+  push:
+    branches: [revision/econometrica-nbo-r66-revision-2026-10-10]
+    paths: [.github/workflows/nbo-r66-science.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r66-scientific-execution
+  cancel-in-progress: false
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 30
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-10-r66/
+            /revisions/2026-10-10-r63/code/
+            /revisions/2026-10-10-r64/code/
+            /revisions/2026-10-10-r62/**/*.py
+            /revisions/2026-10-10-r62/code/
+          sparse-checkout-cone-mode: false
+      - name: Materialize and commit ordinary scientific sources
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import ast,base64,hashlib,json,zlib
+          from pathlib import Path
+          root=Path('revisions/2026-10-10-r66')
+          encoded=''.join((root/'inputs'/('source66.b64.'+str(i))).read_text().strip() for i in range(4))
+          raw=zlib.decompress(base64.b64decode(encoded,validate=True))
+          assert hashlib.sha256(raw).hexdigest()=='af810d26ebb6b58fd562a4251ca7cad30abc0702ee45662c5cb78da4fbb0baef'
+          files=json.loads(raw)
+          for name,text in files.items():
+              if Path(name).is_absolute() or '..' in Path(name).parts:raise ValueError(name)
+              if name.endswith('.py'):ast.parse(text)
+              path=root/name;path.parent.mkdir(parents=True,exist_ok=True)
+              if path.exists() and path.read_text()!=text:raise AssertionError('Refusing to overwrite ordinary source: '+name)
+              path.write_text(text)
+          PY
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-10-r66
+          if ! git diff --cached --quiet; then git commit -m 'R66: commit ordinary operational-screen, two-control, inference and reliability sources'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r66-revision-2026-10-10
+      - name: Install scientific dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn
+      - name: Independent development regressions and prospective source freeze
+        run: |
+          mkdir -p revisions/2026-10-10-r66/audit
+          /usr/bin/python3 revisions/2026-10-10-r66/code/tests66.py > revisions/2026-10-10-r66/audit/tests66-preexecution.log 2>&1
+          GITHUB_SHA=$(git rev-parse HEAD) /usr/bin/python3 revisions/2026-10-10-r66/code/science66.py --freeze
+          git add -f revisions/2026-10-10-r66
+          git commit -m 'R66: freeze all 212 scientific services and source identities before execution'
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r66-revision-2026-10-10 HEAD:refs/heads/revision/econometrica-nbo-r66-science-source-2026-10-10
+      - name: Execute every declared process and retain failures as observations
+        run: /usr/bin/python3 -u revisions/2026-10-10-r66/code/science66.py --run
+      - name: Commit the complete immutable scientific record
+        if: always()
+        run: |
+          git add -f revisions/2026-10-10-r66
+          if ! git diff --cached --quiet; then git commit -m 'R66: retain actual prospective service results, costs, reuse and scaling records'; fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r66-revision-2026-10-10 HEAD:refs/heads/revision/econometrica-nbo-r66-science-executed-2026-10-10
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r66-prospective-science
+          path: revisions/2026-10-10-r66/
+          compression-level: 1
+          retention-days: 30
