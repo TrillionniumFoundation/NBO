@@ -23,6 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: revision/econometrica-nbo-r69-referee-revision-2026-10-11
           fetch-depth: 100
           filter: blob:none
           sparse-checkout: |
@@ -49,13 +50,14 @@ jobs:
           git add -f revisions/2026-10-11-r69
           if ! git diff --cached --quiet; then git commit -m 'R69: integrate ordinary manuscript, complete preserved development and tested scientific sources'; fi
           git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r69-referee-revision-2026-10-11 HEAD:refs/heads/revision/econometrica-nbo-r69-source-2026-10-11
-      - name: Require and bind the complete executed catalogue and latest referee report
+      - name: Bind all executed records and finalize ordinary publication sources
         run: |
           git fetch --no-tags --filter=blob:none --depth=100 origin refs/heads/revision/econometrica-nbo-r69-executed-2026-10-11:refs/remotes/origin/r69-executed
           git merge --no-edit refs/remotes/origin/r69-executed
           git fetch --no-tags --filter=blob:none --depth=1 origin 4b27b56f4514f6c1d77b69fe707f7202f8b06b19
           git fetch --no-tags --filter=blob:none --depth=1 origin eacd3e217ae1e2e9ea6e154b48da7d103159d051
           /usr/bin/python3 revisions/2026-10-11-r69/code/finalize_sources69.py
+          /usr/bin/python3 revisions/2026-10-11-r69/code/finish_paper69.py
           /usr/bin/python3 - <<'PY'
           import ast
           from pathlib import Path
@@ -64,13 +66,13 @@ jobs:
               ast.parse(path.read_bytes(),filename=str(path))
           PY
           git add -f revisions/2026-10-11-r69
-          if ! git diff --cached --quiet; then git commit -m 'R69: bind complete executed catalogue, exact scientific blobs and controlling R67 report'; fi
+          if ! git diff --cached --quiet; then git commit -m 'R69: bind independent inference checks and finalize complete preserved paper sources'; fi
           git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r69-referee-revision-2026-10-11 HEAD:refs/heads/revision/econometrica-nbo-r69-source-2026-10-11
-      - name: Run inherited and new tests, independent trajectory checks and complete publication build
+      - name: Run inherited and new tests, independent checks and the complete publication build
         run: /usr/bin/python3 revisions/2026-10-11-r69/code/build69.py
       - name: Rebuild the clean offline archive and verify atomic remote publication
         run: /usr/bin/python3 revisions/2026-10-11-r69/code/publish69.py
-      - name: Retain complete PDFs, records and failure diagnostics
+      - name: Retain PDFs and all audit diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -82,5 +84,22 @@ jobs:
             revisions/2026-10-11-r69/audit/
             revisions/2026-10-11-r69/tables/*69.tex
             revisions/2026-10-11-r69/CONTENT_MAP69.md
+          compression-level: 1
+          retention-days: 30
+      - name: Retain ordinary paper sources for independent typesetting inspection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r69-ordinary-paper-sources
+          path: |
+            revisions/2026-10-11-r69/*.tex
+            revisions/2026-10-11-r69/*.bib
+            revisions/2026-10-11-r69/*.cls
+            revisions/2026-10-11-r69/*.cfg
+            revisions/2026-10-11-r69/*.bst
+            revisions/2026-10-11-r69/sections/
+            revisions/2026-10-11-r69/tables/
+            revisions/2026-10-11-r69/publication/
+            revisions/2026-10-11-r69/code/
           compression-level: 1
           retention-days: 30
