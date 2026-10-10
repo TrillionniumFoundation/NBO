@@ -1,0 +1,42 @@
+name: NBO R66 scientific source export
+on:
+  push:
+    branches: [revision/econometrica-nbo-r66-revision-2026-10-10]
+    paths: [.github/workflows/nbo-r66-code-export.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-10-r65/*.tex
+            /revisions/2026-10-10-r65/*.cls
+            /revisions/2026-10-10-r65/*.cfg
+            /revisions/2026-10-10-r65/*.bib
+            /revisions/2026-10-10-r65/*.bst
+            /revisions/2026-10-10-r65/code/
+            /revisions/2026-10-10-r65/sections/
+            /revisions/2026-10-10-r65/publication/
+            /revisions/2026-10-10-r63/code/
+            /revisions/2026-10-10-r64/code/
+            /revisions/2026-10-10-r62/**/*.py
+            /revisions/2026-10-10-r62/code/
+            /reviews/2026-10-10-econometrica-numerical-methods-r65/
+          sparse-checkout-cone-mode: false
+      - name: Export checked-out scientific source bytes
+        run: |
+          mkdir -p /tmp/nbo-r66-code
+          tar -czf /tmp/nbo-r66-code/scientific-source.tar.gz revisions reviews
+          git rev-parse HEAD > /tmp/nbo-r66-code/export-head.txt
+          sha256sum /tmp/nbo-r66-code/scientific-source.tar.gz > /tmp/nbo-r66-code/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r66-scientific-sources
+          path: /tmp/nbo-r66-code/
+          compression-level: 0
+          retention-days: 14
