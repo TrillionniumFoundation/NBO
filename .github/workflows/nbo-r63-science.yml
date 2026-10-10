@@ -1,0 +1,68 @@
+name: NBO R63 grid-free prospective services
+on:
+  push:
+    branches: [revision/econometrica-nbo-r63-referee-revision-2026-10-10]
+    paths: [.github/workflows/nbo-r63-science.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r63-science
+  cancel-in-progress: false
+jobs:
+  prospective:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 20
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+          sparse-checkout-cone-mode: false
+      - name: Install numerical dependencies
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn
+      - name: Verify exact locally tested source bytes and rational regressions
+        run: |
+          mkdir -p revisions/2026-10-10-r63/audit
+          /usr/bin/python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          root=Path('revisions/2026-10-10-r63')
+          expected={'PROTOCOL63.md':'607413e742551e7a0a33cb79f319accc90310293af6da50141d87c2046905d61','code/query63.py':'1d048e6f2e0cc88b9194960173173e93da5f28f7b190ad0e0e113e49d368c43e','code/science63.py':'2b4189e297d0f3dc4eb47f582de4c48005a727c06c872472b9069bb9278cad4b','code/tests63.py':'2f4c1764c686cad383edb71230705d30a2bfd8ca2951d8bb3997c5c2986544e5','sections/query63.tex':'5996fffb52faea254fecd044c0829e3e9d06dae07802f4aed4550b6bf4304f96'}
+          for path,h in expected.items():
+              actual=hashlib.sha256((root/path).read_bytes()).hexdigest()
+              if actual!=h:raise AssertionError((path,actual,h))
+          print('All five source files match the locally tested bytes.')
+          PY
+          /usr/bin/python3 revisions/2026-10-10-r63/code/tests63.py 2>&1 | tee revisions/2026-10-10-r63/audit/preproduction-tests63.log
+      - name: Commit and push source freeze before production
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          export NBO63_SOURCE_SHA=$(git rev-parse HEAD)
+          /usr/bin/python3 revisions/2026-10-10-r63/code/science63.py --freeze
+          git add -f revisions/2026-10-10-r63
+          git commit -m 'R63: freeze exact sources, theorem and finite catalogue before prospective execution'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r63-source-2026-10-10
+      - name: Execute every isolated complete service without selecting seeds
+        run: /usr/bin/python3 revisions/2026-10-10-r63/code/science63.py --run
+      - name: Deposit complete scientific evidence
+        run: |
+          git add -f revisions/2026-10-10-r63
+          git commit -m 'R63: deposit all isolated grid-free Bellman services, exact traces and full process timings'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r63-science-2026-10-10
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r63-grid-free-science
+          path: revisions/2026-10-10-r63/
+          retention-days: 30
+          compression-level: 1
