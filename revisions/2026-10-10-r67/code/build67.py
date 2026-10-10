@@ -54,7 +54,7 @@ def bibliography(root,name):
     if keys-set(entries):raise ValueError('Missing reference '+str(keys-set(entries)))
     keys=sorted(keys,key=lambda key:re.search(r'\\textsc\{([^}]+)',entries[key])[1].lower())
     text='\\begin{thebibliography}{'+str(len(keys))+'}\n'+r"\providecommand{\enquote}[1]{``#1''}"+'\n'+r'\providecommand{\natexlab}[1]{#1}'+'\n\n'
-    (root/'build'/(name+'.bbl')).write_text(text+'\n\n'.join(entries[key] for key in keys)+'\n\\end{thebibliography}\n')
+    (root/'build'/(name+'.bbl')).write_text(text+'\n\n'.join(entries[key] for key in keys)+'\n\n\\end{thebibliography}\n')
 
 def response():
     run(['pandoc','-f','markdown','-t','latex','--wrap=auto','response.md','-o','build/response-body.tex'],'response-convert')
