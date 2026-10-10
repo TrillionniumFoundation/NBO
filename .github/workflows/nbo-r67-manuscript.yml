@@ -1,0 +1,53 @@
+name: NBO R67 ordinary manuscript sources
+on:
+  push:
+    branches: [revision/econometrica-nbo-r67-referee-revision-2026-10-10]
+    paths: [.github/workflows/nbo-r67-manuscript.yml]
+permissions:
+  contents: write
+jobs:
+  manuscript:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: |
+            revisions/2026-10-10-r65
+            revisions/2026-10-10-r67
+      - name: Verify authored transport and materialize ordinary UTF-8 sources
+        run: |
+          python3 - <<'PY'
+          import ast,base64,hashlib,json,lzma,pathlib
+          root=pathlib.Path('revisions/2026-10-10-r67')
+          encoded=''.join((root/'inputs'/f'authored67.part{i}.b64').read_text().strip() for i in range(5))
+          packed=base64.b64decode(encoded,validate=True)
+          assert hashlib.sha256(packed).hexdigest()=='15d77a8c6b92958cf57577173ed02fba21418e2006f04be383f69d0d6668a7c8','Transport mismatch'
+          raw=lzma.decompress(packed)
+          assert hashlib.sha256(raw).hexdigest()=='a8702a88cdb8d5cbc387e14819e1432ab0338fc67e7122dbfd9dd7fd4a5c52ae'
+          sources=json.loads(raw)
+          protected={'science67.py','tests67.py','kernel66.py','vector66.py','PROTOCOL67.md'}
+          for name,text in sources.items():
+              rel=pathlib.Path(name)
+              assert not rel.is_absolute() and '..' not in rel.parts and rel.name not in protected
+              if rel.suffix=='.py':ast.parse(text,filename=name)
+              target=root/rel;target.parent.mkdir(parents=True,exist_ok=True);target.write_text(text)
+          (root/'audit/AUTHORED_SOURCE67.json').write_text(json.dumps({'status':'passed','sha256':{k:hashlib.sha256(v.encode()).hexdigest() for k,v in sources.items()},'scope':'Author-created ordinary manuscript and publication-audit sources, not frozen scientific code'},indent=2)+'\n')
+          PY
+          python3 revisions/2026-10-10-r67/code/prepare_paper67.py
+          python3 revisions/2026-10-10-r67/code/tests_math67.py > revisions/2026-10-10-r67/audit/MATHEMATICAL_PREFLIGHT67.log 2>&1
+      - name: Push ordinary sources without force
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-10-r67
+          git commit -m 'R67: complete ordinary manuscript, original proofs, pointwise response and 24 exact mathematical tests'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r67-referee-revision-2026-10-10
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r67-mathematical-preflight
+          path: revisions/2026-10-10-r67/audit/*67*
+          retention-days: 30
