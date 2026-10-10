@@ -1,0 +1,43 @@
+name: NBO R63 source inspection
+on:
+  push:
+    branches: [revision/econometrica-nbo-r63-referee-revision-2026-10-10]
+    paths: [.github/workflows/nbo-r63-source-inspection.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /reviews/2026-10-10-econometrica-numerical-methods-r62/
+          sparse-checkout-cone-mode: false
+      - name: Export exact text sources and inventory
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, hashlib, shutil
+          base=Path('revisions/2026-10-10-r62'); out=Path('source-inspection'); out.mkdir()
+          count=0
+          for f in base.rglob('*'):
+              if not f.is_file() or '__pycache__' in f.parts: continue
+              rel=f.relative_to(base)
+              # Keep all ordinary text, class, bibliography, tables and numerical
+              # source inputs. Large historical result arrays remain in the repo.
+              if f.suffix not in ('.py','.tex','.cls','.sty','.bst','.bib','.md','.json','.txt','.yml','.log'): continue
+              if 'build-logs' in f.parts or rel.parts[0]=='build': continue
+              target=out/'r62'/rel;target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(f,target);count+=1
+          shutil.copytree('reviews/2026-10-10-econometrica-numerical-methods-r62',out/'review62')
+          print(json.dumps({'files':count,'bytes':sum(f.stat().st_size for f in out.rglob('*') if f.is_file())}))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r63-inspection-sources
+          path: source-inspection/
+          retention-days: 30
