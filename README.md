@@ -1,30 +1,24 @@
 # Neural Bellman Operators
 
-**Current complete referee revision: R61.**
+**Current complete referee revision: R62.**
 
-Canonical branch: `revision/econometrica-nbo-r61-review-ready-2026-10-09`.
+Canonical branch: `revision/econometrica-nbo-r62-review-ready-2026-10-10`.
 
-[Main article](revisions/2026-10-09-r61/build/ECTA.pdf) · [Technical supplement](revisions/2026-10-09-r61/build/supp.pdf) · [Referee response](revisions/2026-10-09-r61/build/response.pdf)
+[Article](revisions/2026-10-10-r62/build/ECTA.pdf) · [Technical supplement](revisions/2026-10-10-r62/build/supp.pdf) · [Response to the referee](revisions/2026-10-10-r62/build/response.pdf)
 
-[Revision guide](revisions/2026-10-09-r61/README.md) · [Complete development](revisions/2026-10-09-r61/build/complete.pdf) · [Full proof companion](revisions/2026-10-09-r61/build/complete-supp.pdf)
+[Revision guide](revisions/2026-10-10-r62/README.md) · [Complete development](revisions/2026-10-10-r62/build/complete.pdf) · [Complete proof companion](revisions/2026-10-10-r62/build/complete-supp.pdf)
 
-The title, economic primitives, original Bellman objective, trained backend,
-broader applications and adverse evidence remain intact. R61 integrates a
-root-free exact action witness, a constrained multi-action extension, stable
-Bellman enclosures, complete original-policy revalidation and a fresh native
-two-by-two experiment with explicit batching and crossover results.
+R62 preserves the original NBO paper and develops primitive regularity and a
+second-order original-optimum certificate for the actual acquired policy.
+A separately frozen prospective study covers several state dimensions,
+longer horizons and complete two-control economic policies. Pure and
+common-augmented neural and conventional actors retain their own certificates,
+direct policy-cost comparisons and full computational charges.
 
-The R59 advisory report, complete R60 source freezes and successful and failed
-records are preserved. R61 adds no training service or independent policy-cost
-sample. Its fresh factorial observations concern implementation work.
-All 96 original prospective returns, including 16 exhausted budgets, remain in
-the registry. Cold compilation, complete return work, original policy cost and
-additional original-optimum verification have separate accounting boundaries.
+`revisions/2026-10-10-r62/audit/FINAL_DELIVERY62.json` binds the complete sources,
+scientific records, tests, seven documents and clean offline archive rebuild.
+The controlling R61 review, earlier revision branches and unfavorable results
+are unchanged. The source-freeze and completed-science branches retain their
+separate provenance; they are not additional independent experiments.
 
-The seven-document build, inherited and new tests, source preservation and
-clean offline rebuild are bound by
-`revisions/2026-10-09-r61/audit/FINAL_DELIVERY61.json`.
-Historical revision and review branches are unchanged.
-
-Offline ordinary-source build:
-`python3 revisions/2026-10-09-r61/code/build61.py`.
+Offline build: `python3 revisions/2026-10-10-r62/code/build62.py`.
