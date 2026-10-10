@@ -1,0 +1,78 @@
+name: NBO R67 complete referee publication
+on:
+  push:
+    branches: [revision/econometrica-nbo-r67-referee-revision-2026-10-10]
+    paths: [.github/workflows/nbo-r67-publication.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r67-publication
+  cancel-in-progress: false
+jobs:
+  publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      SOURCE_DATE_EPOCH: '1791590400'
+      FORCE_SOURCE_DATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 100
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+            /revisions/2026-10-10-r64/
+            /revisions/2026-10-10-r65/
+            /revisions/2026-10-10-r66/
+            /revisions/2026-10-10-r67/
+            /README.md
+          sparse-checkout-cone-mode: false
+      - name: Consolidate the pinned corrected execution and controlling report
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git fetch --no-tags --filter=blob:none --depth=100 origin c3519eb28e1217690daa6120317e7424084e04c6
+          git merge --no-edit c3519eb28e1217690daa6120317e7424084e04c6
+          git fetch --no-tags --filter=blob:none --depth=1 origin d548a97f461160296239ed6a973d4a91ef9d1fad
+          mkdir -p revisions/2026-10-10-r67/inputs
+          git show d548a97f461160296239ed6a973d4a91ef9d1fad:reviews/2026-10-10-econometrica-numerical-methods-r65/referee_report.md > revisions/2026-10-10-r67/inputs/referee-r65.md
+          /usr/bin/python3 revisions/2026-10-10-r67/code/prepare_paper67.py
+          /usr/bin/python3 - <<'PY'
+          import ast,hashlib,json,pathlib,subprocess
+          root=pathlib.Path('revisions/2026-10-10-r67')
+          for p in (root/'code').glob('*.py'):ast.parse(p.read_text(),filename=str(p))
+          report=root/'inputs/referee-r65.md'
+          record={'review_commit':'d548a97f461160296239ed6a973d4a91ef9d1fad','reviewed_manuscript_commit':'34a5ce17dc3ac4681b6d004eca00637f28104e28','corrected_execution_commit':'c3519eb28e1217690daa6120317e7424084e04c6','report_sha256':hashlib.sha256(report.read_bytes()).hexdigest(),'scope':'Pinned original-paper referee revision; prior branches and scientific freezes unchanged'}
+          (root/'audit/INPUT_BINDINGS67.json').write_text(json.dumps(record,indent=2)+'\n')
+          PY
+          git add -f revisions/2026-10-10-r67
+          if ! git diff --cached --quiet; then git commit -m 'R67: bind the controlling R65 report and corrected complete scientific execution'; fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r67-referee-revision-2026-10-10 HEAD:refs/heads/revision/econometrica-nbo-r67-source-2026-10-10
+      - name: Install publication and verification dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Replay the complete corrected and inherited records and compile all nine documents
+        run: /usr/bin/python3 revisions/2026-10-10-r67/code/build67.py
+      - name: Clean offline archive rebuild and atomic verified remote publication
+        run: /usr/bin/python3 revisions/2026-10-10-r67/code/publish67.py
+      - name: Retain manuscript PDFs and complete verification diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r67-publication-and-audits
+          path: |
+            revisions/2026-10-10-r67/build/*.pdf
+            revisions/2026-10-10-r67/build/*.txt
+            revisions/2026-10-10-r67/audit/
+            revisions/2026-10-10-r67/tables/*67*
+            revisions/2026-10-10-r67/CONTENT_MAP67.md
+          compression-level: 1
+          retention-days: 30
