@@ -1,0 +1,101 @@
+\section{Lossless computation of neural action witnesses}\label{sec:screen58}
+The preceding transfer theorem isolates an action computation that can be improved without changing the economic approximation problem. Once the continuation has been fitted, its smallest exact lattice minimizer is a well-defined object. Different certified algorithms may return that same object at different costs. We now construct such an alternative for the trained neural continuation. It leaves the fit, the feasible lattice, the whole-cell verification rule and the original Bellman target unchanged.
+
+\subsection{Exact reduction of inactive feature regions}
+Fix a reported state and write the action-dependent objective, omitting an action-independent constant, as
+\begin{equation}\label{eq:ridge-objective58}
+ F(a)=4a^4+q_2a^2+q_1a+
+       \sum_{j=1}^m v_j\Phi(z_j+s_ja,R_j),\qquad 0\le a\le A.
+\end{equation}
+Its coefficients are the exact rational reductions of the stored neural parameters and the known primitives in Lemma~\ref{lem:integrated56}. The output coefficients $v_j$ may have either sign. Put
+\[
+ l_j=\min\{z_j,z_j+s_jA\},\qquad
+ u_j=\max\{z_j,z_j+s_jA\}.
+\]
+These are bounds over the entire feasible interval, not tests at a single action.
+
+\begin{lemma}[Active-region reduction]\label{lem:regions58}
+Every feature with $u_j\le -R_j$ can be removed. Every feature with $l_j\ge R_j$ contributes only $v_jz_j$ to the constant and $v_js_j$ to the linear coefficient. If $R_j>0$ and $-R_j\le l_j\le u_j\le R_j$, its contributions to the constant, linear and quadratic coefficients are, respectively,
+\[
+ \frac{v_j(z_j+R_j)^2}{4R_j},\qquad
+ \frac{v_j(z_j+R_j)s_j}{2R_j},\qquad
+ \frac{v_js_j^2}{4R_j}.
+\]
+After these reductions, there are rational numbers $c,\widetilde q_1,\widetilde q_2$ and a set $I$ of $r\le m$ remaining features such that
+\begin{equation}\label{eq:reduced58}
+ F(a)-c=4a^4+\widetilde q_2a^2+\widetilde q_1a+
+              \sum_{j\in I}v_j\Phi(z_j+s_ja,R_j)
+\end{equation}
+for every feasible action. Every action-null feature, $s_j=0$, is removed, including features on a branch boundary. The computation uses $O(m)$ rational operations and comparisons after the feature projections have been formed.
+\end{lemma}
+\begin{proof}
+The affine preactivation ranges exactly over $[l_j,u_j]$. In the three indicated cases, the formula for $\Phi$ is respectively zero, affine, or quadratic throughout that interval. Expanding those polynomials gives the stated coefficients. The formulas agree at both branch boundaries, so the weak inequalities cause no ambiguity. A zero action projection makes the range a singleton and belongs to at least one case; at $R_j=0$ only the zero and affine cases are needed. Summing the identities proves \eqref{eq:reduced58}. Each feature is examined once.
+\end{proof}
+
+This reduction is not a deletion of a learned feature from the economic model. It is an exact representation of its contribution to one action-search problem. A feature that is inactive on one feasible interval may remain active on another. In particular, the reduction changes neither the continuation evaluated during fitting nor the critic-menu proposals supplied to the common verifier.
+
+\subsection{Outward screening and exact comparison}
+Let $a_k=k\Delta$, $k=0,\ldots,K-1$, be the same robust action lattice as before. Suppose finite intervals $[\ell_k,u_k]$ enclose $F(a_k)-c$. Define
+\begin{equation}\label{eq:screen58}
+ \overline u=\min_k u_k,\qquad
+ S=\{k:\ell_k\le\overline u\},\qquad
+ \omega=\max_k(u_k-\ell_k).
+\end{equation}
+Compute the exact rational objective only at retained indices and select its smallest minimizing index. The screen uses weak inequality deliberately: discarding a tied minimizer could change the prescribed actor.
+
+\begin{theorem}[Lossless screened witness]\label{thm:screen58}
+Under the interval containment assumption, $S$ is nonempty and contains every global minimizer on the original lattice. Exact comparison over $S$, with smallest-index tie breaking, returns the same action and objective as exact comparison over the entire lattice and hence as Theorem~\ref{thm:algebraic56}. Every retained action also satisfies
+\begin{equation}\label{eq:retained-gap58}
+ F(a_k)-\min_i F(a_i)\le2\omega,\qquad k\in S.
+\end{equation}
+The constant two is sharp for arbitrary valid intervals of maximum width $\omega$. If every nonminimizing action has gap strictly greater than $2\omega$, the retained set consists exactly of the minimizing actions. No positive lower bound on this separation is required for correctness or finite termination.
+\end{theorem}
+\begin{proof}
+Let $k_*$ minimize $F$ and put $F_*=F(a_{k_*})-c$. For every $i$,
+$\ell_{k_*}\le F_*\le F(a_i)-c\le u_i$. Therefore $\ell_{k_*}\le\overline u$, so every minimizer is retained. Minimization over this nonempty subset has the same value and, because all tied minimizers remain, the same smallest index.
+
+For $k\in S$, containment and the width bound give
+\[
+ F(a_k)-c\le\ell_k+\omega
+       \le\overline u+\omega
+       \le u_{k_*}+\omega\le F_*+2\omega.
+\]
+For sharpness, take two objective values $0$ and $2\omega$ with intervals $[0,\omega]$ and $[\omega,2\omega]$. Both survive the weak screen. The separation assertion follows immediately. Without separation, exact comparison of finitely many rational values still terminates.
+\end{proof}
+
+Outward arithmetic constructs the intervals for the reduced objective, including the coefficient conversions and the action division. Positive parts are enclosed before squaring. For $R>0$ the identity
+\[
+ \Phi(z,R)=\frac{(z+R)_+^2-(z-R)_+^2}{4R}
+\]
+is valid on every branch and can be evaluated outward; $R=0$ is handled separately. Negative feature weights are multiplied as intervals, rather than by preserving the wrong endpoint order. The implementation combines ridge terms by outward pairwise additions, not by an unverified floating-point dot product. Exact region reduction is important computationally and can also remove avoidable cancellation before this evaluation.
+
+The use of rigorous floating-point enclosures follows the verification principles surveyed by \citet{rump2010}. The broader idea of discarding candidates without excluding a solution has other applications, including the convex variable-screening methods of \citet{ndiaye2017}. The present screen does not use a convex duality gap and does not assume convexity of the fitted neural objective. Its particular role is to preserve an exact NBO action witness while reducing expensive rational comparisons.
+
+\begin{proposition}[Work and precision]\label{prop:screen-work58}
+After the $O(md)$ rational feature reduction, the screened procedure uses $O(m)$ rational operations for Lemma~\ref{lem:regions58}, $O(K(1+r))$ directed fixed-precision operations for the intervals, and $O(s(1+m))$ rational operations for exact comparison of the $s=|S|$ survivors using the original reduced-at-state objective. The vector implementation requires $O(md+K(1+r))$ stored numbers, in addition to the fitted model and returned certificate. These arithmetic counts do not bound the bit cost of rational operations.
+
+If the lattice exceeds a prespecified finite size or an interval operation cannot return valid finite endpoints, invoking the terminating algebraic solver preserves exactness. The work of any preceding failed screen must also be charged. Thus fixed-precision screening does not impose an upper bound on the numerical resolution allowed by the combined solver.
+\end{proposition}
+\begin{proof}
+Forming each neural feature's drift, action and innovation projections takes $O(d)$ rational operations. Each retained feature is evaluated at $K$ actions using a fixed number of directed operations; pairwise interval summation is linear in the number of terms. Original rational evaluation at each survivor costs $O(1+m)$. The broadcast interval arrays have $O(K(1+r))$ entries, and the feature coefficients require $O(md)$ storage. The fallback has the termination and exactness properties of Theorem~\ref{thm:algebraic56}; adding, rather than hiding, prior work gives the final assertion.
+\end{proof}
+
+The two solvers have different precision tradeoffs. The algebraic solver's candidate count is independent of lattice cardinality, whereas the screen evaluates every lattice point cheaply. Neither algorithm is uniformly faster from these counts alone. In the executed screen the maximum is 2049 points; larger lattices use the original algebraic routine. This threshold is fixed before production. Reported zero fallbacks, when observed, are not a general guarantee that fallback is unnecessary.
+
+\subsection{Preservation of the economic return}
+The witness enters a complete procedure: fitting, acquisition, candidate generation, whole-cell verification, continuous-action covering and prospective stopping. The next statement specifies when exact witness preservation transfers through that procedure.
+
+\begin{corollary}[Policy and stopping identity]\label{cor:return-identity58}
+Consider two runs with identical fitted coefficients, acquired partitions, reference policies, candidate order, endpoint procedures, stopping paths and numerical environment. Suppose their only difference is the choice between the algebraic solver and the screened solver, both with the same action lattice and tie rule. Suppose also that the controller branches on its specified evidence and resource rungs, not on elapsed wall time. Then every attempted policy, selected whole-cell endpoint, continuous-action gap and inference decision is identical in the two runs. They return at the same evidence-based stopping step or both exhaust the declared budget. Their implemented expected costs are equal under every common admissible initial law. In Theorem~\ref{thm:transfer57}, both have the same zero optimization-loss term $\kappa_C$ and the same remaining accuracy obligations.
+\end{corollary}
+\begin{proof}
+Theorem~\ref{thm:screen58} gives identical exact proposals, including ties. All other candidate entries are identical by assumption. The fixed-order endpoint selection therefore gives identical actors and endpoints on every cell. The common full-action cover gives identical local gaps. Applying the same interval path evaluation to identical policies gives the same stopping evidence. Induction over looks and construction rungs proves the asserted return identity. Identical policies under the same primitives have identical expected costs. The definition of $\kappa_C$ and Theorem~\ref{thm:transfer57} give the last assertion.
+\end{proof}
+
+The assumptions about matching fits and arithmetic are checked in the experiment; they are not inferred solely from a shared seed. Identical returned actors alone already imply equality of economic costs, even if their internal numerical histories differ. By contrast, an algorithm stopped at a physical deadline need not take the same number of steps after a speed improvement, so the corollary does not make that claim.
+
+Let $W_A,W_S$ be the observed complete work of two matched returns. Relative to the algebraic procedure, using the screened procedure with an additional charge $\tau$ and computation price $\lambda\ge0$ changes net cost by exactly
+\begin{equation}\label{eq:net-work58}
+ \tau+\lambda(W_S-W_A)
+\end{equation}
+when the returned policies are identical. This is the identity case of \eqref{eq:incremental-adoption57}; no statistical interval for a zero policy difference is needed. If $W_S<W_A$, every $\tau<\lambda(W_A-W_S)$ supports that particular switch. The measured work difference remains an observation about the executed workload, not a guarantee of future processor speed or an estimated economic computation price.

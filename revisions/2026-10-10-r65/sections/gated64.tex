@@ -1,0 +1,55 @@
+\section{Certificate-gated neural queries}\label{sec:gated64}
+A prediction of the optimal action and a prediction of a useful numerical query are different objects. Inserting a learned action before examining an already available certificate charges an extra continuation query even when the two boundary actions suffice. We instead make the demand for another query a mathematical decision and let a trained NBO selector determine its location only after that demand has been established. The underlying continuation recursion and the economic optimum are unchanged.
+
+At a recursive state, start with the two feasible action endpoints. Compute the global lower bound from the parabolic minorants of Lemma~\ref{lem:parabolic63}, including the capacity remainder, and the smallest upper endpoint. Return immediately when their difference is at most the requested tolerance. Otherwise choose a partition interval with smallest current minorant. A learned action is used only if it lies in the central half of that interval; it then replaces the conventional proposed split. Outside that region the safeguarded parabolic split is used. The rounded split must pass the one-fifth interior check before evaluation. A prediction is evaluated at most once at each recursive state and is reused only as a proposed location. It supplies neither a value endpoint nor a lower bound.
+
+\begin{theorem}[Gated prediction and complete-policy validity]\label{thm:gated64}
+Under the assumptions of Theorem~\ref{thm:query63}, the gated service returns the same original-optimum and actual-policy guarantees for every supplied prediction, independently of fitting error. In real arithmetic, with endpoint-plus-capacity width at most $5\delta/8$, a sufficient number of endpoint evaluations at a state is
+\[
+ A_r(\delta,x)=4+\left\lceil5c(x)\sqrt{H_r/(3\delta)}\right\rceil.
+\]
+Each requested evaluation either reduces the unresolved action partition or terminates the query; no initial interior evaluation is mandatory. If the boundary certificate suffices, no predictor is evaluated at that state. If every prediction is declined at every recursive query, the value endpoints and implemented actions coincide with those of the conventional parabolic service using the same arithmetic and tie rules.
+\end{theorem}
+\begin{proof}
+A routed action is merely another feasible partition point. The endpoint and minorant induction in Theorem~\ref{thm:query63} therefore applies without change. After each evaluation retain the smallest upper endpoint and the maximum of the old and newly valid global lower endpoints. Their difference cannot increase. The stopping test uses this difference, not a fitted value or a prediction error.
+
+Put $h_\delta=\sqrt{3\delta/H_r}$. A partition interval of length at most $h_\delta$ has minimum minorant at least its smaller lower endpoint minus $3\delta/8$. The associated upper endpoint, with the stipulated width and capacity allowance, is within $\delta$ of that minorant. Such an interval cannot be responsible for an unresolved global gap. Every split parent therefore has length greater than $h_\delta$. The one-fifth condition makes each of its children longer than $h_\delta/5$. Starting with one interval, disjoint terminal fragments consequently number at most $1+5c(x)/h_\delta$. Counting endpoints and allowing for rounding of this numerical bound gives the displayed conservative budget. Floating failure is handled by the separately charged exact-rational procedure, not by this real-arithmetic count.
+
+The first assertion about predictor evaluation follows from the order of the stopping test and the routing rule. For the last assertion, use backward induction on the remaining horizon, with the common analytic terminal kernel as base. At each nonterminal query, declined predictions leave the same conventional split, lower bound, witness and tie rule. Induction over partition refinements gives the same next query and returned endpoints; the induction over dates then gives the same implemented policy. Model-evaluation work can still differ, so transcript identity is not a zero-cost fitting claim.
+\end{proof}
+
+This theorem establishes robustness to the numerical content of a fitted prediction, not that learning is free or always useful. It also does not state that an arbitrary routed transcript has fewer queries than the adaptive conventional transcript. The executed comparison records both possibilities. Unlike a policy catalogue with a stored reference action at every state, neither service constructs a conventional state lattice before it can return a certified policy.
+
+\subsection{State dimension, working memory, and reliability}
+For the original scalar model, the primitive bounds $dG_r\le27$ and $dM_r\le54$ imply
+\[
+ H_r\le\frac{3369}{256},\qquad
+ \Lambda_r\le\frac{1319}{128},\qquad
+ \frac{\beta M_{r-1}d}{6144}\le\frac{135}{16384}.
+\]
+Thus the action and scalar-innovation budgets at fixed remaining horizon and tolerance are independent of the number of state coordinates. Every primitive evaluation still requires $O(d)$ arithmetic. A width-$w$ one-hidden-layer ReLU prediction on the recorded $d+5$ features requires $O(dw)$ work and stored parameters; a full quadratic prediction on these features uses $O(d^2)$ terms. Neither cost is included for free in the Bellman recursion.
+
+Let $q_r(\delta)$ be the dyadic quadrature count and let $P_r(d)$ be the cost of one predictor evaluation. Apart from the separately identified exact-arithmetic recovery, a conservative work recursion is
+\[
+ W_r(d,\delta)\le C d A_r(\delta)+P_r(d)
+   +A_r(\delta)q_r(\delta)
+      W_{r-1}(d,\delta/(4\beta)).
+\]
+The predictor term is absent on a boundary-certified query. This expression removes the exponential state lattice, not the horizon or innovation-tree dependence. A depth-first scalar implementation can retain the current action partition and one innovation child at a time. The executed batched implementation instead reports its maximum state batch and process peak memory. A zero count of stored state-lattice nodes does not mean zero storage.
+
+The deterministic certificate is valid for any supplied finite network weights. A failure to fit and return such weights is a separate service event. Our reliability estimand is the return count and worst measured complete work over the preregistered finite seed catalogue, with every repetition retained. Numerical workload paths are not optimizer replications. The real-arithmetic cap and the exact-rational precision condition establish algorithmic termination at admissible tolerances; recorded processor seconds are descriptive, not a hardware-uniform worst-case bound.
+
+\subsection{An explicit economic purchase criterion}\label{sec:purchase64}
+The decision maker buys a callable controller rather than a table of successful sample decisions. Fix a physical capital numeraire for the normalized state, a conversion $m>0$ dollars per unit of the model's loss index, a computation charge $p\ge0$ dollars per measured second, and a fixed deployment fee $f\ge0$ dollars. For $n$ uses under a specified initial-state law, the monetary objective is
+\[
+ \mathcal C(\pi)=nm\,\E[J_0^\pi(X_0)]+pW(\pi)+f.
+\]
+These are declared preference and service-price parameters, not estimated economic primitives. The policy theorem bounds the expected loss under the original continuous law for every such initial-state law. The finite dyadic workload below measures execution; its average cost is not substituted for that expectation.
+
+If two policies have an independently valid expected-gain interval $[l,u]$ for $\E[J_0^{\pi_0}-J_0^{\pi_1}]$, and their incremental measured service charge is $\Delta=p(W_1-W_0)+f_1-f_0$, then the monetary net gain lies in
+\[
+ [nm l-\Delta,\;nm u-\Delta].
+\]
+This follows by multiplication by the positive numeraire conversion and subtraction of the same service charge. A positive lower endpoint supports purchase; a negative upper endpoint rules it out at the stated prices. Uniform regret certificates alone do not supply a directional expected-gain interval. They instead support a worst-case accuracy requirement imposed before selecting the least expensive eligible service.
+
+Finally, a forecast of amortized query work is distinguishable from a measured complete service. With a fixed model and exactly repeated query workload, if training requires $B$ operations and deployment requires $D_L$ rather than $D_C$ operations per workload, then learning uses fewer total operations after $k$ repetitions precisely when $D_L<D_C$ and $k>B/(D_C-D_L)$. If $D_L\ge D_C$ and $B\ge0$, no repetition of that unchanged workload produces an operation saving. This arithmetic criterion includes training and cannot be applied to unrelated future states without a new assumption. The executed catalogue reports its own full process clocks, not a favorable hypothetical amortization.

@@ -1,0 +1,135 @@
+\section{Precision-Adaptive Neural Continuation Refresh}
+\label{sec:r37precision}
+An old continuation can be inaccurate for a changed economy and nevertheless
+provide a useful initialization for learning its new continuation. A useful
+refresh rule must specify both how much learning is required and how accurately
+that learning must be implemented. We give such a rule for the trainable
+square continuation, allowing rectangular factors and noncommuting targets.
+The economic stopping criterion remains the full-policy bound of
+Theorem~\ref{thm:r34robust}.
+
+Fix one date after the future policy has been finalized. During this fit the
+symmetric target $M$ is fixed and satisfies $mI\preceq M\preceq LI$, with
+$0<m\leq L$. For $W_j\in\R^{p\times d}$, $p\geq d$, let
+\[
+ C_j=M^{-1/2}W_j'W_jM^{-1/2},\qquad E_j=C_j-I.
+\]
+The implemented update is
+\begin{equation}\label{eq:r37update}
+ W_{j+1}=\tfrac12 W_j\{3I-M^{-1}W_j'W_j\}+\Delta_j,
+ \qquad \|\Delta_jM^{-1/2}\|_2\leq\nu_j.
+\end{equation}
+Every entry of the hidden factor is trainable. The inverse is that of the
+current fixed target; it is neither an inverse of the optimal value nor a
+matrix transported unchanged from a different economic future. In whitened
+coordinates, the ideal update is a Newton--Schulz polar iteration. Matrix
+polar iterations and their numerical analysis are classical
+\citep{r37higham2008}. We use their error identity to allocate precision within
+an own-policy economic error budget, rather than claim a new matrix iteration.
+
+Choose a checked basin radius $0<r\leq1/2$ and put $c_r=(3+r)/4$. If
+$\|E_0\|_2\leq\rho_0\leq r$, define $\rho_{j+1}=\rho_j^2$. For every
+step that is needed, require
+\begin{equation}\label{eq:r37precision}
+ 2\nu_j+\nu_j^2\leq(1-c_r)\rho_j^2.
+\end{equation}
+A zero initial error needs no update. The condition budgets the whole
+implemented step. It cannot be justified by bounding only the final storage
+conversion when preceding matrix products have also been rounded.
+
+\begin{theorem}[Precision-adaptive refresh]\label{thm:r37precision}
+Suppose the fixed target, initial basin, and full-step errors satisfy the
+conditions just stated. Then every returned factor obeys
+\begin{equation}\label{eq:r37double}
+ (1-\rho_j)M\preceq W_j'W_j\preceq(1+\rho_j)M,
+ \qquad \rho_j=\rho_0^{2^j}.
+\end{equation}
+For a requested relative tolerance $0<\tau<1$ with $\tau<\rho_0$, a sufficient number of updates is
+\begin{equation}\label{eq:r37cap}
+ K=\left\lceil\log_2\left\{
+       \frac{\log(1/\tau)}{\log(1/\rho_0)}\right\}\right\rceil.
+\end{equation}
+The number is zero if $\rho_0\leq\tau$. No simultaneous eigenbasis for
+$W_0'W_0$ and $M$ is assumed.
+
+Suppose, more specifically, that matrix products and target solves are exact
+and each of the $pd$ entries of the updated factor is rounded to the nearest
+multiple of $2^{-b_j}$. Let $A$ be any finite certified upper bound for
+$\sqrt{pd/m}$. Choosing the first positive integer $b_j$ for which
+\begin{equation}\label{eq:r37bits}
+ 2\nu_j+\nu_j^2\leq(1-c_r)\rho_j^2,
+ \qquad \nu_j=A2^{-b_j-1},
+\end{equation}
+is sufficient. Such an integer exists at every required step. For a constant
+$C$ depending only on $A$ and $r$, the chosen integers satisfy
+\begin{equation}\label{eq:r37bitaccount}
+ \sum_{j=0}^{K-1}b_j\leq CK+4\log_2(1/\tau).
+\end{equation}
+A checked inverse of the fixed target may be constructed once and applied
+at each update. Thus a fit requiring updates needs one target-inverse
+construction and $K$ target-inverse applications; a zero-update fit needs
+neither.
+\end{theorem}
+
+The proof is in Section~\ref{sec:r37proof}. The first conclusion is a
+uniform deterministic statement over the declared basin and perturbations.
+The second is a fractional-storage account, not a bound on all bit operations
+in exact rational arithmetic. It omits neither inverse applications nor
+residual and positivity checks from a measured service cost. Numerators and
+denominators in exact intermediate products can be considerably larger than
+the stored factor precision. An implementation with a fixed precision cap
+must fail explicitly if it cannot satisfy \eqref{eq:r37bits}; the theorem
+does not authorize it to return an uncertified factor.
+
+\subsection{A target change and its economic allowance}
+Suppose an old factor has relative error at most $\rho_{\rm old}$ for
+$M_{\rm old}$, and evaluation of the new future establishes
+\[
+ (1-\omega)M_{\rm new}\preceq M_{\rm old}
+                \preceq(1+\omega)M_{\rm new},\qquad 0\leq\omega<1.
+\]
+Then the same factor has relative error at most
+$\rho_{\rm old}+\omega+\rho_{\rm old}\omega$ for $M_{\rm new}$. If
+this upper bound does not exceed $r$, it supplies an admissible initial
+radius for Theorem~\ref{thm:r37precision}. Otherwise, a direct basin test or
+a controlled cold construction is required. This is a condition for using
+an old factor as an initialization, not for accepting its old policy without
+improvement. The old inverse is not reused across the target change.
+
+\begin{corollary}[Precision-budgeted full-policy construction]
+\label{cor:r37policy}
+Under the primitive envelope and allocation of
+Theorem~\ref{thm:r34robust}, let each positive remaining Gram allowance be
+$a_t$, and let the independently evaluated center satisfy
+$m_tI\preceq\widetilde M_t\preceq L_tI$. A basin-certified refresh with
+\begin{equation}\label{eq:r37economic}
+ \tau_t\leq\min\{1/2,a_t/(\sqrt d\,L_t)\}
+\end{equation}
+reaches that Gram allowance after the finite schedule in
+\eqref{eq:r37cap}--\eqref{eq:r37bits}. If the evaluation radius and returned
+actor also satisfy \eqref{eq:r34accept}, then
+\[
+ 0\leq J_0^\pi(x)-J_0^*(x)
+       \leq s\{\lambda_0^+\|x\|^2+\mu_0^+\}
+       \leq\varepsilon_{\rm policy},\qquad \|x\|^2\leq b_0.
+\]
+The comparison is with all adapted policies of finite recursive cost and all
+real vector controls in the stated economy. A separate action-execution
+allowance is added when the implemented actions differ from the stored
+rational feedback.
+\end{corollary}
+
+Thus the economic primitives determine the envelope and policy allocation;
+own-policy evaluation supplies the current target and its radius; the
+precision rule constructs a trainable continuation to the remaining
+allowance; and the actor and full-policy checks complete the certificate.
+The terminal target is the known transformed coefficient
+$\Psi_\theta(Q_f)$, not $Q_f$ in general. A direct terminal evaluation
+requires no neural factor fit.
+
+The update count and fractional precision account concern a specified neural
+construction. They do not rank all ways of solving the economy. In particular,
+the structural solution legitimately bypasses factor training. The numerical
+comparison below charges both constructions to the same economic stopping
+target, includes that competitor, and reports the work of evaluating, checking,
+and writing the result as well as the work of training.
