@@ -1,0 +1,35 @@
+\section{Two controls and two continuous innovations}\label{sec:vector67}
+The absence of a state lattice does not remove action or innovation dimensions. We extend the query implementation to the previously specified two-control economy of Section~\ref{sec:accuracy62}: $a_1,a_2\ge0$, $a_1+a_2\le c(x)$, the interaction cost is $a_1a_2/4$, and the second innovation is an independent common-direction uniform shock. The original scalar model and its experiments are unchanged.
+
+At a queried state, triangulate the feasible action simplex. Let $v_0,v_1,v_2$ be a triangle's vertices with verified lower endpoints $l_0,l_1,l_2$. If $\theta_j(a)$ are its barycentric coordinates, define
+\begin{equation}\label{eq:triangle67}
+ p(a)=\sum_{j=0}^2\theta_j(a)l_j
+       -\frac H2\sum_{j=0}^2\theta_j(a)\|v_j-a\|_2^2.
+\end{equation}
+This is the quadratic $H\|a\|_2^2/2+b^\top a+c$ interpolating the lower endpoints. Its approximate minimizer is only a proposed support point. For any point $y\in\mathbb R^2$, including a numerically displaced point outside the triangle,
+\begin{equation}\label{eq:dual-triangle67}
+ p(y)+\min_j\nabla p(y)^\top(v_j-y)
+                    \le \min_{a\in\operatorname{co}(v_0,v_1,v_2)}p(a).
+\end{equation}
+Thus an outward supporting-plane calculation, not an uncertified quadratic solver, supplies the lower endpoint.
+
+\begin{theorem}[Simplicial Bellman query]\label{thm:vector67}
+For the two-control primitives, \eqref{eq:triangle67} is a lower minorant of the true Bellman objective. Taking the smallest valid triangle lower endpoint and the best feasible-action upper endpoint gives a lower--upper certificate for the full continuous simplex. Include the omitted capacity strip and actual action-rounding allowances. Returning when this gap is at most $\delta$ gives the same acquired-policy loss recursion as Theorem~\ref{thm:query63}.
+
+A failed floating triangulation can be replaced by an exact-rational simplex enumeration. Under the stated positive precision slack, this recovery is finite at every finite horizon. With two innovations divided into $q$ bins each, a valid local quadrature error is
+\begin{equation}\label{eq:two-shock67}
+ \zeta=\frac{5\beta M_{t+1}d}{24576q^2}.
+\end{equation}
+If $A_r$ bounds the number of action queries at a state with $r$ dates remaining, a work account has the form
+\begin{equation}\label{eq:vector-work67}
+ W_r\le C_d A_r+A_rq_r^2W_{r-1},\qquad C_d=O(d),
+\end{equation}
+with separate charges for triangulation, arithmetic and output. There is no tensor state-table factor, but the descendant tree remains.
+\end{theorem}
+\begin{proof}
+Semiconcavity means that $f(a)-H\|a\|_2^2/2$ is concave. Its barycentric inequality, with vertex values replaced by lower endpoints, gives \eqref{eq:triangle67}. The tangent inequality for the convex quadratic $p$ proves \eqref{eq:dual-triangle67}; a linear function attains its simplex minimum at a vertex. Taking minima over a cover preserves the lower bound. Each feasible upper witness is an action of the actual model. The local gap premise therefore implies the earlier policy recursion, irrespective of how the triangle or support point was proposed.
+
+For finiteness, use simplex lattice denominator $A$, with $(A+1)(A+2)/2$ vertices. On triangles of diameter proportional to $c(x)/A$, the curvature error tends to zero as $A^{-2}$. The endpoint error is reduced by finite descendant accuracy and quadrature refinements. The retained exact-rational recovery contract requires $\delta>16\Lambda\,2^{-32}$ at each recursive call, leaving positive slack after rounding; dyadic enlargement of $A$ and $q$ then terminates. This is a finite arithmetic procedure, not a uniform bound on rational bit cost. For \eqref{eq:two-shock67}, the independent innovation variances after conditioning on the bins are $\rho_j^2/(3q^2)$, their direction norms squared are $d$, and the semiconcavity Taylor remainder is $M_{t+1}/2$ times their sum. Substitution of $\rho_1=1/32$, $\rho_2=1/64$ gives the coefficient. Finally, each action query has $q_r^2$ descendants, proving \eqref{eq:vector-work67}.
+\end{proof}
+
+The executed algorithm uses longest-edge refinement of the lowest triangle and an outward terminal convexity-gap check. Its floating cap is followed by the stated recovery rule, not by an uncertified returned action. The implementation batches descendants but can allocate a descendant array before slicing it into query batches; a reported maximum query batch is therefore not a bound on total live state memory. We report process memory separately. The two-control execution is a verified extension of the NBO query backend, not evidence for a trained two-output selector.
