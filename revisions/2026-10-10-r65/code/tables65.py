@@ -53,9 +53,9 @@ def main():
     out=[]
     for g in groups:
         rr=[x for x in rows if (x['d'],x['T'],x['target'])==(g['d'],g['T'],g['target'])]
-        out.append([g['d'],g['T'],g['target'],len(rr),f"{max(x['uniform_gap'] for x in rr):.8f}",max(x['counts']['max_batch'] for x in rr),max(x['peak_rss_kib'] for x in rr),f"{max(x['wall'] for x in rr):.3f}"])
+        out.append([g['d'],g['T'],g['target'],len(rr),format(Decimal.from_float(float(max(x['uniform_gap'] for x in rr))).quantize(Decimal('0.00000001'),rounding=ROUND_CEILING),'f'),max(x['counts']['max_batch'] for x in rr),max(x['peak_rss_kib'] for x in rr),f"{max(x['wall'] for x in rr):.3f}"])
     table('reliability65','Accuracy, memory and finite-catalogue return','tab:reliability65',['$d$','$T$','Target','Returns','Gap bound','Batch','RSS (KiB)','Max (s)'],out,
-        'Every cell has twenty isolated-process returns: two conventional methods with two repetitions and four learned methods with two seeds and two repetitions. Gap bounds are descriptive rounded displays of the common outward account; exact binary64 values are retained in the audit and checked against the rational target. RSS is the largest recorded process peak, not only model storage. No service built a stored state lattice or invoked exact-rational recovery.','rrrrrrrr')
+        'Every cell has twenty isolated-process returns: two conventional methods with two repetitions and four learned methods with two seeds and two repetitions. Gap bounds are rounded upward for display; exact binary64 values are retained in the audit and checked against the rational target. RSS is the largest recorded process peak, not only model storage. No service built a stored state lattice or invoked exact-rational recovery.','rrrrrrrr')
     for cohort in ('R63','R64'):
         out=[]
         for r in a[cohort]['rows']:
