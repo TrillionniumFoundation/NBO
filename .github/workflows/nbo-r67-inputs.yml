@@ -20,25 +20,27 @@ jobs:
             revisions/2026-10-10-r64
             revisions/2026-10-10-r65
             revisions/2026-10-10-r66
-      - name: Export unchanged sources and dependencies without scientific reruns
+      - name: Export ordinary text sources and scientific Python dependencies
         run: |
           python3 - <<'PY'
           import hashlib,json,pathlib,subprocess,zipfile
           roots=[pathlib.Path('revisions')/('2026-10-10-r'+str(k)) for k in range(62,67)]
-          prohibited={'.ttf','.otf','.woff','.woff2','.pfb','.pfa','.afm','.tfm'}
+          allowed={'.py','.tex','.bib','.bst','.cls','.cfg','.md','.json','.sty'}
           hashes={}
-          with zipfile.ZipFile('r67-inputs.zip','w',zipfile.ZIP_DEFLATED,compresslevel=1) as z:
+          with zipfile.ZipFile('r67-source-view.zip','w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
               for root in roots:
                   for p in root.rglob('*'):
-                      if not p.is_file() or '__pycache__' in p.parts or p.suffix.lower() in prohibited:
+                      if not p.is_file() or '__pycache__' in p.parts or p.suffix.lower() not in allowed:
+                          continue
+                      if p.suffix=='.json' and p.stat().st_size>1000000:
                           continue
                       z.write(p,str(p));hashes[str(p)]=hashlib.sha256(p.read_bytes()).hexdigest()
-              z.writestr('INPUTS67.json',json.dumps({'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':hashes,'new_scientific_observations':0},indent=2))
-          print('Exported',len(hashes),'files')
+              z.writestr('INPUTS67.json',json.dumps({'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':hashes,'new_scientific_observations':0,'scope':'compact text source view; original binary evidence remains unchanged in repository'},indent=2))
+          print('Exported',len(hashes),'text files')
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: nbo-r67-immutable-inputs
-          path: r67-inputs.zip
+          name: nbo-r67-source-view
+          path: r67-source-view.zip
           retention-days: 30
           compression-level: 0
