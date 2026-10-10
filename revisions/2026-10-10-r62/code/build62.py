@@ -17,7 +17,7 @@ def bindings():
         rel=p.relative_to(R)
         if rel.parts[0] in ('build','audit','tables') or str(rel)=='response.tex':continue
         files[str(rel)]=b.digest(p)
-    for name in ('audit/SOURCE_FREEZE62.json','audit/EXECUTION62.json','audit/COMPILER62.json','audit/PREPARATION62.json','audit/PREPRODUCTION_CORRECTION62.json'):files[name]=b.digest(R/name)
+    for name in ('audit/SOURCE_FREEZE62.json','audit/EXECUTION62.json','audit/COMPILER62.json','audit/PREPARATION62.json','audit/PREPRODUCTION_CORRECTION62.json','audit/PRODUCTION_ENVELOPE62.json'):files[name]=b.digest(R/name)
     return files
 
 def main():
@@ -35,11 +35,15 @@ def main():
     b.run(['g++','-O3','-std=c++17','code/search60.cpp','-o','build/native60'],'r62-exact-native-build')
     tests=b.historical()
     for script in SCRIPTS:tests[script[:-3]]=b.tests([sys.executable,'code/'+script],'r62-'+script[:-3])
-    tests['native_factorial61']=b.tests([sys.executable,'code/factorial61.py','--test'],'r62-retained-native-factorial-tests')
+    # Explicit unittest discovery exercises the four retained fixtures without
+    # going through their multipurpose scientific-service command-line router.
+    tests['native_factorial61']=b.tests([sys.executable,'-m','unittest','discover','-s','code','-p','factorial61.py','-v'],'r62-retained-native-factorial-tests')
+    need(tests['native_factorial61']['tests']==4,'All four retained factorial fixtures must execute')
     b.run([sys.executable,'code/extend53.py','--test'],'r62-retained-exact-perturbation')
     b.run([sys.executable,'code/cohort55b.py','--test'],'r62-retained-immutable-recorder')
     b.run([sys.executable,'code/revalidate61.py','--replay'],'r62-retained-fixed-actor-replay')
     b.run([sys.executable,'code/audit62.py'],'r62-science-replay')
+    b.run([sys.executable,'code/account62.py'],'r62-complete-work-account')
     b.run([sys.executable,'code/tables62.py'],'r62-current-tables')
     preservation={}
     for name,old in prep['baseline_labels'].items():
@@ -53,11 +57,12 @@ def main():
     for name in DOCS:
         record=b.compile_document(name);raw=subprocess.check_output(['pdftotext','-layout',str(R/'build'/(name+'.pdf')),'-']);record['extracted_text_sha256']=hashlib.sha256(raw).hexdigest();(R/'build'/(name+'.txt')).write_bytes(raw);documents.append(record)
     need(before==bindings(),'Ordinary build changed scientific inputs or author sources')
-    if not bindfile.exists():b.write_json(bindfile,dict(files_sha256=before,scope='All ordinary author sources and immutable scientific inputs/outputs. Current generated tables, PDF outputs and volatile replay logs have separate release bindings.'))
+    if not bindfile.exists():b.write_json(bindfile,dict(files_sha256=before,scope='All ordinary author sources and immutable scientific inputs/outputs, including the observed production-envelope receipt. Current generated tables, PDF outputs and volatile replay logs have separate release bindings.'))
     try:sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=R,text=True,stderr=subprocess.DEVNULL).strip()
     except subprocess.CalledProcessError:sha=None
-    replay=read(R/'audit/SCIENCE_REPLAY62.json');facts=read(R/'audit/PUBLICATION_FACTS62.json')
-    result=dict(status='passed',tested_source_commit=sha,baseline_commit=prep['baseline_commit'],controlling_review_commit=prep['review_commit'],source_freeze_sha256=fz,source_binding_sha256=b.digest(bindfile),documents=documents,tests=tests,total_tests=sum(v['tests'] for v in tests.values()),new_R62_tests=tests['tests62']['tests'],preservation=preservation,protected_files=len(prep['protected_sha256']),checked_nodal_action_records=replay['checked_nodal_action_records'],checked_interval_records=replay['checked_interval_records'],reintegrated_primitive_point_action_queries=replay['reintegrated_primitive_point_action_queries'],fitting_services_in_frozen_execution=40,path_rows_in_frozen_execution=327680,new_training_services_in_build=0,new_policy_cost_samples_in_build=0,publication_facts=facts,build_seconds=time.perf_counter()-start,network_used_by_builder=False,original_service_clocks_replaced=False,typography_scope='Seven document compilation logs, extracted text and output identities. Font substitutions are retained; any visual review has its own separate record.',science_scope=replay['scope'],scope='Ordinary-source original-paper revision, complete retained science bindings, inherited/new regression tests, all stored decision and interval recursions, seven-document compilation. Not external mathematical or editorial acceptance.')
+    replay=read(R/'audit/SCIENCE_REPLAY62.json');facts=read(R/'audit/PUBLICATION_FACTS62.json');work=read(R/'audit/COMPLETE_WORK62.json')
+    need(work['status']=='passed' and replay['complete_work_ledger_sha256']==b.digest(R/'audit/COMPLETE_WORK62.json'),'Complete-production charge binding')
+    result=dict(status='passed',tested_source_commit=sha,baseline_commit=prep['baseline_commit'],controlling_review_commit=prep['review_commit'],source_freeze_sha256=fz,source_binding_sha256=b.digest(bindfile),documents=documents,tests=tests,total_tests=sum(v['tests'] for v in tests.values()),new_R62_tests=tests['tests62']['tests'],preservation=preservation,protected_files=len(prep['protected_sha256']),checked_nodal_action_records=replay['checked_nodal_action_records'],checked_interval_records=replay['checked_interval_records'],reintegrated_primitive_point_action_queries=replay['reintegrated_primitive_point_action_queries'],fitting_services_in_frozen_execution=40,path_rows_in_frozen_execution=327680,new_training_services_in_build=0,new_policy_cost_samples_in_build=0,publication_facts=facts,complete_work_ledger_sha256=b.digest(R/'audit/COMPLETE_WORK62.json'),complete_work_scope=work['scope'],build_seconds=time.perf_counter()-start,network_used_by_builder=False,original_service_clocks_replaced=False,typography_scope='Seven document compilation logs, extracted text and output identities. Font substitutions are retained; any visual review has its own separate record.',science_scope=replay['scope'],scope='Ordinary-source original-paper revision, complete retained science bindings, inherited/new regression tests, all stored decision and interval recursions, seven-document compilation. Not external mathematical or editorial acceptance.')
     b.write_json(R/'audit/RELEASE62.json',result)
     print(json.dumps(dict(status='passed',tests=result['total_tests'],new_tests=result['new_R62_tests'],documents=[dict(name=d['document'],pages=d['pages']) for d in documents],checked_nodes=result['checked_nodal_action_records'],checked_intervals=result['checked_interval_records'],seconds=result['build_seconds']),indent=2),flush=True)
 if __name__=='__main__':main()
