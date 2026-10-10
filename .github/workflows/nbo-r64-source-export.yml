@@ -1,0 +1,40 @@
+name: NBO R64 pinned manuscript source export
+on:
+  push:
+    branches: [revision/econometrica-nbo-r64-referee-revision-2026-10-10]
+    paths: [.github/workflows/nbo-r64-source-export.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+            /reviews/2026-10-10-econometrica-numerical-methods-r62/
+          sparse-checkout-cone-mode: false
+      - name: Export ordinary source and compact evidence with hashes
+        run: |
+          python3 - <<'PY'
+          import pathlib,zipfile,json,hashlib,subprocess
+          files={}
+          allowed={'.py','.tex','.bib','.cls','.cfg','.bst','.sty','.md','.json','.csv','.png','.jpg','.jpeg','.svg'}
+          with zipfile.ZipFile('nbo-r64-pinned-sources.zip','w',compression=zipfile.ZIP_DEFLATED,compresslevel=3) as z:
+              for root in ('revisions/2026-10-10-r62','revisions/2026-10-10-r63','reviews/2026-10-10-econometrica-numerical-methods-r62'):
+                  for p in pathlib.Path(root).rglob('*'):
+                      if p.is_file() and p.suffix in allowed and 'build' not in p.parts and '__pycache__' not in p.parts:
+                          z.write(p,str(p));files[str(p)]=hashlib.sha256(p.read_bytes()).hexdigest()
+              z.writestr('SNAPSHOT64.json',json.dumps({'commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'files':files,'excludes':'binary scientific arrays, evidence ZIPs and generated build products; original repo bytes unchanged'},indent=2))
+          print(json.dumps({'files':len(files),'bytes':pathlib.Path('nbo-r64-pinned-sources.zip').stat().st_size}))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r64-pinned-sources
+          path: nbo-r64-pinned-sources.zip
+          retention-days: 30
+          compression-level: 0
