@@ -8,7 +8,7 @@ permissions:
   contents: write
 concurrency:
   group: nbo-r70-publication
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -39,22 +39,26 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
-      - name: Retain controlling review and the original independent-replay disagreement
+      - name: Retain controlling review, intervening propositions and initial replay disagreement
         run: |
           mkdir -p revisions/2026-10-11-r70/inputs
           git fetch --filter=blob:none --depth=1 origin 4b27b56f4514f6c1d77b69fe707f7202f8b06b19
           git show 4b27b56f4514f6c1d77b69fe707f7202f8b06b19:reviews/2026-10-11-econometrica-numerical-methods-r67/referee_report.md > revisions/2026-10-11-r70/inputs/referee_report_R67.md
           test "$(git hash-object revisions/2026-10-11-r70/inputs/referee_report_R67.md)" = 7f214ec7eddbadef7d3f31064783c6243f358198
+          git fetch --filter=blob:none --depth=1 origin e709dcce64100b58d2af1a7057eba1f8359a1408
+          git show e709dcce64100b58d2af1a7057eba1f8359a1408:revisions/2026-10-11-r69/sections/training69.tex > revisions/2026-10-11-r70/inputs/training69.tex
+          test "$(git hash-object revisions/2026-10-11-r70/inputs/training69.tex)" = 3f34e085be6d240ee441f1bd7f95b46ed8f9f6c5
           git fetch --filter=blob:none --depth=1 origin revision/econometrica-nbo-r70-audit-attempt-38095779092-1
           git show FETCH_HEAD:revisions/2026-10-11-r70/audit/DISAGREEMENT70.json > revisions/2026-10-11-r70/inputs/INITIAL_REPLAY_DISAGREEMENT70.json
           git show FETCH_HEAD:revisions/2026-10-11-r70/code/audit70.py > revisions/2026-10-11-r70/inputs/initial_audit70.py
       - name: Commit and push ordinary revised manuscript sources
         run: |
           /usr/bin/python3 revisions/2026-10-11-r70/code/prepare70.py
+          /usr/bin/python3 revisions/2026-10-11-r70/code/finish70.py
           git config user.name 'NBO revision verification'
           git config user.email 'nbo-revision@users.noreply.github.com'
           git add -f revisions/2026-10-11-r70
-          if ! git diff --cached --quiet; then git commit -m 'R70: assemble ordinary original-paper revision and preserve all inherited statements and proofs'; fi
+          if ! git diff --cached --quiet; then git commit -m 'R70: assemble ordinary original-paper revision with preserved intervening mathematics and exact context law'; fi
           git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r70-referee-revision-2026-10-11 HEAD:refs/heads/revision/econometrica-nbo-r70-source-2026-10-11
       - name: Run all tests, independent record replay and three-document publication gates
         run: |
