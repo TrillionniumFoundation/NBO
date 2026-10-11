@@ -1,0 +1,88 @@
+name: NBO R73 complete original-paper publication
+on:
+  push:
+    branches: [revision/econometrica-nbo-r73-referee-revision-2026-10-11]
+    paths: [.github/workflows/nbo-r73-publication.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r73-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-slim
+    timeout-minutes: 15
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      SOURCE_DATE_EPOCH: '1791676800'
+      FORCE_SOURCE_DATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+            /revisions/2026-10-10-r64/
+            /revisions/2026-10-10-r65/
+            /revisions/2026-10-10-r66/
+            /revisions/2026-10-10-r67/
+            /revisions/2026-10-11-r69/
+            /revisions/2026-10-11-r70/
+            /revisions/2026-10-11-r72/
+            /revisions/2026-10-11-r73/
+            /README.md
+      - name: Verify ordinary publication source transport before execution
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          root=Path('revisions/2026-10-11-r73')
+          m=json.loads((root/'PUBLICATION_SOURCES73.json').read_text())
+          bad=[]
+          for name,h in m['sha256'].items():
+              actual=hashlib.sha256((root/name).read_bytes()).hexdigest()
+              if actual!=h:bad.append({'path':name,'expected':h,'actual':actual})
+          if bad:raise AssertionError(json.dumps(bad,indent=2))
+          print('All ordinary authored sources match the local preflight inputs.')
+          PY
+      - name: Install numerical and publication dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Prepare and commit the ordinary original-paper reading set
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          /usr/bin/python3 revisions/2026-10-11-r73/code/assemble73.py
+          cp revisions/2026-10-11-r73/README73.md revisions/2026-10-11-r73/README.md
+          git add -f revisions/2026-10-11-r73
+          if ! git diff --cached --quiet; then
+            git commit -m 'R73: integrate editable original-paper sources, full proofs and all ten referee responses'
+          fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r73-referee-revision-2026-10-11 HEAD:refs/heads/revision/econometrica-nbo-r73-source-2026-10-11
+      - name: Full inherited and new tests, independent record checks and complete manuscript compilation
+        run: /usr/bin/python3 revisions/2026-10-11-r73/code/build73.py --full
+      - name: Complete clean archive rebuild and non-forced remote staging
+        run: /usr/bin/python3 revisions/2026-10-11-r73/code/stage73.py
+      - name: Retain current PDFs and all verification diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r73-paper-audits-and-logs
+          path: |
+            revisions/2026-10-11-r73/build/*.pdf
+            revisions/2026-10-11-r73/build/*.txt
+            revisions/2026-10-11-r73/audit/*73*
+            revisions/2026-10-11-r73/audit/build-logs/
+            revisions/2026-10-11-r73/tables/*73.tex
+            revisions/2026-10-11-r73/PUBLICATION_SOURCES73.json
+            revisions/2026-10-11-r73/CONTENT_MAP73.md
+          retention-days: 30
+          compression-level: 6
