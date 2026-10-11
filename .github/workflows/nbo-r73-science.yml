@@ -1,0 +1,93 @@
+name: NBO R73 qualified continuation construction
+on:
+  push:
+    branches: [revision/econometrica-nbo-r73-referee-revision-2026-10-11]
+    paths: [.github/workflows/nbo-r73-science.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r73-scientific-construction
+  cancel-in-progress: false
+jobs:
+  construct:
+    runs-on: ubuntu-slim
+    timeout-minutes: 15
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-11-r72/
+            /revisions/2026-10-11-r73/
+      - name: Install finite optimization dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy
+      - name: Preserve the preceding paper and commit the prospective source freeze
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          /usr/bin/python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+          old=Path('revisions/2026-10-11-r72');root=Path('revisions/2026-10-11-r73')
+          if (root/'results73').exists() or (root/'SOURCE_FREEZE73.json').exists():
+              raise RuntimeError('Scientific execution is single-shot; preserve existing outputs and use an explicit audit run')
+          own={str(p.relative_to(root)):p.read_bytes() for p in root.rglob('*') if p.is_file()}
+          shutil.copytree(old,root,dirs_exist_ok=True,ignore=shutil.ignore_patterns('__pycache__','build'))
+          for name,raw in own.items():
+              p=root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(raw)
+          (root/'audit').mkdir(exist_ok=True)
+          PY
+          git add -f revisions/2026-10-11-r73
+          git commit -m 'R73: retain the original R72 paper and all scientific records alongside prospective R73 sources'
+          /usr/bin/python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,subprocess
+          root=Path('revisions/2026-10-11-r73')
+          names=['REVISION_PROTOCOL73.md','code/qualification73.py','code/study73.py','code/independent73.py']
+          record={'design_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+                  'base_commit':'5611b32978a2df5f32bff796f7dd209105cf28b0',
+                  'services_have_started':False,'files':{name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in names}}
+          (root/'SOURCE_FREEZE73.json').write_text(json.dumps(record,sort_keys=True,indent=2)+'\n')
+          print(json.dumps(record,indent=2))
+          PY
+          git add -f revisions/2026-10-11-r73/SOURCE_FREEZE73.json
+          git commit -m 'R73: freeze the four matched backward constructions before the first scientific execution'
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r73-referee-revision-2026-10-11 HEAD:refs/heads/revision/econometrica-nbo-r73-source-2026-10-11
+      - name: Execute every predeclared original-economy construction
+        run: |
+          set -o pipefail
+          /usr/bin/python3 revisions/2026-10-11-r73/code/study73.py 2>&1 | tee revisions/2026-10-11-r73/audit/CONSTRUCTION73.log
+      - name: Independently reconstruct every action value and exact optimization bound
+        run: |
+          set -o pipefail
+          /usr/bin/python3 revisions/2026-10-11-r73/code/independent73.py 2>&1 | tee revisions/2026-10-11-r73/audit/INDEPENDENT73.log
+      - name: Preserve executed records on the new branches
+        if: always()
+        run: |
+          git add -f revisions/2026-10-11-r73
+          if ! git diff --cached --quiet; then
+            git commit -m 'R73: retain all prospectively executed construction results, checks and failure diagnostics'
+            git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r73-referee-revision-2026-10-11 HEAD:refs/heads/revision/econometrica-nbo-r73-source-2026-10-11
+          fi
+      - name: Expose compact construction and checker records
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r73-qualified-constructions
+          path: |
+            revisions/2026-10-11-r73/results73/
+            revisions/2026-10-11-r73/audit/*73*
+            revisions/2026-10-11-r73/SOURCE_FREEZE73.json
+          retention-days: 30
+          compression-level: 6
