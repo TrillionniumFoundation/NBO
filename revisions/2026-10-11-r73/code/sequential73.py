@@ -111,15 +111,22 @@ class Ledger:
                 min(self.support_upper,self.sum_upper+b)/self.n)
 
     def decision(self, margin: F, setup_charge: F = F(0), deployments: int = 1,
-                 per_deployment_charge: F = F(0)) -> dict:
+                 incremental_charge: F = F(0)) -> dict:
+        """Normalize setup once over a declared deployment count, not sample size.
+
+        Charges are in the SAME cost units as the scientific endpoint, and
+        exclude sunk qualification costs unless these are explicitly included
+        by the decision-maker. This routine does not price seconds as money.
+        """
+        if not self.fixed_target:
+            raise ValueError('A varying-target average does not qualify the final controller')
         margin = F(margin)
-        if margin < 0 or F(setup_charge) < 0 or not isinstance(deployments,int) or deployments < 1:
-            raise ValueError('Invalid declared economic decision')
-        l,u = self.interval()
-        charge = F(setup_charge)/deployments+F(per_deployment_charge)
-        return {'target': 'fixed_original_law_cost_difference' if self.fixed_target else 'average_conditional_cost_difference',
-                'lower':l,'upper':u,'net_lower':l+charge,'net_upper':u+charge,
-                'strict_net_improvement':u+charge<0,
-                'equivalent_at_declared_margin':l>=-margin and u<=margin,
-                'episodes':self.n,'failed_numerical_rows':self.failed_numerical_rows,
-                'paid_work':self.work,'deployment_count':deployments}
+        if margin < 0 or F(setup_charge) < 0 or deployments < 1 or not isinstance(deployments,int):
+            raise ValueError('Invalid decision contract')
+        lower,upper = self.interval()
+        charge = F(setup_charge)/deployments + F(incremental_charge)
+        return {'equivalent': lower >= -margin and upper <= margin,
+                'net_strict_improvement': upper+charge < 0,
+                'net_noninferiority': upper+charge <= margin,
+                'net_interval': (lower+charge,upper+charge),
+                'qualified_episodes': self.n, 'measured_work': self.work}
