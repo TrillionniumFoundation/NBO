@@ -1,0 +1,88 @@
+name: NBO R77 original-controller cost qualification
+on:
+  push:
+    branches: [revision/econometrica-nbo-r77-referee-revision-2026-10-11]
+    paths: [.github/workflows/nbo-r77-science.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r77-science
+  cancel-in-progress: false
+jobs:
+  original-law-costs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-11-r73/
+            /revisions/2026-10-11-r77/
+          sparse-checkout-cone-mode: false
+      - name: Install numerical dependency
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy
+      - name: Test ordinary sources and commit the prospective freeze
+        run: |
+          mkdir -p revisions/2026-10-11-r77/audit
+          /usr/bin/python3 revisions/2026-10-11-r77/code/tests77.py > revisions/2026-10-11-r77/audit/PRE_FREEZE_TESTS77.log 2>&1 || { cat revisions/2026-10-11-r77/audit/PRE_FREEZE_TESTS77.log; exit 1; }
+          /usr/bin/python3 - <<'PY'
+          import hashlib,json,pathlib,subprocess,sys
+          root=pathlib.Path('revisions/2026-10-11-r77')
+          sys.path.insert(0,str(root/'code'))
+          import cost77
+          cost77.controllers()
+          files=list((root/'code').glob('*.py'))+[root/'PROTOCOL77.md']
+          record={'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'files':{str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in files},'controllers':cost77.EXPECTED,'rows':cost77.N,'seed':cost77.SEED,'bin_bits':cost77.BITS,'status':'frozen_before_scientific_execution'}
+          path=root/'SOURCE_FREEZE77.json'
+          if path.exists() and json.loads(path.read_text())['files']!=record['files']:raise RuntimeError('An earlier freeze exists: preserve its attempt before changing scientific sources')
+          if not path.exists():path.write_text(json.dumps(record,indent=2,sort_keys=True)+'\n')
+          PY
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-11-r77
+          if ! git diff --cached --quiet; then git commit -m 'R77: freeze ordinary scientific sources and fixed constructed controllers before independent paths'; fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r77-referee-revision-2026-10-11 HEAD:refs/heads/revision/econometrica-nbo-r77-science-source-2026-10-11
+      - name: Execute both independent interval implementations on every new bin
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import json,os,pathlib,subprocess,time
+          root=pathlib.Path('revisions/2026-10-11-r77')
+          if hasattr(os,'sched_getaffinity'):os.sched_setaffinity(0,{min(os.sched_getaffinity(0))})
+          start=time.perf_counter()
+          with (root/'audit/SCIENCE77.log').open('w') as out:
+              result=subprocess.run(['/usr/bin/python3',str(root/'code/cost77.py'),'--execute'],stdout=out,stderr=subprocess.STDOUT)
+          receipt={'returncode':result.returncode,'complete_process_seconds':time.perf_counter()-start,'run_id':os.environ['GITHUB_RUN_ID'],'run_head':os.environ['GITHUB_SHA'],'clock_scope':'launch, imports, controller loading, both evaluators, exact checks, all inference and durable arrays, shutdown and log flush'}
+          (root/'audit/SERVICE_RECEIPT77.json').write_text(json.dumps(receipt,indent=2)+'\n')
+          print((root/'audit/SCIENCE77.log').read_text()[-18000:],flush=True)
+          if result.returncode:raise SystemExit(result.returncode)
+          PY
+      - name: Commit executed scientific evidence
+        run: |
+          git add -f revisions/2026-10-11-r77
+          git commit -m 'R77: retain complete original-law cost catalogue and independent integer full-bin verification'
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r77-referee-revision-2026-10-11 HEAD:refs/heads/revision/econometrica-nbo-r77-science-executed-2026-10-11
+      - name: Preserve a failed attempt without overwriting earlier evidence
+        if: failure()
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-11-r77
+          if ! git diff --cached --quiet; then git commit -m 'R77: retain failed scientific attempt and diagnostics'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r77-science-attempt-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r77-scientific-evidence
+          path: revisions/2026-10-11-r77/
+          compression-level: 1
+          retention-days: 30
