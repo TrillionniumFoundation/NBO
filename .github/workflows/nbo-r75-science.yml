@@ -1,0 +1,74 @@
+name: NBO R75 original-law qualification
+on:
+  push:
+    branches: [revision/econometrica-nbo-r75-referee-revision-2026-10-11]
+    paths: [.github/workflows/nbo-r75-science.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  qualification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-11-r74/
+            /revisions/2026-10-11-r75/
+          sparse-checkout-cone-mode: false
+      - name: Materialize the frozen design in the new revision
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil,hashlib,json
+          old=Path('revisions/2026-10-11-r74');new=Path('revisions/2026-10-11-r75')
+          if (new/'results74/study.json').exists():raise RuntimeError('Existing prospective execution may not be overwritten')
+          own={str(p.relative_to(new)):p.read_bytes() for p in new.rglob('*') if p.is_file()} if new.exists() else {}
+          shutil.copytree(old,new,dirs_exist_ok=True)
+          for name,data in own.items():
+              p=new/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
+          (new/'audit').mkdir(exist_ok=True)
+          (new/'audit/R75_BASE.json').write_text(json.dumps({'base_commit':'5b6bb84fe02e6c7295624c1d9ba5266eef6c5717','review_commit':'4b27b56f4514f6c1d77b69fe707f7202f8b06b19','prospective_design':'REVISION_PROTOCOL74.md','new_revision':'R75','source_changes_before_execution':False},indent=2)+'\n')
+          PY
+          python3 -m pip install numpy scipy
+      - name: Verify frozen source and independent arithmetic regressions
+        run: |
+          python3 revisions/2026-10-11-r75/code/tests74.py > revisions/2026-10-11-r75/audit/TESTS74_IN_R75.log 2>&1
+      - name: Execute all predeclared original-law paths and independent integer enclosures
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess,time,json,sys,hashlib
+          r=Path('revisions/2026-10-11-r75');start=time.perf_counter()
+          with (r/'audit/EXECUTION74_IN_R75.log').open('w') as f:
+              result=subprocess.run([sys.executable,str(r/'code/study74.py')],stdout=f,stderr=subprocess.STDOUT)
+          record={'returncode':result.returncode,'complete_process_seconds':time.perf_counter()-start,'includes_startup_shutdown':True}
+          (r/'audit/QUALIFICATION_PROCESS75.json').write_text(json.dumps(record,indent=2)+'\n')
+          if result.returncode:
+              print((r/'audit/EXECUTION74_IN_R75.log').read_text()[-8000:]);raise SystemExit(result.returncode)
+          print((r/'audit/EXECUTION74_IN_R75.log').read_text())
+          PY
+          python3 revisions/2026-10-11-r75/code/study74.py --replay
+      - name: Preserve execution on a new evidence branch
+        if: always()
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-11-r75
+          if ! git diff --cached --quiet; then git commit -m 'R75: preserve prospective qualification outputs, exact checks and all outcomes'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r75-evidence-2026-10-11
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r75-qualification-and-sources
+          path: revisions/2026-10-11-r75
+          compression-level: 1
+          retention-days: 30
