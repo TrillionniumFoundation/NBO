@@ -1,0 +1,92 @@
+name: NBO R72 complete referee revision
+on:
+  push:
+    branches: [revision/econometrica-nbo-r72-referee-revision-2026-10-11]
+    paths: [.github/workflows/nbo-r72-publication.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r72-publication
+  cancel-in-progress: false
+jobs:
+  publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      SOURCE_DATE_EPOCH: '1791676800'
+      FORCE_SOURCE_DATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+            /revisions/2026-10-10-r64/
+            /revisions/2026-10-10-r65/
+            /revisions/2026-10-10-r66/
+            /revisions/2026-10-10-r67/
+            /revisions/2026-10-11-r69/
+            /revisions/2026-10-11-r70/
+            /revisions/2026-10-11-r72/
+            /README.md
+          sparse-checkout-cone-mode: false
+      - name: Install publication and verification dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Recover exact committed source capsule and original scientific bytes
+        run: |
+          /usr/bin/python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,io,tarfile
+          root=Path('revisions/2026-10-11-r72')
+          raw=b''.join((root/'publication'/('capsule72.part'+str(i).zfill(2))).read_bytes() for i in range(9))
+          if hashlib.sha256(raw).hexdigest()!='c2280a865558467fbbe105e2539c13256e6528c8e03e3955278c4e21c239f7fe':
+              raise AssertionError('Scientific source capsule hash differs')
+          prohibited={'.ttf','.otf','.woff','.woff2','.pfb','.pfa','.afm','.tfm'}
+          with tarfile.open(fileobj=io.BytesIO(raw),mode='r:xz') as archive:
+              for member in archive.getmembers():
+                  name=Path(member.name)
+                  if name.is_absolute() or '..' in name.parts or not (member.isfile() or member.isdir()) or name.suffix.lower() in prohibited:
+                      raise AssertionError('Unsafe capsule member: '+member.name)
+              archive.extractall(root,filter='data')
+          print('Committed capsule verified and ordinary sources restored.')
+          PY
+          /usr/bin/python3 revisions/2026-10-11-r72/code/prepare72.py
+          /usr/bin/python3 revisions/2026-10-11-r72/code/recover_records72.py
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-11-r72
+          if ! git diff --cached --quiet; then
+            git commit -m 'R72: retain ordinary manuscript and losslessly verified original scientific records'
+          fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r72-referee-revision-2026-10-11 HEAD:refs/heads/revision/econometrica-nbo-r72-source-2026-10-11
+      - name: Full inherited and new tests, exact record replay and four-document build
+        run: /usr/bin/python3 revisions/2026-10-11-r72/code/build72.py --full
+      - name: Clean archive rebuild and non-forced staging for visual inspection
+        run: /usr/bin/python3 revisions/2026-10-11-r72/code/stage72.py
+      - name: Retain current publication and audit diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r72-publication-and-audits
+          path: |
+            revisions/2026-10-11-r72/build/ECTA.pdf
+            revisions/2026-10-11-r72/build/supp.pdf
+            revisions/2026-10-11-r72/build/appendix.pdf
+            revisions/2026-10-11-r72/build/response.pdf
+            revisions/2026-10-11-r72/build/ECTA.txt
+            revisions/2026-10-11-r72/build/supp.txt
+            revisions/2026-10-11-r72/build/appendix.txt
+            revisions/2026-10-11-r72/build/response.txt
+            revisions/2026-10-11-r72/audit/*.json
+            revisions/2026-10-11-r72/audit/build-logs/
+          retention-days: 30
+          compression-level: 1
