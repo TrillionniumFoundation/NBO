@@ -1,0 +1,78 @@
+name: NBO R77 original-law execution on slim
+on:
+  push:
+    branches: [revision/econometrica-nbo-r77-referee-revision-2026-10-11]
+    paths: [.github/workflows/nbo-r77-science-slim.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r77-science
+  cancel-in-progress: true
+jobs:
+  qualification:
+    runs-on: ubuntu-slim
+    timeout-minutes: 15
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-11-r73/
+            /revisions/2026-10-11-r77/
+      - name: Install original numerical dependency
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy
+      - name: Verify, freeze, execute and retain the complete new original-law catalogue
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import hashlib,json,os,pathlib,subprocess,sys,time
+          R=pathlib.Path('revisions/2026-10-11-r77');(R/'audit').mkdir(exist_ok=True)
+          sys.path.insert(0,str(R/'code'));import cost77 as c
+          def run(args):return subprocess.check_output(args,text=True).strip()
+          run(['git','config','user.name','NBO revision verification']);run(['git','config','user.email','nbo-revision@users.noreply.github.com'])
+          def commit(message):
+              run(['git','add','-f',str(R)])
+              if run(['git','diff','--cached','--name-only']):run(['git','commit','-m',message])
+          def push(suffix):
+              run(['git','push','--atomic','origin','HEAD:refs/heads/revision/econometrica-nbo-r77-referee-revision-2026-10-11','HEAD:refs/heads/revision/econometrica-nbo-r77-'+suffix+'-2026-10-11'])
+          try:
+              with (R/'audit/PRE_FREEZE_TESTS77.log').open('w') as out:
+                  test=subprocess.run(['/usr/bin/python3',str(R/'code/tests77.py')],stdout=out,stderr=subprocess.STDOUT)
+              if test.returncode:raise RuntimeError((R/'audit/PRE_FREEZE_TESTS77.log').read_text())
+              c.controllers();files=[R/'code'/n for n in ('float77.py','independent77.py','cost77.py','tests77.py')]+[R/'PROTOCOL77.md']
+              record={'source_commit':run(['git','rev-parse','HEAD']),'files':{str(p.relative_to(R)):hashlib.sha256(p.read_bytes()).hexdigest() for p in files},'controllers':c.EXPECTED,'rows':c.N,'seed':c.SEED,'bin_bits':c.BITS,'status':'frozen_before_scientific_execution'}
+              freeze=R/'SOURCE_FREEZE77.json'
+              if freeze.exists():
+                  if json.loads(freeze.read_text())['files']!=record['files']:raise AssertionError('Changed scientific source after an existing freeze')
+              else:freeze.write_text(json.dumps(record,indent=2,sort_keys=True)+'\n')
+              commit('R77: freeze the original-controller inference design and both independent arithmetic sources');push('science-source')
+              if hasattr(os,'sched_getaffinity'):os.sched_setaffinity(0,{min(os.sched_getaffinity(0))})
+              start=time.perf_counter()
+              with (R/'audit/SCIENCE77.log').open('w') as out:
+                  result=subprocess.run(['/usr/bin/python3',str(R/'code/cost77.py'),'--execute'],stdout=out,stderr=subprocess.STDOUT)
+              receipt={'returncode':result.returncode,'complete_process_seconds':time.perf_counter()-start,'run_id':os.environ['GITHUB_RUN_ID'],'run_head':os.environ['GITHUB_SHA'],'clock_scope':'launch, imports, loading, both complete evaluators, exact checks, all inference and durable output, shutdown and log flush'}
+              (R/'audit/SERVICE_RECEIPT77.json').write_text(json.dumps(receipt,indent=2)+'\n')
+              print((R/'audit/SCIENCE77.log').read_text()[-20000:],flush=True)
+              if result.returncode:raise RuntimeError('Scientific service failed')
+              commit('R77: retain every new original-law path enclosure, exact cost interval and complete inference clock');push('science-executed')
+          except BaseException:
+              commit('R77: preserve failed scientific attempt without deleting or overwriting historical evidence')
+              run(['git','push','origin','HEAD:refs/heads/revision/econometrica-nbo-r77-science-attempt-'+os.environ['GITHUB_RUN_ID']+'-'+os.environ['GITHUB_RUN_ATTEMPT']])
+              raise
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r77-scientific-evidence
+          path: revisions/2026-10-11-r77/
+          retention-days: 30
+          compression-level: 1
