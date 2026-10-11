@@ -1,0 +1,83 @@
+# Response to the Referee
+
+## Neural Bellman Operators — Revision R77
+
+We thank the referee for separating the correctness of a numerical certificate from the contribution of a fitted continuation and the economic performance of its implemented policy. We revise the original Neural Bellman Operators paper. Its title, author, investment primitives, original Bellman optimum and broader historical applications are retained. The controlling report is the owner-commissioned advisory report on R67, dated 11 October 2026, at commit `4b27b56f4514f6c1d77b69fe707f7202f8b06b19`, reviewing manuscript `eacd3e217ae1e2e9ea6e154b48da7d103159d051`. It is not an official Econometrica decision.
+
+The revision incorporates the intervening R69/R70 execution, R72 fitted-continuation and witnessed-reuse results, and R73 qualification-optimal backward constructions. The present base is `2d7d9c4e62abc2230087f3a092a5c493b8ca6cb0`. Later source-only commitments are preserved but not counted as executed science. We do not restart the paper under a different title or relabel the common verifier as an intrinsically neural algorithm.
+
+The central new link is the original-law evaluation of the same complete controllers returned by the attained NBO continuation fits. A prospectively fixed study evaluates all four constructed actors and an admissible installed reference, with both full cash observations and exact final-innovation integration. Two independent interval implementations recompute every new bin and acquisition rectangle. An explicit simultaneous-coverage and width account separates numerical uncertainty, observed endpoint dispersion and the finite-support penalty. The priced-choice result converts the resulting intervals into controller-selection and replacement-fee regions. All outcome statements and flags are generated from the fixed records, including failed precision targets and unresolved or adverse comparisons.
+
+## M1 / B1. The original NBO contribution
+
+The original constructed continuation remains the main mathematical object. It is evaluated against its own fitted future, produces a feasible actor, and has an original-optimum account. R73 supplied the missing attained fixed-feature fit: a finite residual-qualification problem, an exact primal–dual gap, and a backward construction using the continuation actually returned at the next date. R77 evaluates the complete actors returned by those constructions. Thus continuation construction, achieved qualification, implementation and independent original-law policy cost now refer to the same numerical objects.
+
+The optional query predictor and the witnessed-reuse mechanism remain separate parts of the paper. Their common certificate is method-neutral; no neural advantage follows from their validity. The new experiment instead compares a ReLU continuation construction with a conventional Bernstein construction under the same feature count and acquisition contract at each resolution. The reported paired costs, not a representation identity or a reduced fitting objective, determine their finite-catalogue comparison. This extends the original NBO evaluation and improvement problem without substituting a generic query-search paper.
+
+## M2 / B2. Matched information, features and training
+
+The intervening R69/R70 study executes the certificate-aware fixed-feature action readout, equally sized Bernstein features, label-loss ReLU and quadratic proposals, together with prediction-free conventional controls. It purchases the same declared training information for the learned arms and records the objective and optimization-gap calculations. The complete cold-start comparisons and adverse ReLU outcomes are retained.
+
+The R73 continuation experiment is a different matched construction: two bases, nine coefficients per basis, the same coefficient limits, two acquisition resolutions, exact original-law conditional moments, continuous-action covers and whole-cell feasible choices. The attained qualification objective improves on its fixed-label least-squares ablation, but that ablation is not an independently propagated controller. R77 neither refits those actors on new cost observations nor treats the ablation as a new policy arm. All four original service hashes and actor arrays are checked before evaluation. Cross-resolution comparisons retain their different acquisition contracts rather than being advertised as feature-only effects.
+
+## M3 / B5. Prospective work validation and fixed targets
+
+The retained action-readout experiment uses predictor-independent validation contexts disjoint from fitting and executes the declared recovery after a failed screen. Its IID work-loss statement is not assigned to recursively visited on-policy contexts. The later predictable qualification theorem keeps conditional deployment targets distinct from a fixed complete controller's cost.
+
+For the new cost experiment, the complete actors, initial law, bin precision, estimands, sample count and comparison margin are fixed before the new rows. The conditional estimator integrates only the last original innovation; it does not alter either action. Consequently, it has exactly the same expected cost as the complete cash observation. The fixed-sample empirical-Bernstein analysis is not described as an optional-stopping experiment, and no additional observations are authorized after a comparison is inspected. This preserves the distinction between the earlier stopping-valid theorem and the present fixed-design execution.
+
+## M4 / B3. Prospective reuse and complete work
+
+The sixty-four-block R69 catalogue, its predetermined invalidation and stable-crossing criterion, and the R72 fresh, exact-key and transported-witness experiments remain in the Numerical and Development Appendix. Their failed reuse, first fills and actual descendant costs are not removed. The bounded executed cache is not asserted to satisfy the stronger retention and fill-precision premises of the finite-cover theorem merely because a transport lookup succeeds.
+
+R77 adds a complete policy-qualification service, not a newly optimized reuse competition. Its parent clock includes launch, imports, controller reading and hashing, acquisition-rectangle preparation, both independent evaluators, exact checks, statistical postprocessing, compressed output and shutdown. The earlier construction clocks remain unchanged and separately labeled. A measured shared qualification service is not split into invented per-controller marginal timings. The adoption corollary permits conservative charging of the complete shared service and states explicitly how setup is amortized over a declared number of economic deployments, not over the inference sample size.
+
+## M5 / B4. Target precision and economically interpretable comparisons
+
+The completed R70 centered-cost study already identifies equivalence for twelve contrasts at its declared margin while identifying no strict ordering; the earlier wide R67 intervals remain preserved. R73 then constructed actual qualified continuations but added no independent cost rows. R77 directly evaluates these constructed controllers rather than borrowing intervals from the different callable recursive policies.
+
+The new protocol fixes 524,288 rows, forty-bit original-law bins, a full-width target of 1/256 and a separate two-sided equivalence margin of 1/256. All five marginal costs and all ten paired differences are reported for each of two estimators. The joint family contains 30 estimands, not 30 independent datasets. With log allowance ten, the endpoint union bound is below one percent. Every interval is recomputed from exact integer sums and sums of squares with upward rational square roots.
+
+The width identity separates the mean retained numerical enclosure, the two empirical-variance terms and the finite-support penalty. Acquisition ambiguity and arithmetic expansion are included in the numerical term and accompanied by diagnostic counts; we do not pretend that their interacting effects are separately additive. The complete table reports all failed and passed width targets. Precision is not equivalence: an interval can be narrow and identify a difference larger than the chosen margin. Neither midpoint estimates nor subtraction of two marginal confidence intervals replaces the paired comparison.
+
+The exact final-innovation identity is proved under the unchanged investment law. Conditional expectation preserves each cost estimand and weakly reduces the variance of the exact common-path difference. It does not guarantee that every realized numerical confidence interval is narrower, so both estimator outcomes are retained. No optimal-value descendant tree is needed to evaluate the frozen acquired actors.
+
+## M6 / B6. Vector controls and horizon dependence
+
+The original two-control theorem and the genuine trained two-output and conventional-comparator catalogue are retained. The four-date transferred readout remains labeled as transfer rather than four-date supervised fitting. The costly large simplicial recursion and the subsequent witnessed-reuse study remain visible, including every miss's original-law descendant cost.
+
+The new full-bin experiment has two dates and scalar control because it targets the actual R73 constructed actors and permits a complete independent arithmetic calculation of every new trajectory. It is not relabeled as a high-dimensional or long-horizon result. The general cost-qualification theorem applies to any fixed complete controllers with valid bounded original-law endpoint observations; this mathematical scope does not create an unexecuted vector experiment. The original general NBO program and the distinct numerical evidence blocks therefore remain separate without being abandoned or conflated.
+
+## M7 / B7. Independent endpoint reimplementation
+
+The new production evaluator uses outward binary64 operations on centered primitive expressions. The independent evaluator uses Python-integer endpoints on a 48-bit dyadic grid, explicit directed integer multiplication and division, expanded cost and transition polynomials, and independently enumerated acquisition rectangles. It imports none of the production interval, economic or actor routines. Both implementations evaluate every new original-law bin for every controller. The published interval is their hull intersected with the proved primitive support, not their potentially more optimistic intersection.
+
+The technical proof establishes containment by induction through elementary interval operations and exhaustive acquisition choices. Agreement alone is not called a proof. A separate exact-Fraction midpoint trajectory checks 512 predetermined rows per controller, while boundary regressions exercise state and innovation extremes. The publication replay then re-evaluates the full new arrays with both implementations and recomputes every statistical interval exactly. Historical clocks and source files are not altered by this replay.
+
+This fully independently reimplements the critical new two-date cost calculation. It does not independently recreate every descendant of the historical eight-million-query vector tree, and the manuscript does not claim that it does. The R67 aliasing error, exact counterexample and corrected execution remain first-class historical evidence.
+
+## M8 / B8. Return, fitting and timing reliability
+
+A safe verifier's return does not demonstrate reliable neural fitting. The attained R73 fixed-feature optimization gaps and original fitting messages therefore remain distinct from service completion. The new study has no hidden-layer fitting and does not infer a population training probability from a fixed catalogue. It checks the original controller identities, numerical endpoint validity and statistical calculations separately.
+
+The work records distinguish inherited construction, production interval evaluation, independent integer evaluation, exact postprocessing and complete parent service. CPU affinity and available frequency information are recorded; frequency is not described as locked when it is not. One new inference service is not a timing-distribution experiment, and small differences between numerical phases are not promoted to a cross-hardware speed claim. Operation counts, acquired-boundary cases and peak memory are reported alongside seconds. All earlier warning and adverse runtime records remain unchanged.
+
+## M9 / B9. The economic choice
+
+The evaluated object is a feasible investment controller constructed from an attained continuation fit. The installed zero-investment controller gives an explicit replacement reference within the same economy. It is not used to replace the stronger conventional query baselines or to manufacture a specifically neural dominance claim. Matched ReLU-versus-Bernstein comparisons and gains against the installed reference are reported separately.
+
+The new priced-selection corollary holds on the same simultaneous event for every assignment of nonnegative resource charges. A controller minimizing the upper qualified cost plus its charge is compared with every alternative using that alternative's interval width. For a replacement gain in [l,u], a declared deployment count m, monetary scale v, qualification cost q and replacement fee f give net benefit in [mvl-q-f,mvu-q-f]. Positive lower gain produces an entire certified deployment and fee region; unresolved gain remains unresolved rather than being converted into a purchase recommendation by choosing a favorable fee.
+
+The loss units are normalized model units. We do not estimate monetary installation costs, infer currency from processor seconds, or present an uncalibrated model comparison as an empirical welfare estimate. The result makes the economic decision conditional on explicit prices and usage, while the new observations evaluate actual complete-policy gains. This is a substantive extension of the original construction-to-policy-cost chain, not a substitution of certificate sharpness for policy performance.
+
+## M10 / B10. Exposition and preservation
+
+The active article retains the original NBO construction, original economy, operational and vector guarantees, qualified continuation fit and original-law policy-cost analysis. Complete proofs remain in the Technical Supplement. The earlier detailed reuse and numerical sections move intact into the Numerical and Development Appendix to make room for the new cost section. Every inherited active section is hash checked and compiled exactly once. Original wrappers, earlier responses, broader applications and complete editions remain preserved for comparison.
+
+The manuscript uses the retained Econometrica class, author–year references, explicit theorem premises and compact interpretation of economic quantities. The internal article, supplement and abstract targets guide organization; they are not represented as external editorial approval. Established empirical-Bernstein and conditional-expectation principles are attributed to the existing literature. The new contribution is their executable connection to the same attained NBO construction and its original-law controller decision, with a complete numerical and resource account.
+
+## Verification and renewed review
+
+The release record distinguishes source freezing, scientific execution, independent numerical replay, exact mathematical regressions, inherited evidence preservation, ordinary-source compilation, clean archive reproduction and actual PDF inspection. No unexecuted source commitment is counted as a result. A missing or failed check is not labeled passed, and tests are not described as external mathematical acceptance.
+
+The positive submission for renewed review is the original NBO paper extended from an attained continuation qualification to the costs of the actual returned controllers, with explicit precision and priced-choice guarantees and independently reimplemented original-law observations. The retained conventional, reuse and vector evidence continues to delimit any representation-specific or scaling claim. This revision develops the existing mathematical and economic subject without deleting unfavorable results or claiming an empirical victory unsupported by the declared comparisons.
