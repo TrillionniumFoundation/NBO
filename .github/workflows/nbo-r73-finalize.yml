@@ -1,0 +1,26 @@
+name: NBO R73 final reviewed publication
+on:
+  push:
+    branches: [revision/econometrica-nbo-r73-referee-revision-2026-10-11]
+    paths: [revisions/2026-10-11-r73/audit/VISUAL73.json]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r73-finalize
+  cancel-in-progress: false
+jobs:
+  finalize:
+    runs-on: ubuntu-slim
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-11-r73/
+            /README.md
+      - name: Check actual visual report, complete staged file identities and full archive evidence
+        run: python3 revisions/2026-10-11-r73/code/finalize73.py
