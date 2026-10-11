@@ -23,6 +23,9 @@ def table(name,caption,heads,rows,note,cols=None,long=False):
     else:
         text='\\begin{table}[htbp]\n\\centering\\caption{'+caption+'}\\label{'+label+'}\n{\\small\\setlength{\\tabcolsep}{3pt}\n\\begin{tabular}{'+cols+'}\n\\hline\n'+' & '.join(heads)+r' \\'+'\n\\hline\n'
         text+='\n'.join(' & '.join(map(str,row))+r' \\' for row in rows)+'\n\\hline\\end{tabular}}\n\\par\\smallskip{\\footnotesize '+note+'}\n\\end{table}\n'
+    if long:
+        text=text.replace('\\endhead'+chr(10),'\\endhead'+chr(10)+'\\hline\\endfoot'+chr(10)+'\\hline\\endlastfoot'+chr(10))
+        text=text.replace(chr(10)+'\\hline'+chr(10)+'\\end{longtable}',chr(10)+'\\end{longtable}')
     put('tables/'+name+'.tex',text)
 def main():
     s=read('SUMMARY70.json');a=read('RESULT_AUDIT70.json');d=read('DETAILS70.json');cat=read('CATALOGUE70.json')['rows']
