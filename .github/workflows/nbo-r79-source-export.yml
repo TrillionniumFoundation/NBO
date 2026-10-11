@@ -29,24 +29,22 @@ jobs:
             /revisions/2026-10-11-r77/
             /revisions/2026-10-11-r78/
             /reviews/2026-10-11-econometrica-numerical-methods-r67/
-      - name: Export pinned ordinary sources and evidence without font files
+      - name: Export ordinary text sources and cost summaries for local inspection
         run: |
           python3 - <<'PY'
           import pathlib,zipfile,json,subprocess,hashlib
-          root=pathlib.Path('.')
-          banned={'.ttf','.otf','.woff','.woff2','.pfb','.pfa','.afm','.tfm'}
-          records={}
-          with zipfile.ZipFile('NBO_R79_BASELINE.zip','w',zipfile.ZIP_DEFLATED,compresslevel=1) as out:
+          root=pathlib.Path('.');allowed={'.py','.tex','.md','.json','.bib','.bst','.cls','.cfg','.sty','.bbl'};records={}
+          with zipfile.ZipFile('NBO_R79_TEXT_BASELINE.zip','w',zipfile.ZIP_DEFLATED,compresslevel=6) as out:
             for folder in ('revisions','reviews'):
               for p in sorted((root/folder).rglob('*')):
-                if p.is_file() and '__pycache__' not in p.parts and p.suffix.lower() not in banned:
+                if p.is_file() and p.suffix.lower() in allowed and p.stat().st_size<5000000 and not any(k in p.parts for k in ('__pycache__','inputs','preserved','evidence','build')):
                   out.write(p,str(p));records[str(p)]=hashlib.sha256(p.read_bytes()).hexdigest()
-            out.writestr('EXPORT_IDENTITY.json',json.dumps({'commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'baseline':'6b88c6b3a61193c98c822bd62af1203df09c992d','sha256':records},indent=2))
-          print(len(records),pathlib.Path('NBO_R79_BASELINE.zip').stat().st_size)
+            out.writestr('EXPORT_IDENTITY.json',json.dumps({'commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'baseline':'6b88c6b3a61193c98c822bd62af1203df09c992d','scope':'Text inspection only. Full scientific bytes stay on pinned remote branches and are required for full verification.','sha256':records},indent=2))
+          print(len(records),pathlib.Path('NBO_R79_TEXT_BASELINE.zip').stat().st_size)
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: nbo-r79-pinned-baseline
-          path: NBO_R79_BASELINE.zip
+          name: nbo-r79-text-baseline
+          path: NBO_R79_TEXT_BASELINE.zip
           retention-days: 7
           compression-level: 0
