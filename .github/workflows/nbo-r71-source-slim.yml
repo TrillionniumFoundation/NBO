@@ -1,0 +1,52 @@
+name: NBO R71 bounded source export
+on:
+  push:
+    branches: [revision/econometrica-nbo-r71-referee-revision-2026-10-11]
+    paths: [.github/workflows/nbo-r71-source-slim.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            revisions/2026-10-10-r62
+            revisions/2026-10-10-r63
+            revisions/2026-10-10-r64
+            revisions/2026-10-10-r65
+            revisions/2026-10-10-r66
+            revisions/2026-10-10-r67
+            revisions/2026-10-11-r69
+            revisions/2026-10-11-r70
+      - name: Export sources and selected test data within the attachment limit
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,zipfile
+          roots=[Path('revisions')/('2026-10-10-r'+str(n)) for n in (62,63,64,65,66,67)]
+          roots += [Path('revisions')/('2026-10-11-r'+str(n)) for n in (69,70)]
+          text={'.py','.tex','.md','.bib','.cls','.cfg','.bst','.sty','.cpp','.hpp','.c','.h','.json'}
+          manifest={}
+          with zipfile.ZipFile('/tmp/nbo-r71-source-slim.zip','w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+              for root in roots:
+                  for p in root.rglob('*'):
+                      if not p.is_file() or 'build' in p.parts or '__pycache__' in p.parts:continue
+                      keep=p.suffix in text and p.stat().st_size<2000000
+                      targeted=root.name in ('2026-10-11-r69','2026-10-10-r67') and p.suffix=='.npz' and '/results' in str(p) and any(k in str(p) for k in ('/inference-','/validation-','/vector-'))
+                      if not keep and not targeted:continue
+                      z.write(p,str(p));manifest[str(p)]=hashlib.sha256(p.read_bytes()).hexdigest()
+              z.writestr('INPUT_EXPORT71.json',json.dumps({'baseline_commit':'b576584cb5b1ff5ceccbcf37a3fa6e1ac613aca6','file_sha256':manifest},sort_keys=True,indent=2))
+          print(json.dumps({'files':len(manifest),'bytes':Path('/tmp/nbo-r71-source-slim.zip').stat().st_size}))
+          if Path('/tmp/nbo-r71-source-slim.zip').stat().st_size>450000000:raise RuntimeError('Export exceeds limit')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r71-source-slim
+          path: /tmp/nbo-r71-source-slim.zip
+          compression-level: 0
+          retention-days: 7
