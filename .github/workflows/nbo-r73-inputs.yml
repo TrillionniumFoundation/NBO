@@ -1,0 +1,50 @@
+name: NBO R73 pinned revision inputs
+on:
+  push:
+    branches: [revision/econometrica-nbo-r73-referee-revision-2026-10-11]
+    paths: [.github/workflows/nbo-r73-inputs.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 5611b32978a2df5f32bff796f7dd209105cf28b0
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+            /revisions/2026-10-10-r64/
+            /revisions/2026-10-10-r65/
+            /revisions/2026-10-10-r66/
+            /revisions/2026-10-10-r67/
+            /revisions/2026-10-11-r69/
+            /revisions/2026-10-11-r70/
+            /revisions/2026-10-11-r72/
+            /reviews/2026-10-11-econometrica-numerical-methods-r67/
+      - name: Retain source, record and transitive input files without standalone fonts
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,zipfile
+          allowed={'.py','.tex','.cls','.cfg','.bst','.bib','.md','.json','.npz','.npy','.csv','.txt'}
+          hashes={}
+          with zipfile.ZipFile('revision-inputs73.zip','w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+              for root in ('revisions','reviews'):
+                  for p in sorted(Path(root).rglob('*')):
+                      if not p.is_file() or p.suffix not in allowed or 'build' in p.parts or '__pycache__' in p.parts:continue
+                      raw=p.read_bytes();hashes[str(p)]=hashlib.sha256(raw).hexdigest();z.writestr(str(p),raw)
+              z.writestr('INPUT_MANIFEST73.json',json.dumps({'base_commit':'5611b32978a2df5f32bff796f7dd209105cf28b0','files':hashes},sort_keys=True,indent=2))
+          print(json.dumps({'files':len(hashes),'zip_bytes':Path('revision-inputs73.zip').stat().st_size},indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r73-pinned-inputs
+          path: revision-inputs73.zip
+          retention-days: 14
+          compression-level: 0
