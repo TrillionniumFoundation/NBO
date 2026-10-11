@@ -1,0 +1,62 @@
+\section{Direct cost qualification of constructed policies}\label{sec:policycost74}
+The attained readout in Section~\ref{sec:qualification73} produces a complete feasible controller. Its residual account bounds regret, but a better qualification objective need not imply a lower expected cost. We now give a second, nonrecursive route from that returned controller to its actual cost under the original law. The route uses the deployed action tables and primitive moduli; it does not require a policy-value oracle, a new training run, or continuity of the acquired actor.
+
+Let $\pi$ and $\sigma$ be two fixed, measurable, feasible policies on finite acquired partitions $\mathcal C_t^\pi$ and $\mathcal C_t^\sigma$ of a compact state space. Boundary ownership is specified in the policy; closed cell closures are used for enclosure. Write their constant actions as $a_t(C)$ and $b_t(D)$. For a specified state norm, define
+\begin{equation}\label{eq:actionmod74}
+ \alpha_t(r)=\max_{\operatorname{dist}(C,D)\le r}
+                  \|a_t(C)-b_t(D)\|,
+ \qquad C\in\mathcal C_t^\pi,\quad D\in\mathcal C_t^\sigma.
+\end{equation}
+This is a finite comparison of known actions. Its value at zero can be positive, even for neighboring cells of one actor. Thus it does not assume an actor Lipschitz constant.
+
+\begin{theorem}[Acquired-policy displacement bound]\label{thm:displacement74}
+Couple the policies from the same initial state using the same original innovation at every date. Suppose, uniformly over innovations and feasible state--action pairs,
+\begin{align*}
+ \|F_t(x,a,z)-F_t(y,b,z)\|&\le L_t\|x-y\|+B_t\|a-b\|,\\
+ |c_t(x,a)-c_t(y,b)|&\le l_t\|x-y\|+m_t\|a-b\|,
+ \qquad |g(x)-g(y)|\le l_T\|x-y\|.
+\end{align*}
+The coupled trajectories remain in their stated state spaces. Put $d_0=0$, $u_t=\alpha_t(d_t)$, and
+\[
+ d_{t+1}=\min\{\operatorname{diam}(X_{t+1}),L_td_t+B_tu_t\}.
+\]
+Let $w_0=1$ and $w_t=\prod_{j<t}\beta_j$. If $Y^{\pi,\sigma}$ is the difference of the two complete discounted path costs, then
+\begin{equation}\label{eq:pathsupport74}
+ |Y^{\pi,\sigma}|\le
+ K_{\pi,\sigma}:=\sum_{t<T}w_t(l_td_t+m_tu_t)+w_Tl_Td_T.
+\end{equation}
+If both path costs lie in $[0,H]$, $K_{\pi,\sigma}$ may be replaced by $\min\{K_{\pi,\sigma},H\}$. If the two complete policies agree on a common refinement, the difference is exactly zero. The bound and this identity test use no realized cost samples.
+\end{theorem}
+
+The proof is in the Technical Supplement. Unlike a residual-oscillation range, this range is obtained directly from a pair of deployed actors. Either bound can be used when its premises have been verified; taking their intersection is valid. A small range does not establish a favorable sign of the expectation. The displacement calculation is also not a neural-only certificate: its role is to evaluate the complete policies actually returned by the neural and conventional constructions.
+
+In the original two-state investment economy, the $\ell^1$ state norm gives the valid primitive constants
+\[
+ L_t=\frac{11}{16},\quad B_t=\frac34,\quad
+ l_t=4,\quad m_t=\frac{13}{16},\quad l_T=5.
+\]
+For two dates and $\beta=15/16$, a common nonnegative path-cost upper bound is
+\begin{equation}\label{eq:globalH74}
+ H=\frac{87}{64}(1+\beta)+\frac{33}{16}\beta^2
+   =\frac{18213}{4096}.
+\end{equation}
+All constants are proved from the original primitives, not estimated from the new trajectories. For rectangular partitions, evaluating \eqref{eq:actionmod74} by exhaustive cell pairs takes $O(dT N_\pi N_\sigma)$ elementary distance work; it can be streamed. The tensor acquisition cost remains explicit. Once the actors are returned, their direct simulation generates no optimal-Bellman descendants.
+
+\subsection{Original-law endpoints and economic decisions}
+Condition on the frozen construction. Let $M$ be a finite, predeclared family of absolute costs or paired differences, and let $N\ge2$ independent innovation-bin rows have their probabilities under the original continuous law. For estimand $j$, a deterministic enclosure supplies $Z^-_{ij}\le Y_{ij}\le Z^+_{ij}$ over the entire bin. Intersect these endpoints with the proved support $[a_j,b_j]$. The endpoint samples, not arbitrarily chosen bin midpoints, are the bounded observations. Denote their means and unbiased sample variances by $\bar Z_j^\pm$ and $s_j^{2,\pm}$.
+
+\begin{corollary}[Simultaneous fixed-controller cost intervals]\label{cor:costinterval74}
+For $0<\delta<1$, choose a verified $\lambda\ge\log(4M/\delta)$ and put
+\[
+ r_j^\pm=\sqrt{\frac{2\lambda s_j^{2,\pm}}{N}}
+       +\frac{7\lambda(b_j-a_j)}{3(N-1)}.
+\]
+With conditional probability at least $1-\delta$, all original-law expected costs or differences belong to
+\begin{equation}\label{eq:costinterval74}
+ I_j=\left[\max\{a_j,\bar Z_j^- -r_j^-\},\;
+           \min\{b_j,\bar Z_j^+ +r_j^+\}\right].
+\end{equation}
+Outward numerical evaluation of this interval preserves coverage. For an incremental cost $J^\pi-J^\sigma$, a negative upper endpoint identifies improvement. If a setup and qualification charge $S\ge0$ is amortized over a declared $D\ge1$ deployments and the additional per-deployment charge is $f\ge0$, adoption is supported whenever $\sup I_j+S/D+f<0$.
+\end{corollary}
+
+The concentration inequality is the empirical-Bernstein bound of \citet{maurer2009}; the numerical endpoints, supports and fixed-policy target specify its application here. The display is fixed-sample, not an anytime statement. Optional inspection instead requires the predictable construction of Section~\ref{sec:sequential73}. The deployment count $D$ is not the qualification sample count $N$. Processor time enters $S$ only after an explicit conversion into the model's cost units.

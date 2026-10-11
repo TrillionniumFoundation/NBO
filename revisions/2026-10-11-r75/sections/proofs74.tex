@@ -1,0 +1,39 @@
+\section{Acquired-policy displacement and direct cost qualification}\label{supp:cost74}
+\begin{proof}[Proof of Theorem~\ref{thm:displacement74}]
+At date zero the coupled states coincide. Suppose their distance at date $t$ is at most $d_t$. Their actual acquired cells have closures $C,D$ whose distance is no greater than the distance between the two states. Consequently their action distance is at most $\alpha_t(d_t)=u_t$, regardless of discontinuities at the cell boundaries. Applying the primitive transition inequality with the common innovation gives the next distance bound $L_td_t+B_tu_t$. The diameter bound is independently valid, so the minimum remains a valid bound. Induction establishes all the displayed state and action bounds.
+
+Apply the stage-cost inequality at every date, multiply by the nonnegative discount products, and use the terminal modulus. The triangle inequality gives \eqref{eq:pathsupport74}. If both nonnegative costs are bounded by $H$, their difference is in $[-H,H]$, which proves the intersection claim. Agreement on a common refinement means that the two action maps are equal at every state, including the assigned boundaries. Starting at the same state with the same innovations, induction then gives identical trajectories and costs. The identity test is stronger than substituting a coarse closed-cell modulus that might compare neighboring actions not reached by that identical pair.
+\end{proof}
+
+\subsection{Primitive constants and the finite calculation}
+For the original deterministic transition $m$, its two coordinate derivatives in a column are $9/16-x_v/16$ and $1/8-x_v/16$, with the appropriate other coordinate in each expression. They are nonnegative on $[0,1]^2$ and their column sum is at most $11/16$. The induced $\ell^1$ operator norm is therefore at most $11/16$. The sum of the two action exposures is $1/2+1/4=3/4$. The common additive innovation cancels from the trajectory difference, but each marginal retains the original uniform law. The transition lies in $[0,1]^2$ for all states and every action in $[0,1/4]$: its minimum is at least $1/32$ and each maximum is less than one. Thus the state intersection used by the interval evaluators is valid even for conservative action ranges containing actions feasible at only part of a box.
+
+The state partial derivatives of the running cost have absolute values at most $5/4+1/2+2=15/4<4$. The squared positive-part term is continuously differentiable, including at its kink. The action derivative is $2a+16a^3\le3/4<13/16$ on $[0,1/4]$. For the terminal cost the analogous state bound is $5/2+1/2+2=5$. These uniform gradient bounds give the stated $\ell^1$ state and scalar-action moduli by integration along line segments. The stage state-cost component is convex and its maximum on the square occurs at a vertex, where it is at most $41/32$. The action component is at most $5/64$. The terminal convex state cost is at most $33/16$ at the vertices. Summing these nonnegative bounds with the two-date discount gives \eqref{eq:globalH74}.
+
+For boxes $C=\prod_i[c_i^-,c_i^+]$ and $D=\prod_i[d_i^-,d_i^+]$, their exact $\ell^1$ distance is
+\[
+ \operatorname{dist}(C,D)=\sum_i\max\{0,c_i^- -d_i^+,d_i^- -c_i^+\}.
+\]
+This formula reduces the action modulus to finitely many comparisons of rational numbers and integer action indices. A common integer coordinate scale makes the production eligibility mask exact. A second implementation instead forms every distance as a rational number in nested loops. Both calculations precede the generation of cost rows. The implementation evaluates all eight requested policy pairs, including identity checks, and charges 206,080 cell-pair checks. This finite work does not establish a state-dimension-free procedure.
+
+\begin{proof}[Proof of Corollary~\ref{cor:costinterval74}]
+Fix the construction information. Each endpoint is a measurable deterministic function of its bin row and belongs to the stated support. Under the declared independent-bin model, the endpoint rows for one estimand are independent and identically distributed. They may be dependent across estimands because the same row is reused. The original continuous random path inside a bin has cost between its endpoints, so
+\[
+ \mathbb E Z_j^-\le\mathbb E Y_j\le\mathbb E Z_j^+.
+\]
+Apply the one-sided empirical-Bernstein inequality separately to the lower endpoint mean in the downward direction and the upper endpoint mean in the upward direction, with failure probability $\delta/(2M)$ for each. Its logarithmic term is $\log(4M/\delta)$ and its range coefficient is $7/[3(N-1)]$. Increasing the logarithmic term to $\lambda$ and rounding the radii upward preserve each inequality. A union bound over the $2M$ events gives simultaneous coverage without assuming independence across estimands. Intersecting with independently proved support cannot remove the true expectation. Finally, add the deterministic cost $S/D+f$ to both endpoints. A negative upper endpoint certifies a negative total incremental cost on the same event.
+\end{proof}
+
+\subsection{Width, arithmetic, and boundary ownership}
+Before the final support intersection, the interval width decomposes exactly as
+\begin{align*}
+ W_j={}&(\bar Z_j^+-\bar Z_j^-)
+  +\sqrt{2\lambda s_j^{2,-}/N}
+  +\sqrt{2\lambda s_j^{2,+}/N}\\
+ &+\frac{14\lambda(b_j-a_j)}{3(N-1)}.
+\end{align*}
+The first term includes the continuous-bin enclosure and internal interval arithmetic. It is not a sampling radius. Acquired-action ambiguity contributes through the full action range whenever a propagated box intersects multiple cells. The implementation records the number of such cases; observing none in one finite sample does not remove that branch from the algorithm. The last term is the deterministic support contribution, not an estimate of the variance. Reported square roots are rational upward bounds, so their rounding slack is included in the displayed interval.
+
+The independent evaluator rounds every product outward on an $80$-bit dyadic integer scale. Addition and subtraction of scaled integers are exact. It evaluates the transition in expanded rather than production-factorized form, queries the complete acquired action range by separate loops, and maintains distinct cumulative endpoints. Its final output is rounded outward to a $60$-bit grid. This last conversion adds less than $2^{-60}$ on each side; this statement is not a bound on all preceding interval arithmetic. Endpoint sums and squared sums are accumulated with arbitrary-precision integers, giving exact sample means and variances. For $M=13$ and $\delta=1/100$, the code verifies $\lambda=9$ by the rational inequality $\sum_{k=0}^{24}9^k/k!>5200$.
+
+The initial state and each innovation are enclosed over their entire original continuous bin. At an exact acquired boundary, the complete controller uses the prescribed upper cell; when a bin intersects both sides, both actions are enclosed. Different valid factorizations can produce different interval widths. The independent audit therefore records both endpoint arrays, checks that they do not contradict each other, and separately tests exact rational trajectories on predetermined interiors and closed faces. Coverage follows from the interval construction and the theorem, not from agreement of two approximate midpoints.
