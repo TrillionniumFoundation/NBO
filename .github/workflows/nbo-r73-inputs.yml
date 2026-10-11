@@ -30,24 +30,26 @@ jobs:
             /revisions/2026-10-11-r70/
             /revisions/2026-10-11-r72/
             /reviews/2026-10-11-econometrica-numerical-methods-r67/
-      - name: Retain source, record and transitive input files without standalone fonts
+      - name: Export manuscript and all transitive Python sources
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import hashlib,json,zipfile
-          allowed={'.py','.tex','.cls','.cfg','.bst','.bib','.md','.json','.npz','.npy','.csv','.txt'}
+          allowed={'.py','.tex','.cls','.cfg','.bst','.bib','.md'}
           hashes={}
-          with zipfile.ZipFile('revision-inputs73.zip','w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+          with zipfile.ZipFile('revision-sources73.zip','w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
               for root in ('revisions','reviews'):
                   for p in sorted(Path(root).rglob('*')):
-                      if not p.is_file() or p.suffix not in allowed or 'build' in p.parts or '__pycache__' in p.parts:continue
+                      if not p.is_file() or 'build' in p.parts or '__pycache__' in p.parts:continue
+                      keep=p.suffix in allowed or (p.suffix=='.json' and ('publication' in p.parts or ('2026-10-11-r72' in p.parts and 'audit' in p.parts)))
+                      if not keep:continue
                       raw=p.read_bytes();hashes[str(p)]=hashlib.sha256(raw).hexdigest();z.writestr(str(p),raw)
-              z.writestr('INPUT_MANIFEST73.json',json.dumps({'base_commit':'5611b32978a2df5f32bff796f7dd209105cf28b0','files':hashes},sort_keys=True,indent=2))
-          print(json.dumps({'files':len(hashes),'zip_bytes':Path('revision-inputs73.zip').stat().st_size},indent=2))
+              z.writestr('INPUT_MANIFEST73.json',json.dumps({'base_commit':'5611b32978a2df5f32bff796f7dd209105cf28b0','scope':'manuscript and import sources; historical numerical arrays stay in the pinned repository','files':hashes},sort_keys=True,indent=2))
+          print(json.dumps({'files':len(hashes),'zip_bytes':Path('revision-sources73.zip').stat().st_size},indent=2))
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: nbo-r73-pinned-inputs
-          path: revision-inputs73.zip
+          name: nbo-r73-pinned-sources
+          path: revision-sources73.zip
           retention-days: 14
           compression-level: 0
