@@ -2,13 +2,18 @@ name: NBO R77 original-controller cost qualification
 on:
   push:
     branches: [revision/econometrica-nbo-r77-referee-revision-2026-10-11]
-    paths: [.github/workflows/nbo-r77-science.yml]
+    paths:
+      - .github/workflows/nbo-r77-science.yml
+      - revisions/2026-10-11-r77/code/tests77.py
+      - revisions/2026-10-11-r77/code/cost77.py
+      - revisions/2026-10-11-r77/code/float77.py
+      - revisions/2026-10-11-r77/code/independent77.py
   workflow_dispatch:
 permissions:
   contents: write
 concurrency:
   group: nbo-r77-science
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   original-law-costs:
     runs-on: ubuntu-24.04
@@ -37,11 +42,10 @@ jobs:
           /usr/bin/python3 revisions/2026-10-11-r77/code/tests77.py > revisions/2026-10-11-r77/audit/PRE_FREEZE_TESTS77.log 2>&1 || { cat revisions/2026-10-11-r77/audit/PRE_FREEZE_TESTS77.log; exit 1; }
           /usr/bin/python3 - <<'PY'
           import hashlib,json,pathlib,subprocess,sys
-          root=pathlib.Path('revisions/2026-10-11-r77')
-          sys.path.insert(0,str(root/'code'))
+          root=pathlib.Path('revisions/2026-10-11-r77');sys.path.insert(0,str(root/'code'))
           import cost77
           cost77.controllers()
-          files=list((root/'code').glob('*.py'))+[root/'PROTOCOL77.md']
+          files=[root/'code'/name for name in ('float77.py','independent77.py','cost77.py','tests77.py')]+[root/'PROTOCOL77.md']
           record={'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'files':{str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in files},'controllers':cost77.EXPECTED,'rows':cost77.N,'seed':cost77.SEED,'bin_bits':cost77.BITS,'status':'frozen_before_scientific_execution'}
           path=root/'SOURCE_FREEZE77.json'
           if path.exists() and json.loads(path.read_text())['files']!=record['files']:raise RuntimeError('An earlier freeze exists: preserve its attempt before changing scientific sources')
