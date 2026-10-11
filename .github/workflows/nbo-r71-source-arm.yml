@@ -1,0 +1,52 @@
+name: NBO R71 pinned ARM source export
+on:
+  push:
+    branches: [revision/econometrica-nbo-r71-referee-revision-2026-10-11]
+    paths: [.github/workflows/nbo-r71-source-arm.yml]
+permissions:
+  contents: read
+jobs:
+  source-export:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            revisions/2026-10-10-r62
+            revisions/2026-10-10-r63
+            revisions/2026-10-10-r64
+            revisions/2026-10-10-r65
+            revisions/2026-10-10-r66
+            revisions/2026-10-10-r67
+            revisions/2026-10-11-r69
+            revisions/2026-10-11-r70
+      - name: Export exact source and record bytes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,zipfile,subprocess
+          roots=[Path('revisions')/('2026-10-10-r'+str(n)) for n in (62,63,64,65,66,67)]
+          roots += [Path('revisions')/('2026-10-11-r'+str(n)) for n in (69,70)]
+          manifest={}
+          forbidden={'.ttf','.otf','.woff','.woff2','.pfb','.pfa','.afm','.tfm'}
+          with zipfile.ZipFile('/tmp/nbo-r71-inputs.zip','w',zipfile.ZIP_DEFLATED,compresslevel=1) as z:
+              for root in roots:
+                  for p in root.rglob('*'):
+                      if not p.is_file() or p.suffix.lower() in forbidden or '__pycache__' in p.parts:
+                          continue
+                      if 'build' in p.parts or p.suffix.lower() in ('.zip','.tar','.gz','.png','.jpg','.jpeg','.pdf'):
+                          continue
+                      z.write(p,str(p))
+                      manifest[str(p)]={'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()}
+              z.writestr('INPUT_EXPORT71.json',json.dumps({'baseline_commit':'b576584cb5b1ff5ceccbcf37a3fa6e1ac613aca6','head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'files':manifest},sort_keys=True,indent=2))
+          print(json.dumps({'files':len(manifest),'uncompressed_bytes':sum(v['bytes'] for v in manifest.values())}))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r71-pinned-inputs-arm
+          path: /tmp/nbo-r71-inputs.zip
+          compression-level: 0
+          retention-days: 7
