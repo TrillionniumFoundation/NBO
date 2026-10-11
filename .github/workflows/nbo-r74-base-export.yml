@@ -1,0 +1,40 @@
+name: NBO R74 pinned base export
+on:
+  push:
+    branches: [revision/econometrica-nbo-r74-referee-revision-2026-10-11]
+    paths: [.github/workflows/nbo-r74-base-export.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 2b890feafe2fc2b713148a7af0ca2321160b2afb
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            revisions/2026-10-11-r73
+      - name: Verify source identity and export ordinary inputs
+        run: |
+          test "$(git rev-parse HEAD)" = 2b890feafe2fc2b713148a7af0ca2321160b2afb
+          mkdir -p /tmp/nbo-r74-base
+          cp -a revisions/2026-10-11-r73/. /tmp/nbo-r74-base/
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          p=pathlib.Path('/tmp/nbo-r74-base')
+          bad={'.ttf','.otf','.pfb','.pfa','.woff','.woff2','.afm','.tfm'}
+          files={}
+          for f in p.rglob('*'):
+              if f.is_file():
+                  assert f.suffix.lower() not in bad
+                  files[str(f.relative_to(p))]=hashlib.sha256(f.read_bytes()).hexdigest()
+          (p/'EXPORT74.json').write_text(json.dumps({'base_commit':'2b890feafe2fc2b713148a7af0ca2321160b2afb','files':files},sort_keys=True,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r74-pinned-base
+          path: /tmp/nbo-r74-base
+          retention-days: 30
+          compression-level: 1
