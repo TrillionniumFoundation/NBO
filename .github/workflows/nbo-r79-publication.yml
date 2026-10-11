@@ -1,0 +1,162 @@
+name: NBO R79 complete original-paper revision
+on:
+  push:
+    branches: [revision/econometrica-nbo-r79-referee-revision-2026-10-12]
+    paths: [.github/workflows/nbo-r79-publication.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r79-complete-publication
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-slim
+    timeout-minutes: 15
+    outputs:
+      built_sha: ${{ steps.built.outputs.sha }}
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      SOURCE_DATE_EPOCH: '1791676800'
+      FORCE_SOURCE_DATE: '1'
+      TZ: UTC
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 100
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+            /revisions/2026-10-10-r64/
+            /revisions/2026-10-10-r65/
+            /revisions/2026-10-10-r66/
+            /revisions/2026-10-10-r67/
+            /revisions/2026-10-11-r69/
+            /revisions/2026-10-11-r70/
+            /revisions/2026-10-11-r72/
+            /revisions/2026-10-11-r73/
+            /revisions/2026-10-11-r77/
+            /revisions/2026-10-11-r78/
+            /revisions/2026-10-12-r79/
+      - name: Install numerical and publication dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Integrate and commit ordinary original-paper sources
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          /usr/bin/python3 revisions/2026-10-12-r79/code/prepare79.py
+          /usr/bin/python3 - <<'PY'
+          import ast,pathlib
+          for p in pathlib.Path('revisions/2026-10-12-r79/code').glob('*.py'):
+              ast.parse(p.read_text(),filename=str(p))
+          PY
+          git add -f revisions/2026-10-12-r79
+          if ! git diff --cached --quiet; then git commit -m 'R79: integrate ordinary original-paper manuscript, original evidence and complete allocation proofs'; fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r79-referee-revision-2026-10-12 HEAD:refs/heads/revision/econometrica-nbo-r79-source-2026-10-12
+      - name: Run all inherited and new tests, both whole-bin implementations, and four-document compilation
+        run: /usr/bin/python3 revisions/2026-10-12-r79/code/build79.py
+      - name: Retain the exact built source and evidence
+        id: built
+        run: |
+          git add -f revisions/2026-10-12-r79
+          if ! git diff --cached --quiet; then git commit -m 'R79: retain full source-bound tests, independent cost replay and four compiled documents'; fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r79-referee-revision-2026-10-12 HEAD:refs/heads/revision/econometrica-nbo-r79-source-2026-10-12
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Preserve failed attempt separately
+        if: failure()
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-12-r79
+          if ! git diff --cached --quiet; then git commit -m 'R79: retain failed build diagnostics without asserting success'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r79-audit-attempt-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r79-built-paper
+          path: |
+            revisions/2026-10-12-r79/build/*.pdf
+            revisions/2026-10-12-r79/build/*.txt
+            revisions/2026-10-12-r79/build/*.log
+            revisions/2026-10-12-r79/audit/*79*
+            revisions/2026-10-12-r79/audit/*78*
+            revisions/2026-10-12-r79/audit/build-logs/
+            revisions/2026-10-12-r79/*.tex
+            revisions/2026-10-12-r79/*.md
+            revisions/2026-10-12-r79/sections/
+            revisions/2026-10-12-r79/tables/
+          compression-level: 1
+          retention-days: 30
+  clean-archive:
+    needs: build
+    runs-on: ubuntu-slim
+    timeout-minutes: 15
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      SOURCE_DATE_EPOCH: '1791676800'
+      FORCE_SOURCE_DATE: '1'
+      TZ: UTC
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.build.outputs.built_sha }}
+          fetch-depth: 100
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+            /revisions/2026-10-10-r64/
+            /revisions/2026-10-10-r65/
+            /revisions/2026-10-10-r66/
+            /revisions/2026-10-10-r67/
+            /revisions/2026-10-11-r69/
+            /revisions/2026-10-11-r70/
+            /revisions/2026-10-11-r72/
+            /revisions/2026-10-11-r73/
+            /revisions/2026-10-11-r77/
+            /revisions/2026-10-11-r78/
+            /revisions/2026-10-12-r79/
+      - name: Install complete clean-reproduction dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+      - name: Rebuild from a clean archive and publish the source-bound candidate
+        run: /usr/bin/python3 revisions/2026-10-12-r79/code/publish79.py
+      - name: Preserve failed clean-reproduction attempt separately
+        if: failure()
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-12-r79
+          if ! git diff --cached --quiet; then git commit -m 'R79: retain failed archive diagnostics without asserting success'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r79-archive-attempt-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r79-clean-candidate
+          path: |
+            revisions/2026-10-12-r79/build/*.pdf
+            revisions/2026-10-12-r79/build/*.txt
+            revisions/2026-10-12-r79/build/*.log
+            revisions/2026-10-12-r79/audit/*79*
+            revisions/2026-10-12-r79/audit/*78*
+            revisions/2026-10-12-r79/audit/build-logs/
+            revisions/2026-10-12-r79/*.tex
+            revisions/2026-10-12-r79/*.md
+            revisions/2026-10-12-r79/sections/
+            revisions/2026-10-12-r79/tables/
+          compression-level: 1
+          retention-days: 30
