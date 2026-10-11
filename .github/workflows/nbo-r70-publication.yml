@@ -12,12 +12,15 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     env:
       OPENBLAS_NUM_THREADS: '1'
       OMP_NUM_THREADS: '1'
       MKL_NUM_THREADS: '1'
       PYTHONDONTWRITEBYTECODE: '1'
+      SOURCE_DATE_EPOCH: '1791676800'
+      FORCE_SOURCE_DATE: '1'
+      TZ: UTC
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,24 +35,47 @@ jobs:
             revisions/2026-10-10-r67
             revisions/2026-10-11-r69
             revisions/2026-10-11-r70
-      - run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy
-      - name: Commit amended independent audit before executing it
+      - name: Install verification and publication dependencies
         run: |
-          /usr/bin/python3 revisions/2026-10-11-r70/code/amend70.py
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Retain controlling review and the original independent-replay disagreement
+        run: |
+          mkdir -p revisions/2026-10-11-r70/inputs
+          git fetch --filter=blob:none --depth=1 origin 4b27b56f4514f6c1d77b69fe707f7202f8b06b19
+          git show 4b27b56f4514f6c1d77b69fe707f7202f8b06b19:reviews/2026-10-11-econometrica-numerical-methods-r67/referee_report.md > revisions/2026-10-11-r70/inputs/referee_report_R67.md
+          test "$(git hash-object revisions/2026-10-11-r70/inputs/referee_report_R67.md)" = 7f214ec7eddbadef7d3f31064783c6243f358198
+          git fetch --filter=blob:none --depth=1 origin revision/econometrica-nbo-r70-audit-attempt-38095779092-1
+          git show FETCH_HEAD:revisions/2026-10-11-r70/audit/DISAGREEMENT70.json > revisions/2026-10-11-r70/inputs/INITIAL_REPLAY_DISAGREEMENT70.json
+          git show FETCH_HEAD:revisions/2026-10-11-r70/code/audit70.py > revisions/2026-10-11-r70/inputs/initial_audit70.py
+      - name: Commit and push ordinary revised manuscript sources
+        run: |
+          /usr/bin/python3 revisions/2026-10-11-r70/code/prepare70.py
           git config user.name 'NBO revision verification'
           git config user.email 'nbo-revision@users.noreply.github.com'
-          git add revisions/2026-10-11-r70/code/audit70.py revisions/2026-10-11-r70/sections/deployment70.tex
-          if ! git diff --cached --quiet; then git commit -m 'R70: verify exact saved-action chord and preserve cross-platform rounding diagnostics'; fi
-      - name: Independent full-bin, training, validation and centered-inference audit
+          git add -f revisions/2026-10-11-r70
+          if ! git diff --cached --quiet; then git commit -m 'R70: assemble ordinary original-paper revision and preserve all inherited statements and proofs'; fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r70-referee-revision-2026-10-11 HEAD:refs/heads/revision/econometrica-nbo-r70-source-2026-10-11
+      - name: Run all tests, independent record replay and three-document publication gates
         run: |
           mkdir -p revisions/2026-10-11-r70/audit/build-logs
-          /usr/bin/python3 revisions/2026-10-11-r70/code/audit70.py > revisions/2026-10-11-r70/audit/build-logs/audit70.log 2>&1 || { tail -100 revisions/2026-10-11-r70/audit/build-logs/audit70.log; exit 1; }
-          cat revisions/2026-10-11-r70/audit/RESULT_AUDIT70.json
-      - name: Preserve attempt diagnostics without changing prior evidence
-        if: always()
+          /usr/bin/python3 revisions/2026-10-11-r70/code/build70.py > revisions/2026-10-11-r70/audit/build-logs/build70.log 2>&1 || { tail -150 revisions/2026-10-11-r70/audit/build-logs/build70.log; exit 1; }
+          cat revisions/2026-10-11-r70/audit/RELEASE70.json
+      - name: Rebuild from a clean archive and publish verified revision branches
+        run: /usr/bin/python3 revisions/2026-10-11-r70/code/publish70.py
+      - name: Preserve failed attempt without rewriting the original evidence
+        if: failure()
         run: |
           git config user.name 'NBO revision verification'
           git config user.email 'nbo-revision@users.noreply.github.com'
-          git add -f revisions/2026-10-11-r70/audit
-          if ! git diff --cached --quiet; then git commit -m 'R70: preserve independent verification attempt and complete diagnostics'; fi
+          git add -f revisions/2026-10-11-r70
+          if ! git diff --cached --quiet; then git commit -m 'R70: retain publication-attempt diagnostics and generated files'; fi
           git push origin HEAD:refs/heads/revision/econometrica-nbo-r70-audit-attempt-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}
+      - name: Retain complete manuscript sources, PDFs and verification records
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r70-complete-publication
+          path: revisions/2026-10-11-r70/
+          retention-days: 30
+          compression-level: 1
