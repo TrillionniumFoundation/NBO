@@ -1,0 +1,53 @@
+name: NBO R76 pinned source export
+on:
+  push:
+    branches: [revision/econometrica-nbo-r76-referee-revision-2026-10-11]
+    paths: [.github/workflows/nbo-r76-source.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 6c11f9ebd95adc32d751a1af145f276f19c3f1c6
+          filter: blob:none
+          fetch-depth: 1
+          sparse-checkout: |
+            revisions/2026-10-10-r62
+            revisions/2026-10-10-r63
+            revisions/2026-10-10-r64
+            revisions/2026-10-10-r65
+            revisions/2026-10-10-r66
+            revisions/2026-10-10-r67
+            revisions/2026-10-11-r69
+            revisions/2026-10-11-r70
+            revisions/2026-10-11-r72
+            revisions/2026-10-11-r73
+            revisions/2026-10-11-r74
+            revisions/2026-10-11-r75
+      - name: Export exact selected source and evidence bytes
+        run: |
+          python3 - <<'PY'
+          import pathlib, zipfile, hashlib, json, subprocess
+          root = pathlib.Path('.')
+          files = {}
+          rejected = {'.ttf','.otf','.woff','.woff2','.pfb','.pfa','.afm','.tfm'}
+          with zipfile.ZipFile('/tmp/nbo-r76-inputs.zip','w',zipfile.ZIP_DEFLATED,compresslevel=1) as z:
+              for f in sorted(pathlib.Path('revisions').rglob('*')):
+                  if not f.is_file() or '__pycache__' in f.parts or 'build' in f.parts or f.suffix.lower() in rejected:
+                      continue
+                  z.write(f,str(f))
+                  files[str(f)] = hashlib.sha256(f.read_bytes()).hexdigest()
+              z.writestr('PINNED_INPUTS76.json',json.dumps({'base_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'files':files},sort_keys=True,indent=2))
+          print('Selected files:',len(files),'ZIP bytes:',pathlib.Path('/tmp/nbo-r76-inputs.zip').stat().st_size)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r76-pinned-inputs
+          path: /tmp/nbo-r76-inputs.zip
+          retention-days: 30
+          compression-level: 0
