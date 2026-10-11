@@ -1,22 +1,25 @@
 # Neural Bellman Operators
 
-**R77 — original-paper referee revision.**
+## R78 original-paper referee revision — manuscript sources
 
-[Main article](revisions/2026-10-11-r77/build/ECTA.pdf) · [Technical Supplement](revisions/2026-10-11-r77/build/supp.pdf) · [Numerical and Development Appendix](revisions/2026-10-11-r77/build/appendix.pdf) · [Referee response](revisions/2026-10-11-r77/build/response.pdf)
+The complete R78 LaTeX manuscript is in `revisions/2026-10-11-r78/`.
+Read `ECTA.tex`, `supp.tex`, `appendix.tex`, and `response.md`.
+The new simultaneous-choice theorem and full proof are in
+`sections/choice78.tex` and `sections/choice_proof78.tex`.
 
-[Revision guide](revisions/2026-10-11-r77/README.md) · [Content preservation](revisions/2026-10-11-r77/CONTENT_MAP77.md) · [Release audit](revisions/2026-10-11-r77/audit/RELEASE77.json)
+The original title, author, investment primitives and Bellman optimum are
+unchanged. The attained-controller cost comparison is extended to sharp
+simultaneous catalogue regret and exact refinement-charge regions. All earlier
+active sections, scientific records and unfavorable results remain available.
+The original R77 wrappers and compiled PDFs are explicitly preserved under
+`preserved/R77-original/`; they are not represented as newly compiled R78 PDFs.
 
-The same NBO title, author, investment primitives and original Bellman optimum
-are retained. R77 qualifies the original-law costs of the actual four attained
-continuation constructions. Exact conditional integration, independently
-implemented full-bin arithmetic, explicit precision components and priced
-controller selection link construction to an economic decision. The fixed new
-catalogue and every prior adverse comparison remain separately identified.
+Publication validation is not yet complete. The new regression calculation has
+been exercised locally, but the remote full build is queued. A passed R78 full
+release audit, clean rebuild and hash-bound PDF inspection are required before
+claiming review-ready publication. Historical R77 audit files remain historical.
 
-All preceding active sections are compiled byte-identically once. Full inherited
-and new tests, complete dual-arithmetic cost replay and clean archive reproduction
-have passed. Review-ready publication additionally requires the hash-bound PDF
-visual record and `revisions/2026-10-11-r77/audit/FINAL_DELIVERY77.json`.
-Old revision and review branches are unchanged.
-
-Offline full build: `python3 revisions/2026-10-11-r77/code/build77.py --full`.
+Controlling advisory review: R67, 11 October 2026,
+`4b27b56f4514f6c1d77b69fe707f7202f8b06b19`.
+Baseline R77 manuscript: `21a99a92c9a8aed96b36931467a40cd7b82aeeb6`.
+Earlier revision and review branches are unchanged.
