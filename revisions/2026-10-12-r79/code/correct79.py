@@ -24,7 +24,15 @@ def main():
     write(p,text)
     p=R/'code/allocation79.py';text=p.read_text().replace('for t in (F(-1,4),F(0),F(1,4),F(1,2),F(3,4),F(1),F(5,4)):','for t in (-l/width,F(0),F(1,4),F(1,2),F(3,4),F(1),F(5,4)):')
     write(p,text)
-    p=R/'response.md';text=p.read_text().replace('The corresponding theorem, full proof, rational primal-dual witnesses and finite-cohort exhaustive checks are deposited.','The corresponding theorem, full proof, rational primal-dual witnesses and finite-cohort exhaustive checks are deposited. The new suite has twenty-two unskipped exact tests; the retained cost catalogue supplies seven full-catalogue linear-program checks, thirty-five finite-cohort checks and four explicit setup-charge regimes. These are decision calculations, not new economic observations.')
+    p=R/'sections/allocation79.tex';text=p.read_text()
+    text=text.replace('approximately $0.00024059$ and $0.00048118$', 'approximately $0.0002405736$ and $0.0004811472$')
+    text=text.replace('reproduced with its full proof in Appendix~\\ref{app:choice78}', 'stated and proved in the Numerical and Development Appendix')
+    write(p,text)
+    p=R/'response.md';text=p.read_text()
+    sentence='The corresponding theorem, full proof, rational primal-dual witnesses and finite-cohort exhaustive checks are deposited.'
+    extra=' The new suite has twenty-two unskipped exact tests; the retained cost catalogue supplies seven full-catalogue linear-program checks, thirty-five finite-cohort checks and four explicit setup-charge regimes. These are decision calculations, not new economic observations.'
+    if extra not in text:text=text.replace(sentence,sentence+extra)
+    while extra+extra in text:text=text.replace(extra+extra,extra)
     write(p,text)
     p=R/'audit/EDITORIAL79.json'
     if changed:write(p,json.dumps(dict(status='applied_before_tested_source_commit',changed=changed,historical_sections_or_scientific_sources_changed=False),indent=2)+'\n')
