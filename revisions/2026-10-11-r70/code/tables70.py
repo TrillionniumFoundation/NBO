@@ -84,5 +84,11 @@ def main():
     table('adoption70','Conditional complete-reuse adoption thresholds',['$(d,T)$','Rule','Repeat','Saving (s)','Loss upper','$p/v$ threshold'],rows,
         'Seed 6901; zero incremental installation fee. The loss upper is 504 times the corresponding policy-cost upper endpoint. A displayed positive-saving threshold describes the adoption region only when the numerical callable policy is the one evaluated by inference. Saved parameter equality is checked, but cross-platform numerical equality is an additional requirement. A dash means no positive work saving in that matched observation. Prices are declared inputs, not estimated currency values.','lcrrrr',True)
     put('audit/TABLES70.json',json.dumps(dict(status='passed',inference=inference_machine,economic=economic,training_unique=len(unique),validation_rows=len(d['validation'])),indent=2,sort_keys=True)+'\n')
+    small={kind:sorted((x for x in d['validation'] if x['d']==2 and x['T']==2 and x['kind']==kind),key=lambda x:x['seed']) for kind in ('hat-relu','bernstein4')}
+    counts=lambda kind:' and '.join(str(x['screen_returns']) for x in small[kind])
+    maxgap=max(F(x['dual_gap_exact']) for x in unique.values())
+    if maxgap>F(1,10**7):raise AssertionError('Displayed readout gap bound')
+    paragraph='At a fixed purchased-information and coefficient budget, the hat--ReLU readouts close '+counts('hat-relu')+' of 256 small-task validation contexts for the two seeds, compared with '+counts('bernstein4')+' for Bernstein. The achieved exact box dual gaps are at most $10^{-7}$ across the certificate-aware catalogue. This is a method-specific improvement in the declared context screen, not a uniform complete-runtime advantage. All methods and both tasks remain in the supplementary validation table.\n'
+    put('tables/screen-findings70.tex',paragraph)
     print(json.dumps(dict(tables=8,equivalent=sum(x['equivalent'] for x in inference_machine),all_precision_allocations_met=all(x['sampling_allocation_passed'] and x['numerical_allocation_passed'] for x in inference_machine),vector=s['vector']),indent=2))
 if __name__=='__main__':main()

@@ -121,3 +121,5 @@ The original NBO topic, title and theoretical statements are retained. All prior
 | `thm:vector67` | `../2026-10-10-r67/sections/vector67.tex` |
 | `thm:work-loss67` | `../2026-10-10-r67/sections/operational67.tex` |
 | `verification-and-delivery` | `../2026-10-10-r67/response.tex` |
+
+The intervening R69 complete-work and optional-vector-witness propositions are retained verbatim in sections/training69-retained70.tex; their proofs are in sections/proofs70.tex. The full pinned source is inputs/training69.tex.

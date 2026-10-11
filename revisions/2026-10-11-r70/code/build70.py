@@ -53,6 +53,7 @@ def response():
     body=re.sub(r'\\texttt\{([^{}]*)\}',lambda m:r'\nolinkurl{'+m[1].replace(r'\_','_')+'}',body)
     head=(R/'supp.tex').read_text().split(r'\input{sections/proofs67}')[0]
     head=head.replace(r'\externaldocument{build/ECTA}[ECTA.pdf]','').replace('Technical Supplement to Neural Bellman Operators','Response to the Referee: Neural Bellman Operators').replace('Neural Bellman Operators: Supplement','Response to the Referee')
+    head=re.sub(r'^\\externaldocument[^\n]*\n?', '', head, flags=re.M).replace('label=e70supp','label=e70response')
     head=re.sub(r'(\\begin\{abstract\}).*?(\\end\{abstract\})',lambda m:m[1]+'This response addresses the 11 October 2026 advisory report on R67. Revision R70 retains the original Neural Bellman Operators paper and integrates the separately frozen R69 execution, new deployment and cost-inference results, independent reconstruction and a point-by-point response.'+m[2],head,flags=re.S)
     (R/'response.tex').write_text(head+r'\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}'+'\n'+body+'\n\\end{document}\n')
 
