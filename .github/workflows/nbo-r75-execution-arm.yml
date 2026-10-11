@@ -1,0 +1,69 @@
+name: NBO R75 ARM qualification audit
+on:
+  push:
+    branches: [revision/econometrica-nbo-r75-referee-revision-2026-10-11]
+    paths: [.github/workflows/nbo-r75-execution-arm.yml]
+permissions:
+  contents: write
+jobs:
+  qualification:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-11-r74/
+            /revisions/2026-10-11-r75/
+          sparse-checkout-cone-mode: false
+      - name: Prepare the unchanged prospective design
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil,json
+          old=Path('revisions/2026-10-11-r74');new=Path('revisions/2026-10-11-r75')
+          own={str(p.relative_to(new)):p.read_bytes() for p in new.rglob('*') if p.is_file()} if new.exists() else {}
+          shutil.copytree(old,new,dirs_exist_ok=True)
+          for name,data in own.items():
+              p=new/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
+          (new/'audit').mkdir(exist_ok=True)
+          (new/'audit/ATTEMPT75.json').write_text(json.dumps({'base_commit':'5b6bb84fe02e6c7295624c1d9ba5266eef6c5717','same_frozen_design':True,'same_random_indices':True,'additional_independent_sample_families':0,'architecture':'ARM64'},indent=2)+'\n')
+          PY
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy
+      - name: Run regressions and complete double implementation
+        run: |
+          /usr/bin/python3 revisions/2026-10-11-r75/code/tests74.py > revisions/2026-10-11-r75/audit/TESTS74_IN_R75.log 2>&1
+          /usr/bin/python3 - <<'PY'
+          from pathlib import Path
+          import subprocess,time,json,sys
+          r=Path('revisions/2026-10-11-r75');start=time.perf_counter()
+          with (r/'audit/EXECUTION74_IN_R75.log').open('w') as f:
+              result=subprocess.run([sys.executable,str(r/'code/study74.py')],stdout=f,stderr=subprocess.STDOUT)
+          (r/'audit/QUALIFICATION_PROCESS75.json').write_text(json.dumps({'returncode':result.returncode,'complete_process_seconds':time.perf_counter()-start,'includes_startup_shutdown':True,'architecture':'ARM64','same_sample_family_as_other_attempts':True},indent=2)+'\n')
+          if result.returncode:
+              print((r/'audit/EXECUTION74_IN_R75.log').read_text()[-10000:]);raise SystemExit(result.returncode)
+          PY
+          /usr/bin/python3 revisions/2026-10-11-r75/code/study74.py --replay
+      - name: Preserve the separate audit branch
+        if: always()
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-11-r75
+          if ! git diff --cached --quiet; then git commit -m 'R75: retain ARM qualification audit of the same frozen policy and sample identities'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r75-arm-evidence-2026-10-11
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r75-arm-qualification
+          path: revisions/2026-10-11-r75
+          compression-level: 1
+          retention-days: 30
