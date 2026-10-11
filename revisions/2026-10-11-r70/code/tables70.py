@@ -62,7 +62,7 @@ def main():
     rows=[]
     for key,x in sorted(unique.items()):
         rows.append([f"{x['d']},{x['T']},{x['r']}",METHOD[x['kind']],str(x['seed'])[-1],x['coefficient_count'],f"{x['value']:.3g}",f"{x['dual_gap']:.3g}",f"{x['work_upper']:.3g}"])
-    table('training70','Achieved convex readout certificates',['$(d,T,r)$','Rule','Seed','Weights','$F(w)$','$D(w)$','$F(w)/\tau^2$'],rows,
+    table('training70','Achieved convex readout certificates',['$(d,T,r)$','Rule','Seed','Weights','$F(w)$','$D(w)$',r'$F(w)/\tau^2$'],rows,
         'These are achieved objective and optimization-gap values, not optimizer flags or hidden-layer convergence claims. The complete rational fractions are retained in DETAILS70.json. Repeated services of the same readout are listed once here and remain separately charged in their receipts.','lcrrrrr',True)
     rows=[]
     for x in s['inference']:
