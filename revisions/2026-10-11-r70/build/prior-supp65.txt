@@ -1,0 +1,935 @@
+                                         Prepared for referee review
+
+1          TECHNICAL SUPPLEMENT TO NEURAL BELLMAN OPERATORS                                       1
+
+2                                                                                                 2
+
+3
+                                                  Q IAN QI                                        3
+                                              Peking University
+4                                                                                                 4
+
+5                                                                                                 5
+                    This supplement specifies independent algebraic and trajectory checks,
+6                                                                                                 6
+                 the query implementation and reliability contracts, and all individual pro-
+7                                                                                                 7
+                 cess observations used in the revised article. Exact retained editions contain
+8                the preceding whole-domain proof, numerical evidence and broader appli-          8
+
+9                cations without deletion.                                                        9
+
+10                                                                                                10
+                     1. INDEPENDENT ALGEBRAIC AND NUMERICAL CHECKS
+11                                                                                                11
+
+12     The article contains complete proofs of the parabolic minorant, recursive query,           12
+
+13   gated refinement and certificate-localization statements. Deterministic tests supple- 13
+14   ment those arguments. They do not substitute a finite collection of examples for a           14
+
+15   proof over all states. The retained query suite has 24 tests, the gated suite 17, and the    15
+
+16   new independent suite 22. They include exact rational identities, interval boundary          16
+
+17   cases, inaccurate predictors, precision failure, continuous quadrature checks and            17
+
+18   deliberately corrupted records.                                                              18
+
+19                                                                                                19
+
+20                                   1.1. Curvature and regularity                                20
+
+21                                                                                                21
+       The state curvature slack in the original scalar model is
+22                                                                                                22
+                                         4 15 27   107
+23                                        −      =     > 0.                                       23
+                                         d 16 8d 128d
+24                                                                                                24
+     The independently written recurrence starts at dG0 = 10, dM0 = 26 and uses
+25                                                                                                25
+                                                                               
+26            1037    705                          21    15 9            1                        26
+       dGr =       +      dGr−1 ,    dMr = 22 +       +         dMr−1 + dGr−1 .
+27             128   1024                         256 16 16              8                        27
+
+28   It agrees exactly with the implemented rational coefficients. The induction bounds           28
+
+29   dGr ≤ 27 and dMr ≤ 54 imply the action-curvature, derivative and quadrature                  29
+
+30   coefficients printed in the article. The terminal action coefficients 41/32 and 9/4 are      30
+
+31                                                                                                31
+
+32     Qian QI: qiqian@pku.edu.cn                                                                 32
+     2
+
+1    separately derived from the alternating action exposures and checked against the         1
+
+2    original rational objective and derivative.                                              2
+
+3        For a uniform innovation on [−1/32, 1/32], let z j = (2j + 1 − q)/(32q) be the       3
+
+4    conditional means of q equal bins. The exact identity                                    4
+
+5                                              q −1                                           5
+                                       1  1          1
+6                                        − ∑ z2j =                                            6
+                                     3072 q j=0    3072q2
+7                                                                                             7
+
+8    gives the conditional variance discarded by midpoint evaluation. Convexity sup- 8
+9    plies the lower inequality and semiconcavity supplies the upper remainder. The           9
+
+10   fitted model supplies neither. Additional primitive floating uncertainty is expanded     10
+
+11   with the proven Lipschitz constant before a child interval is accepted.                  11
+
+12                                                                                            12
+                                    1.2. Feasibility at boundaries
+13                                                                                            13
+
+14       The capacity c( x ) = 1/8 + ∑ j x j /(8d) is affine and nondecreasing. Barycentric   14
+
+15   combinations of feasible nodal controls are feasible at the interpolated state because   15
+
+16   their summed controls are bounded by the same barycentric combination of ca- 16
+17   pacities. The tests include vertices, faces, equality at capacity and two-coordinate     17
+
+18   controls. Downward state acquisition preserves the ordering of capacities. The           18
+
+19   implemented query action is rounded downward on the thirty-two-bit lattice before        19
+
+20   its original-law endpoint is evaluated. The numerical certificate therefore belongs      20
+
+21   to the action actually used.                                                             21
+
+22       For a truncated capacity endpoint c, the omitted interval is charged by Λ(c −        22
+
+23   c). No lower envelope is permitted to ignore that interval. Projected derivative         23
+
+24   certification at zero and at capacity uses the appropriate one-sided optimality sign;    24
+
+25   a constrained optimum need not have derivative zero. The example f ( a) = a shows        25
+
+26   why a boundary prediction-error term can be first order even though an interior          26
+
+27   one is second order.                                                                     27
+
+28                                                                                            28
+
+29
+                             1.3. Localization and corrupt-record tests                       29
+
+30       The new rational tests compute exact parabolic lower bounds for linear and           30
+
+31   quadratic objectives, including both boundary minimizers and an interior mini- 31
+32   mizer. They check the certificate-localization bound with endpoint uncertainty, a        32
+                           NEURAL BELLMAN OPERATORS: SUPPLEMENT                            3
+
+1    shortened capacity interval, all three parabolic-minimum cases and the running- 1
+2    bound identity. A constant objective with an exact optimal witness and a deliberately      2
+
+3    loose curvature allowance provides a useful counterexample: prediction accuracy            3
+
+4    alone does not close a coarse lower certificate.                                           4
+
+5      The trajectory checker is tested by separately corrupting an acquired state, a           5
+
+6    returned action, a reported local gap, an exact path cost and the requested target. 6
+7    Each corrupted object is rejected. This verifies that the replay is checking economic      7
+
+8    implementation and accuracy fields rather than only accepting a success flag. It is        8
+
+9    not a claim that these five mutations exhaust all possible implementation faults.          9
+
+10                                                                                              10
+                       2. FINITE-PRECISION AND WORKLOAD CONTRACTS
+11                                                                                              11
+
+12     A service receives the dimension, horizon, target, workload size, mode, fitting          12
+
+13   seed and repetition number. Those fields are bound to its summary and parent re- 13
+14   ceipt. Every scientific source freeze is checked before replay, including the imported     14
+
+15   original primitives. Each returned trace contains true initial and innovation dyadic       15
+
+16   indices, acquired states, actions, original-law lower and upper endpoints, local gaps      16
+
+17   and probe counts. Models, exact costs, traces, summaries and clocks have separate          17
+
+18   SHA-256 identities.                                                                        18
+
+19     The local request is the recorded binary64 rounding of ϵ/(2 ∑t<T      βt ). The global   19
+
+20   policy allowance uses this actual local request and a rational acquisition expansion       20
+
+21   before upward conversion. For every declared target and horizon, the indepen- 21
+22   dent suite checks the outward direction and the final comparison with ϵ. It also           22
+
+23   checks the recovery condition δr > 8Λr 2−32 at the smallest descendant request. A          23
+
+24   fixed-precision failure cannot be reclassified as a valid certificate because another      24
+
+25   workload previously returned.                                                              25
+
+26     The finite return theorem separates real-arithmetic refinement from executable           26
+
+27   recovery. In the floating implementation, a failed width guard or refinement cap           27
+
+28   invokes exact-rational enumeration, with separately counted queries. That proce- 28
+29   dure refines only the required descendants and never loads a conventional full-state       29
+
+30   policy. Its rational bit complexity can differ substantially from the floating operation   30
+
+31   count. No recovery was observed in the declared workloads; the manuscript does             31
+
+32   not infer that recovery is costless or unnecessary in general.                             32
+     4
+
+1                                  2.1. Independent exact trajectories                         1
+
+2                                                                                              2
+         For rational x, a and z, the replay computes the transition as
+3                                                                                              3
+                                        1  9     1        1
+4                    Fj ( x, a, z) =      + x j + x j+1 − x j x j+1 + Bj a + s j z.            4
+                                       16 16     8       16
+5                                                                                              5
+
+6    This is coded independently of the original interval routine. The stage and terminal      6
+
+7    costs are likewise evaluated from their polynomial and positive-part definitions. 7
+8    The true state remains rational across dates; only the observation and selected           8
+
+9    action are quantized. The replay checks every acquired state, true-state capacity,        9
+
+10   invariant-domain condition and complete discounted path cost exactly. It does             10
+
+11   not replace the evolving true state with its acquired version when computing the          11
+
+12   economic loss.                                                                            12
+
+13       Across both frozen catalogues, 55,296 decision records are bound to valid traces. 13
+14   The repeated models and traces match exactly across the two repetitions. Conse- 14
+15   quently the numerical re-query and rational reconstruction need only be executed          15
+
+16   once for each byte-identical trace/model combination; each repeated receipt, request      16
+
+17   and identity is still checked. There are 27,648 distinct recorded decision observations   17
+
+18   re-queried. This economy of verification does not change the number of original           18
+
+19   process measurements or create new independent observations.                              19
+
+20                                                                                             20
+                         3. COMPLETE INDIVIDUAL SERVICE OBSERVATIONS
+21                                                                                             21
+
+22       The following tables retain every declared service. A denotes adaptive parabolic      22
+
+23   search, B bisection, RI unconditional ReLU insertion, RG gated ReLU routing,              23
+
+24   QI unconditional quadratic insertion and QG gated quadratic routing. The first            24
+
+25   catalogue has no routing arm. Seed zero denotes a conventional method with no fit. 25
+26   Repetition zero and repetition one are two distinct isolated-process measurements;        26
+
+27   identical numerical traces do not imply identical clocks.                                 27
+
+28       “Train Q” is the number of Bellman action queries paid to construct training          28
+
+29   labels. “Deploy Q” includes the actual policy’s recursive queries and its termi- 29
+30   nal kernel. These counts are algorithmic operations, not statistically independent        30
+
+31   sample sizes. “Warn.” is the number of retained fitting warnings at service dates. 31
+32   Seconds are complete parent clocks, rounded for display; exact stored binary64            32
+                          NEURAL BELLMAN OPERATORS: SUPPLEMENT                       5
+
+1    values determine the derived accounts. Individual peak memory, maximum live          1
+
+2    batch, fitted parameters, path costs and receipt hashes remain in the accompanying   2
+
+3    machine-readable audit.                                                              3
+
+4                                                                                         4
+                      TABLE I: R63 complete individual service observations
+5                                                                                         5
+
+6                                                                                         6
+              d   T Target Method Seed Rep. Seconds Train Q Deploy Q Warn.
+7                                                                                         7
+
+8             2   2   1/32        A     0     0   0.2657       0      1280    0           8
+
+9
+              2   2   1/32        A     0     1   0.2583       0      1280    0           9
+              2   2   1/32        B     0     0   0.2578       0      1295    0
+10                                                                                        10
+              2   2   1/32        B     0     1   0.2561       0      1295    0
+11                                                                                        11
+              2   2   1/32       RI 6301      0   0.6489    6912      1469    0
+12                                                                                        12
+              2   2   1/32       RI 6301      1   0.6467    6912      1469    0
+13                                                                                        13
+              2   2   1/32       RI 6302      0   0.6386    6912      1415    0
+14            2   2   1/32       RI 6302      1   0.6366    6912      1415    0           14
+
+15            2   2   1/32       QI 6301      0   0.6116    6912      1409    0           15
+
+16            2   2   1/32       QI 6301      1   0.6089    6912      1409    0           16
+
+17            2   2   1/32       QI 6302      0   0.6091    6912      1391    0           17
+
+18            2   2   1/32       QI 6302      1   0.6057    6912      1391    0           18
+
+19            2   2 1/128         A     0     0   0.2680       0      2353    0           19
+
+20
+              2   2 1/128         A     0     1   0.2714       0      2353    0           20
+              2   2 1/128         B     0     0   0.2798       0      2533    0
+21                                                                                        21
+              2   2 1/128         B     0     1   0.2803       0      2533    0
+22                                                                                        22
+              2   2 1/128        RI 6301      0   0.6664    6912      2598    0
+23                                                                                        23
+              2   2 1/128        RI 6301      1   0.6588    6912      2598    0
+24                                                                                        24
+              2   2 1/128        RI 6302      0   0.6531    6912      2553    0
+25            2   2 1/128        RI 6302      1   0.6580    6912      2553    0           25
+
+26            2   2 1/128        QI 6301      0   0.6202    6912      2533    0           26
+
+27            2   2 1/128        QI 6301      1   0.6254    6912      2533    0           27
+
+28            2   2 1/128        QI 6302      0   1.4713    6912      2468    0           28
+
+29            2   2 1/128        QI 6302      1   0.6208    6912      2468    0           29
+
+30            8   2   1/32        A     0     0   0.3802       0      1265    0           30
+
+31
+              8   2   1/32        A     0     1   0.3774       0      1265    0           31
+              8   2   1/32        B     0     0   0.3555       0      1328    0
+32                                                                                        32
+     6
+
+1        d   T Target Method Seed Rep. Seconds Train Q Deploy Q Warn.   1
+
+2                                                                       2
+         8   2   1/32      B    0    1   0.3577      0     1328     0
+3                                                                       3
+         8   2   1/32     RI 6301    0   0.7536   6912     1478     1
+4        8   2   1/32     RI 6301    1   0.7745   6912     1478     1   4
+
+5        8   2   1/32     RI 6302    0   0.7871   6912     1427     1   5
+
+6        8   2   1/32     RI 6302    1   0.7837   6912     1427     1   6
+
+7        8   2   1/32     QI 6301    0   0.7302   6912     1460     0   7
+
+8        8   2   1/32     QI 6301    1   0.7384   6912     1460     0   8
+
+9
+         8   2   1/32     QI 6302    0   0.7295   6912     1496     0   9
+         8   2   1/32     QI 6302    1   0.7316   6912     1496     0
+10                                                                      10
+         8   2 1/128      A     0    0   0.4069      0     2393     0
+11                                                                      11
+         8   2 1/128      A     0    1   0.4141      0     2393     0
+12                                                                      12
+         8   2 1/128       B    0    0   0.4279      0     2703     0
+13                                                                      13
+         8   2 1/128       B    0    1   0.4259      0     2703     0
+14                                                                      14
+         8   2 1/128      RI 6301    0   0.8082   6912     2628     1
+15       8   2 1/128      RI 6301    1   0.8106   6912     2628     1   15
+
+16       8   2 1/128      RI 6302    0   0.8044   6912     2603     1   16
+
+17       8   2 1/128      RI 6302    1   0.8117   6912     2603     1   17
+
+18       8   2 1/128      QI 6301    0   0.7594   6912     2618     0   18
+
+19       8   2 1/128      QI 6301    1   0.7649   6912     2618     0   19
+
+20
+         8   2 1/128      QI 6302    0   0.7682   6912     2653     0   20
+         8   2 1/128      QI 6302    1   0.7646   6912     2653     0
+21                                                                      21
+         16 2    1/32     A     0    0   0.5348      0     1265     0
+22                                                                      22
+         16 2    1/32     A     0    1   0.5357      0     1265     0
+23                                                                      23
+         16 2    1/32      B    0    0   0.5045      0     1316     0
+24                                                                      24
+         16 2    1/32      B    0    1   0.5002      0     1316     0
+25                                                                      25
+         16 2    1/32     RI 6301    0   0.9419   6912     1448     1
+26       16 2    1/32     RI 6301    1   0.9454   6912     1448     1   26
+
+27       16 2    1/32     RI 6302    0   0.9458   6912     1424     1   27
+
+28       16 2    1/32     RI 6302    1   0.9340   6912     1424     1   28
+
+29       16 2    1/32     QI 6301    0   0.9000   6912     1427     0   29
+
+30       16 2    1/32     QI 6301    1   0.8981   6912     1427     0   30
+
+31
+         16 2    1/32     QI 6302    0   0.9056   6912     1445     0   31
+         16 2    1/32     QI 6302    1   0.8959   6912     1445     0
+32                                                                      32
+                NEURAL BELLMAN OPERATORS: SUPPLEMENT                7
+
+1    d   T Target Method Seed Rep. Seconds Train Q Deploy Q Warn.       1
+
+2                                                                       2
+     16 2 1/128       A     0    0   0.5493      0     2278     0
+3                                                                       3
+     16 2 1/128       A     0    1   0.5499      0     2278     0
+4    16 2 1/128        B    0    0   0.6272      0     2583     0       4
+
+5    16 2 1/128        B    0    1   0.6299      0     2583     0       5
+
+6    16 2 1/128       RI 6301    0   1.0003   6912     2643     1       6
+
+7    16 2 1/128       RI 6301    1   0.9952   6912     2643     1       7
+
+8    16 2 1/128       RI 6302    0   0.9967   6912     2538     1       8
+
+9
+     16 2 1/128       RI 6302    1   0.9965   6912     2538     1       9
+     16 2 1/128       QI 6301    0   0.9228   6912     2538     0
+10                                                                      10
+     16 2 1/128       QI 6301    1   0.9151   6912     2538     0
+11                                                                      11
+     16 2 1/128       QI 6302    0   0.9219   6912     2573     0
+12                                                                      12
+     16 2 1/128       QI 6302    1   0.9137   6912     2573     0
+13                                                                      13
+     8   3   1/32     A     0    0   0.9580      0     6638     0
+14                                                                      14
+     8   3   1/32     A     0    1   0.9643      0     6638     0
+15   8   3   1/32      B    0    0   1.0045      0     7376     0       15
+
+16   8   3   1/32      B    0    1   1.0065      0     7376     0       16
+
+17   8   3   1/32     RI 6301    0   1.9047 155904     9402     2       17
+
+18   8   3   1/32     RI 6301    1   1.9126 155904     9402     2       18
+
+19   8   3   1/32     RI 6302    0   1.9265 155904     8042     2       19
+
+20
+     8   3   1/32     RI 6302    1   1.9255 155904     8042     2       20
+     8   3   1/32     QI 6301    0   1.8335 155904     8404     0
+21                                                                      21
+     8   3   1/32     QI 6301    1   1.8324 155904     8404     0
+22                                                                      22
+     8   3   1/32     QI 6302    0   1.8350 155904     8754     0
+23                                                                      23
+     8   3   1/32     QI 6302    1   1.8372 155904     8754     0
+24                                                                      24
+     8   3 1/128      A     0    0   1.4140      0    27165     0
+25                                                                      25
+     8   3 1/128      A     0    1   1.4087      0    27165     0
+26   8   3 1/128       B    0    0   1.8735      0    34394     0       26
+
+27   8   3 1/128       B    0    1   1.8832      0    34394     0       27
+
+28   8   3 1/128      RI 6301    0   2.3955 155904    35526     2       28
+
+29   8   3 1/128      RI 6301    1   2.3911 155904    35526     2       29
+
+30   8   3 1/128      RI 6302    0   2.4166 155904    31210     2       30
+
+31
+     8   3 1/128      RI 6302    1   2.4197 155904    31210     2       31
+     8   3 1/128      QI 6301    0   2.3370 155904    32253     0
+32                                                                      32
+     8
+
+1        d   T Target Method Seed Rep. Seconds Train Q Deploy Q Warn.         1
+
+2                                                                             2
+         8   3 1/128        QI 6301      1   2.3315 155904       32253    0
+3                                                                             3
+         8   3 1/128        QI 6302      0   2.3348 155904       33324    0
+4        8   3 1/128        QI 6302      1   2.3232 155904       33324    0   4
+
+5                                                                             5
+
+6                                                                             6
+
+7                TABLE II: R64 complete individual service observations       7
+
+8                                                                             8
+
+9        d   T Target Method Seed Rep. Seconds Train Q Deploy Q Warn.         9
+
+10                                                                            10
+         2   2   1/32        A     0     0   0.2586        0      1298    0
+11                                                                            11
+         2   2   1/32        A     0     1   0.2542        0      1298    0
+12       2   2   1/32        B     0     0   0.2515        0      1310    0   12
+
+13       2   2   1/32        B     0     1   0.2523        0      1310    0   13
+
+14       2   2   1/32       RI 6401      0   0.7141    6912       1415    1   14
+
+15       2   2   1/32       RI 6401      1   0.6452    6912       1415    1   15
+
+16       2   2   1/32       RI 6402      0   0.6510    6912       1439    0   16
+
+17       2   2   1/32       RI 6402      1   0.6498    6912       1439    0   17
+
+18
+         2   2   1/32       RG 6401      0   0.6662    6912       1298    1   18
+         2   2   1/32       RG 6401      1   0.6555    6912       1298    1
+19                                                                            19
+         2   2   1/32       RG 6402      0   0.6517    6912       1298    0
+20                                                                            20
+         2   2   1/32       RG 6402      1   0.6579    6912       1298    0
+21                                                                            21
+         2   2   1/32       QI 6401      0   0.6250    6912       1418    0
+22                                                                            22
+         2   2   1/32       QI 6401      1   0.6097    6912       1418    0
+23       2   2   1/32       QI 6402      0   0.6127    6912       1424    0   23
+
+24       2   2   1/32       QI 6402      1   0.6144    6912       1424    0   24
+
+25       2   2   1/32      QG 6401       0   0.6138    6912       1295    0   25
+
+26       2   2   1/32      QG 6401       1   0.9454    6912       1295    0   26
+
+27       2   2   1/32      QG 6402       0   0.6151    6912       1295    0   27
+
+28       2   2   1/32      QG 6402       1   0.6099    6912       1295    0   28
+
+29
+         2   2 1/128         A     0     0   0.2698        0      2508    0   29
+         2   2 1/128         A     0     1   0.2700        0      2508    0
+30                                                                            30
+         2   2 1/128         B     0     0   0.2805        0      2658    0
+31                                                                            31
+         2   2 1/128         B     0     1   0.2830        0      2658    0
+32                                                                            32
+                NEURAL BELLMAN OPERATORS: SUPPLEMENT                9
+
+1    d   T Target Method Seed Rep. Seconds Train Q Deploy Q Warn.       1
+
+2                                                                       2
+     2   2 1/128      RI 6401    0   0.6702   6912     2593     1
+3                                                                       3
+     2   2 1/128      RI 6401    1   0.6624   6912     2593     1
+4    2   2 1/128      RI 6402    0   0.6475   6912     2643     0       4
+
+5    2   2 1/128      RI 6402    1   0.6408   6912     2643     0       5
+
+6    2   2 1/128     RG 6401     0   0.6561   6912     2438     1       6
+
+7    2   2 1/128     RG 6401     1   0.6555   6912     2438     1       7
+
+8    2   2 1/128     RG 6402     0   0.6493   6912     2428     0       8
+
+9
+     2   2 1/128     RG 6402     1   0.6603   6912     2428     0       9
+     2   2 1/128      QI 6401    0   0.6283   6912     2633     0
+10                                                                      10
+     2   2 1/128      QI 6401    1   0.6215   6912     2633     0
+11                                                                      11
+     2   2 1/128      QI 6402    0   0.6232   6912     2613     0
+12                                                                      12
+     2   2 1/128      QI 6402    1   0.6243   6912     2613     0
+13                                                                      13
+     2   2 1/128     QG 6401     0   0.6320   6912     2473     0
+14                                                                      14
+     2   2 1/128     QG 6401     1   0.6224   6912     2473     0
+15   2   2 1/128     QG 6402     0   0.6241   6912     2463     0       15
+
+16   2   2 1/128     QG 6402     1   0.6367   6912     2463     0       16
+
+17   8   2   1/32     A     0    0   0.3777      0     1280     0       17
+
+18   8   2   1/32     A     0    1   0.3821      0     1280     0       18
+
+19   8   2   1/32      B    0    0   0.3616      0     1325     0       19
+
+20
+     8   2   1/32      B    0    1   0.3586      0     1325     0       20
+     8   2   1/32     RI 6401    0   0.7551   6912     1472     1
+21                                                                      21
+     8   2   1/32     RI 6401    1   0.7606   6912     1472     1
+22                                                                      22
+     8   2   1/32     RI 6402    0   0.7788   6912     1472     1
+23                                                                      23
+     8   2   1/32     RI 6402    1   0.7917   6912     1472     1
+24                                                                      24
+     8   2   1/32    RG 6401     0   0.7678   6912     1277     1
+25                                                                      25
+     8   2   1/32    RG 6401     1   0.7616   6912     1277     1
+26   8   2   1/32    RG 6402     0   0.7869   6912     1280     1       26
+
+27   8   2   1/32    RG 6402     1   0.7749   6912     1280     1       27
+
+28   8   2   1/32     QI 6401    0   0.7419   6912     1451     0       28
+
+29   8   2   1/32     QI 6401    1   0.7405   6912     1451     0       29
+
+30   8   2   1/32     QI 6402    0   0.7417   6912     1472     0       30
+
+31
+     8   2   1/32     QI 6402    1   0.7400   6912     1472     0       31
+     8   2   1/32    QG 6401     0   0.7451   6912     1280     0
+32                                                                      32
+     10
+
+1         d   T Target Method Seed Rep. Seconds Train Q Deploy Q Warn.   1
+
+2                                                                        2
+          8   2   1/32    QG 6401     1   0.7616   6912     1280     0
+3                                                                        3
+          8   2   1/32    QG 6402     0   0.7329   6912     1277     0
+4         8   2   1/32    QG 6402     1   0.7224   6912     1277     0   4
+
+5         8   2 1/128      A     0    0   0.4154      0     2373     0   5
+
+6         8   2 1/128      A     0    1   0.4165      0     2373     0   6
+
+7         8   2 1/128       B    0    0   0.4437      0     2648     0   7
+
+8         8   2 1/128       B    0    1   0.4373      0     2648     0   8
+
+9
+          8   2 1/128      RI 6401    0   0.8051   6912     2608     1   9
+          8   2 1/128      RI 6401    1   0.7990   6912     2608     1
+10                                                                       10
+          8   2 1/128      RI 6402    0   0.8215   6912     2618     1
+11                                                                       11
+          8   2 1/128      RI 6402    1   0.8073   6912     2618     1
+12                                                                       12
+          8   2 1/128     RG 6401     0   0.8055   6912     2358     1
+13                                                                       13
+          8   2 1/128     RG 6401     1   0.8242   6912     2358     1
+14                                                                       14
+          8   2 1/128     RG 6402     0   0.8069   6912     2393     1
+15        8   2 1/128     RG 6402     1   0.8057   6912     2393     1   15
+
+16        8   2 1/128      QI 6401    0   0.7548   6912     2573     0   16
+
+17        8   2 1/128      QI 6401    1   0.7619   6912     2573     0   17
+
+18        8   2 1/128      QI 6402    0   0.7533   6912     2603     0   18
+
+19        8   2 1/128      QI 6402    1   0.7467   6912     2603     0   19
+
+20
+          8   2 1/128     QG 6401     0   0.7602   6912     2373     0   20
+          8   2 1/128     QG 6401     1   0.7848   6912     2373     0
+21                                                                       21
+          8   2 1/128     QG 6402     0   0.7703   6912     2358     0
+22                                                                       22
+          8   2 1/128     QG 6402     1   0.7753   6912     2358     0
+23                                                                       23
+          16 2    1/32     A     0    0   0.5383      0     1286     0
+24                                                                       24
+          16 2    1/32     A     0    1   0.5341      0     1286     0
+25                                                                       25
+          16 2    1/32      B    0    0   0.4973      0     1328     0
+26        16 2    1/32      B    0    1   0.4955      0     1328     0   26
+
+27        16 2    1/32     RI 6401    0   0.9512   6912     1433     1   27
+
+28        16 2    1/32     RI 6401    1   0.9526   6912     1433     1   28
+
+29        16 2    1/32     RI 6402    0   0.9195   6912     1478     1   29
+
+30        16 2    1/32     RI 6402    1   0.9131   6912     1478     1   30
+
+31
+          16 2    1/32    RG 6401     0   0.9118   6912     1283     1   31
+          16 2    1/32    RG 6401     1   0.9231   6912     1283     1
+32                                                                       32
+                NEURAL BELLMAN OPERATORS: SUPPLEMENT                11
+
+1    d   T Target Method Seed Rep. Seconds Train Q Deploy Q Warn.        1
+
+2                                                                        2
+     16 2    1/32    RG 6402     0   0.9097   6912     1280     1
+3                                                                        3
+     16 2    1/32    RG 6402     1   0.9074   6912     1280     1
+4    16 2    1/32     QI 6401    0   0.8947   6912     1451     0        4
+
+5    16 2    1/32     QI 6401    1   0.8840   6912     1451     0        5
+
+6    16 2    1/32     QI 6402    0   0.8905   6912     1463     0        6
+
+7    16 2    1/32     QI 6402    1   0.8912   6912     1463     0        7
+
+8    16 2    1/32    QG 6401     0   0.8558   6912     1283     0        8
+
+9
+     16 2    1/32    QG 6401     1   0.8530   6912     1283     0        9
+     16 2    1/32    QG 6402     0   0.8644   6912     1283     0
+10                                                                       10
+     16 2    1/32    QG 6402     1   0.8568   6912     1283     0
+11                                                                       11
+     16 2 1/128       A     0    0   0.5504      0     2318     0
+12                                                                       12
+     16 2 1/128       A     0    1   0.5527      0     2318     0
+13                                                                       13
+     16 2 1/128        B    0    0   0.6213      0     2633     0
+14                                                                       14
+     16 2 1/128        B    0    1   0.6218      0     2633     0
+15   16 2 1/128       RI 6401    0   0.9672   6912     2608     1        15
+
+16   16 2 1/128       RI 6401    1   0.9621   6912     2608     1        16
+
+17   16 2 1/128       RI 6402    0   0.9975   6912     2548     1        17
+
+18   16 2 1/128       RI 6402    1   0.9898   6912     2548     1        18
+
+19   16 2 1/128      RG 6401     0   0.9855   6912     2368     1        19
+
+20
+     16 2 1/128      RG 6401     1   0.9849   6912     2368     1        20
+     16 2 1/128      RG 6402     0   0.9890   6912     2348     1
+21                                                                       21
+     16 2 1/128      RG 6402     1   1.0064   6912     2348     1
+22                                                                       22
+     16 2 1/128       QI 6401    0   0.9144   6912     2598     0
+23                                                                       23
+     16 2 1/128       QI 6401    1   0.9251   6912     2598     0
+24                                                                       24
+     16 2 1/128       QI 6402    0   0.9089   6912     2608     0
+25                                                                       25
+     16 2 1/128       QI 6402    1   0.9108   6912     2608     0
+26   16 2 1/128      QG 6401     0   0.9393   6912     2373     0        26
+
+27   16 2 1/128      QG 6401     1   0.9502   6912     2373     0        27
+
+28   16 2 1/128      QG 6402     0   0.9316   6912     2348     0        28
+
+29   16 2 1/128      QG 6402     1   0.9021   6912     2348     0        29
+
+30   8   3   1/32     A     0    0   0.9763      0     7042     0        30
+
+31
+     8   3   1/32     A     0    1   0.9923      0     7042     0        31
+     8   3   1/32      B    0    0   1.0346      0     8112     0
+32                                                                       32
+     12
+
+1         d   T Target Method Seed Rep. Seconds Train Q Deploy Q Warn.   1
+
+2                                                                        2
+          8   3   1/32      B    0    1   1.0266      0     8112     0
+3                                                                        3
+          8   3   1/32     RI 6401    0   1.9628 155904     9711     2
+4         8   3   1/32     RI 6401    1   1.9639 155904     9711     2   4
+
+5         8   3   1/32     RI 6402    0   1.9298 155904     8317     2   5
+
+6         8   3   1/32     RI 6402    1   1.9611 155904     8317     2   6
+
+7         8   3   1/32    RG 6401     0   1.8078 155904     6965     2   7
+
+8         8   3   1/32    RG 6401     1   1.8173 155904     6965     2   8
+
+9
+          8   3   1/32    RG 6402     0   1.8316 155904     6930     2   9
+          8   3   1/32    RG 6402     1   1.7950 155904     6930     2
+10                                                                       10
+          8   3   1/32     QI 6401    0   1.8207 155904     8539     0
+11                                                                       11
+          8   3   1/32     QI 6401    1   1.8391 155904     8539     0
+12                                                                       12
+          8   3   1/32     QI 6402    0   1.8545 155904     8669     0
+13                                                                       13
+          8   3   1/32     QI 6402    1   1.8405 155904     8669     0
+14                                                                       14
+          8   3   1/32    QG 6401     0   1.8065 155904     7081     0
+15        8   3   1/32    QG 6401     1   1.7982 155904     7081     0   15
+
+16        8   3   1/32    QG 6402     0   1.7837 155904     6996     0   16
+
+17        8   3   1/32    QG 6402     1   1.8069 155904     6996     0   17
+
+18        8   3 1/128      A     0    0   1.4404      0    31015     0   18
+
+19        8   3 1/128      A     0    1   1.4604      0    31015     0   19
+
+20
+          8   3 1/128       B    0    0   1.9562      0    39768     0   20
+          8   3 1/128       B    0    1   1.9488      0    39768     0
+21                                                                       21
+          8   3 1/128      RI 6401    0   2.4113 155904    39472     2
+22                                                                       22
+          8   3 1/128      RI 6401    1   2.4064 155904    39472     2
+23                                                                       23
+          8   3 1/128      RI 6402    0   2.4844 155904    35566     2
+24                                                                       24
+          8   3 1/128      RI 6402    1   2.4596 155904    35566     2
+25                                                                       25
+          8   3 1/128     RG 6401     0   2.3900 155904    30547     2
+26        8   3 1/128     RG 6401     1   2.3792 155904    30547     2   26
+
+27        8   3 1/128     RG 6402     0   2.5831 155904    31601     2   27
+
+28        8   3 1/128     RG 6402     1   2.5721 155904    31601     2   28
+
+29        8   3 1/128      QI 6401    0   2.3349 155904    34705     0   29
+
+30        8   3 1/128      QI 6401    1   2.3239 155904    34705     0   30
+
+31
+          8   3 1/128      QI 6402    0   2.3191 155904    35886     0   31
+          8   3 1/128      QI 6402    1   2.3214 155904    35886     0
+32                                                                       32
+                              NEURAL BELLMAN OPERATORS: SUPPLEMENT                      13
+
+1              d   T Target Method Seed Rep. Seconds Train Q Deploy Q Warn.                  1
+
+2                                                                                            2
+               8   3 1/128        QG 6401    0   2.3186 155904      30908       0
+3                                                                                            3
+               8   3 1/128        QG 6401    1   2.2859 155904      30908       0
+4              8   3 1/128        QG 6402    0   2.2838 155904      30889       0            4
+
+5              8   3 1/128        QG 6402    1   2.2779 155904      30889       0            5
+
+6                                                                                            6
+
+7                                                                                            7
+                        4. STATISTICAL AND ECONOMIC INTERPRETATION
+8                                                                                            8
+
+9
+       The workload generation rule and named boundary replacements are fixed in             9
+
+10
+     each source-frozen protocol. Its dyadic average has an exact reproducible value but     10
+
+11
+     is not an independent continuous-law estimate. The earlier bounded-sample cost          11
+
+12
+     intervals remain attached to their original frozen policies and their declared simulta- 12
+13
+     neous families (Maurer and Pontil, 2009). The query-service catalogue adds neither      13
+
+14
+     new confidence intervals for expected gains nor additional optimizer replications       14
+
+15
+     to that earlier study.                                                                  15
+
+16
+       A complete cold-start time is a directly observed service cost on the recorded        16
+
+17
+     machine. A median of two conventional runs or four learned runs is descriptive. 17
+18
+     Fixed affinity and single-thread configuration remove some sources of variation         18
+
+19
+     but do not control CPU frequency, system interference or another platform. We           19
+
+20
+     therefore retain all clocks, logical operation counts and process memory, and make      20
+
+21
+     no hardware-uniform timing probability claim.                                           21
+
+22
+       For a decision maker with a declared dollar conversion per model-loss unit, a         22
+
+23
+     price per computation second and a deployment fee, an independently valid gain          23
+
+24
+     interval can be converted to a monetary purchase interval as shown in the article. 24
+25
+     A uniform regret bound instead supports an accuracy constraint. An accuracy             25
+
+26
+     constraint is not a measured welfare gain. Likewise, a conditional arithmetic break- 26
+27
+     even workload count does not establish that an unobserved future distribution will      27
+
+28
+     produce the same query savings.                                                         28
+
+29                                                                                           29
+                       5. PRESERVATION AND REPRODUCIBLE PUBLICATION
+30                                                                                           30
+
+31     The original NBO title, own-future construction, investment primitives and Bell- 31
+32   man objective remain in the active article. Chronological repetitions are removed       32
+     14
+
+1    from its reading path, not from the research record. The exact retained manuscript                           1
+
+2    tree contains every earlier text source, with a location map for every distinct label. 2
+3    The preceding article and supplement and their complete broader companions are                               3
+
+4    compiled separately. Their recursive-utility, diffusion and game results retain their                        4
+
+5    original assumptions and are not asserted as numerical consequences of the scalar                            5
+
+6    expected-cost query theorem.                                                                                 6
+
+7      The offline build runs the two inherited query test suites, the independent tests, all                     7
+
+8    source and record checks, and the table derivation before compiling the active article,                      8
+
+9    supplement and response. The four preserved companions are compiled from their                               9
+
+10   unchanged sources. Undefined references, duplicate labels, missing characters,                               10
+
+11   fatal errors and overfull boxes are publication failures. Any nonfatal class-font                            11
+
+12   substitutions are recorded rather than described as absent. A clean publication                              12
+
+13   rebuild deletes generated tables and PDFs and checks the resulting document text                             13
+
+14   and page counts. Neither compilation nor record identity is external mathematical                            14
+
+15   acceptance.                                                                                                  15
+
+16                                                                                                                16
+                                                 REFERENCES
+17                                                                                                                17
+     M AURER , A NDREAS AND M ASSIMILIANO P ONTIL (2009): “Empirical Bernstein Bounds and Sample
+18                                                                                                                18
+      Variance Penalization,” in Proceedings of the 22nd Annual Conference on Learning Theory, arXiv:0907.3740.
+19                                                                                                                19
+      [13]
+20                                                                                                                20
+
+21                                                                                                                21
+
+22                                                                                                                22
+
+23                                                                                                                23
+
+24                                                                                                                24
+
+25                                                                                                                25
+
+26                                                                                                                26
+
+27                                                                                                                27
+
+28                                                                                                                28
+
+29                                                                                                                29
+
+30                                                                                                                30
+
+31                                                                                                                31
+
+32                                                                                                                32
+
