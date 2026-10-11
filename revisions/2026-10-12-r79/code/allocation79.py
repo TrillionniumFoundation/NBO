@@ -123,7 +123,7 @@ def main():
     for theta in potentials:
         if any(theta[b]-theta[a]>c for a,b,c in edges):raise AssertionError('Invalid attaining potential')
     records=[]
-    for t in (F(-1,4),F(0),F(1,4),F(1,2),F(3,4),F(1),F(5,4)):
+    for t in (-l/width,F(0),F(1,4),F(1,2),F(3,4),F(1),F(5,4)):
         f=l+t*width;w=[F(0)]*n;w[ia]=f;H=matrix(D,w)
         game=solve_game(H);pstar,V=two_policy(l,u,f)
         p=[F(0)]*n;p[ia]=pstar;p[ib]=1-pstar
