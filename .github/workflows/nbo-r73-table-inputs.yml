@@ -1,0 +1,33 @@
+name: NBO R73 retained table inputs
+on:
+  push:
+    branches: [revision/econometrica-nbo-r73-referee-revision-2026-10-11]
+    paths: [.github/workflows/nbo-r73-table-inputs.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-slim
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 5611b32978a2df5f32bff796f7dd209105cf28b0
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-11-r72/results72/
+            /revisions/2026-10-11-r72/audit/INDEPENDENT72.json
+            /revisions/2026-10-11-r72/code/tables72.py
+      - name: Regenerate unchanged R72 table outputs
+        run: python3 revisions/2026-10-11-r72/code/tables72.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r73-retained-table-inputs
+          path: |
+            revisions/2026-10-11-r72/results72/
+            revisions/2026-10-11-r72/tables/
+            revisions/2026-10-11-r72/audit/INDEPENDENT72.json
+          retention-days: 14
+          compression-level: 6
