@@ -3,7 +3,7 @@ from pathlib import Path
 import hashlib,json,re,subprocess,sys,time
 import build72 as b
 import build77 as old77
-import build78 as old78
+import decision78 as decision
 import allocation79 as allocation
 R=Path(__file__).resolve().parents[1];OLD=R.parent/'2026-10-11-r78'
 
@@ -40,16 +40,30 @@ def main():
     # Only the publication wrapper is adapted. Every scientific test, interval
     # implementation and source-freeze check runs through the inherited builder.
     old77.response=response79
-    old78.main()
-    previous=json.loads((R/'audit/RELEASE78.json').read_text())
+    # R78 never deposited PREPARATION78.json. Do not manufacture a past
+    # success record: the R79 manifest above checks all actual R78 sections and
+    # evidence. Execute its exact decision calculation and tests directly.
+    decision.main()
+    choice_log=b.run([sys.executable,'code/tests78.py'],'tests-78-sharp-choice')
+    cm=re.search(r'Ran (\d+) tests?',choice_log)
+    if not cm or not re.search(r'^OK\s*$',choice_log,re.M) or re.search(r'OK \(skipped=',choice_log):
+        raise AssertionError('Complete inherited sharp-choice tests required')
+    choice_tests=int(cm[1])
+    old77.main(full=True)
+    previous=json.loads((R/'audit/RELEASE77.json').read_text())
+    for label in previous['tests']:
+        log=(R/'audit/build-logs'/('tests-'+label+'.log')).read_text()
+        if re.search(r'OK \(skipped=',log):raise AssertionError('Skipped inherited test: '+label)
     choice=json.loads((R/'audit/ALLOCATION79.json').read_text());keep=preserve()
     record=dict(status='passed',tested_source_commit=previous['tested_source_commit'],documents=previous['documents'],
-        total_tests=previous['total_tests']+n,inherited_test_count=previous['total_tests'],new_exact_tests=n,
+        total_tests=previous['total_tests']+choice_tests+n,inherited_test_count=previous['total_tests'],
+        inherited_sharp_choice_tests=choice_tests,new_exact_tests=n,full_inherited_tests=previous['tests'],
         skipped_tests=0,preservation=keep,earlier_preservation=previous['preservation'],
-        inherited_full_bin_trajectories_per_implementation=previous['inherited_full_bin_trajectories_per_implementation'],
-        inherited_exact_midpoint_trajectories=previous['inherited_exact_midpoint_trajectories'],
-        cost_replay_status=previous['cost_replay_status'],recomputed_cost_estimands=previous['recomputed_cost_estimands'],
-        inherited_cost_rows=previous['inherited_cost_rows'],new_scientific_services=0,new_simulation_rows=0,
+        prior_incomplete_wrapper='R78 missing PREPARATION78.json; actual 30-section R79 byte preservation replaces that unavailable publication wrapper, not any scientific test',
+        inherited_full_bin_trajectories_per_implementation=previous['independent_replay']['full_bin_trajectories_per_implementation'],
+        inherited_exact_midpoint_trajectories=previous['independent_replay']['exact_midpoint_trajectories'],
+        cost_replay_status=previous['independent_replay']['status'],recomputed_cost_estimands=previous['independent_replay']['recomputed_estimands'],
+        inherited_cost_rows=previous['new_independent_policy_cost_rows'],new_scientific_services=0,new_simulation_rows=0,
         scientific_clocks_replaced=False,original_cost_summary_sha256=b.sha(R/'results77/summary.json'),
         original_source_freeze_sha256=b.sha(R/'SOURCE_FREEZE77.json'),allocation_sha256=b.sha(R/'audit/ALLOCATION79.json'),
         allocation_summary={k:choice[k] for k in ('gain_lower','gain_upper','midpoint_fee','midpoint_mixed_regret','midpoint_pure_regret','exact_full_catalogue_lp_probes','finite_cohort_probes')},
