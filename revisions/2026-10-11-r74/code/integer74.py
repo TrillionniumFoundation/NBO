@@ -9,7 +9,7 @@ import numpy as np
 S=1<<80
 class Q:
     def __init__(self,lo,hi=None):
-        self.lo=np.asarray(lo,dtype=object);self.hi=np.asarray(lo if hi is None else hi,dtype=object)
+        self.lo=np.atleast_1d(np.asarray(lo,dtype=object));self.hi=np.atleast_1d(np.asarray(lo if hi is None else hi,dtype=object))
     @staticmethod
     def const(x):
         if isinstance(x,Q):return x
@@ -58,6 +58,7 @@ def path(policy,bins,bits=40):
         loss=loss+a.square()+a.square().square()*4
         running=running+loss*beta**t
         z=Q((b[:,2+t]-den//2)*(S//(16*den)),(b[:,2+t]+1-den//2)*(S//(16*den)))
+        # Expanded transition differs from the production factorization.
         product=x*y
         one=Q.const(Fraction(1,16))+x*Fraction(9,16)+y*Fraction(1,8)-product*Fraction(1,16)+a*Fraction(1,2)+z
         two=Q.const(Fraction(1,16))+y*Fraction(9,16)+x*Fraction(1,8)-product*Fraction(1,16)+a*Fraction(1,4)-z
