@@ -1,0 +1,44 @@
+\section{Proof, installation costs, and finite deployment cohorts}\label{app:allocation79}
+\begin{proof}[Proof of Theorem~\ref{thm:allocation79}]
+For fixed $j$, each feasible cost vector satisfies $\theta_i-\theta_j\le d(j,i)$. Nonnegative allocation weights therefore give
+\[
+ \sum_i p_i(\theta_i-\theta_j)\le\sum_i p_i d(j,i).
+\]
+The potential $\theta_i^{(j)}=d(j,i)-d(j,0)$ is feasible and attains all of these differences at once. Hence equality is attained for every weighted sum in this display, not just for each pair separately. Commuting the two finite maxima gives \eqref{eq:allocation79}; a maximizing row supplies an attaining potential. The argument would not hold for arbitrary separately sharp pairwise bounds lacking a common attaining vector.
+
+Minimizing the largest row payoff is the program
+\[
+ \min_{p,z}z\quad\text{subject to }p\ge0,\quad\boldsymbol1^\top p=1,
+ \quad H p\le z\boldsymbol1.
+\]
+Its dual maximizes $y$ subject to $\lambda\ge0$, $\boldsymbol1^\top\lambda=1$ and $H^\top\lambda\ge y\boldsymbol1$. Both simplexes are compact and the matrix is finite, so linear-programming duality gives equal attained values. Independently of optimality, every feasible pair satisfies
+\[
+ \min_i(H^\top\lambda)_i\le\lambda^\top H p
+                       \le\max_j(Hp)_j.
+\]
+Taking the appropriate infimum or supremum proves the computable gap bound. For rational input, exact rational vertices exist, and the certificate only requires feasibility and these inequalities, not a floating-point solver status. Finally, on the original coverage event the true cost vector belongs to $\mathcal C$. All preceding inequalities are deterministic for every $p,w$ on that event. The allocation draw is independent of the deployment trajectory and takes place before information acquisition, so its expected cost is $p^\top J$. This proves the stated economic interpretation. It is not a pathwise guarantee for a particular random assignment.
+\end{proof}
+
+\subsection{Installed subsets rather than free simultaneous availability}
+Suppose a decision maker serves $m\ge1$ deployments and may install a nonempty subset $S$ at total normalized cost $K(S)$. Write $K_i=K(\{i\})$, and assume $K(S)\ge K_i$ for every $i\in S$. The benchmark installs the best single controller, paying its own $K_j$. For $p$ supported on $S$, the exact worst-case average regret is
+\begin{equation}\label{eq:installed79}
+ \mathcal R_S(p,w)=\max_j\left\{\sum_i p_iH_{ji}(w)
+                   +\frac{K(S)-K_j}{m}\right\}.
+\end{equation}
+Indeed, the installation term is independent of $\theta$, and the same attaining potential proves the formula. The assumption on $K$ makes the cost of an allocation at least the weighted average of its corresponding singleton costs, and hence at least their minimum; the regret is nonnegative. For each subset, \eqref{eq:installed79} is a linear program on $\Delta_S$. Enumerating the nonempty subsets and retaining the least optimum yields the exact installation-and-allocation decision. It requires at most $2^q-1$ programs and is not advertised as dimension-free optimization. Lower bounds from the dual of every subset, together with an attaining primal allocation for the chosen subset, certify a global solution. A controller outside the installed subset remains a possible oracle comparator and must not be removed from the rows.
+
+\subsection{Two-controller formula and extra setup threshold}
+With only the fine controller charged $f$, put $a=f-l$ and $b=u-f$. Within the ambiguity region both are positive and $a+b=u-l$. If $p$ is the fine share, the two worst-case comparator regrets are $pa$ and $(1-p)b$. Their maximum is minimized at their intersection, giving $p=b/(a+b)$ and value $ab/(a+b)$. Outside that region a uniformly optimal pure controller has zero regret. If $l=u$, the gain is known exactly: use the fine controller below $l$, the coarse one above it, and any allocation at equality; no division by a zero width is needed.
+
+When both controllers incur additional cost $\kappa$ only for $0<p<1$, their optimal nontrivial allocation is unchanged and its value is $ab/(a+b)+\kappa$. The best pure value is $\min\{a,b\}$. Subtracting gives the exact saving $\min\{a,b\}^2/(a+b)$ and proves \eqref{eq:setup-threshold79}. Equality gives a tie. A positive extra cost can make the pure rule optimal; the deployment analysis never assumes that loading or operating an additional controller has zero cost. Formula~\eqref{eq:installed79} handles unequal singleton installation charges as well.
+
+\subsection{A deterministic allocation to a finite cohort}
+Random assignment is unnecessary when $m$ homogeneous deployments with the same expected cost law can be assigned in advance. Deploy $A$ on exactly $k$ tasks and $B$ on the others, without choosing tasks according to unqualified outcome information. The average expected cost is the mixture with $p=k/m$; independence between tasks is not needed for this expectation identity. For $l<f<u$, a minimizing integer $k$ is one of $\lfloor mp_A^*\rfloor$ and $\lceil mp_A^*\rceil$. This follows because the piecewise-linear regret decreases up to $p_A^*$ and increases afterwards. Nearest rounding also supplies
+\[
+ 0\le V_m(f)-V(f)\le\frac{\max\{f-l,u-f\}}{2m}.
+\]
+An extra two-controller setup charge is included only for $0<k<m$; both pure endpoints must then also be tested. Nonhomogeneous deployment laws require separately qualified cost vectors and are not covered by relabeling the existing sample as a cohort.
+
+\input{tables/allocation79}
+
+The deposited implementation checks exact probability feasibility, all original cost inequalities at each attaining potential, and equality between primal and dual payoffs. Two-policy formulas are checked against a separate exhaustive rational vertex solver on the full five-controller catalogue. Finite-cohort choices are checked against every integer allocation. The original thirty cost estimands, 524,288 evaluation rows, fitted coefficients, scientific clocks and adverse selector comparisons remain unchanged. The optimization tables contain no new simulation or timing evidence. The sharpness claim is relative to the retained interval system; neither an exact decision solution nor a positive finite comparison establishes a population-wide neural ranking.
