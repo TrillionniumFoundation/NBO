@@ -67,7 +67,7 @@ class CostQualificationTests(unittest.TestCase):
         rec=s.interval(lo,hi,(F(0),s.H));parts=rec['width_decomposition']
         self.assertEqual(rec['width_exact'],sum(parts.values()));self.assertEqual(parts['numerical'],F(3,z.S))
     def test_precision_is_not_equivalence(self):
-        lo=np.array([z.S//8]*100000,dtype=np.int64)
+        lo=np.array([z.S//8]*200000,dtype=np.int64)
         rec=s.interval(lo,lo,(-s.H,s.H))
         self.assertTrue(rec['paired_width_target_passed']);self.assertFalse(rec['equivalence_at_margin'])
     def test_no_pathwise_gain_clipping(self):
