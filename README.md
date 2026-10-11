@@ -1,29 +1,25 @@
 # Neural Bellman Operators
 
-**Current complete referee revision: R67.**
+**R70 — complete referee revision.**
 
-Canonical branch: `revision/econometrica-nbo-r67-review-ready-2026-10-10`.
+Canonical branch: `revision/econometrica-nbo-r70-review-ready-2026-10-11`.
 
-[Main article](revisions/2026-10-10-r67/build/ECTA.pdf) · [Technical supplement](revisions/2026-10-10-r67/build/supp.pdf) · [Point-by-point response](revisions/2026-10-10-r67/build/response.pdf)
+[Article](revisions/2026-10-11-r70/build/ECTA.pdf) · [Technical supplement](revisions/2026-10-11-r70/build/supp.pdf) · [Response to the referee](revisions/2026-10-11-r70/build/response.pdf)
 
-[Revision guide](revisions/2026-10-10-r67/README.md) · [Preserved content map](revisions/2026-10-10-r67/CONTENT_MAP67.md)
+[Revision guide](revisions/2026-10-11-r70/README.md) · [Content preservation map](revisions/2026-10-11-r70/CONTENT_MAP70.md) · [Final delivery manifest](revisions/2026-10-11-r70/audit/FINAL_DELIVERY70.json)
 
-R67 retains the original NBO title, model, constructive neural operator and
-Bellman optimum. It adds a computable pre-query certificate, a certificate-aware
-ReLU readout with an optimization-gap bound, and a two-control extension.
-The complete corrected 212-process catalogue includes ten same-gate controls,
-eight fitting seeds, prospective cached reuse, continuous-law costs of the
-actual callable policies, and two-control/two-shock scaling through four dates.
+The original NBO topic, economic law and constructive operator remain intact.
+R70 integrates the separately frozen R69 catalogue, certificate-aware readouts,
+independent-context validation, predictable-deployment work bounds, paid
+Bellman-centered cost inference and independent exact full-bin reconstruction.
+All twelve scalar contrasts meet the predeclared equivalence margin, without
+identifying strict cost superiority or a universal neural work advantage.
 
-An independent rational trajectory check detected endpoint aliasing in R66's
-cumulative path account. R67 preserves that counterexample and the entire old
-execution, repairs the accumulator, freezes a separate source version, and
-reruns every declared process. Repeated streams are not additional IID data.
+The unchanged R67 article and supplement and the broader prior development
+remain companion PDFs in the R70 build directory. Historical sources, adverse
+comparisons, warnings and the interval-accounting counterexample are retained.
+The final manifest binds the tests, record replay, current documents and clean
+offline archive reproduction. Numerical policy identity is an additional premise
+when combining cost inference with deployment observations across runtimes.
 
-The current article, supplement and response and six unchanged historical
-companions are bound by `revisions/2026-10-10-r67/audit/FINAL_DELIVERY67.json`.
-Numerical and mathematical regression tests, all-record replay, source/statement
-preservation and a clean offline archive rebuild are recorded separately.
-The older review and scientific branches remain unchanged.
-
-Full offline verification: `python3 revisions/2026-10-10-r67/code/build67.py`.
+Offline build: `python3 revisions/2026-10-11-r70/code/build70.py`.
