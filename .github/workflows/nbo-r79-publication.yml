@@ -47,19 +47,20 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
-      - name: Commit corrected ordinary sources and actual R78 preservation identities
+      - name: Commit corrected ordinary sources and current-version referee response
         run: |
           git config user.name 'NBO revision verification'
           git config user.email 'nbo-revision@users.noreply.github.com'
           /usr/bin/python3 revisions/2026-10-12-r79/code/prepare79.py
           /usr/bin/python3 revisions/2026-10-12-r79/code/correct79.py
+          /usr/bin/python3 revisions/2026-10-12-r79/code/response79.py
           /usr/bin/python3 - <<'PY'
           import ast,pathlib
           for p in pathlib.Path('revisions/2026-10-12-r79/code').glob('*.py'):
               ast.parse(p.read_text(),filename=str(p))
           PY
           git add -f revisions/2026-10-12-r79
-          if ! git diff --cached --quiet; then git commit -m 'R79: finalize ordinary manuscript values and citations before full verification'; fi
+          if ! git diff --cached --quiet; then git commit -m 'R79: finalize ordinary manuscript and current-version response before full verification'; fi
           git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r79-referee-revision-2026-10-12 HEAD:refs/heads/revision/econometrica-nbo-r79-source-2026-10-12
       - name: Run all inherited and new tests, both whole-bin implementations, and four-document compilation
         run: /usr/bin/python3 revisions/2026-10-12-r79/code/build79.py
