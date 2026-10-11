@@ -1,0 +1,91 @@
+name: NBO R78 complete original-paper revision
+on:
+  push:
+    branches: [revision/econometrica-nbo-r78-referee-revision-2026-10-11]
+    paths: [.github/workflows/nbo-r78-publication.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r78-publication
+  cancel-in-progress: false
+jobs:
+  publication:
+    runs-on: ubuntu-slim
+    timeout-minutes: 15
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      SOURCE_DATE_EPOCH: '1791676800'
+      FORCE_SOURCE_DATE: '1'
+      TZ: UTC
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+            /revisions/2026-10-10-r64/
+            /revisions/2026-10-10-r65/
+            /revisions/2026-10-10-r66/
+            /revisions/2026-10-10-r67/
+            /revisions/2026-10-11-r69/
+            /revisions/2026-10-11-r70/
+            /revisions/2026-10-11-r72/
+            /revisions/2026-10-11-r73/
+            /revisions/2026-10-11-r77/
+            /revisions/2026-10-11-r78/
+      - name: Install publication and numerical dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Materialize and commit the ordinary original-paper revision
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          /usr/bin/python3 revisions/2026-10-11-r78/code/prepare78.py
+          /usr/bin/python3 - <<'PY'
+          import ast,pathlib
+          for p in pathlib.Path('revisions/2026-10-11-r78/code').glob('*.py'):
+              ast.parse(p.read_text(),filename=str(p))
+          PY
+          git add -f revisions/2026-10-11-r78
+          if ! git diff --cached --quiet; then
+            git commit -m 'R78: retain ordinary manuscript, full proof, all inherited evidence and point-by-point response'
+          fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r78-referee-revision-2026-10-11 HEAD:refs/heads/revision/econometrica-nbo-r78-source-2026-10-11
+      - name: Run complete inherited and new verification and compile four documents
+        run: /usr/bin/python3 revisions/2026-10-11-r78/code/build78.py
+      - name: Rebuild from a clean archive and publish the compiled candidate
+        run: /usr/bin/python3 revisions/2026-10-11-r78/code/publish78.py
+      - name: Retain failed attempt without overwriting scientific branches
+        if: failure()
+        run: |
+          git add -f revisions/2026-10-11-r78
+          if ! git diff --cached --quiet; then
+            git commit -m 'R78: preserve failed publication diagnostics without asserting verification success'
+          fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r78-audit-attempt-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r78-publication-candidate
+          path: |
+            revisions/2026-10-11-r78/build/*.pdf
+            revisions/2026-10-11-r78/build/*.txt
+            revisions/2026-10-11-r78/build/*.log
+            revisions/2026-10-11-r78/audit/
+            revisions/2026-10-11-r78/code/*78.py
+            revisions/2026-10-11-r78/sections/*78.tex
+            revisions/2026-10-11-r78/tables/*78.tex
+            revisions/2026-10-11-r78/ECTA.tex
+            revisions/2026-10-11-r78/supp.tex
+            revisions/2026-10-11-r78/appendix.tex
+            revisions/2026-10-11-r78/response.md
+          retention-days: 30
+          compression-level: 1
