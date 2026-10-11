@@ -36,6 +36,15 @@ def preservation():
         target=(R/'sections/proofs70.tex').read_text()
         if proof['sha256'] not in [hashlib.sha256(x.encode()).hexdigest() for x in re.findall(r'\\begin\{proof\}.*?\\end\{proof\}',target,re.S)]:raise AssertionError('Changed relocated proof')
     record=dict(status='passed',prior_sources=len(p['prior_sources_sha256']),inherited_active_statements=statements,inherited_active_inline_proofs=proofs,retained_proof_collection_sha256=sha(R/'sections/proofs67.tex'),relocated_proofs=len(p['relocated_proofs']),prior_label_locations=len(p['prior_label_locations']),historical_directories_modified=False)
+    intervening=json.loads((R/'audit/INTERVENING_SOURCE70.json').read_text())
+    source=(R/'sections/training69-retained70.tex').read_text()
+    statement_hashes=[hashlib.sha256(m[0].encode()).hexdigest() for m in re.finditer(r'\\begin\{(?P<kind>theorem|proposition|lemma|corollary)\}.*?\\end\{(?P=kind)\}',source,re.S)]
+    proof_hashes=[hashlib.sha256(x.encode()).hexdigest() for x in re.findall(r'\\begin\{proof\}.*?\\end\{proof\}',(R/'sections/proofs70.tex').read_text(),re.S)]
+    if not set(intervening['statement_sha256'])<=set(statement_hashes) or not set(intervening['proof_sha256'])<=set(proof_hashes):raise AssertionError('Intervening R69 statement/proof changed')
+    layout=json.loads((R/'audit/LAYOUT70.json').read_text())
+    for name,expected in layout['unchanged_content_sha256'].items():
+        if sha(R/name)!=expected:raise AssertionError('Relocated full content changed '+name)
+    record.update(intervening_propositions_preserved=len(intervening['statement_sha256']),intervening_proofs_preserved=len(intervening['proof_sha256']),relocated_full_content_verified=True)
     save(R/'audit/PRESERVATION70.json',record);return record
 
 def bibliography(name):
@@ -44,14 +53,14 @@ def bibliography(name):
     if '*' in keys:keys=set(entries)
     if keys-set(entries):raise AssertionError('Missing bibliography keys '+str(keys-set(entries)))
     keys=sorted(keys,key=lambda k:re.search(r'\\textsc\{([^}]+)',entries[k])[1].lower())
-    text='\\begin{thebibliography}{'+str(len(keys))+'}\n'+r"\providecommand{\enquote}[1]{``#1''}"+'\n'+r'\providecommand{\natexlab}[1]{#1}'+'\n\n'+'\n\n'.join(entries[k] for k in keys)+'\n\\end{thebibliography}\n'
+    text='\\begin{thebibliography}{'+str(len(keys))+'}\n'+r"\providecommand{\enquote}[1]{``#1''}"+'\n'+r'\providecommand{\natexlab}[1]{#1}'+'\n\n'+'\n\n'.join(entries[k] for k in keys)+'\n\n\\end{thebibliography}\n'
     (R/'build'/(name+'.bbl')).write_text(text)
 
 def response():
     run(['pandoc','-f','markdown','-t','latex','--wrap=auto','response.md','-o','build/response-body.tex'],'response-convert')
     body=(R/'build/response-body.tex').read_text()
     body=re.sub(r'\\texttt\{([^{}]*)\}',lambda m:r'\nolinkurl{'+m[1].replace(r'\_','_')+'}',body)
-    head=(R/'supp.tex').read_text().split(r'\input{sections/proofs67}')[0]
+    head=(R/'supp.tex').read_text().split(r'\end{frontmatter}',1)[0]+r'\end{frontmatter}'+'\n'
     head=head.replace(r'\externaldocument{build/ECTA}[ECTA.pdf]','').replace('Technical Supplement to Neural Bellman Operators','Response to the Referee: Neural Bellman Operators').replace('Neural Bellman Operators: Supplement','Response to the Referee')
     head=re.sub(r'^\\externaldocument[^\n]*\n?', '', head, flags=re.M).replace('label=e70supp','label=e70response')
     head=re.sub(r'(\\begin\{abstract\}).*?(\\end\{abstract\})',lambda m:m[1]+'This response addresses the 11 October 2026 advisory report on R67. Revision R70 retains the original Neural Bellman Operators paper and integrates the separately frozen R69 execution, new deployment and cost-inference results, independent reconstruction and a point-by-point response.'+m[2],head,flags=re.S)

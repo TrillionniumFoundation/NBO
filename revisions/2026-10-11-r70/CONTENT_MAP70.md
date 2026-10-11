@@ -123,3 +123,5 @@ The original NBO topic, title and theoretical statements are retained. All prior
 | `verification-and-delivery` | `../2026-10-10-r67/response.tex` |
 
 The intervening R69 complete-work and optional-vector-witness propositions are retained verbatim in sections/training69-retained70.tex; their proofs are in sections/proofs70.tex. The full pinned source is inputs/training69.tex.
+
+The complete legacy economic-inference section decisions49 is included unchanged in the active supplement. The cold70 and vector70 tables are included there without row deletion. Their current locations and source hashes are recorded in audit/LAYOUT70.json.

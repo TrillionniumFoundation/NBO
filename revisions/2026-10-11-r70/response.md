@@ -94,6 +94,8 @@ The supplementary table reports matched observed savings and zero-fee critical p
 
 The investment primitives and loss margin remain normalized theoretical quantities. No installation fee or monetary welfare magnitude is estimated. This preserves the original economic purchase question while separating a proved eligibility conclusion, observed complete work and the purchaser's price inputs. Equivalence at a margin is a substantive precision result, but it is not strict neural economic superiority.
 
+The economic account now explicitly separates already qualified reuse from a first purchase of qualification. The complete reuse receipts do not include the separately paid policy-cost inference experiment. Any noncommon qualification work must therefore be added to the candidate work before applying the purchase proposition. Under the conservative boundary charging the entire observed shared inference process, approximately 9.03 or 408.63 seconds, every displayed matched work saving becomes negative. The tables and machine record distinguish these two boundaries. Neither an unmeasured marginal inference allocation nor an unexecuted longer amortization horizon is substituted for that cost.
+
 ## B10 and M10: Scope, style and preservation of the original paper
 
 The active article follows one theorem–implementation–evidence chain. The original NBO operator and primitive regularity lead to recursive certification, training, centered inference, complete deployment and the executed comparison. Detailed proofs and records are placed in the technical supplement rather than appended indiscriminately to the main text. All relocated proofs are preserved verbatim and all inherited active mathematical statements are checked against their original bytes.
