@@ -1,0 +1,151 @@
+name: NBO R77 complete original-paper publication
+on:
+  push:
+    branches: [revision/econometrica-nbo-r77-source-2026-10-11]
+    paths: [.github/workflows/nbo-r77-publication.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r77-publication
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-slim
+    timeout-minutes: 15
+    outputs:
+      built_sha: ${{ steps.commit.outputs.sha }}
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      SOURCE_DATE_EPOCH: '1791676800'
+      FORCE_SOURCE_DATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 100
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+            /revisions/2026-10-10-r64/
+            /revisions/2026-10-10-r65/
+            /revisions/2026-10-10-r66/
+            /revisions/2026-10-10-r67/
+            /revisions/2026-10-11-r69/
+            /revisions/2026-10-11-r70/
+            /revisions/2026-10-11-r72/
+            /revisions/2026-10-11-r73/
+            /revisions/2026-10-11-r77/
+            /README.md
+      - name: Join the executed scientific commit without rewriting either history
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git fetch --depth=100 --filter=blob:none origin 17bf09746c185590bf94bf58d13a4b5bd96b988b
+          git merge --no-edit 17bf09746c185590bf94bf58d13a4b5bd96b988b
+      - name: Install full numerical and publication dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Assemble and commit the ordinary editable original-paper reading set
+        run: |
+          /usr/bin/python3 revisions/2026-10-11-r77/code/assemble77.py
+          git add -f revisions/2026-10-11-r77
+          if ! git diff --cached --quiet; then git commit -m 'R77: integrate original manuscript, complete inherited sections and attained-controller cost qualification'; fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r77-source-2026-10-11 HEAD:refs/heads/revision/econometrica-nbo-r77-referee-revision-2026-10-11
+      - name: Run every declared suite, independently replay all new bins and compile four documents
+        run: /usr/bin/python3 revisions/2026-10-11-r77/code/build77.py --full
+      - name: Retain the fully built manuscript and its exact source identity
+        id: commit
+        run: |
+          git add -f revisions/2026-10-11-r77
+          if ! git diff --cached --quiet; then git commit -m 'R77: retain full numerical replay, four compiled documents and inherited-source preservation'; fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r77-source-2026-10-11 HEAD:refs/heads/revision/econometrica-nbo-r77-referee-revision-2026-10-11
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Preserve unsuccessful publication diagnostics separately
+        if: failure()
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-11-r77
+          if ! git diff --cached --quiet; then git commit -m 'R77: preserve publication attempt, complete diagnostics and generated outputs'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r77-publication-attempt-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r77-built-paper
+          path: |
+            revisions/2026-10-11-r77/build/*.pdf
+            revisions/2026-10-11-r77/build/*.txt
+            revisions/2026-10-11-r77/audit/*77*
+            revisions/2026-10-11-r77/audit/build-logs/
+            revisions/2026-10-11-r77/*.tex
+            revisions/2026-10-11-r77/*.md
+            revisions/2026-10-11-r77/sections/
+            revisions/2026-10-11-r77/tables/
+          compression-level: 1
+          retention-days: 30
+  clean-archive:
+    needs: build
+    runs-on: ubuntu-slim
+    timeout-minutes: 15
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      SOURCE_DATE_EPOCH: '1791676800'
+      FORCE_SOURCE_DATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.build.outputs.built_sha }}
+          fetch-depth: 100
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+            /revisions/2026-10-10-r64/
+            /revisions/2026-10-10-r65/
+            /revisions/2026-10-10-r66/
+            /revisions/2026-10-10-r67/
+            /revisions/2026-10-11-r69/
+            /revisions/2026-10-11-r70/
+            /revisions/2026-10-11-r72/
+            /revisions/2026-10-11-r73/
+            /revisions/2026-10-11-r77/
+            /README.md
+      - name: Install full offline reproduction dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Rebuild from the full clean archive and verify remote staged refs
+        run: /usr/bin/python3 revisions/2026-10-11-r77/code/stage77.py
+      - name: Preserve a failed archive attempt without marking it passed
+        if: failure()
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-11-r77
+          if ! git diff --cached --quiet; then git commit -m 'R77: retain failed clean-archive reproduction evidence'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r77-archive-attempt-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r77-staged-paper
+          path: |
+            revisions/2026-10-11-r77/build/*.pdf
+            revisions/2026-10-11-r77/build/*.txt
+            revisions/2026-10-11-r77/audit/*77*
+            revisions/2026-10-11-r77/audit/build-logs/
+            revisions/2026-10-11-r77/*.tex
+            revisions/2026-10-11-r77/*.md
+            revisions/2026-10-11-r77/sections/
+            revisions/2026-10-11-r77/tables/
+          compression-level: 1
+          retention-days: 30
