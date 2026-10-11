@@ -1,59 +1,49 @@
-# Neural Bellman Operators — R72
+# Neural Bellman Operators — R73
 
-The original NBO paper is revised against the 11 October 2026 advisory report
-on R67, starting from the completed R70 revision. R68–R71 and all old review
-and revision branches remain unchanged.
+The original paper, author, investment primitives and Bellman optimum are unchanged.
+This revision responds to the 11 October 2026 advisory report on R67 and retains
+the intervening R70/R72 development and every adverse scientific comparison.
 
-## Reading set
+## Current reading set
 
 [Main article](build/ECTA.pdf), [Technical Supplement](build/supp.pdf),
 [Numerical and Development Appendix](build/appendix.pdf), and
-[point-by-point response](build/response.pdf) are the current reading set.
-The ordinary editable roots are `ECTA.tex`, `supp.tex`, `appendix.tex` and
-`response.md`. Prior complete editions are retained as companion PDFs.
+[point-by-point response](build/response.pdf).
+Ordinary editable sources are ECTA.tex, supp.tex, appendix.tex and response.md.
+The current complete set compiles every R72 active section byte-identically once;
+see CONTENT_MAP73.md. Prior complete editions and the original R72 wrappers remain
+companions or preserved sources, not silently discarded history.
 
-The main article adds frozen-continuation policy-cost and regret bounds,
-exact conditional ReLU integration under the original one- and two-innovation
-laws, and original-Bellman witness transport after capacity repair. The
-finite-cover proposition states its stricter fill and storage conditions;
-they are not attributed to the bounded experimental cache.
+## New results
 
-All fifteen R70 active sections are compiled byte-identically in exactly one
-of the current article, supplement or appendix. The content map identifies
-their location, and the preservation audit checks their hashes. No inherited
-formal statement or proof is replaced by a summary.
+A qualification-optimal fixed-feature continuation readout has an explicit finite
+LP and exact primal--dual gap. Backward construction uses its actual fitted future.
+A predictable original-law cost theorem supports optional stopping and distinguishes
+fixed complete controllers from a varying conditional target. The four prospectively
+frozen original-economy constructions compare nine-coefficient ReLU and Bernstein
+bases and matched label-loss ablations. All new action values, continuous-action
+covers, whole-cell choices and exact optimization certificates are independently
+recomputed. These services do not add independent policy-cost observations.
 
-## New evidence
+The measured residual bounds remain conservative. A better qualification objective
+is not a population policy-cost improvement or a cheaper execution of the old
+1/256 equivalence test. Fixed-feature optimization is not unrestricted neural
+training, and the paid tensor qualification cover is not a high-dimensional
+non-tensor scaling result. Original vector and reuse studies remain distinct.
 
-The source commitment predates 36 complete processes. All returned. The
-independent checker covers 708 root-query returns, 357 accepted reuses,
-127 nonidentical-state reuses, 18 repaired-action reuses, and 4,096 exact
-conditional neuron integrals. Every recursive descendant of a miss is charged.
-The original 895 scientific files are preserved byte-for-byte, including
-complete clocks, hardware records and all block outputs. The lossless
-transport representation does not rerun or retime Bellman services.
+## Reproduce
 
-The workload is localized and deterministic; it adds no independent policy-cost
-observations and trains no new predictor. The four-date first fill remains
-expensive. All previous adverse neural comparisons and qualification costs
-are retained. The new checker independently verifies transport and conditional
-moments, not every internal node of inherited Bellman fill trees.
+From the repository root with Python 3, numpy, scipy, scikit-learn, pandoc,
+poppler-utils and the repository's LaTeX class dependencies installed:
 
-## Reproduction
+    python3 revisions/2026-10-11-r73/code/build73.py --full
 
-Dependencies: Python 3, NumPy, SciPy, scikit-learn; pdflatex, pandoc, pdfinfo,
-pdftotext, and the TeX packages required by the retained econsocart class.
-From the repository root:
+The source freeze predates the new constructions; the publication build never
+reruns or retimes them. It replays their full numerical checks and regenerates
+the tables and PDFs. The archive test includes all transitive inputs, including
+the R62 original service source omitted by the interrupted R72 archive.
 
-    python3 revisions/2026-10-11-r72/code/build72.py --full
-
-This is an offline record replay, proof/regression test and ordinary-source
-publication build. It does not launch the 36 scientific processes again.
-Their predeclared task catalogue is in `SOURCE_FREEZE72.json`; intentional
-new executions should use a separate output copy to avoid overwriting the
-retained observations. Local-only builds without `--full` run the new suites
-and record checks but do not claim the full inherited audit.
-
-`audit/FINAL_DELIVERY72.json` binds the completed publication; its status, not
-this README alone, determines whether clean reproduction and final checks
-passed. `audit/VISUAL72.json` separately identifies inspected PDF hashes.
+The final release is identified by audit/FINAL_DELIVERY73.json with status passed.
+Before that manifest exists, a source or staged branch is not a completed
+review-ready publication. The manifest binds the full tests, source/evidence
+preservation, clean archive rebuild, actual visual inspection and final PDFs.
