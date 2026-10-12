@@ -1,0 +1,92 @@
+name: NBO R80 prospective calibrated qualification
+on:
+  push:
+    branches: [revision/econometrica-nbo-r80-referee-revision-2026-10-12]
+    paths: [.github/workflows/nbo-r80-science.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r80-science
+  cancel-in-progress: false
+jobs:
+  science:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-12-r80/
+      - name: Install scientific dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+      - name: Test and commit prospective source freeze
+        run: |
+          mkdir -p revisions/2026-10-12-r80/audit/build-logs
+          /usr/bin/python3 revisions/2026-10-12-r80/code/tests80.py > revisions/2026-10-12-r80/audit/build-logs/pre-freeze-tests80.log 2>&1
+          /usr/bin/python3 - <<'PY'
+          import ast,hashlib,json,pathlib,subprocess
+          R=pathlib.Path('revisions/2026-10-12-r80')
+          names=['PROTOCOL80.md']+['code/'+n for n in ('calibrated80.py','study80.py','cost80.py','barrier80.py','tests80.py','qualification73.py','study73.py','cost77.py','float77.py','independent77.py')]
+          names += [str(p.relative_to(R)) for p in (R/'results73').rglob('*.json')]
+          for n in names:
+              if n.endswith('.py'):ast.parse((R/n).read_text(),filename=n)
+          (R/'SOURCE_FREEZE80.json').write_text(json.dumps({'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'files':{n:hashlib.sha256((R/n).read_bytes()).hexdigest() for n in names},'new_cost_rows_before_freeze':0},indent=2,sort_keys=True)+'\n')
+          PY
+          git add -f revisions/2026-10-12-r80
+          git commit -m 'R80: freeze prospective matched qualification and original-law cost design'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r80-science-source-2026-10-12
+      - name: Construct and freeze four new complete controllers before evaluation
+        run: |
+          /usr/bin/python3 revisions/2026-10-12-r80/code/study80.py > revisions/2026-10-12-r80/audit/build-logs/construction80.log 2>&1
+          /usr/bin/python3 revisions/2026-10-12-r80/code/study80.py --verify > revisions/2026-10-12-r80/audit/build-logs/construction-replay80.log 2>&1
+          /usr/bin/python3 - <<'PY'
+          import json,pathlib,sys,subprocess
+          sys.path.insert(0,'revisions/2026-10-12-r80/code')
+          import cost80
+          _,meta=cost80.controllers()
+          cost80.save(cost80.R/'ACTOR_FREEZE80.json',{'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'actors':meta,'cost_rows_seen':0})
+          PY
+          git add -f revisions/2026-10-12-r80
+          git commit -m 'R80: freeze attained complete actors and exact optimization witnesses before cost sampling'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r80-science-source-2026-10-12
+      - name: Evaluate the fixed fresh original-law family with both interval implementations
+        run: /usr/bin/python3 revisions/2026-10-12-r80/code/cost80.py --execute > revisions/2026-10-12-r80/audit/build-logs/cost-execution80.log 2>&1
+      - name: Execute every action-switch certificate
+        run: /usr/bin/python3 revisions/2026-10-12-r80/code/barrier80.py > revisions/2026-10-12-r80/audit/build-logs/barrier-execution80.log 2>&1
+      - name: Commit and verify executed scientific records
+        run: |
+          git add -f revisions/2026-10-12-r80
+          git commit -m 'R80: retain prospective nine-controller factorial and exhaustive exact action-switch certificates'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r80-science-executed-2026-10-12
+          git ls-remote --heads origin refs/heads/revision/econometrica-nbo-r80-science-executed-2026-10-12
+      - name: Preserve a failed attempt
+        if: failure()
+        run: |
+          git add -f revisions/2026-10-12-r80
+          if ! git diff --cached --quiet; then git commit -m 'R80: preserve failed scientific attempt without asserting completion'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r80-science-attempt-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r80-science-records
+          path: |
+            revisions/2026-10-12-r80/results80/
+            revisions/2026-10-12-r80/audit/*80*
+            revisions/2026-10-12-r80/audit/build-logs/*80*
+            revisions/2026-10-12-r80/SOURCE_FREEZE80.json
+            revisions/2026-10-12-r80/ACTOR_FREEZE80.json
+          compression-level: 1
+          retention-days: 30
