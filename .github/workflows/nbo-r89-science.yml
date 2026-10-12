@@ -1,0 +1,110 @@
+name: NBO R89 prospective shared proposal and cross-machine replay
+on:
+  push:
+    branches: [revision/econometrica-nbo-r89-referee-revision-2026-10-13]
+    paths: [.github/workflows/nbo-r89-science.yml]
+permissions:
+  contents: write
+env:
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  fit-and-evaluate:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-07-r45/code/
+            /revisions/2026-10-08-r48/code/
+            /revisions/2026-10-08-r49/code/
+            /revisions/2026-10-10-r62/code/
+            /revisions/2026-10-10-r62/inputs/revisions/2026-10-08-r49/code/
+            /revisions/2026-10-10-r63/code/
+            /revisions/2026-10-10-r64/code/
+            /revisions/2026-10-10-r67/code/
+            /revisions/2026-10-13-r89/code/shared89.py
+            /revisions/2026-10-13-r89/PROTOCOL89.md
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn
+      - name: Bind sources before fitting
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          python3 - <<'PY'
+          import pathlib,json,hashlib,subprocess
+          r=pathlib.Path('revisions/2026-10-13-r89/results89');r.mkdir(exist_ok=True)
+          files=[pathlib.Path(p) for p in subprocess.check_output(['git','ls-files','revisions'],text=True).splitlines() if pathlib.Path(p).is_file()]
+          (r/'SOURCE_EXECUTION89.json').write_text(json.dumps({'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'files':{str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in files},'fit_executed':False,'holdout_generated':False},sort_keys=True,indent=2)+'\n')
+          PY
+          /usr/bin/python3 revisions/2026-10-13-r89/code/shared89.py fit
+          git add -f revisions/2026-10-13-r89/results89
+          git commit -m 'R89: freeze fitted shared coefficients and all training diagnostics before calibration'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r89-experiment-2026-10-13
+      - name: Freeze calibration selector before holdout
+        run: |
+          /usr/bin/python3 revisions/2026-10-13-r89/code/shared89.py calibrate
+          git add -f revisions/2026-10-13-r89/results89
+          git commit -m 'R89: freeze calibration-selected service before generating evaluation states'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r89-experiment-2026-10-13
+      - name: Execute all prespecified holdout arms and complete-process repetitions
+        run: |
+          /usr/bin/python3 revisions/2026-10-13-r89/code/shared89.py evaluate --machine arm64
+          git add -f revisions/2026-10-13-r89/results89
+          git commit -m 'R89: retain every held-out state, service, query diagnostic and ARM timing repetition'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r89-experiment-2026-10-13
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r89-shared-arm
+          path: revisions/2026-10-13-r89/results89/
+          retention-days: 30
+  replay-x86:
+    needs: fit-and-evaluate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-07-r45/code/
+            /revisions/2026-10-08-r48/code/
+            /revisions/2026-10-08-r49/code/
+            /revisions/2026-10-10-r62/code/
+            /revisions/2026-10-10-r62/inputs/revisions/2026-10-08-r49/code/
+            /revisions/2026-10-10-r63/code/
+            /revisions/2026-10-10-r64/code/
+            /revisions/2026-10-10-r67/code/
+            /revisions/2026-10-13-r89/code/shared89.py
+            /revisions/2026-10-13-r89/PROTOCOL89.md
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r89-shared-arm
+          path: revisions/2026-10-13-r89/results89
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy
+      - name: Replay identical coefficients and workload without refitting
+        run: |
+          /usr/bin/python3 revisions/2026-10-13-r89/code/shared89.py replay --machine x86_64
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-13-r89/results89
+          git commit -m 'R89: retain identical-model x86 replay; repetitions and machine replay add no independent rows'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r89-crossmachine-2026-10-13
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r89-shared-crossmachine
+          path: revisions/2026-10-13-r89/results89/
+          retention-days: 30
