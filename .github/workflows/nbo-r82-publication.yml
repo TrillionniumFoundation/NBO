@@ -1,0 +1,111 @@
+name: NBO R82 complete original-paper revision
+on:
+  push:
+    branches: [revision/econometrica-nbo-r82-referee-revision-2026-10-12]
+    paths: [.github/workflows/nbo-r82-publication.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r82-complete-publication
+  cancel-in-progress: false
+jobs:
+  publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      SOURCE_DATE_EPOCH: '1791676800'
+      FORCE_SOURCE_DATE: '1'
+      TZ: UTC
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 100
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /README.md
+            /ECTA.tex
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+            /revisions/2026-10-10-r64/
+            /revisions/2026-10-10-r65/
+            /revisions/2026-10-10-r66/
+            /revisions/2026-10-10-r67/
+            /revisions/2026-10-11-r69/
+            /revisions/2026-10-11-r70/
+            /revisions/2026-10-11-r72/
+            /revisions/2026-10-11-r73/
+            /revisions/2026-10-11-r77/
+            /revisions/2026-10-11-r78/
+            /revisions/2026-10-12-r80/
+            /revisions/2026-10-12-r81/
+            /revisions/2026-10-12-r82/
+      - name: Install numerical and Econometrica publication dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Require completed frozen scientific dependency and integrate ordinary manuscript
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          ready=0
+          for attempt in $(seq 1 60); do
+            if git ls-remote --exit-code --heads origin refs/heads/revision/econometrica-nbo-r82-science-executed-2026-10-12 > /tmp/nbo-r82-science-ref; then ready=1; break; fi
+            sleep 30
+          done
+          test "$ready" = 1
+          git fetch --filter=blob:none origin revision/econometrica-nbo-r82-science-executed-2026-10-12
+          git merge --no-edit --no-ff FETCH_HEAD
+          /usr/bin/python3 revisions/2026-10-12-r82/code/prepare82.py
+          /usr/bin/python3 revisions/2026-10-12-r82/code/integrate82.py
+          /usr/bin/python3 - <<'PY'
+          import ast,pathlib,json
+          root=pathlib.Path('revisions/2026-10-12-r82')
+          for p in (root/'code').glob('*.py'):ast.parse(p.read_text(),filename=str(p))
+          record=json.loads((root/'results82/summary.json').read_text())
+          assert record['status']=='passed' and record['model_count']==4 and record['integrated_switches']==976
+          PY
+          git add -f revisions/2026-10-12-r82
+          if ! git diff --cached --quiet; then git commit -m 'R82: bind ordinary revised manuscript, proofs, response and complete frozen deterministic evidence'; fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r82-referee-revision-2026-10-12 HEAD:refs/heads/revision/econometrica-nbo-r82-source-2026-10-12
+      - name: Recompute every new paired box and inherited cost bin, run all tests and compile four documents
+        run: /usr/bin/python3 revisions/2026-10-12-r82/code/build82.py
+      - name: Retain exact compiled candidate before clean reproduction
+        run: |
+          git add -f revisions/2026-10-12-r82
+          if ! git diff --cached --quiet; then git commit -m 'R82: retain complete current-source verification and four compiled manuscript documents'; fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r82-referee-revision-2026-10-12 HEAD:refs/heads/revision/econometrica-nbo-r82-source-2026-10-12
+      - name: Full clean-archive reproduction and remote identity verification
+        run: /usr/bin/python3 revisions/2026-10-12-r82/code/publish82.py
+      - name: Preserve failed attempt without asserting publication success
+        if: failure()
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-12-r82
+          if ! git diff --cached --quiet; then git commit -m 'R82: retain failed manuscript audit and publication diagnostics'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r82-audit-attempt-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r82-paper-audits
+          path: |
+            revisions/2026-10-12-r82/build/*.pdf
+            revisions/2026-10-12-r82/build/*.txt
+            revisions/2026-10-12-r82/build/*.log
+            revisions/2026-10-12-r82/audit/*82*
+            revisions/2026-10-12-r82/audit/*81*
+            revisions/2026-10-12-r82/audit/build-logs/
+            revisions/2026-10-12-r82/*.tex
+            revisions/2026-10-12-r82/*.md
+            revisions/2026-10-12-r82/code/*82.py
+            revisions/2026-10-12-r82/sections/*82.tex
+            revisions/2026-10-12-r82/tables/*82.tex
+            revisions/2026-10-12-r82/results82/
+          compression-level: 1
+          retention-days: 30
