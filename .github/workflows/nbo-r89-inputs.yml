@@ -1,0 +1,50 @@
+name: NBO R89 pinned revision inputs
+on:
+  push:
+    branches: [revision/econometrica-nbo-r89-referee-revision-2026-10-13]
+    paths: [.github/workflows/nbo-r89-inputs.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ed5232aba788317bfb75b714a5a6a206043508dc
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-12-r88/
+            /revisions/2026-10-12-r87/code/
+            /revisions/2026-10-12-r87/sections/
+            /revisions/2026-10-12-r87/audit/
+            /revisions/2026-10-12-r87/results87/
+            /revisions/2026-10-12-r85/
+            /reviews/2026-10-12-econometrica-numerical-methods-r84/
+            /revisions/2026-10-10-r62/code/
+            /revisions/2026-10-10-r62/sections/
+            /revisions/2026-10-10-r64/results64/d2-T2-e32-adaptive-s0-r0/
+            /revisions/2026-10-10-r65/audit/RESULT_AUDIT65.json
+            /revisions/2026-10-10-r67/results67/comparison-d2-T2-adaptive-s0-r0/
+            /revisions/2026-10-10-r67/audit/ERRATUM67.json
+      - name: Export source-bound inputs
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,pathlib,subprocess,zipfile
+          names=subprocess.check_output(['git','ls-files','revisions','reviews'],text=True).splitlines()
+          files=[pathlib.Path(n) for n in names if pathlib.Path(n).is_file()]
+          manifest={'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'files':{str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in files}}
+          with zipfile.ZipFile('nbo-r89-pinned-inputs.zip','w',zipfile.ZIP_DEFLATED,compresslevel=3) as z:
+              for p in files:z.write(p,str(p))
+              z.writestr('EXPORT89.json',json.dumps(manifest,sort_keys=True,indent=2)+'\n')
+          print(json.dumps({'files':len(files),'bytes':pathlib.Path('nbo-r89-pinned-inputs.zip').stat().st_size}))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r89-pinned-inputs
+          path: nbo-r89-pinned-inputs.zip
+          compression-level: 0
+          retention-days: 30
