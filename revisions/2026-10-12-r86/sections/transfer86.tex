@@ -1,0 +1,49 @@
+\section{One neural continuation on a population of contexts}\label{sec:population86}
+Compatibility on a finite catalogue does not by itself imply accuracy at a new context. The missing ingredient is a certified modulus on the context domain. This section supplies a constructive result for a continuum of contexts, including contexts generated endogenously by previous decisions. It describes an attained neural continuation; it does not assume that unrestricted training finds one.
+
+Let $Z$ be a compact subset of $\R^k$, consisting of state and declared context variables. At a fixed date, the target $h(z)$ is the economic Bellman operator applied to the same attained future continuation at every $z$. Suppose $h$ is $L$-Lipschitz in the $\ell_1$ metric. Let $z_1,\ldots,z_N$ form an $r$-cover, with certified label intervals $[\ell_i,u_i]$ of width at most $\eta$. Put
+\begin{align}\label{eq:shared-envelope86}
+ \ell(z)&=\max_i\{\ell_i-L\|z-z_i\|_1\},\\
+ u(z)&=\min_i\{u_i+L\|z-z_i\|_1\},\qquad
+ f(z)=\tfrac12\{\ell(z)+u(z)\}.\notag
+\end{align}
+These functions share one set of labels and one coefficient vector on the entire domain.
+
+\begin{theorem}[Population qualification by a common ReLU realization]\label{thm:population86}
+Under the stated conditions,
+\begin{equation}\label{eq:population86}
+ \ell(z)\le h(z)\le u(z),\qquad
+ \|f-h\|_\infty\le\eta/2+Lr.
+\end{equation}
+The lower envelope, upper envelope and $f$ have exact sparse affine--ReLU realizations with $O(Nk)$ nonzero coefficients and depth $O(1+\log N)$, and each has Lipschitz modulus at most $L$. A naive query uses $O(Nk)$ arithmetic operations; faster tensor compilation is available under the original-owner conditions of Theorem~\ref{thm:compile49}.
+
+Consequently the same bound holds along every history-dependent sequence of contexts in $Z$, without an independence assumption on that sequence. If the label enclosures hold on a simultaneous event of probability at least $1-\alpha$, the conclusion holds on that same event. No extra error probability is spent on choosing a context, a qualification tolerance or a stopping time after the labels have been fixed.
+\end{theorem}
+
+The cover is the source of the unseen-context guarantee. On a $k$-dimensional cube, a tensor cover gives $N=O(r^{-k})$; a claim of small intrinsic dimension requires a separate primitive factorization. Specifically, if $h(z)=H(\phi(z))+e(z)$, $|e(z)|\le\nu$, and $H$ is Lipschitz on an effectively covered feature image, constructing \eqref{eq:shared-envelope86} there adds $\nu$ to the approximation error. The cost of evaluating $\phi$, proving the factorization and certifying its image remains part of the construction. Low-dimensional labels alone do not establish the factorization.
+
+The primitive moduli already used by the original NBO extend to context coordinates. If the current cost, transition, feasible correspondence and risk evaluator have the declared uniform moduli, the same Hausdorff comparison that gives $L_t$ in Section~\ref{sec:construction49} gives a joint state--context modulus. Applying Theorem~\ref{thm:population86} backwards to each attained own-future target yields a population-qualified dynamic construction. This is not a fit against the unknown optimal continuation. The one-sided sandwich then prices its actual residual and feasible-actor errors in original economic units.
+
+A bounded family of date-specific networks can also be represented as one network with a date one-hot input. If $|f_t|\le M$, the gate
+\[
+ [f_t+M(b_t-1)]_+-[-f_t+M(b_t-1)]_+
+\]
+returns $f_t$ when $b_t=1$ and zero when $b_t=0$. Summing the gated outputs gives one fixed vector of coefficients for all dates. Its size is the sum of the component sizes plus $O(T)$; a common encoding is not automatically a compression gain. A common latent feature map can lower this sum only when its additional structural assumptions are established.
+
+\subsection{What is specific to the neural representation?}
+The validity of an enclosure is not specific to a representation. Its size and evaluation work can be. The construction above uses the closure of affine--ReLU circuits under absolute value, maximum and minimum, while the residual theorem remains available to every feasible competing representation. This distinction complements, rather than substitutes for, approximation-complexity comparisons such as \citet{yarotsky2017}.
+
+A simple exact comparison isolates this mechanism. On $[-1,1]$, $h(z)=[z]_+$ uses one ReLU. For the unmodified degree-$m$ Bernstein sampling operator on the same interval, with $m=2j$,
+\begin{equation}\label{eq:kink86}
+ (\mathcal B_{2j}h)(0)-h(0)
+ =\frac12\frac{\binom{2j}{j}}{4^j}\ge\frac{1}{4\sqrt j}.
+\end{equation}
+Thus that particular positive approximation operator requires a degree of order at least the inverse squared target error at the kink, whereas the ReLU realization is exact. The Supplement proves the displayed identity and inequality. This is an analytical representation benchmark within piecewise-linear Bellman constructions, not a statement about best polynomial approximation. In particular, the fitted nine-coefficient Bernstein controllers in the investment study are not the sampling operator $\mathcal B_m$. Their empirical performance must be determined from their own complete-policy costs, and their observed advantages are retained.
+
+\subsection{Predictable observations and distributional transport}
+Uniform qualification and average prospective performance answer different questions. Theorem~\ref{thm:population86} supplies the former. For the latter, consider a frozen finite menu of $M$ complete services, bounded loss or work $0\le W_j(Z)\le H_j$, and a calibration-selected service $\widehat j$. On $n$ future independent workloads from the declared distribution, simultaneous concentration for every service gives
+\[
+ \E W_{\widehat j}\le\overline W_{\widehat j}
+ +H_{\widehat j}\sqrt{\frac{\log(M/\alpha)}{2n}}
+\]
+with probability at least $1-\alpha$. A paired comparison can be tighter. Selection is allowed to use the calibration data but not the unseen evaluation outcomes; a simultaneous evaluation event also supports reporting all comparators. For predictable nonstationary workloads the analogous martingale bound controls the average conditional expected loss, not an unidentified stationary population risk. A justified total-variation discrepancy $\delta$ between deployment and evaluation laws adds $H_j\delta$ for a nonnegative loss with range $H_j$. Without such a transport condition, a finite evaluation is not a guarantee for arbitrary new economies.

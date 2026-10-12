@@ -1,0 +1,94 @@
+\section{Proofs for complete policies, population transfer and economic decisions}\label{sec:proofs86}
+\subsection{Dynamic performance and original-law occupations}
+\begin{proof}[Proof of Theorem~\ref{thm:dynamic86}]
+Let $X_0\sim\mu$ and generate $(X_t,A_t)$ under the complete policy $\pi^\theta$ and the original kernels. Boundedness permits conditional expectation and the finite summation to be interchanged. Since $B_{t+1}=B_t\beta_t$,
+\[
+ \E\sum_{t<T}B_td_t(X_t,A_t)
+ =\E\sum_{t<T}B_tc_t(X_t,A_t)
+   +B_T\E g(X_T)-\E\bar V_0(X_0).
+\]
+The intermediate terms $B_t\bar V_t(X_t)$ cancel. The two remaining expressions are exactly $J_0^{\pi^\theta}$ and $J_0^{\bar\pi}$. This proves \eqref{eq:occupation86}. Integrating the pointwise advantage enclosures under $m_t^\theta$ preserves inequalities because $B_t>0$. Membership in $\mathcal R_\epsilon$ then gives \eqref{eq:dynamic-bands86}. No step replaces the law under $\pi^\theta$ by that under $\bar\pi$.
+
+For the cell implementation, set $z_{t,i,a}=1$ for the action selected throughout cell $C_{t,i}$ by the implemented observation rule, and zero for its other menu actions, including cells that have zero occupation. Set $x_{t,i,a}=\Pr(X_t\in C_{t,i},A_t=a)$ and $e_{t,i,a,j}=\Pr(X_t\in C_{t,i},A_t=a,X_{t+1}\in C_{t+1,j})$. The flow equalities follow from the law of total probability. Conditional integration of the pointwise kernel bounds gives $p^-x\le e\le p^+x$. The total state mass is one, so $x\le z$. Every excluded joint event is absent from the deterministic policy's choice vector, proving its conflict inequality. These statements establish feasible embedding before relaxing integrality. If acquisition itself randomizes, its randomization state must be included or a corresponding randomized-policy embedding supplied; the deterministic cell embedding is not silently reused.
+\end{proof}
+
+\begin{proof}[Proof of Corollary~\ref{cor:flow-dual86}]
+For a feasible $q\ge0$ and the proposed dual variables,
+\[
+ (w^+)^{\mathsf T}q\le y^{\mathsf T}Aq+
+ \lambda^{\mathsf T}Gq\le y^{\mathsf T}b+\lambda^{\mathsf T}h.
+\]
+The first inequality uses every column of the dual constraint, and the second uses $\lambda\ge0$. The same argument for negative lower costs gives the lower endpoint. Solver statuses and primal feasibility claims play no role in this proof. If the relaxation is feasible and bounded, ordinary finite linear-programming duality identifies its support value, not necessarily an attainable shared-parameter policy value.
+\end{proof}
+
+\subsection{Nonlinear recursive evaluations}
+\begin{proof}[Proof of Proposition~\ref{prop:nonlinear86}]
+At the terminal date all three functions equal $g$. Suppose $L_{t+1}^D\le V_{t+1}^{\pi^\theta}\le U_{t+1}^D$. Monotonicity of the recursive evaluator implies
+\[
+ Q_t(L_{t+1}^D;x,\pi_t^\theta(x))
+ \le V_t^{\pi^\theta}(x)
+ \le Q_t(U_{t+1}^D;x,\pi_t^\theta(x)).
+\]
+The selected action belongs to $\mathcal A_t^D(x)$. Taking the relevant infimum and supremum proves the date-$t$ bounds. Backward induction completes the first assertion. Each policy belongs to at least one covering set, which proves the union bounds. For a subset $D'\subseteq D$ use nested valid action enclosures. Backward induction shows $L_t^{D'}\ge L_t^D$ and $U_t^{D'}\le U_t^D$.
+
+Monotonicity and cash invariance imply $\|\rho(v)-\rho(w)\|_\infty\le\|v-w\|_\infty$: sandwich $v$ between $w\pm\|v-w\|_\infty$. Hence a local recursion error $\eta_t$ and a next-date error $e_{t+1}$ give $e_t\le\eta_t+\beta_te_{t+1}$. Iteration yields $e_t\le\sum_{s\ge t}(B_s/B_t)\eta_s$, with the terminal error included. Near-extremum and integration errors are components of $\eta_t$.
+\end{proof}
+
+\subsection{Uniform constructive neural transfer}
+\begin{proof}[Proof of Theorem~\ref{thm:population86}]
+For every anchor, the label and Lipschitz bounds imply
+$\ell_i-L\|z-z_i\|_1\le h(z)\le u_i+L\|z-z_i\|_1$.
+Taking maximum and minimum gives $\ell(z)\le h(z)\le u(z)$. Choose an anchor within $r$. Its interval gives
+$u(z)-\ell(z)\le u_i-\ell_i+2Lr\le\eta+2Lr$.
+The midpoint error is at most half this width. Every lower and upper cone is $L$-Lipschitz; finite maxima and minima, and then their average, preserve this modulus.
+
+The identity $|v|=[v]_++[-v]_+$ computes each coordinate distance. Affine summation yields all cones in $O(Nk)$ nonzero parameters. Pairwise max and min are realized using $\max(a,b)=[a-b]_++b$ and $\min(a,b)=a-[a-b]_+$. Balanced reduction trees have $O(N)$ gates and depth $O(1+\log N)$, with signed quantities carried in positive and negative channels. Their average is affine. Thus the construction is an exact sparse affine--ReLU circuit with the stated size and depth. It is not an existence claim about a training algorithm.
+
+All inequalities hold on the single simultaneous label event over the entire deterministic domain. A predictable or adaptively selected context is therefore covered on that same event. Conditioning on a new state distribution is unnecessary. A conditional label event given earlier construction data, followed by a union bound over dates, handles backward own-future constructions. The grid covering number on a compact bounding box is $O(r^{-k})$. A reduction to a feature domain must bound both its covering number and the factorization remainder. These quantities cannot be inferred solely from accuracy on a finite catalogue.
+\end{proof}
+
+\paragraph{Primitive context modulus.}
+For completeness, let feasible action sets have Hausdorff modulus $K_A$ under the chosen state--context metric. Suppose the immediate cost and transition objective have a state--context modulus $L_z$, uniformly in the action, and an action modulus $D$. For an action nearly attaining the minimum at $z$, choose a feasible action at $z'$ within $K_A\|z-z'\|$. Comparing their objectives gives an upper difference $(L_z+DK_A)\|z-z'\|$ plus the near-minimum error. Reverse the roles and send that error to zero. This derives the Bellman modulus required in Theorem~\ref{thm:population86}. When kernels themselves vary with context, their stated operator modulus contributes to $L_z$. Exogenous changes outside this bound are not certified transport.
+
+\paragraph{Proof of the representation comparison.}
+Let $S\sim\operatorname{Bin}(2j,1/2)$. At $z=0$ the Bernstein operator is $\E(S/j-1)_+$. By symmetry it equals $\E|S-j|/(2j)$. The identity
+\[
+ \sum_{s=j+1}^{2j}(s-j)\binom{2j}{s}
+ =j\binom{2j-1}{j}=\frac j2\binom{2j}{j}
+\]
+follows by writing $(s-j)\binom{2j}{s}=j[\binom{2j-1}{s-1}-\binom{2j-1}{s}]$ and telescoping. This proves \eqref{eq:kink86}. To prove its inequality, put $a_j=\sqrt j\binom{2j}{j}/4^j$. Then $a_1=1/2$ and
+\[
+ \left(\frac{a_{j+1}}{a_j}\right)^2
+ =\frac{(2j+1)^2}{4j(j+1)}>1.
+\]
+Thus $\binom{2j}{j}/4^j\ge1/(2\sqrt j)$. The conclusion concerns the stated sampling operator only.
+
+\paragraph{Prospective and predictable context bounds.}
+Condition on all calibration data, leaving the finite service menu fixed. For each service the bounded-variable exponential inequality yields
+$\Pr(\E W_j-\bar W_j>H_j\sqrt{\log(M/\alpha)/(2n)})\le\alpha/M$.
+The union bound proves the displayed simultaneous result in the article. For predictable nonstationary workloads replace $\E W_j$ in the summand by $\E[W_j(Z_i)\mid\mathcal F_{i-1}]$. The same conditional exponential bound iterated over the filtration proves the martingale version for the average conditional means. It does not establish a stationary or new-task risk. Finally, for $0\le W_j\le H_j$, the layer-cake representation gives $|\E_P W_j-\E_Q W_j|\le H_j\|P-Q\|_{\rm TV}$ under the supremum-over-events convention.
+
+\subsection{Horizon work and accuracy allocation}
+\begin{proof}[Proof of Proposition~\ref{prop:horizon86}]
+Apply the original policy-loss bound, adding the acquisition allowance at each date and retaining the terminal allowance. The resulting total is at most $\sum_{t=0}^TB_t\eta\le\eta/(1-\bar\beta)$. Date-uniform primitive requirements and the chosen allowance give a uniform bound $K(\varepsilon)$ on each construction stage. A compiled query calls only stored coefficients or a stored interpolation layer. It does not invoke the procedure that produced those coefficients. The stage count is consequently a sum over $T$ dates, not a product of descendant branch factors, proving \eqref{eq:work86} and its asserted bound. For undiscounted problems the same finite sum instead uses $\eta=\varepsilon/(T+1)$. Uniform moduli and query costs are explicit premises, not consequences of discounting alone.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:allocation86}]
+The objective is strictly convex on positive allowances. Since it decreases in each allowance, the constraint binds at an optimum. The first-order equations are $p\kappa_t\eta_t^{-p-1}=\lambda w_t$. They imply $\eta_t=(p/\lambda)^{1/(p+1)}(\kappa_t/w_t)^{1/(p+1)}$. Substitution in the binding constraint gives $(p/\lambda)^{1/(p+1)}=\varepsilon/S$, and substitution into the objective gives \eqref{eq:allocation86}. Strict convexity gives uniqueness and sufficiency. A direct global lower certificate follows from convexity: for any feasible $\eta$, the supporting hyperplane at $\eta^*$ gives
+\[
+ W(\eta)\ge W(\eta^*)-\lambda\sum_tw_t(\eta_t-\eta_t^*)
+ \ge W(\eta^*).
+\]
+Positive upper and lower allowance restrictions change the stationary equations for active coordinates and must be incorporated separately.
+\end{proof}
+
+\subsection{Selection, robust prices and precision}
+\begin{proof}[Proof of Proposition~\ref{prop:selection86}]
+For any selected index, subtracting the smallest menu cost gives the maximum paired difference: $J^{\pi^{\widehat j}}-\min_kJ^{\pi^k}=\max_k(J^{\pi^{\widehat j}}-J^{\pi^k})$. Apply the simultaneous upper bounds and include $k=\widehat j$, whose difference is zero. The two other conclusions follow from the definitions of strict superiority and the declared equivalence margin. Conditional validity given the calibration sample suffices; no stochastic model of fitting success is used.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:prices86}]
+For each competitor $k$, maximize $C_j-C_k$ over $\mathcal U$. Nonnegativity of $\kappa$ permits the policy-cost part to be maximized as $\kappa D_{jk}$, while resources and fees remain fixed. All these maxima are nonpositive exactly when $j$ is optimal for every vector in $\mathcal U$. Replacing $D$ by a valid upper bound preserves sufficiency. An affine function on a compact polytope is bounded above by its largest vertex value, proving uniformity on a price region. For a finite assignment menu the same argument applies to each assignment contrast. There is no requirement to assume independent marginal cost uncertainty.
+\end{proof}
+
+The width identity \eqref{eq:width86} is obtained by subtracting the retained lower endpoint from its upper endpoint. For observations in an interval of width $H_D$, their empirical second central moment is at most $H_D^2/4$; the unbiased sample variance is at most $nH_D^2/[4(n-1)]$. Substituting this into the two square-root terms gives the bound used for sample planning. Squaring the variance inequality and rearranging the support-charge inequality gives the two displayed requirements. These sufficient width conditions do not assert that an economically relevant effect exists.

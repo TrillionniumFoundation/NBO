@@ -1,0 +1,63 @@
+\section{Transporting purchased Bellman witnesses}\label{sec:reuse72}
+A second way to control the descendant cost is to reuse a calculation already purchased. Exact memoization only recognizes the same state. The following rule transfers a lower Bellman bound and its feasible upper witness to a nearby state, after repairing capacity and accounting for the full displacement. It is compatible with either a neural or a conventional generator of the original certified record.
+
+\subsection{An original-optimum transport certificate}
+At remaining horizon $r$, a record at $y$ contains an action $a_y\in A(y)$ and numbers satisfying
+\[
+ L_y\le V_r^*(y)\le Q_r^*(y,a_y)\le U_y.
+\]
+It also identifies the economic primitives, remaining horizon and numerical contract under which the record was obtained. A file hash detects changed bytes; validity of the inequalities is a separate premise. For the original scalar and two-control economies, let
+\[
+ L_V=G_r,\qquad L_Q=\frac8d+\frac{11\beta}{16}G_{r-1},
+ \qquad L_A=\frac{13}{16}+\frac{3\beta d}{8}G_{r-1}.
+\]
+These bound state variation of $V_r^*$ and state and action variation of $Q_r^*$. The action comparison may be made on the ambient simplex $a\ge0$, $\sum_i a_i\le1/4$: the original transition remains in the state cube there, even if a particular action violates the smaller capacity at one endpoint.
+
+At a new state $x$, repair $a_y$ to an actual lattice action $\widetilde a\in A(x)$. Set $D=\|x-y\|_1$ and $\Delta_a=\|\widetilde a-a_y\|_1$. Define
+\begin{equation}\label{eq:witness-transport72}
+ L(x)=\max\{0,L_y-L_VD\},\qquad
+ U(x)=U_y+L_QD+L_A\Delta_a.
+\end{equation}
+The truncation at zero uses the nonnegative costs of this economy. It is not part of a general signed-cost transfer rule.
+
+\begin{theorem}[Reuse after capacity repair]\label{thm:reuse72}
+Under the stated record and modulus conditions,
+\[
+ L(x)\le V_r^*(x)\le Q_r^*(x,\widetilde a)\le U(x).
+\]
+Hence outward endpoints with $\overline U(x)-\underline L(x)\le\delta$ permit the actual repaired action to be returned without a new Bellman query. An identity mismatch, failed feasibility check or excessive width requires a new verified calculation; proximity alone licenses no reuse.
+
+The same assertion holds after any history-dependent selection of valid records. At each future date, suppose the selected record or fresh query supplies the original local-gap and acquisition premises of Theorem~\ref{thm:query63}. The resulting, possibly history-dependent controller retains that theorem's original-optimum loss sum. It need not coincide with the action returned by a fresh search at the same tolerance.
+\end{theorem}
+\noindent The proof is in Supplement, Section~\ref{supp:transport72}.
+
+The implemented repair first rounds the new capacity downward on the $2^{-32}$ lattice, scales a vector action proportionally when necessary, and rounds each coordinate downward. The certificate charges its exact resulting $\ell^1$ displacement, not merely the change in capacity. Retrieval may use approximate distances or a learned index as an ordering heuristic. Every returned hit must still satisfy \eqref{eq:witness-transport72} under outward arithmetic.
+
+\subsection{A finite-cover account and its premises}
+A small number of hits does not establish a uniform reuse complexity bound. Such a bound requires a fill precision, a coverage argument and a retention rule. Let the action quantum be $q$, let $m\in\{1,2\}$, and suppose every fresh record is purchased with gap at most $\gamma\delta$, where $0<\gamma<1$. The repair just described obeys
+\[
+ \Delta_a\le\kappa D+(m+1)q,\qquad \kappa=1/(8d).
+\]
+Consider the exact-endpoint transport rule, or an outward rule with a known total additional width allowance $\xi\ge0$. Define
+\begin{equation}\label{eq:reuse-radius72}
+ \rho_*=
+ \frac{(1-\gamma)\delta-L_A(m+1)q-\xi}
+      {L_V+L_Q+\kappa L_A}.
+\end{equation}
+
+\begin{proposition}[Paid fills and complete reuse work]\label{prop:cover72}
+Suppose $\rho_*>0$, all valid records are retained, the context is fixed, and every stored candidate is checked before a miss is declared. A record within distance $\rho_*$ certifies a hit. On the unit state cube, the number $M_r$ of fresh records at remaining horizon $r$ is at most
+\begin{equation}\label{eq:packing72}
+ M_r\le\left(1+\frac d{\rho_*}\right)^d.
+\end{equation}
+If $C_r(\gamma\delta)$ bounds the complete cost of a fresh fill, a workload of $B$ requests obeys
+\begin{equation}\label{eq:reuse-work72}
+ W_B\le W_{\mathrm{setup}}+M_rC_r(\gamma\delta)
+       +\sum_{b=1}^B\bigl(W_b^{\mathrm{lookup}}+W_b^{\mathrm{check}}
+                     +W_b^{\mathrm{load/store}}\bigr).
+\end{equation}
+The lookup and check costs include rejected candidates. Naive retrieval uses $O(M_rd)$ arithmetic operations per request, apart from rational bit costs. Storage, eviction, invalidation and context changes require their own additional fill accounts when the stated retention premises do not hold.
+\end{proposition}
+\noindent The proof is in Supplement, Section~\ref{supp:cover72}.
+
+This bound makes the dimensional price of uniform reuse explicit. It is not a dimension-free caching theorem. It also separates a first expensive Bellman fill from later transport checks. Caching at the workload root can avoid all descendants on a hit, but does not accelerate the descendants of a miss. The executed bounded cache uses 128 records and the requested fill tolerance, not the tighter $\gamma\delta$ premise. Its operation counts below are direct observations, not an application of \eqref{eq:packing72}. A cache at recursive descendants would need a separate execution and ledger.
