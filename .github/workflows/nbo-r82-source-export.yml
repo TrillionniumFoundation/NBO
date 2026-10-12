@@ -1,0 +1,48 @@
+name: NBO R82 pinned source export
+on:
+  push:
+    branches: [revision/econometrica-nbo-r82-referee-revision-2026-10-12]
+    paths: [.github/workflows/nbo-r82-source-export.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-12-r81/
+            /reviews/2026-10-11-econometrica-numerical-methods-r67/
+      - name: Package exact sources and finite certificate records without raw simulation arrays
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,hashlib,zipfile,subprocess
+          root=Path('revisions/2026-10-12-r81')
+          kept={}
+          with zipfile.ZipFile('r82-pinned-inputs.zip','w',compression=zipfile.ZIP_DEFLATED,compresslevel=3) as z:
+              for p in root.rglob('*'):
+                  if not p.is_file():continue
+                  rel=p.relative_to(root)
+                  if '__pycache__' in rel.parts or rel.parts[0] in ('preserved','build'):continue
+                  if p.suffix.lower() in ('.ttf','.otf','.woff','.woff2','.pfb','.pfa','.afm','.tfm','.pdf'):continue
+                  if p.suffix=='.npz' and p.stat().st_size>1000000:continue
+                  data=p.read_bytes();z.writestr(str(p),data);kept[str(p)]=hashlib.sha256(data).hexdigest()
+              for p in Path('reviews/2026-10-11-econometrica-numerical-methods-r67').glob('*'):
+                  if p.is_file() and p.suffix in ('.md','.py','.json'):
+                      data=p.read_bytes();z.writestr(str(p),data);kept[str(p)]=hashlib.sha256(data).hexdigest()
+              z.writestr('EXPORT_MANIFEST.json',json.dumps({'pinned_baseline':'c411bfb2badac2981f001f4c84d99c8c3c306c5e','source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':kept},indent=2))
+          print('files',len(kept),'zip_bytes',Path('r82-pinned-inputs.zip').stat().st_size)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r82-pinned-inputs
+          path: r82-pinned-inputs.zip
+          compression-level: 0
+          retention-days: 14
