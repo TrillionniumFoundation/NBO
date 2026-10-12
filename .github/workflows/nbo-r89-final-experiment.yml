@@ -1,0 +1,112 @@
+name: NBO R89 complete source-bound experiment
+on:
+  push:
+    branches: [revision/econometrica-nbo-r89-referee-revision-2026-10-13]
+    paths: [.github/workflows/nbo-r89-final-experiment.yml]
+permissions:
+  contents: write
+  actions: read
+env:
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  arm:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-07-r45/code/
+            /revisions/2026-10-08-r48/code/
+            /revisions/2026-10-10-r62/code/
+            /revisions/2026-10-10-r62/inputs/revisions/2026-10-08-r49/code/
+            /revisions/2026-10-10-r63/code/
+            /revisions/2026-10-10-r64/code/
+            /revisions/2026-10-10-r67/code/
+            /revisions/2026-10-13-r89/code/
+            /revisions/2026-10-13-r89/PROTOCOL89.md
+            /revisions/2026-10-13-r89/results89/
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r89-shared-arm
+          run-id: 38299428139
+          github-token: ${{ github.token }}
+          path: revisions/2026-10-13-r89/results89
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy
+      - name: Freeze diagnostic amendment and retain first-fit coefficients
+        run: |
+          /usr/bin/python3 revisions/2026-10-13-r89/code/recording89.py
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add --sparse -f revisions/2026-10-13-r89/results89 revisions/2026-10-13-r89/code/run89.py revisions/2026-10-13-r89/audit/RECORDING_AMENDMENT89.json
+          git commit -m 'R89: freeze ordinary diagnostic-corrected runner and original first-fit coefficients'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r89-science-complete-2026-10-13
+      - name: Calibrate and commit selector before unseen evaluation
+        run: |
+          /usr/bin/python3 revisions/2026-10-13-r89/code/run89.py calibrate
+          git add --sparse -f revisions/2026-10-13-r89/results89
+          git commit -m 'R89: freeze prospective service selection before evaluation generation'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r89-science-complete-2026-10-13
+      - name: Execute every ARM holdout arm and repetition
+        run: |
+          /usr/bin/python3 revisions/2026-10-13-r89/code/run89.py evaluate --machine arm64
+          git add --sparse -f revisions/2026-10-13-r89/results89
+          git commit -m 'R89: completed ARM evaluation with all paired workload diagnostics and process timings'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r89-science-complete-2026-10-13
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r89-final-arm
+          path: revisions/2026-10-13-r89/results89/
+          retention-days: 30
+  x86:
+    needs: arm
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-07-r45/code/
+            /revisions/2026-10-08-r48/code/
+            /revisions/2026-10-10-r62/code/
+            /revisions/2026-10-10-r62/inputs/revisions/2026-10-08-r49/code/
+            /revisions/2026-10-10-r63/code/
+            /revisions/2026-10-10-r64/code/
+            /revisions/2026-10-10-r67/code/
+            /revisions/2026-10-13-r89/code/
+            /revisions/2026-10-13-r89/PROTOCOL89.md
+            /revisions/2026-10-13-r89/results89/
+      - uses: actions/download-artifact@v4
+        with:
+          name: nbo-r89-final-arm
+          path: revisions/2026-10-13-r89/results89
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy
+      - name: Identical-model replay with no new independent states
+        run: |
+          /usr/bin/python3 revisions/2026-10-13-r89/code/recording89.py
+          /usr/bin/python3 revisions/2026-10-13-r89/code/run89.py replay --machine x86_64
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add --sparse -f revisions/2026-10-13-r89/results89 revisions/2026-10-13-r89/code/run89.py revisions/2026-10-13-r89/audit/RECORDING_AMENDMENT89.json
+          git commit -m 'R89: completed identical-model x86 replay with no repeated fitting or additional independent data'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r89-crossmachine-complete-2026-10-13
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r89-final-crossmachine
+          path: revisions/2026-10-13-r89/results89/
+          retention-days: 30
