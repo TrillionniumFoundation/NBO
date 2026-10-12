@@ -1,0 +1,44 @@
+name: NBO R83 pinned source audit
+on:
+  push:
+    branches: [revision/econometrica-nbo-r83-referee-revision-2026-10-12]
+    paths: [.github/workflows/nbo-r83-source-audit.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-12-r82/
+            /reviews/2026-10-11-econometrica-numerical-methods-r67/
+      - name: Export exact sources with a complete member hash ledger
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,subprocess,zipfile
+          roots=[Path('revisions/2026-10-12-r82'),Path('reviews/2026-10-11-econometrica-numerical-methods-r67')]
+          forbidden={'.ttf','.otf','.woff','.woff2','.pfb','.pfa','.afm','.tfm'}
+          ledger={}
+          with zipfile.ZipFile('nbo-r83-pinned-inputs.zip','w',zipfile.ZIP_DEFLATED,compresslevel=1) as out:
+              for root in roots:
+                  for p in sorted(root.rglob('*')):
+                      if p.is_file() and '__pycache__' not in p.parts:
+                          if p.suffix.lower() in forbidden:raise ValueError(str(p))
+                          raw=p.read_bytes();ledger[str(p)]=hashlib.sha256(raw).hexdigest();out.writestr(str(p),raw)
+              out.writestr('SOURCE_EXPORT83.json',json.dumps({'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'baseline':'e6d2b89f4f113f4b54b5f270359fafdc7bee67c4','sha256':ledger},sort_keys=True,indent=2))
+          print(json.dumps({'files':len(ledger),'bytes':Path('nbo-r83-pinned-inputs.zip').stat().st_size}))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r83-pinned-inputs
+          path: nbo-r83-pinned-inputs.zip
+          compression-level: 0
+          retention-days: 30
