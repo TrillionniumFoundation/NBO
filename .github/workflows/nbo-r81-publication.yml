@@ -44,20 +44,21 @@ jobs:
             /revisions/2026-10-11-r78/
             /revisions/2026-10-12-r80/
             /revisions/2026-10-12-r81/
-      - name: Integrate preserved source branch without rewriting either history
+      - name: Bind ordinary sources and visual-review corrections before full verification
         run: |
           git config user.name 'NBO revision verification'
           git config user.email 'nbo-revision@users.noreply.github.com'
           git fetch --filter=blob:none origin revision/econometrica-nbo-r81-source-2026-10-12
           git merge --no-edit --no-ff FETCH_HEAD
           python3 revisions/2026-10-12-r81/code/integrate81.py
+          python3 revisions/2026-10-12-r81/code/metadata81.py
           python3 - <<'PY'
           import ast,pathlib
           for p in pathlib.Path('revisions/2026-10-12-r81/code').glob('*.py'):
               ast.parse(p.read_text(),filename=str(p))
           PY
           git add -f revisions/2026-10-12-r81
-          if ! git diff --cached --quiet; then git commit -m 'R81: integrate ordinary original-paper manuscript, complete proofs and point-by-point referee response'; fi
+          if ! git diff --cached --quiet; then git commit -m 'R81: bind appendix-numbering correction and exact eight-table catalogue'; fi
           git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r81-referee-revision-2026-10-12 HEAD:refs/heads/revision/econometrica-nbo-r81-source-2026-10-12
       - name: Install numerical and Econometrica publication dependencies
         run: |
