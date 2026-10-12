@@ -1,0 +1,80 @@
+name: NBO R84 full-menu and shared-readout study
+on:
+  push:
+    branches: [revision/econometrica-nbo-r84-referee-revision-2026-10-12]
+    paths: [.github/workflows/nbo-r84-science.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  qualify:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 60
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-12-r83/
+            /revisions/2026-10-12-r84/
+      - name: Install numerical verification dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn
+      - name: Preserve completed baseline and commit source lock
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git fetch --depth=60 origin 0f807677ac6f2a47455f49f061ddbc9710b28738
+          git merge --no-edit 0f807677ac6f2a47455f49f061ddbc9710b28738
+          /usr/bin/python3 revisions/2026-10-12-r84/code/prepare84.py science
+          /usr/bin/python3 revisions/2026-10-12-r84/code/compatible84.py freeze
+          git add -A -f revisions/2026-10-12-r84
+          git commit -m 'R84: retain ordinary source and fixed deterministic compatibility design before execution'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r84-science-source-2026-10-12
+      - name: Execute mathematical and interval counterexample regressions
+        run: /usr/bin/python3 revisions/2026-10-12-r84/code/tests84.py 2>&1 | tee revisions/2026-10-12-r84/audit/build-logs/tests84-science.log
+      - name: Execute the complete locked deterministic study
+        run: |
+          /usr/bin/python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,os,platform,resource,subprocess,time
+          root=Path('revisions/2026-10-12-r84')
+          start=time.perf_counter()
+          with (root/'audit/build-logs/execute84.log').open('w') as out:
+              result=subprocess.run(['/usr/bin/python3',str(root/'code/compatible84.py'),'execute'],stdout=out,stderr=subprocess.STDOUT)
+          elapsed=time.perf_counter()-start
+          print((root/'audit/build-logs/execute84.log').read_text()[-14000:],flush=True)
+          usage=resource.getrusage(resource.RUSAGE_CHILDREN)
+          clock={'wall_seconds_through_interpreter_shutdown':elapsed,'returncode':result.returncode,'child_user_seconds':usage.ru_utime,'child_system_seconds':usage.ru_stime,'child_peak_rss_kib':usage.ru_maxrss,'machine':platform.machine(),'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'log_sha256':hashlib.sha256((root/'audit/build-logs/execute84.log').read_bytes()).hexdigest(),'scope':'Entire scientific interpreter, including imports, input reads, all qualification and assignment calls, durable records and shutdown; inherited integration and fitting retain their own prior clocks.'}
+          (root/'audit/PROCESS84.json').write_text(json.dumps(clock,sort_keys=True,indent=2)+'\n')
+          if result.returncode:raise SystemExit(result.returncode)
+          PY
+      - name: Independently reconstruct every exact new certificate and cost transfer
+        run: /usr/bin/python3 revisions/2026-10-12-r84/code/verify84.py | tee revisions/2026-10-12-r84/audit/build-logs/independent84.log
+      - name: Commit complete verified execution without changing old branches
+        run: |
+          git add -A -f revisions/2026-10-12-r84
+          git commit -m 'R84: retain complete full-menu and shared-readout certificates, exact independent audit and process clock'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r84-science-executed-2026-10-12
+          git rev-parse HEAD
+      - name: Preserve sources, results and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r84-compatibility
+          path: |
+            revisions/2026-10-12-r84/results84/
+            revisions/2026-10-12-r84/audit/*84*
+            revisions/2026-10-12-r84/audit/build-logs/*84*
+            revisions/2026-10-12-r84/code/*84.py
+            revisions/2026-10-12-r84/SOURCE_FREEZE84.json
+          compression-level: 1
+          retention-days: 30
