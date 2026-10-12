@@ -1,25 +1,29 @@
 # Neural Bellman Operators
 
-## R78 original-paper referee revision — manuscript sources
+## R84 original-paper revision — source delivery
 
-The complete R78 LaTeX manuscript is in `revisions/2026-10-11-r78/`.
-Read `ECTA.tex`, `supp.tex`, `appendix.tex`, and `response.md`.
-The new simultaneous-choice theorem and full proof are in
-`sections/choice78.tex` and `sections/choice_proof78.tex`.
+[Current delivery and verification status](revisions/2026-10-12-r84/DELIVERY84.md)
 
-The original title, author, investment primitives and Bellman optimum are
-unchanged. The attained-controller cost comparison is extended to sharp
-simultaneous catalogue regret and exact refinement-charge regions. All earlier
-active sections, scientific records and unfavorable results remain available.
-The original R77 wrappers and compiled PDFs are explicitly preserved under
-`preserved/R77-original/`; they are not represented as newly compiled R78 PDFs.
+[Main article](revisions/2026-10-12-r84/ECTA.tex) · [Technical supplement](revisions/2026-10-12-r84/supp.tex) · [Numerical and development appendix](revisions/2026-10-12-r84/appendix.tex) · [Point-by-point response](revisions/2026-10-12-r84/response.md)
 
-Publication validation is not yet complete. The new regression calculation has
-been exercised locally, but the remote full build is queued. A passed R78 full
-release audit, clean rebuild and hash-bound PDF inspection are required before
-claiming review-ready publication. Historical R77 audit files remain historical.
+R84 develops the original paper from the completed R83 baseline in response
+to the pinned R67 advisory review. Its title, author, economic primitives,
+constructive NBO continuation, original Bellman optimum and inherited
+substantive sections are retained. Full-menu and common-readout qualification
+sharpen original-law policy-cost guarantees and identify a new classwide
+Bernstein refinement decision without retraining or new independent samples.
 
-Controlling advisory review: R67, 11 October 2026,
-`4b27b56f4514f6c1d77b69fe707f7202f8b06b19`.
-Baseline R77 manuscript: `21a99a92c9a8aed96b36931467a40cd7b82aeeb6`.
-Earlier revision and review branches are unchanged.
+The new scientific execution and independent rational checker passed:
+976 full-menu problems, 1,572 joint events, 2,548 qualification certificates,
+16,548 assignment inequalities, 36 class-cost comparisons and 20 new tests.
+The exact source identities and limitations are in the delivery document.
+
+**This is not a completed review-ready PDF publication.** The preceding
+render failed its appendix overflow check. The full-precision table layout
+has been revised; the new full publication run was still queued at the last
+connector check. Full inherited-test replay, clean-archive reproduction and
+actual-PDF visual inspection are not marked passed. Historical PDFs are not
+relabeled as current outputs.
+
+All editable current sources and the entire point-by-point response are
+available for review. Older revision and review branches remain unchanged.
