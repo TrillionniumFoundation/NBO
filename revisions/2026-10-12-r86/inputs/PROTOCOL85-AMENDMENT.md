@@ -1,0 +1,5 @@
+# Pre-execution probability-accounting clarification
+
+This clarification precedes generation or inspection of either new stream. The frozen actors, seeds, sample sizes, margin and selection rule are unchanged.
+
+There are 36 unordered contrasts for each of TWO estimators (cash and conditional), hence 72 estimands per stream. With the inherited two-endpoint empirical-Bernstein construction, the conservative failure allocation is **288 exp(-11) < 0.005 per stream**, not 144 exp(-11). Both streams jointly have failure bound 576 exp(-11) < 0.01. Conditional-estimator-only statements can use the smaller subfamily bound, but the publication will report the joint two-estimator event. Factorial interaction intervals are formed by adding already covered paired intervals and spend no additional error probability. Absolute empirical endpoint means are descriptive, not additional confidence statements. Calibration chooses the smallest conditioned empirical upper endpoint mean; the selection is evaluated against every comparator on the separate simultaneous evaluation event.
