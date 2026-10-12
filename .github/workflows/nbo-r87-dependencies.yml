@@ -1,0 +1,42 @@
+name: NBO R87 retained test dependencies
+on:
+  push:
+    branches: [revision/econometrica-nbo-r87-referee-revision-2026-10-12]
+    paths: [.github/workflows/nbo-r87-dependencies.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 114fa567540029adf315fcfecf7488dd9a03f1d3
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/inputs/revisions/2026-10-08-r49/code/
+            /revisions/2026-10-11-r73/results73/
+            /revisions/2026-10-11-r70/audit/
+      - name: Preserve exact dependency identities
+        run: |
+          python3 - <<'PY'
+          import pathlib,hashlib,json,zipfile
+          records={}
+          with zipfile.ZipFile('nbo-r87-dependencies.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for p in sorted(pathlib.Path('revisions').rglob('*')):
+                  if not p.is_file():continue
+                  raw=p.read_bytes();name=p.as_posix()
+                  records[name]={'sha256':hashlib.sha256(raw).hexdigest(),'git_blob':hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()}
+                  z.write(p,name)
+              z.writestr('DEPENDENCIES87.json',json.dumps({'commit':'114fa567540029adf315fcfecf7488dd9a03f1d3','files':records},indent=2,sort_keys=True))
+          print('Exact files',len(records))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r87-dependencies
+          path: nbo-r87-dependencies.zip
+          compression-level: 0
+          retention-days: 30
