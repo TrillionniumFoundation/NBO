@@ -8,7 +8,7 @@ permissions:
   contents: write
 concurrency:
   group: nbo-r82-deterministic-science
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   science:
     runs-on: ubuntu-latest
@@ -28,21 +28,21 @@ jobs:
           sparse-checkout: |
             /revisions/2026-10-12-r81/
             /revisions/2026-10-12-r82/
+      - name: Install numerical runtime before any source imports
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy
       - name: Bind ordinary sources without changing any earlier revision
         run: |
           git config user.name 'NBO revision verification'
           git config user.email 'nbo-revision@users.noreply.github.com'
-          python3 revisions/2026-10-12-r82/code/prepare82.py
+          /usr/bin/python3 revisions/2026-10-12-r82/code/prepare82.py
           git add -f revisions/2026-10-12-r82
           git commit -m 'R82: materialize complete original-paper baseline and new independent verification sources'
-          python3 revisions/2026-10-12-r82/code/study82.py freeze
+          /usr/bin/python3 revisions/2026-10-12-r82/code/study82.py freeze
           git add -f revisions/2026-10-12-r82/SOURCE_FREEZE82.json
           git commit -m 'R82: freeze complete deterministic design before exhaustive evaluation'
           git push origin HEAD:refs/heads/revision/econometrica-nbo-r82-science-source-2026-10-12
-      - name: Install numerical runtime
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends python3-numpy
       - name: Run independent regression tests and all inherited switch-dual checks
         run: |
           mkdir -p revisions/2026-10-12-r82/audit/build-logs
@@ -50,6 +50,7 @@ jobs:
           /usr/bin/python3 revisions/2026-10-12-r82/code/dual81.py > revisions/2026-10-12-r82/audit/build-logs/switch-duals-in82.log 2>&1
       - name: Execute every declared action and refinement rung in both arithmetic implementations
         run: |
+          set -o pipefail
           /usr/bin/python3 revisions/2026-10-12-r82/code/study82.py execute | tee revisions/2026-10-12-r82/audit/build-logs/execute82.log
       - name: Deposit completed deterministic evidence on an independent executed branch
         run: |
