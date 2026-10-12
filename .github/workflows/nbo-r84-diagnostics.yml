@@ -18,35 +18,34 @@ jobs:
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /revisions/2026-10-12-r84/audit/
-      - name: Extract actual failure block from retained workflow logs
+      - name: Read retained appendix typography diagnostics
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import hashlib,json,os,pathlib,urllib.request,urllib.parse
+          import hashlib,io,json,os,pathlib,re,urllib.request,urllib.parse,zipfile
           class SafeRedirect(urllib.request.HTTPRedirectHandler):
               def redirect_request(self,req,fp,code,msg,headers,newurl):
                   result=super().redirect_request(req,fp,code,msg,headers,newurl)
-                  if urllib.parse.urlparse(req.full_url).netloc!=urllib.parse.urlparse(newurl).netloc:
-                      result.remove_header('Authorization')
+                  if urllib.parse.urlparse(req.full_url).netloc!=urllib.parse.urlparse(newurl).netloc:result.remove_header('Authorization')
                   return result
           opener=urllib.request.build_opener(SafeRedirect())
-          req=urllib.request.Request('https://api.github.com/repos/TrillionniumFoundation/NBO/actions/jobs/114722283049/logs',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+          req=urllib.request.Request('https://api.github.com/repos/TrillionniumFoundation/NBO/actions/artifacts/11734366500/zip',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
           with opener.open(req,timeout=45) as r:raw=r.read()
-          text=raw.decode('utf-8-sig',errors='replace')
-          last=text.rfind('Traceback (most recent call last)')
-          if last<0:last=max(0,len(text)-16000)
-          end=text.find('##[error]Process completed',last)
-          selected=text[last:end+200 if end>=0 else None]
+          z=zipfile.ZipFile(io.BytesIO(raw))
+          names=[n for n in z.namelist() if n.endswith('appendix-R84-pass4.log')]
+          if len(names)!=1:raise AssertionError(names)
+          text=z.read(names[0]).decode('utf-8',errors='replace')
+          excerpts=[text[max(0,m.start()-220):m.start()+900] for m in re.finditer('Overfull',text)]
           folder=pathlib.Path('revisions/2026-10-12-r84/audit');folder.mkdir(parents=True,exist_ok=True)
-          (folder/'PUBLICATION_FAILURE84.txt').write_text(selected)
-          (folder/'PUBLICATION_FAILURE84.json').write_text(json.dumps({'job_id':114722283049,'run_id':38222616572,'full_log_sha256':hashlib.sha256(raw).hexdigest(),'scope':'Actual retained traceback through process error; not an inferred diagnosis.'},indent=2)+'\n')
-          print(selected,flush=True)
+          (folder/'TYPOGRAPHY_FAILURE84.txt').write_text('\n\n====\n\n'.join(excerpts))
+          (folder/'TYPOGRAPHY_FAILURE84.json').write_text(json.dumps({'artifact_id':11734366500,'archive_sha256':hashlib.sha256(raw).hexdigest(),'log':names[0],'overfull_count':len(excerpts),'scope':'Actual final-pass appendix diagnostics; scientific records unchanged.'},indent=2)+'\n')
+          print((folder/'TYPOGRAPHY_FAILURE84.txt').read_text(),flush=True)
           PY
-      - name: Preserve concise diagnostics on the new revision only
+      - name: Preserve diagnostics only on the new revision
         run: |
           git config user.name 'NBO revision verification'
           git config user.email 'nbo-revision@users.noreply.github.com'
-          git add -f revisions/2026-10-12-r84/audit/PUBLICATION_FAILURE84.*
-          git commit -m 'R84: retain actual failed publication traceback and source-job identity'
+          git add -f revisions/2026-10-12-r84/audit/TYPOGRAPHY_FAILURE84.*
+          git commit -m 'R84: retain actual appendix overflow contexts and artifact identity'
           git push origin HEAD:refs/heads/revision/econometrica-nbo-r84-referee-revision-2026-10-12
