@@ -1,0 +1,99 @@
+name: NBO R81 complete original-paper revision
+on:
+  push:
+    branches: [revision/econometrica-nbo-r81-referee-revision-2026-10-12]
+    paths: [.github/workflows/nbo-r81-publication.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r81-complete-publication
+  cancel-in-progress: false
+jobs:
+  publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      SOURCE_DATE_EPOCH: '1791676800'
+      FORCE_SOURCE_DATE: '1'
+      TZ: UTC
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 100
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /README.md
+            /ECTA.tex
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+            /revisions/2026-10-10-r64/
+            /revisions/2026-10-10-r65/
+            /revisions/2026-10-10-r66/
+            /revisions/2026-10-10-r67/
+            /revisions/2026-10-11-r69/
+            /revisions/2026-10-11-r70/
+            /revisions/2026-10-11-r72/
+            /revisions/2026-10-11-r73/
+            /revisions/2026-10-11-r77/
+            /revisions/2026-10-11-r78/
+            /revisions/2026-10-12-r80/
+            /revisions/2026-10-12-r81/
+      - name: Integrate preserved source branch without rewriting either history
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git fetch --filter=blob:none origin revision/econometrica-nbo-r81-source-2026-10-12
+          git merge --no-edit --no-ff FETCH_HEAD
+          python3 revisions/2026-10-12-r81/code/integrate81.py
+          python3 - <<'PY'
+          import ast,pathlib
+          for p in pathlib.Path('revisions/2026-10-12-r81/code').glob('*.py'):
+              ast.parse(p.read_text(),filename=str(p))
+          PY
+          git add -f revisions/2026-10-12-r81
+          if ! git diff --cached --quiet; then git commit -m 'R81: integrate ordinary original-paper manuscript, complete proofs and point-by-point referee response'; fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r81-referee-revision-2026-10-12 HEAD:refs/heads/revision/econometrica-nbo-r81-source-2026-10-12
+      - name: Install numerical and Econometrica publication dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Recompute every new cost bin and switch certificate, run all suites and compile four documents
+        run: /usr/bin/python3 revisions/2026-10-12-r81/code/build81.py
+      - name: Publish the exact compiled candidate before clean reproduction
+        run: |
+          git add -f revisions/2026-10-12-r81
+          if ! git diff --cached --quiet; then git commit -m 'R81: retain complete source-bound numerical audit and four current compiled documents'; fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r81-referee-revision-2026-10-12 HEAD:refs/heads/revision/econometrica-nbo-r81-source-2026-10-12
+      - name: Rebuild from clean archive and verify remote candidate identities
+        run: /usr/bin/python3 revisions/2026-10-12-r81/code/publish81.py
+      - name: Preserve failed attempt without asserting publication success
+        if: failure()
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-12-r81
+          if ! git diff --cached --quiet; then git commit -m 'R81: retain failed audit and publication diagnostics'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r81-audit-attempt-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r81-paper-audits
+          path: |
+            revisions/2026-10-12-r81/build/*.pdf
+            revisions/2026-10-12-r81/build/*.txt
+            revisions/2026-10-12-r81/build/*.log
+            revisions/2026-10-12-r81/audit/*81*
+            revisions/2026-10-12-r81/audit/*80*
+            revisions/2026-10-12-r81/audit/build-logs/
+            revisions/2026-10-12-r81/*.tex
+            revisions/2026-10-12-r81/*.md
+            revisions/2026-10-12-r81/sections/*81.tex
+            revisions/2026-10-12-r81/tables/*81.tex
+          compression-level: 1
+          retention-days: 30
