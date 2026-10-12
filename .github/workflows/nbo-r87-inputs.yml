@@ -5,9 +5,12 @@ on:
     paths: [.github/workflows/nbo-r87-inputs.yml]
 permissions:
   contents: read
+concurrency:
+  group: nbo-r87-input-export
+  cancel-in-progress: true
 jobs:
   export:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +38,7 @@ jobs:
             /revisions/2026-10-10-r67/code/
             /revisions/2026-10-11-r69/code/
             /revisions/2026-10-11-r70/code/
+            /revisions/2026-10-11-r70/audit/RESULT_AUDIT70.json
             /revisions/2026-10-11-r72/code/
             /revisions/2026-10-11-r73/code/
             /revisions/2026-10-11-r77/code/
@@ -44,14 +48,15 @@ jobs:
             /revisions/2026-10-12-r82/code/
             /revisions/2026-10-12-r83/code/
             /revisions/2026-10-12-r84/code/
+            /reviews/2026-10-12-econometrica-numerical-methods-r84/
       - name: Export exact current files and original Git blob identities
         run: |
           python3 - <<'PY'
-          import hashlib,json,pathlib,subprocess,zipfile
+          import hashlib,json,pathlib,zipfile
           root=pathlib.Path('.')
           records={}
           with zipfile.ZipFile('nbo-r87-pinned-inputs.zip','w',zipfile.ZIP_DEFLATED,compresslevel=3) as z:
-              for p in sorted(root.glob('revisions/**/*')):
+              for p in sorted(list(root.glob('revisions/**/*'))+list(root.glob('reviews/**/*'))):
                   if not p.is_file():continue
                   raw=p.read_bytes();name=p.as_posix()
                   records[name]={'sha256':hashlib.sha256(raw).hexdigest(),'git_blob':hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest(),'bytes':len(raw)}
