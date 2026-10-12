@@ -1,0 +1,28 @@
+name: NBO R81 source preparation
+on:
+  push:
+    branches: [revision/econometrica-nbo-r81-referee-revision-2026-10-12]
+    paths: [.github/workflows/nbo-r81-prepare.yml]
+permissions:
+  contents: write
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 20
+          filter: blob:none
+          sparse-checkout: |
+            /revisions/2026-10-12-r80/
+            /revisions/2026-10-12-r81/
+          sparse-checkout-cone-mode: false
+      - name: Preserve executed data and materialize ordinary sources
+        run: |
+          python3 revisions/2026-10-12-r81/code/prepare81.py
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-12-r81
+          git commit -m 'R81: preserve R80 executed science and R79 manuscript before substantive integration'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r81-source-2026-10-12
