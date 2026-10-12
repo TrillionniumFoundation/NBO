@@ -1,0 +1,67 @@
+name: NBO R87 pinned revision inputs
+on:
+  push:
+    branches: [revision/econometrica-nbo-r87-referee-revision-2026-10-12]
+    paths: [.github/workflows/nbo-r87-inputs.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 114fa567540029adf315fcfecf7488dd9a03f1d3
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-12-r86/
+            !/revisions/2026-10-12-r86/preserved/
+            !/revisions/2026-10-12-r86/results80/barriers/
+            !/revisions/2026-10-12-r86/results80/cost/
+            !/revisions/2026-10-12-r86/results77/
+            /revisions/2026-10-12-r85/
+            !/revisions/2026-10-12-r85/preserved/
+            !/revisions/2026-10-12-r85/results80/barriers/
+            !/revisions/2026-10-12-r85/results80/cost/
+            !/revisions/2026-10-12-r85/results77/
+            /revisions/2026-10-10-r62/code/
+            /revisions/2026-10-10-r63/code/
+            /revisions/2026-10-10-r64/code/
+            /revisions/2026-10-10-r65/code/
+            /revisions/2026-10-10-r66/code/
+            /revisions/2026-10-10-r67/code/
+            /revisions/2026-10-11-r69/code/
+            /revisions/2026-10-11-r70/code/
+            /revisions/2026-10-11-r72/code/
+            /revisions/2026-10-11-r73/code/
+            /revisions/2026-10-11-r77/code/
+            /revisions/2026-10-11-r78/code/
+            /revisions/2026-10-12-r80/code/
+            /revisions/2026-10-12-r81/code/
+            /revisions/2026-10-12-r82/code/
+            /revisions/2026-10-12-r83/code/
+            /revisions/2026-10-12-r84/code/
+      - name: Export exact current files and original Git blob identities
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,pathlib,subprocess,zipfile
+          root=pathlib.Path('.')
+          records={}
+          with zipfile.ZipFile('nbo-r87-pinned-inputs.zip','w',zipfile.ZIP_DEFLATED,compresslevel=3) as z:
+              for p in sorted(root.glob('revisions/**/*')):
+                  if not p.is_file():continue
+                  raw=p.read_bytes();name=p.as_posix()
+                  records[name]={'sha256':hashlib.sha256(raw).hexdigest(),'git_blob':hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest(),'bytes':len(raw)}
+                  z.write(p,name)
+              z.writestr('EXPORT87.json',json.dumps({'commit':'114fa567540029adf315fcfecf7488dd9a03f1d3','scope':'Exact sparse source export; excluded inherited large arrays remain in pinned repository and earlier archives.','files':records},sort_keys=True,indent=2))
+          print('Exported',len(records),'files; ZIP bytes',pathlib.Path('nbo-r87-pinned-inputs.zip').stat().st_size)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r87-pinned-inputs
+          path: nbo-r87-pinned-inputs.zip
+          compression-level: 0
+          retention-days: 30
