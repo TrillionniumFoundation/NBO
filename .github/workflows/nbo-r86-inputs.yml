@@ -1,0 +1,55 @@
+name: NBO R86 pinned revision inputs
+on:
+  push:
+    branches: [revision/econometrica-nbo-r86-referee-revision-2026-10-12]
+    paths: [.github/workflows/nbo-r86-inputs.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-12-r84/
+            /revisions/2026-10-12-r85/
+            /reviews/2026-10-12-econometrica-numerical-methods-r84/
+            /revisions/*/code/
+            /revisions/*/sections/
+            /revisions/*/tables/
+            /revisions/*/*.tex
+            /revisions/*/*.bib
+            /revisions/*/*.cls
+            /revisions/*/*.cfg
+            /revisions/*/*.bst
+      - name: Export pinned ordinary files with hashes
+        run: |
+          git fetch --depth=1 origin b030d87d7e96440eb25a3178c94ee6a87940cdb0
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,subprocess,zipfile
+          root=Path('.'); files={}
+          review='reviews/2026-10-12-econometrica-numerical-methods-r84'
+          names=subprocess.check_output(['git','ls-tree','-r','--name-only','b030d87d7e96440eb25a3178c94ee6a87940cdb0',review],text=True).splitlines()
+          for name in names:
+              p=Path(name);p.parent.mkdir(parents=True,exist_ok=True)
+              p.write_bytes(subprocess.check_output(['git','show','b030d87d7e96440eb25a3178c94ee6a87940cdb0:'+name]))
+          with zipfile.ZipFile('/tmp/nbo-r86-inputs.zip','w',zipfile.ZIP_DEFLATED,compresslevel=1) as z:
+              for top in ('revisions','reviews'):
+                  for p in sorted(Path(top).rglob('*')):
+                      if p.is_file():
+                          raw=p.read_bytes();files[str(p)]=hashlib.sha256(raw).hexdigest();z.writestr(str(p),raw)
+              z.writestr('EXPORT86.json',json.dumps({'baseline':'07ccc37d76b0a3613f30582489e257f2a265b263','review':'b030d87d7e96440eb25a3178c94ee6a87940cdb0','files':files},sort_keys=True,indent=2))
+          print('Exported',len(files),'files')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r86-inputs
+          path: /tmp/nbo-r86-inputs.zip
+          compression-level: 0
+          retention-days: 7
