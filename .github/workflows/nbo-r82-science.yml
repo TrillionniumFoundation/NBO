@@ -1,0 +1,78 @@
+name: NBO R82 actionwise optimizer-class verification
+on:
+  push:
+    branches: [revision/econometrica-nbo-r82-referee-revision-2026-10-12]
+    paths: [.github/workflows/nbo-r82-science.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r82-deterministic-science
+  cancel-in-progress: false
+jobs:
+  science:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      TZ: UTC
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-12-r81/
+            /revisions/2026-10-12-r82/
+      - name: Bind ordinary sources without changing any earlier revision
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          python3 revisions/2026-10-12-r82/code/prepare82.py
+          git add -f revisions/2026-10-12-r82
+          git commit -m 'R82: materialize complete original-paper baseline and new independent verification sources'
+          python3 revisions/2026-10-12-r82/code/study82.py freeze
+          git add -f revisions/2026-10-12-r82/SOURCE_FREEZE82.json
+          git commit -m 'R82: freeze complete deterministic design before exhaustive evaluation'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r82-science-source-2026-10-12
+      - name: Install numerical runtime
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy
+      - name: Run independent regression tests and all inherited switch-dual checks
+        run: |
+          mkdir -p revisions/2026-10-12-r82/audit/build-logs
+          /usr/bin/python3 revisions/2026-10-12-r82/code/tests82.py > revisions/2026-10-12-r82/audit/build-logs/science-tests82.log 2>&1
+          /usr/bin/python3 revisions/2026-10-12-r82/code/dual81.py > revisions/2026-10-12-r82/audit/build-logs/switch-duals-in82.log 2>&1
+      - name: Execute every declared action and refinement rung in both arithmetic implementations
+        run: |
+          /usr/bin/python3 revisions/2026-10-12-r82/code/study82.py execute | tee revisions/2026-10-12-r82/audit/build-logs/execute82.log
+      - name: Deposit completed deterministic evidence on an independent executed branch
+        run: |
+          git add -f revisions/2026-10-12-r82
+          git commit -m 'R82: retain complete actionwise cost catalogue, signed class transfer and measured verification work'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r82-science-executed-2026-10-12
+      - name: Preserve any failed attempt without marking it complete
+        if: failure()
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add -f revisions/2026-10-12-r82
+          if ! git diff --cached --quiet; then git commit -m 'R82: preserve failed deterministic verification attempt'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r82-science-attempt-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r82-actionwise-evidence
+          path: |
+            revisions/2026-10-12-r82/results82/
+            revisions/2026-10-12-r82/audit/build-logs/*82*
+            revisions/2026-10-12-r82/audit/DISAGREEMENT82.json
+            revisions/2026-10-12-r82/audit/PREPARATION82.json
+            revisions/2026-10-12-r82/SOURCE_FREEZE82.json
+          compression-level: 1
+          retention-days: 30
