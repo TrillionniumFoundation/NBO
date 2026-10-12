@@ -1,0 +1,117 @@
+name: NBO R83 complete original-paper revision
+on:
+  push:
+    branches: [revision/econometrica-nbo-r83-referee-revision-2026-10-12]
+    paths: [.github/workflows/nbo-r83-publication.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r83-full-publication
+  cancel-in-progress: false
+jobs:
+  complete-revision:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 110
+    defaults:
+      run:
+        shell: bash
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      SOURCE_DATE_EPOCH: '1791763200'
+      FORCE_SOURCE_DATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-10-r62/
+            /revisions/2026-10-10-r63/
+            /revisions/2026-10-10-r64/
+            /revisions/2026-10-10-r65/
+            /revisions/2026-10-10-r66/
+            /revisions/2026-10-10-r67/
+            /revisions/2026-10-11-r69/
+            /revisions/2026-10-11-r70/
+            /revisions/2026-10-11-r72/
+            /revisions/2026-10-11-r73/
+            /revisions/2026-10-11-r77/
+            /revisions/2026-10-11-r78/
+            /revisions/2026-10-12-r80/
+            /revisions/2026-10-12-r81/
+            /revisions/2026-10-12-r82/
+            /revisions/2026-10-12-r83/
+            /README.md
+      - name: Install full verification and publication dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Materialize, preserve and commit ordinary sources before execution
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git fetch --depth=1 origin 766319d4d4c0877c439f10ae433eb608e0b41626 4b27b56f4514f6c1d77b69fe707f7202f8b06b19
+          /usr/bin/python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          root=Path('revisions/2026-10-12-r83')
+          files=['code/'+n+'.py' for n in ('frontier83','replay83','tests83','tables83','prepare83','freeze83','build83','publish83')]
+          files+=['sections/'+n+'.tex' for n in ('frontier83','proof83','study83')]
+          files+=['response83.md','PROTOCOL83.md','CONTENT_MAP83.md']
+          ledger={name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in files}
+          target=root/'OWN_SOURCE83.json'
+          if target.exists():
+              if json.loads(target.read_text())!=ledger:raise AssertionError('Existing own-source manifest changed')
+          else:target.write_text(json.dumps(ledger,sort_keys=True,indent=2)+'\n')
+          print('Verified ordinary source members:',len(ledger))
+          PY
+          /usr/bin/python3 revisions/2026-10-12-r83/code/prepare83.py
+          mkdir -p revisions/2026-10-12-r83/inputs
+          git show 4b27b56f4514f6c1d77b69fe707f7202f8b06b19:reviews/2026-10-11-econometrica-numerical-methods-r67/referee_report.md > revisions/2026-10-12-r83/inputs/referee-r67.md
+          /usr/bin/python3 revisions/2026-10-12-r83/code/freeze83.py
+          git add -A -f revisions/2026-10-12-r83
+          if ! git diff --cached --quiet; then
+            git commit -m 'R83: retain complete ordinary original-paper sources and disclosed publication lock'
+          fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r83-referee-revision-2026-10-12 HEAD:refs/heads/revision/econometrica-nbo-r83-source-2026-10-12
+      - name: Complete source-bound recovery with both arithmetic implementations
+        run: |
+          if test -f revisions/2026-10-12-r83/results83/EXECUTION83.json; then
+            /usr/bin/python3 revisions/2026-10-12-r83/code/freeze83.py
+            /usr/bin/python3 revisions/2026-10-12-r83/code/replay83.py --full | tee revisions/2026-10-12-r83/audit/build-logs/reused-execution-check83.log
+          else
+            /usr/bin/python3 revisions/2026-10-12-r83/code/replay83.py --execute | tee revisions/2026-10-12-r83/audit/build-logs/execute83.log
+          fi
+          git add -A -f revisions/2026-10-12-r83
+          if ! git diff --cached --quiet; then
+            git commit -m 'R83: preserve first complete source-bound recovery and independent execution clocks'
+          fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r83-referee-revision-2026-10-12 HEAD:refs/heads/revision/econometrica-nbo-r83-source-2026-10-12
+      - name: Run every inherited and new suite, full replay and four-document publication
+        run: /usr/bin/python3 revisions/2026-10-12-r83/code/build83.py
+      - name: Require full clean-archive reproduction and verify remote candidate refs
+        run: /usr/bin/python3 revisions/2026-10-12-r83/code/publish83.py
+      - name: Preserve the complete paper and diagnostic records
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r83-paper-and-audits
+          path: |
+            revisions/2026-10-12-r83/build/*.pdf
+            revisions/2026-10-12-r83/build/*.txt
+            revisions/2026-10-12-r83/audit/*83*
+            revisions/2026-10-12-r83/audit/build-logs/
+            revisions/2026-10-12-r83/results83/*.json
+            revisions/2026-10-12-r83/code/*83.py
+            revisions/2026-10-12-r83/sections/*83.tex
+            revisions/2026-10-12-r83/ECTA.tex
+            revisions/2026-10-12-r83/supp.tex
+            revisions/2026-10-12-r83/appendix.tex
+            revisions/2026-10-12-r83/response.md
+          compression-level: 1
+          retention-days: 30
