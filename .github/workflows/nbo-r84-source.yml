@@ -1,0 +1,43 @@
+name: NBO R84 pinned source export
+on:
+  push:
+    branches: [revision/econometrica-nbo-r84-referee-revision-2026-10-12]
+    paths: [.github/workflows/nbo-r84-source.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-12-r83/
+            /reviews/2026-10-11-econometrica-numerical-methods-r67/
+      - name: Export exact committed non-font source and evidence
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,pathlib,subprocess,zipfile
+          root=pathlib.Path('.')
+          forbidden={'.ttf','.otf','.woff','.woff2','.pfb','.pfa','.afm','.tfm'}
+          sources=[root/'revisions/2026-10-12-r83',root/'reviews/2026-10-11-econometrica-numerical-methods-r67']
+          ledger={}
+          with zipfile.ZipFile('nbo-r84-base.zip','w',zipfile.ZIP_DEFLATED,compresslevel=1) as z:
+              for folder in sources:
+                  for p in sorted(folder.rglob('*')):
+                      if p.is_file() and '__pycache__' not in p.parts and p.suffix.lower() not in forbidden:
+                          z.write(p,str(p));ledger[str(p)]=hashlib.sha256(p.read_bytes()).hexdigest()
+              z.writestr('EXPORT84.json',json.dumps({'commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'files':ledger},sort_keys=True,indent=2))
+          print('files',len(ledger),'archive_sha256',hashlib.sha256(pathlib.Path('nbo-r84-base.zip').read_bytes()).hexdigest())
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r84-base
+          path: nbo-r84-base.zip
+          compression-level: 0
+          retention-days: 30
