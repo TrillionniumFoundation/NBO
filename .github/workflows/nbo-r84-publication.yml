@@ -9,9 +9,12 @@ permissions:
 concurrency:
   group: nbo-r84-publication
   cancel-in-progress: false
+defaults:
+  run:
+    shell: bash
 jobs:
   publish:
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-latest
     timeout-minutes: 110
     env:
       OMP_NUM_THREADS: '1'
@@ -59,19 +62,38 @@ jobs:
           /usr/bin/python3 revisions/2026-10-12-r84/code/prepare84.py editorial
           git add -A -f revisions/2026-10-12-r84
           if ! git diff --cached --quiet; then
-            git commit -m 'R84: retain complete ordinary original-paper manuscript, full new proof and point-by-point response'
+            git commit -m 'R84: retain complete ordinary original-paper manuscript, full proof and point-by-point response'
           fi
           git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r84-referee-revision-2026-10-12 HEAD:refs/heads/revision/econometrica-nbo-r84-source-2026-10-12
       - name: Render current documents for separately qualified inspection
         run: |
-          /usr/bin/python3 revisions/2026-10-12-r84/code/build84.py --render
+          /usr/bin/python3 revisions/2026-10-12-r84/code/build84.py --render 2>&1 | tee /tmp/nbo-render84.log
           git add -A -f revisions/2026-10-12-r84
           git commit -m 'R84: retain rendered current manuscript; full verification and visual status remain explicit'
           git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r84-referee-revision-2026-10-12 HEAD:refs/heads/revision/econometrica-nbo-r84-source-2026-10-12 HEAD:refs/heads/revision/econometrica-nbo-r84-rendered-2026-10-12
       - name: Full inherited and new unskipped tests and independent verification
-        run: /usr/bin/python3 revisions/2026-10-12-r84/code/build84.py
+        run: /usr/bin/python3 revisions/2026-10-12-r84/code/build84.py 2>&1 | tee /tmp/nbo-full84.log
       - name: Full clean archive reproduction and verified remote candidate publication
-        run: /usr/bin/python3 revisions/2026-10-12-r84/code/publish84.py
+        run: /usr/bin/python3 revisions/2026-10-12-r84/code/publish84.py 2>&1 | tee /tmp/nbo-publish84.log
+      - name: Preserve exact concise failure evidence on a separate attempt branch
+        if: failure()
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import hashlib,json,os,pathlib,re,subprocess
+          root=pathlib.Path('revisions/2026-10-12-r84');parts=[]
+          for p in pathlib.Path('/tmp').glob('nbo-*84.log'):
+              text=p.read_text(errors='replace');pos=text.rfind('Traceback (most recent call last)')
+              parts.append('=== '+p.name+' ===\n'+text[pos if pos>=0 else max(0,len(text)-9000):])
+          for p in (root/'audit/build-logs').glob('*R84-pass4.log'):
+              text=p.read_text(errors='replace')
+              for m in re.finditer('Overfull',text):parts.append('=== '+p.name+' ===\n'+text[max(0,m.start()-160):m.start()+650])
+          (root/'audit/ATTEMPT_FAILURE84.txt').write_text('\n\n'.join(parts))
+          (root/'audit/ATTEMPT_FAILURE84.json').write_text(json.dumps({'run_id':os.environ['GITHUB_RUN_ID'],'head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'status':'failed_attempt_not_a_release'},indent=2)+'\n')
+          print((root/'audit/ATTEMPT_FAILURE84.txt').read_text(),flush=True)
+          PY
+          git add -A -f revisions/2026-10-12-r84
+          git commit -m 'R84: preserve actual failed attempt and diagnostics without qualifying it as a release'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r84-attempt-${GITHUB_RUN_ID}
       - name: Preserve current PDFs and all diagnostic output
         if: always()
         uses: actions/upload-artifact@v4
