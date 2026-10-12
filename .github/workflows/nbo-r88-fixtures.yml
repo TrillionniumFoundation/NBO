@@ -1,0 +1,43 @@
+name: NBO R88 pinned mutation-test fixtures
+on:
+  push:
+    branches: [revision/econometrica-nbo-r88-referee-revision-2026-10-12]
+    paths: [.github/workflows/nbo-r88-fixtures.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-10-r64/results64/d2-T2-e32-adaptive-s0-r0/
+            /revisions/2026-10-10-r65/audit/RESULT_AUDIT65.json
+            /revisions/2026-10-10-r67/results67/comparison-d2-T2-adaptive-s0-r0/
+            /revisions/2026-10-10-r67/audit/ERRATUM67.json
+      - name: Package exact tracked fixture bytes
+        run: |
+          python3 - <<'PY'
+          import pathlib,zipfile,hashlib,json,subprocess
+          roots=['revisions/2026-10-10-r64/results64/d2-T2-e32-adaptive-s0-r0','revisions/2026-10-10-r65/audit/RESULT_AUDIT65.json','revisions/2026-10-10-r67/results67/comparison-d2-T2-adaptive-s0-r0','revisions/2026-10-10-r67/audit/ERRATUM67.json']
+          files=[]
+          for root in roots:
+              p=pathlib.Path(root)
+              if not p.exists():raise FileNotFoundError(root)
+              files.extend([p] if p.is_file() else [x for x in p.rglob('*') if x.is_file()])
+          manifest={'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'files':{str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in files}}
+          with zipfile.ZipFile('fixtures88.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for p in files:z.write(p,str(p))
+              z.writestr('FIXTURES88.json',json.dumps(manifest,sort_keys=True,indent=2)+'\n')
+          print(json.dumps({'files':len(files),'bytes':pathlib.Path('fixtures88.zip').stat().st_size}))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r88-pinned-fixtures
+          path: fixtures88.zip
+          retention-days: 30
