@@ -104,6 +104,6 @@ def main():
         conditional_gains={f'{basis}-n{n}':pair_record(pairs,f'legacy-{basis}-n{n}',f'calibrated-{basis}-n{n}') for basis in ('relu','bernstein') for n in (8,16)},
         calibrated_n16_premium_region_exact=c['calibrated_n16_R_minus_B'],zero_charge_minimax_policy=c['zero_charge_minimax_policy'],
         zero_charge_regret=c['zero_charge_regret'],new_statistical_observations=0,
-        class_transfers=t['exact_optimizer_class_comparisons'],tables=9)
+        class_transfers=t['exact_optimizer_class_comparisons'],tables=8)
     save(R/'audit/TABLES81.json',record);print(json.dumps(encode(record),indent=2),flush=True)
 if __name__=='__main__':main()
