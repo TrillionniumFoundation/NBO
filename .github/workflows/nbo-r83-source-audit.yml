@@ -8,7 +8,7 @@ permissions:
   contents: read
 jobs:
   source-audit:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -18,22 +18,28 @@ jobs:
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /revisions/2026-10-12-r82/
-            /reviews/2026-10-11-econometrica-numerical-methods-r67/
-      - name: Export exact sources with a complete member hash ledger
+      - name: Export exact sources, editorial additions and the controlling report
         run: |
+          git fetch --depth=1 origin 766319d4d4c0877c439f10ae433eb608e0b41626 4b27b56f4514f6c1d77b69fe707f7202f8b06b19
           python3 - <<'PY'
           from pathlib import Path
           import hashlib,json,subprocess,zipfile
-          roots=[Path('revisions/2026-10-12-r82'),Path('reviews/2026-10-11-econometrica-numerical-methods-r67')]
+          root=Path('revisions/2026-10-12-r82')
           forbidden={'.ttf','.otf','.woff','.woff2','.pfb','.pfa','.afm','.tfm'}
           ledger={}
           with zipfile.ZipFile('nbo-r83-pinned-inputs.zip','w',zipfile.ZIP_DEFLATED,compresslevel=1) as out:
-              for root in roots:
-                  for p in sorted(root.rglob('*')):
-                      if p.is_file() and '__pycache__' not in p.parts:
-                          if p.suffix.lower() in forbidden:raise ValueError(str(p))
-                          raw=p.read_bytes();ledger[str(p)]=hashlib.sha256(raw).hexdigest();out.writestr(str(p),raw)
-              out.writestr('SOURCE_EXPORT83.json',json.dumps({'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'baseline':'e6d2b89f4f113f4b54b5f270359fafdc7bee67c4','sha256':ledger},sort_keys=True,indent=2))
+              def store(name,raw):
+                  if Path(name).suffix.lower() in forbidden:raise ValueError(name)
+                  ledger[name]=hashlib.sha256(raw).hexdigest();out.writestr(name,raw)
+              for p in sorted(root.rglob('*')):
+                  if p.is_file() and '__pycache__' not in p.parts:store(str(p),p.read_bytes())
+              ref='766319d4d4c0877c439f10ae433eb608e0b41626'
+              names=subprocess.check_output(['git','ls-tree','-r','--name-only',ref,str(root)],text=True).splitlines()
+              for name in names:
+                  store('editorial82/'+str(Path(name).relative_to(root)),subprocess.check_output(['git','show',ref+':'+name]))
+              review='reviews/2026-10-11-econometrica-numerical-methods-r67/referee_report.md'
+              store(review,subprocess.check_output(['git','show','4b27b56f4514f6c1d77b69fe707f7202f8b06b19:'+review]))
+              out.writestr('SOURCE_EXPORT83.json',json.dumps({'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'baseline':'e6d2b89f4f113f4b54b5f270359fafdc7bee67c4','editorial_commit':ref,'sha256':ledger},sort_keys=True,indent=2))
           print(json.dumps({'files':len(ledger),'bytes':Path('nbo-r83-pinned-inputs.zip').stat().st_size}))
           PY
       - uses: actions/upload-artifact@v4
