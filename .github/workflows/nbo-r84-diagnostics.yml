@@ -23,9 +23,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import hashlib,json,os,pathlib,re,urllib.request
+          import hashlib,json,os,pathlib,urllib.request,urllib.parse
+          class SafeRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,req,fp,code,msg,headers,newurl):
+                  result=super().redirect_request(req,fp,code,msg,headers,newurl)
+                  if urllib.parse.urlparse(req.full_url).netloc!=urllib.parse.urlparse(newurl).netloc:
+                      result.remove_header('Authorization')
+                  return result
+          opener=urllib.request.build_opener(SafeRedirect())
           req=urllib.request.Request('https://api.github.com/repos/TrillionniumFoundation/NBO/actions/jobs/114722283049/logs',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
-          with urllib.request.urlopen(req,timeout=45) as r:raw=r.read()
+          with opener.open(req,timeout=45) as r:raw=r.read()
           text=raw.decode('utf-8-sig',errors='replace')
           last=text.rfind('Traceback (most recent call last)')
           if last<0:last=max(0,len(text)-16000)
