@@ -1,0 +1,91 @@
+\section{Original-law qualification of constructed policies}\label{sec:cost77}
+A continuation can have a verified fitting objective without its implemented policy having an identified economic advantage. The distinction is resolved by evaluating the same complete policy that the construction returns. We now connect the qualification-optimal readouts of Section~\ref{sec:qualification73} to independent original-law cost observations. Neither the fitted future nor the acquired actor is replaced during evaluation. The comparison concerns the constructed NBO policies, rather than a different recursive controller supplied with the same neural label.
+
+\subsection{Conditional integration and numerical observations}
+In the two-state, two-date investment economy, write $a_t=\pi_t(X_t)$ and $\beta=15/16$. A cash observation and a conditionally integrated observation are
+\begin{align}
+ C^\pi&=c(X_0,a_0)+\beta c(X_1,a_1)+\beta^2g(X_2),\label{eq:cash77}\\
+ Y^\pi&=c(X_0,a_0)+\beta c(X_1,a_1)
+                    +\beta^2\bar g(X_1,a_1),\label{eq:conditional77}
+\end{align}
+where $\bar g(x,a)=P^ag(x)$. If $m(x,a)$ is the deterministic part of the transition, the original common, opposite-signed innovation gives the exact identity
+\begin{equation}\label{eq:last-moment77}
+ \bar g(x,a)=g(m(x,a))+\frac{5}{3072}.
+\end{equation}
+The shortage term depends on the sum of the coordinates and is unchanged by that innovation. The quadratic state and difference terms supply the variance correction. Consequently,
+\[
+ \E Y^\pi=\E C^\pi=\E J_0^\pi(X_0),\qquad
+ \operatorname{Var}(Y^\pi-Y^\sigma)
+       \le\operatorname{Var}(C^\pi-C^\sigma)
+\]
+when both policies use the same initial state and innovations. The variance inequality concerns the exact observations; it does not assert that every finite-sample numerical interval must be narrower.
+
+The state cube is invariant. On that cube, $0\le a\le1/4$, a stage cost is at most $103/64$, and the terminal cost is at most $37/16$. Both observations therefore lie in
+\begin{equation}\label{eq:support77}
+ [0,H],\qquad H=\frac{103}{64}(1+\beta)+\frac{37}{16}\beta^2
+                  =\frac{21097}{4096}.
+\end{equation}
+A paired difference has the signed support $[-H,H]$. Negative common-path gains are not clipped. No original-optimum value query is required to compute either observation for a frozen acquired actor.
+
+An initial or innovation bin is a continuous cell, not a point mass. The evaluator encloses every true state in the bin, every acquired cell reached by that state enclosure, and every resulting feasible action. When an enclosure crosses an acquisition boundary, all intersected actions enter the continuation enclosure. A second implementation evaluates the same primitives using integer-directed arithmetic and expanded polynomials. The reported endpoints are the hull of the two valid enclosures, intersected with the proved support. Arithmetic agreement is a check on the implementations; validity follows from the enclosure rules and the primitive identities, not from agreement alone.
+
+\subsection{Precision and the decision criterion}
+The following statement applies to any fixed finite collection of qualified policies, not only to the two feature bases used below. All construction information is fixed before the independent evaluation rows are drawn. Dependence among policies on a common row is allowed.
+
+\begin{theorem}[Original-law cost qualification]\label{thm:precision77}
+For each of $K$ declared estimands, let $Z_i$ be its original-law observation on independent row $i$, and suppose a deterministic full-bin calculation returns
+\[
+ a\le L_i\le Z_i\le U_i\le b,\qquad i=1,\ldots,N.
+\]
+The inclusion may instead hold for the original conditional expectation within the sampled bin. Put $R=b-a$, let $\bar L,\bar U$ denote sample means, and let $s_L^2,s_U^2$ be the unbiased endpoint sample variances. For $N\ge2$ and $\ell>0$, define
+\[
+ r_L=\sqrt{\frac{2s_L^2\ell}{N}}+\frac{7R\ell}{3(N-1)},\qquad
+ r_U=\sqrt{\frac{2s_U^2\ell}{N}}+\frac{7R\ell}{3(N-1)}.
+\]
+With probability at least $1-4K e^{-\ell}$, simultaneously for the declared collection,
+\begin{equation}\label{eq:interval77}
+ \E Z_i\in[\bar L-r_L,\bar U+r_U].
+\end{equation}
+Before rounding the final endpoints, its width is exactly
+\begin{equation}\label{eq:width77}
+ (\bar U-\bar L)
+ +\sqrt{\frac{2s_L^2\ell}{N}}+\sqrt{\frac{2s_U^2\ell}{N}}
+ +\frac{14R\ell}{3(N-1)}.
+\end{equation}
+Upward square roots and outward final rounding preserve coverage. The first term includes all retained numerical and acquisition uncertainty; the middle terms reflect observed endpoint dispersion; the last term is the finite-support penalty. A declared full-width target is met only when their computed sum meets it.
+\end{theorem}
+
+The proof in the Technical Supplement applies the empirical-Bernstein inequality of \citet{maurer2009} to the lower and upper endpoint variables. The statistical inequality is established work. The contribution here is its application to the original-law costs of the actual constructed actors, with executable whole-bin observations, independent arithmetic and an explicit precision account. Refining only a simulation bin cannot remove the finite-support or sampling terms. Conversely, an inaccurate uniform regret certificate need not prevent an accurate comparison of two actual policy costs.
+
+Precision, equivalence and improvement are different conclusions. For a cost-difference interval $[l,u]$ and a predeclared margin $\delta$, equivalence requires $-\delta<l\le u<\delta$. Noninferiority of the first policy requires $u<\delta$; strict superiority requires $u<0$. An interval can meet its width target and fail equivalence because it identifies a material difference. These decisions are made from exact endpoints, not from rounded table entries.
+
+\begin{corollary}[Priced selection and adoption]\label{cor:purchase77}
+On the simultaneous event of Theorem~\ref{thm:precision77}, let $[L_j,U_j]$ qualify the cost of policy $j$, and let $w_j$ be its declared nonnegative resource charge. A minimizer $\widehat j$ of $U_j+w_j$ satisfies, for every policy $j$,
+\[
+ J_{\widehat j}+w_{\widehat j}
+       \le J_j+w_j+(U_j-L_j).
+\]
+The inequality holds for every assignment of resource prices on the same event. If the gain from replacing an installed controller is in $[l,u]$, then $m$ deployments, monetary scale $v\ge0$, qualification charge $q\ge0$ and replacement fee $f\ge0$ give expected net benefit in
+\[
+ [mv l-q-f,\;mv u-q-f].
+\]
+In particular, when $l>0$ and $v>0$, every $m>(q+f)/(vl)$ is certified beneficial.
+\end{corollary}
+\begin{proof}
+The first assertion follows from $J_{\widehat j}\le U_{\widehat j}$, the minimizing property, and $U_j\le J_j+U_j-L_j$. These deterministic inequalities hold for all nonnegative prices once all cost intervals cover. The second assertion is multiplication by $mv$ and subtraction of $q+f$.
+\end{proof}
+
+The resource charges in this result must be specified, not inferred from normalized losses. An already paid construction and a prospective purchase have different charges. When only a shared qualification service has been timed, charging that entire service to a proposed replacement is conservative; inventing a per-policy marginal qualification time is not.
+
+\subsection{The constructed-controller experiment}
+The fixed catalogue consists of the four previously constructed NBO actors and the admissible zero-investment incumbent. ReLU and degree-four Bernstein continuations each have nine coefficients and are constructed on eight- or sixteen-cell coordinate covers. At a fixed cover, the two bases use the same acquisition contract and primitive information. The actor arrays, actual fitted futures and exact optimization certificates are unchanged. The zero-investment policy supplies an economically interpretable installed reference; it is not substituted for the strong conventional query competitors in the preceding study.
+
+Before execution, the protocol fixes $N=524{,}288$, forty-bit continuous bins, the sample stream, the full-width target $1/256$, and the separate two-sided equivalence margin $1/256$. All five marginal costs and ten paired differences are reported for both observations in \eqref{eq:cash77}--\eqref{eq:conditional77}. Thus $K=30$ and $\ell=10$ give a joint failure bound below $1/100$. Reusing a row for another controller or estimator does not increase the independent sample count. The declared independence model concerns the simulated rows; a fixed pseudorandom seed establishes reproducibility, not mathematical independence.
+
+\input{tables/cost77}
+\input{tables/pairs77}
+\input{tables/findings77}
+
+The construction and the evaluation now refer to the same complete controllers. The resulting cost intervals, rather than a reduction in the residual-fitting objective, determine the adoption regions in Corollary~\ref{cor:purchase77}. Comparisons between the feature bases identify only what their paired intervals support. The earlier unresolved and adverse query-method comparisons remain distinct evidence and are preserved in the Numerical and Development Appendix.
+
+Both interval implementations evaluate every new trajectory and every acquired-action rectangle. Additional rational midpoint checks test predetermined rows. The phase ledger separates controller loading, lookup preparation, binary64 evaluation, integer evaluation, exact statistical arithmetic, output and the complete parent process. The independent replay recomputes the entire new enclosure catalogue without replacing its original clocks. This evaluates the two-date constructed-policy problem; it is not an independent rerun of the older, much larger vector Bellman tree.
