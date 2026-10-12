@@ -1,7 +1,7 @@
 """R84 publication tables; exact rational endpoints round outwards."""
 from pathlib import Path
 from fractions import Fraction as F
-import json
+import json,re
 R=Path(__file__).resolve().parents[1]
 MODELS=((8,'relu'),(8,'bernstein'),(16,'relu'),(16,'bernstein'))
 METHODS=('original_actionwise_band','complete_menu_band','compatible_band')
@@ -19,11 +19,20 @@ def name(s):return ('R' if 'relu' in s else 'B')+s.rsplit('-n',1)[1]
 def tolerance(s):
     x=F(s)
     return '$0$' if not x else '$2^{-'+str(x.denominator.bit_length()-1)+'}$'
+def narrow_interval(value):
+    text=str(value)
+    match=re.fullmatch(r'\[(-?\d+\.\d+), (-?\d+\.\d+)\]',text)
+    if not match:return text
+    return r'\shortstack[r]{$['+match[1]+r',$\\$'+match[2]+r']$}'
 def table(path,caption,label,heads,rows,note,cols,long=False):
+    if long:
+        heads=[r'\shortstack[l]{First minus\\second}' if h=='First minus second' else h for h in heads]
+        rows=[[narrow_interval(cell) for cell in row] for row in rows]
+        note+=' Each interval is displayed on two lines, with its lower endpoint above its upper endpoint; no endpoint digit or catalogue row is omitted.'
     head=' & '.join(heads)+r' \\'+'\n'
     body='\n'.join(' & '.join(map(str,row))+r' \\' for row in rows)+'\n'
     if long:
-        text='{\\small\\setlength{\\tabcolsep}{3pt}\n\\begin{longtable}{'+cols+'}\n\\caption{'+caption+'}\\label{'+label+r'}\\'+'\n\\hline\n'+head+'\\hline\n\\endfirsthead\n\\hline\n'+head+'\\hline\n\\endhead\n'+body+'\\hline\n\\end{longtable}}\n{\\footnotesize '+note+'}\n'
+        text='{\\small\\setlength{\\tabcolsep}{3pt}\\renewcommand{\\arraystretch}{1.12}\n\\begin{longtable}{'+cols+'}\n\\caption{'+caption+'}\\label{'+label+r'}\\'+'\n\\hline\n'+head+'\\hline\n\\endfirsthead\n\\hline\n'+head+'\\hline\n\\endhead\n'+body+'\\hline\n\\end{longtable}}\n{\\footnotesize '+note+'}\n'
     else:
         text='\\begin{table}[htbp]\n\\centering\n\\caption{'+caption+'}\\label{'+label+'}\n{\\small\\setlength{\\tabcolsep}{3pt}\n\\begin{tabular}{'+cols+'}\n\\hline\n'+head+'\\hline\n'+body+'\\hline\n\\end{tabular}}\n\\par\\smallskip\n{\\footnotesize '+note+'}\n\\end{table}\n'
     write('tables/'+path+'.tex',text)
