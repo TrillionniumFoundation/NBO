@@ -1,0 +1,101 @@
+name: NBO R92 verified referee package
+on:
+  push:
+    branches: [revision/econometrica-nbo-r92-referee-revision-2026-10-13]
+    paths: [.github/workflows/nbo-r92-release.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r92-release
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 100
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-13-r92/
+      - name: Verify frozen sources, complete checks and actual-PDF visual evidence
+        run: |
+          /usr/bin/python3 revisions/2026-10-13-r92/code/release92.py --record
+          /usr/bin/python3 - <<'PY'
+          import subprocess
+          base='368a9e754f5de04eb1957e152f22d6ef2c34f2fe'
+          changed=subprocess.check_output(['git','diff','--name-only',base,'HEAD'],text=True).splitlines()
+          outside=[p for p in changed if not p.startswith(('revisions/2026-10-13-r92/','.github/workflows/nbo-r92-'))]
+          if outside:raise AssertionError(('Earlier tree changed',outside))
+          print('Earlier tree unchanged through current delivery commit.')
+          PY
+      - name: Reject corrupted or incomplete release evidence in isolated copies
+        run: |
+          /usr/bin/python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,shutil,subprocess,sys,tempfile
+          root=Path('revisions/2026-10-13-r92').resolve()
+          manifest=json.loads((root/'audit/reproduction92/SOURCE92.json').read_text())
+          records=[]
+          with tempfile.TemporaryDirectory(prefix='nbo-r92-release-tests-') as temp:
+              dest=Path(temp)/'paper';dest.mkdir()
+              for name in manifest['files']:
+                  target=dest/name;target.parent.mkdir(parents=True,exist_ok=True)
+                  shutil.copy2(root/name,target)
+              shutil.copytree(root/'audit/reproduction92',dest/'audit/reproduction92')
+              shutil.copytree(root/'build',dest/'build')
+              def invoke():
+                  return subprocess.run([sys.executable,'code/release92.py'],cwd=dest,capture_output=True,text=True,timeout=120)
+              baseline=invoke()
+              if baseline.returncode:raise AssertionError(('Isolated positive release failed',baseline.stderr))
+              def challenge(name,path,change,expected):
+                  p=dest/path;before=p.read_bytes()
+                  try:
+                      change(p)
+                      out=invoke()
+                      if out.returncode==0 or 'R92 release refused:' not in out.stderr or expected not in out.stderr:
+                          raise AssertionError((name,out.returncode,out.stderr))
+                      records.append({'name':name,'status':'passed','rejected_returncode':out.returncode,'reason':out.stderr.strip()})
+                  finally:
+                      p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(before)
+              def alter_json(p,fn):
+                  x=json.loads(p.read_text());fn(x);p.write_text(json.dumps(x))
+              visual='audit/reproduction92/VISUAL92.json'
+              challenge('missing visual record',visual,lambda p:p.unlink(),'VISUAL92.json')
+              challenge('wrong inspected PDF hash',visual,lambda p:alter_json(p,lambda x:x['documents']['ECTA'].__setitem__('pdf_sha256','0'*64)),'Stale PDF or visual record')
+              challenge('missing inspected page',visual,lambda p:alter_json(p,lambda x:x['documents']['appendix']['inspected_pages'].pop()),'Incomplete page-layout inspection')
+              challenge('changed frozen source','code/centered92.py',lambda p:p.write_bytes(p.read_bytes()+b'\n'),'Changed frozen source')
+              challenge('missing current bibliography','build/ECTA.bbl',lambda p:p.unlink(),'Missing current bibliography')
+              challenge('changed current PDF bytes','build/ECTA.pdf',lambda p:p.write_bytes(p.read_bytes()+b'\n'),'Stale PDF or visual record')
+              final=invoke()
+              if final.returncode:raise AssertionError(('Restored positive release failed',final.stderr))
+          out={'status':'passed','source_commit':manifest['source_commit'],'positive_controls':2,'negative_cases':records,'negative_case_count':len(records),'scope':'Release-integrity tests in isolated copies; not additional scientific tests or economic observations.'}
+          (root/'audit/reproduction92/RELEASE_GATE_TESTS92.json').write_text(json.dumps(out,indent=2)+'\n')
+          print(json.dumps(out,indent=2))
+          PY
+      - name: Publish source-bound referee-ready package without force push
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add --sparse -f revisions/2026-10-13-r92/audit/reproduction92/RELEASE92.json revisions/2026-10-13-r92/audit/reproduction92/RELEASE_GATE_TESTS92.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'R92: publish complete original-paper referee package with matched visual evidence and fail-closed release tests'
+          fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r92-referee-revision-2026-10-13 HEAD:refs/heads/revision/econometrica-nbo-r92-referee-ready-2026-10-13
+          git rev-parse HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r92-referee-ready-pdfs-and-release
+          path: |
+            revisions/2026-10-13-r92/build/*.pdf
+            revisions/2026-10-13-r92/DELIVERY92.md
+            revisions/2026-10-13-r92/audit/reproduction92/RELEASE92.json
+            revisions/2026-10-13-r92/audit/reproduction92/VISUAL92.json
+            revisions/2026-10-13-r92/audit/reproduction92/RELEASE_GATE_TESTS92.json
+            revisions/2026-10-13-r92/audit/reproduction92/SUMMARY92.json
+            revisions/2026-10-13-r92/audit/reproduction92/INDEPENDENT92.json
+          compression-level: 1
+          retention-days: 30
