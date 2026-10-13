@@ -24,12 +24,20 @@ class ReleaseTests(unittest.TestCase):
             for rho in (F(1,3),F(3,2),F(17)):
                 n=math.ceil(d/rho);self.assertLessEqual(F(d,n),rho);self.assertLessEqual(n**d,(1+F(d)/rho)**d)
     def test_every_prior_active_section_has_one_assignment(self):
-        a=json.loads((R/'audit/PREPARATION72.json').read_text());sources={p:(R/p).read_bytes() for p in a['unchanged_active_sections']}
-        for path,record in a['unchanged_active_sections'].items():
+        import hashlib
+        a=json.loads((R/'audit/PREPARATION72.json').read_text())
+        unchanged=a['unchanged_active_sections'];amended=a.get('amended_active_sections',{})
+        self.assertFalse(set(unchanged)&set(amended))
+        original=json.loads((R/'preserved/R95-source/PREPARATION72-failed-in-R95.json').read_text())
+        self.assertEqual(set(unchanged)|set(amended),set(original['unchanged_active_sections']))
+        for path,record in dict(unchanged,**amended).items():
             count=sum((R/(doc+'.tex')).read_text().count('\\input{'+path[:-4]+'}') for doc in ('ECTA','supp','appendix'))
             self.assertEqual(count,1)
-            import hashlib
-            self.assertEqual(hashlib.sha256(sources[path]).hexdigest(),record['sha256'])
+            self.assertEqual(hashlib.sha256((R/path).read_bytes()).hexdigest(),record['sha256'])
+            if path in amended:
+                self.assertTrue(record['reason'])
+                self.assertEqual(record['original_sha256'],original['unchanged_active_sections'][path]['sha256'])
+                self.assertEqual(hashlib.sha256((R/record['original_path']).read_bytes()).hexdigest(),record['original_sha256'])
     def test_new_theorem_proofs_and_reference_keys(self):
         source='\n'.join((R/'sections'/p).read_text() for p in ('frozen72.tex','reuse72.tex','proofs72.tex'))
         for key in ('thm:frozen72','prop:moment72','thm:reuse72','prop:cover72'):

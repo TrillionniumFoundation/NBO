@@ -37,6 +37,7 @@ try:
         for key,num in re.findall(r'\\newlabel\{([^{}]+)\}\{\{([^{}]*)\}',(B/(doc+'.aux')).read_text()):
             labels[key]=num
     text=(R/'response.md').read_text()
+    text=re.sub(r'`([0-9a-f]{40,64})`',lambda m:r'\path{'+m[1]+'}',text)
     def resolve(m):
         if m[2] not in labels:raise RuntimeError('Unresolved response reference: '+m[2])
         return m[1]+' '+labels[m[2]]
