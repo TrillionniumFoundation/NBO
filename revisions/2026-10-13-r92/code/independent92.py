@@ -1,7 +1,7 @@
 """Independent primal-threshold/original-value checker. No centered92 import."""
 from pathlib import Path
 from fractions import Fraction as F
-from itertools import product
+from itertools import product,permutations
 import hashlib,json,time
 R=Path(__file__).resolve().parents[1]
 
@@ -43,6 +43,15 @@ def verify_record(rec):
                 need(rr==F(r[t][s][a]),'Original residual');row.append(rr)
                 k=ks[t][s][a];need(len(k['q'])==len(k['k']) and len(k['q'])>0,'Risk-piece dimensions')
                 need(F(k['reference'])==rho,'Original risk reference')
+                complete=set()
+                for order in permutations(range(S)):
+                    qq=[F(0)]*S;remaining=F(1)
+                    for z in order:
+                        qq[z]=min(remaining,p[z]/(1-alpha));remaining-=qq[z]
+                    need(remaining==0,'Independent risk-envelope filling')
+                    complete.add(tuple(qq))
+                need(complete=={tuple(map(F,qq)) for qq in k['q']},'Complete independent risk envelope')
+
                 for qq,kk in zip(k['q'],k['k']):
                     q=qvec(qq);need(len(q)==S,'Risk-piece state count')
                     need(all(x<=w/(1-alpha) for x,w in zip(q,p)),'Risk density cap')
