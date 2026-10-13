@@ -1,0 +1,87 @@
+name: NBO R95 independent ARM64 evidence
+on:
+  push:
+    branches: [revision/econometrica-nbo-r95-evidence-2026-10-13]
+    paths: [.github/workflows/nbo-r95-evidence.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r95-arm64-evidence
+  cancel-in-progress: false
+jobs:
+  publish-and-replicate:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+      PYTHONHASHSEED: '0'
+      R: revisions/2026-10-13-r95
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-13-r94/
+            /revisions/2026-10-13-r95/
+            /revisions/*/code/
+            /revisions/2026-10-10-r62/inputs/
+            /revisions/2026-10-11-r73/results73/
+            /revisions/2026-10-11-r77/results77/summary.json
+            /econsocart.cls
+            /econsocart.cfg
+            /ecta-fullname.bst
+            /.github/workflows/nbo-r95-evidence.yml
+      - name: Materialize the same verified manuscript without changing frozen models
+        id: materialize
+        run: python "$R/bootstrap/publish95.py" materialize
+      - name: Commit source and actor identity before independent execution
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --force --sparse -- "$R" ":(exclude)$R/**/__pycache__/**" ":(exclude)$R/**/*.pyc"
+          git commit -m 'R95: publish integrated source and frozen actors for independent ARM64 replication'
+          git push origin HEAD:"$GITHUB_REF_NAME"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install pinned dependencies and the publisher toolchain
+        run: |
+          python -m pip install -r "$R/requirements95.txt"
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended pandoc poppler-utils
+      - name: Independent-architecture replay with strict original-record identity checks
+        id: replay
+        run: python "$R/bootstrap/publish95.py" replay --tag arm64-95
+      - name: Run every inherited and current test without skips
+        if: always() && steps.materialize.outcome == 'success'
+        run: python "$R/code/run_tests95.py" --output-dir audit/remote95/tests
+      - name: Check original continuous-policy bounds with the rational kernel
+        if: always() && steps.replay.outcome == 'success'
+        run: python "$R/code/audit94.py" --tag arm64-95
+      - name: Rebuild the four current manuscripts from source
+        if: always() && steps.materialize.outcome == 'success'
+        run: python "$R/code/build95.py" --audit-dir audit/remote95/build
+      - name: Record the actual independent-architecture release gates
+        if: always() && steps.materialize.outcome == 'success'
+        run: python "$R/bootstrap/publish95.py" release --tag arm64-95
+      - name: Commit actual results and rebuilt manuscripts without overwriting other branches
+        if: always() && steps.materialize.outcome == 'success'
+        run: |
+          git add --force --sparse -- "$R" ":(exclude)$R/**/__pycache__/**" ":(exclude)$R/**/*.pyc"
+          if ! git diff --cached --quiet; then
+            git commit -m 'R95: retain independently rebuilt papers and actual ARM64 validation outcomes'
+            git push origin HEAD:"$GITHUB_REF_NAME"
+          fi
+          git rev-parse HEAD
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r95-arm64-${{ github.run_id }}
+          path: revisions/2026-10-13-r95
+          retention-days: 30
+          if-no-files-found: error
