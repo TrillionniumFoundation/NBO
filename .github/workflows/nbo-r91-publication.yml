@@ -37,7 +37,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
-      - name: Commit ordinary complete manuscript before verification
+      - name: Retain ordinary complete manuscript before verification
         run: |
           git config user.name 'NBO revision verification'
           git config user.email 'nbo-revision@users.noreply.github.com'
@@ -45,9 +45,9 @@ jobs:
           /usr/bin/python3 revisions/2026-10-13-r91/code/layout91.py
           git add --sparse -f revisions/2026-10-13-r91
           if ! git diff --cached --quiet; then
-            git commit -m 'R91: integrate ordinary full manuscript, preserve inherited content and canonicalize current bibliography'
+            git commit -m 'R91: retain ordinary full manuscript and preserved original inputs'
           fi
-          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r91-referee-revision-2026-10-13 HEAD:refs/heads/revision/econometrica-nbo-r91-source-2026-10-13
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r91-referee-revision-2026-10-13
       - name: Full unskipped tests, independent replay and four-document clean reconstruction
         id: verify
         run: /usr/bin/python3 revisions/2026-10-13-r91/code/reproduce91.py
@@ -61,9 +61,6 @@ jobs:
             git commit -m 'R91: retain actual current-document outputs and unskipped verification records'
           fi
           git push origin HEAD:refs/heads/revision/econometrica-nbo-r91-referee-revision-2026-10-13
-      - name: Publish only a genuinely verified compiled candidate
-        if: steps.verify.outcome == 'success'
-        run: git push origin HEAD:refs/heads/revision/econometrica-nbo-r91-compiled-2026-10-13
       - name: Assemble inspectable ordinary source and PDF artifact
         if: always() && steps.checkout.outcome == 'success'
         run: |

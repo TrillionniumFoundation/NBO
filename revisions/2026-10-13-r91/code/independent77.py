@@ -38,8 +38,13 @@ class Z:
         return Z(np.minimum.reduce(prods)//S,-((-np.maximum.reduce(prods))//S))
     __rmul__=__mul__
     def sq(self):
-        lower=np.where(self.lo>=0,self.lo*self.lo,np.where(self.hi<=0,self.hi*self.hi,0))
-        upper=np.maximum(self.lo*self.lo,self.hi*self.hi)
+        # NumPy 2 can infer a C integer for scalar Python-integer products.
+        # Retain arbitrary-precision object arithmetic in all selection branches.
+        left=np.asarray(self.lo*self.lo,dtype=object)
+        right=np.asarray(self.hi*self.hi,dtype=object)
+        zero=np.asarray(0,dtype=object)
+        lower=np.where(self.lo>=0,left,np.where(self.hi<=0,right,zero))
+        upper=np.maximum(left,right)
         return Z(lower//S,-((-upper)//S))
     def pos(self):return Z(np.maximum(0,self.lo),np.maximum(0,self.hi))
     def state(self):
