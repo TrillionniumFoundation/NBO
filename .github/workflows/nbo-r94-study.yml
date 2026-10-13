@@ -1,0 +1,128 @@
+name: NBO R94 prospective continuous-risk investment
+on:
+  push:
+    branches: [revision/econometrica-nbo-r94-continuous-risk-2026-10-13]
+    paths: [.github/workflows/nbo-r94-study.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r94-prospective-study
+  cancel-in-progress: false
+env:
+  OMP_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  primary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+        id: checkout
+        with:
+          ref: revision/econometrica-nbo-r94-continuous-risk-2026-10-13
+          fetch-depth: 2
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-13-r94/code/*94.py
+            /revisions/2026-10-13-r94/PROTOCOL94.md
+            /revisions/2026-10-13-r94/AMENDMENT94.md
+      - name: Install numerical dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy time
+          mkdir -p revisions/2026-10-13-r94/audit/reproduction94
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r94-source-2026-10-13
+      - name: New original-law and adversarial tests
+        run: |
+          cd revisions/2026-10-13-r94
+          /usr/bin/time -v -o audit/reproduction94/TESTS94.time /usr/bin/python3 code/tests94.py > audit/reproduction94/TESTS94.log 2>&1
+      - name: Fit and calibrate without opening evaluation
+        run: |
+          cd revisions/2026-10-13-r94
+          /usr/bin/time -v -o audit/reproduction94/PREPARE94.time /usr/bin/python3 code/study94.py prepare > audit/reproduction94/PREPARE94.log 2>&1
+      - name: Land actor and calibration freeze before evaluation
+        run: |
+          git add --sparse -f revisions/2026-10-13-r94/results94 revisions/2026-10-13-r94/audit/reproduction94
+          git commit -m 'R94: freeze actual fitted actors and calibration choice before independent evaluation'
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r94-continuous-risk-2026-10-13 HEAD:refs/heads/revision/econometrica-nbo-r94-calibration-2026-10-13
+      - name: Execute untouched primary stream and independent continuous-law audit
+        run: |
+          cd revisions/2026-10-13-r94
+          /usr/bin/time -v -o audit/reproduction94/EVALUATE94-primary.time /usr/bin/python3 code/study94.py evaluate --tag primary > audit/reproduction94/EVALUATE94-primary.log 2>&1
+          /usr/bin/time -v -o audit/reproduction94/INDEPENDENT94-primary.time /usr/bin/python3 code/audit94.py --tag primary > audit/reproduction94/INDEPENDENT94-primary.log 2>&1
+      - name: Preserve actual primary outputs including failures
+        if: always() && steps.checkout.outcome == 'success'
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add --sparse -f revisions/2026-10-13-r94/results94 revisions/2026-10-13-r94/audit/reproduction94 || true
+          if ! git diff --cached --quiet; then git commit -m 'R94: retain primary continuous-risk observations, complete work and independent audit'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r94-continuous-risk-2026-10-13
+          tar -czf nbo-r94-primary.tar.gz -C revisions/2026-10-13-r94 PROTOCOL94.md AMENDMENT94.md code results94 audit
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.checkout.outcome == 'success'
+        with:
+          name: nbo-r94-primary-source-and-evidence
+          path: nbo-r94-primary.tar.gz
+          retention-days: 30
+  arm64:
+    needs: primary
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+        id: checkout
+        with:
+          ref: revision/econometrica-nbo-r94-continuous-risk-2026-10-13
+          fetch-depth: 2
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-13-r94/code/*94.py
+            /revisions/2026-10-13-r94/PROTOCOL94.md
+            /revisions/2026-10-13-r94/AMENDMENT94.md
+            /revisions/2026-10-13-r94/results94/
+            /revisions/2026-10-13-r94/audit/reproduction94/
+      - name: Install numerical dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy time
+      - name: Replicate frozen policies without refitting or new observations
+        run: |
+          cd revisions/2026-10-13-r94
+          /usr/bin/time -v -o audit/reproduction94/TESTS94-arm64.time /usr/bin/python3 code/tests94.py > audit/reproduction94/TESTS94-arm64.log 2>&1
+          /usr/bin/time -v -o audit/reproduction94/EVALUATE94-replication-arm64.time /usr/bin/python3 code/study94.py evaluate --tag replication-arm64 > audit/reproduction94/EVALUATE94-replication-arm64.log 2>&1
+          /usr/bin/time -v -o audit/reproduction94/INDEPENDENT94-replication-arm64.time /usr/bin/python3 code/audit94.py --tag replication-arm64 > audit/reproduction94/INDEPENDENT94-replication-arm64.log 2>&1
+          /usr/bin/python3 - <<'PY'
+          import hashlib,json,pathlib,numpy as np
+          root=pathlib.Path('results94');p=root/'evaluation-primary';q=root/'evaluation-replication-arm64';rows=[]
+          for src in sorted(p.glob('alpha-*.csv')):
+              dst=q/src.name
+              a=np.genfromtxt(src,delimiter=',',names=True);b=np.genfromtxt(dst,delimiter=',',names=True)
+              if len(a)!=len(b):raise AssertionError('Replication changed the sample size')
+              equal={k:bool(np.array_equal(a[k],b[k])) for k in a.dtype.names}
+              if not all(equal[k] for k in ('row','x0','x1')):raise AssertionError('Replication used a different scientific stream')
+              rows.append({'file':src.name,'equal_columns':equal,'primary_sha256':hashlib.sha256(src.read_bytes()).hexdigest(),'arm64_sha256':hashlib.sha256(dst.read_bytes()).hexdigest(),'max_abs_differences':{k:float(np.max(np.abs(a[k]-b[k]))) for k in a.dtype.names}})
+          pathlib.Path('audit/reproduction94/ARCHITECTURE94.json').write_text(json.dumps({'frozen_policy_replication':rows,'new_fit_attempts':0,'new_independent_observations':0,'scope':'Two-architecture execution of the same frozen policies; primary fitting was performed on x64 only.'},indent=2,sort_keys=True)+'\n')
+          PY
+      - name: Preserve actual replication outputs including failures
+        if: always() && steps.checkout.outcome == 'success'
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add --sparse -f revisions/2026-10-13-r94/results94 revisions/2026-10-13-r94/audit/reproduction94 || true
+          if ! git diff --cached --quiet; then git commit -m 'R94: retain ARM64 frozen-policy replication and cross-architecture comparisons'; fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r94-continuous-risk-2026-10-13
+          tar -czf nbo-r94-two-architecture.tar.gz -C revisions/2026-10-13-r94 PROTOCOL94.md AMENDMENT94.md code results94 audit
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.checkout.outcome == 'success'
+        with:
+          name: nbo-r94-two-architecture-source-and-evidence
+          path: nbo-r94-two-architecture.tar.gz
+          retention-days: 30
