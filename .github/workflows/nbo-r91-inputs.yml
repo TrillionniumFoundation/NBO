@@ -1,0 +1,56 @@
+name: NBO R91 pinned revision inputs
+on:
+  push:
+    branches: [revision/econometrica-nbo-r91-referee-revision-2026-10-13]
+    paths: [.github/workflows/nbo-r91-inputs.yml]
+permissions:
+  contents: read
+jobs:
+  inputs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-13-r90/
+            /revisions/*/code/*.py
+            /revisions/2026-10-11-r73/results73/
+            /reviews/2026-10-12-econometrica-numerical-methods-r84/
+      - name: Bind and archive existing sources without modifying history
+        run: |
+          python3 - <<'PY'
+          import pathlib,subprocess,json,tarfile,hashlib
+          root=pathlib.Path('.');base='9e06160b5464c41a5b84eaab9c3c4d171fc22832'
+          raw=subprocess.check_output(['git','ls-tree','-r','-z',base]).split(b'\0')
+          entries=[];paths=[]
+          for line in raw:
+              if not line:continue
+              meta,path=line.split(b'\t',1);mode,kind,sha=meta.decode().split();p=path.decode()
+              if kind!='blob':continue
+              current=p.startswith('revisions/2026-10-13-r90/')
+              code=p.startswith('revisions/') and '/code/' in p and p.endswith('.py') and '/preserved/' not in p
+              legacy=p.startswith('revisions/2026-10-11-r73/results73/')
+              review=p.startswith('reviews/2026-10-12-econometrica-numerical-methods-r84/')
+              if current:entries.append({'path':p,'git_blob':sha,'mode':mode})
+              if current:
+                  parts=p.split('/')[2:]
+                  keep=not any(q in ('preserved','results72','results77','results80','publication','build') for q in parts)
+              else:keep=code or legacy or review
+              if keep and pathlib.Path(p).is_file():paths.append(p)
+          inventory={'baseline_commit':base,'review_commit':'b030d87d7e96440eb25a3178c94ee6a87940cdb0','current_tree':entries,'archived_files':paths,'scope':'Existing source and evidence bytes; no new fits, experiments or publication approval.'}
+          pathlib.Path('INPUTS91.json').write_text(json.dumps(inventory,indent=2)+'\n')
+          with tarfile.open('nbo-r91-inputs.tar.gz','w:gz',compresslevel=6) as out:
+              out.add('INPUTS91.json')
+              for p in paths:out.add(p,recursive=False)
+          print('Files',len(paths),'archive_bytes',pathlib.Path('nbo-r91-inputs.tar.gz').stat().st_size)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r91-pinned-inputs
+          path: nbo-r91-inputs.tar.gz
+          compression-level: 0
+          retention-days: 30
