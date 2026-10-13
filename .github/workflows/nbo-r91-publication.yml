@@ -1,0 +1,87 @@
+name: NBO R91 complete original-paper revision
+on:
+  push:
+    branches: [revision/econometrica-nbo-r91-referee-revision-2026-10-13]
+    paths: [.github/workflows/nbo-r91-publication.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r91-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      SOURCE_DATE_EPOCH: '1791849600'
+      FORCE_SOURCE_DATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        id: checkout
+        with:
+          fetch-depth: 100
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-13-r91/
+            /revisions/*/code/
+            /revisions/*/inputs/revisions/*/code/
+            /revisions/2026-10-11-r73/results73/
+            /reviews/2026-10-12-econometrica-numerical-methods-r84/
+      - name: Install numerical and publication dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Commit ordinary complete manuscript before verification
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          /usr/bin/python3 revisions/2026-10-13-r91/code/apply91.py
+          /usr/bin/python3 revisions/2026-10-13-r91/code/layout91.py
+          git add --sparse -f revisions/2026-10-13-r91
+          if ! git diff --cached --quiet; then
+            git commit -m 'R91: integrate ordinary full manuscript, preserve inherited content and canonicalize current bibliography'
+          fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r91-referee-revision-2026-10-13 HEAD:refs/heads/revision/econometrica-nbo-r91-source-2026-10-13
+      - name: Full unskipped tests, independent replay and four-document clean reconstruction
+        id: verify
+        run: /usr/bin/python3 revisions/2026-10-13-r91/code/reproduce91.py
+      - name: Preserve actual evidence without relabeling a failure
+        if: always() && steps.checkout.outcome == 'success'
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add --sparse -f revisions/2026-10-13-r91
+          if ! git diff --cached --quiet; then
+            git commit -m 'R91: retain actual current-document outputs and unskipped verification records'
+          fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r91-referee-revision-2026-10-13
+      - name: Publish only a genuinely verified compiled candidate
+        if: steps.verify.outcome == 'success'
+        run: git push origin HEAD:refs/heads/revision/econometrica-nbo-r91-compiled-2026-10-13
+      - name: Assemble inspectable ordinary source and PDF artifact
+        if: always() && steps.checkout.outcome == 'success'
+        run: |
+          python3 - <<'PY'
+          import pathlib,tarfile
+          root=pathlib.Path('revisions/2026-10-13-r91')
+          with tarfile.open('nbo-r91-manuscript.tar.gz','w:gz') as out:
+              for p in sorted(root.rglob('*')):
+                  if not p.is_file():continue
+                  rel=p.relative_to(root)
+                  if any(x in ('preserved','publication','__pycache__') or x.startswith('results') for x in rel.parts):continue
+                  if rel.parts[0]=='audit' and rel.parts[1]!='reproduction91' and '91' not in p.name:continue
+                  out.add(p,arcname=str(rel),recursive=False)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.checkout.outcome == 'success'
+        with:
+          name: nbo-r91-current-manuscript-and-verification
+          path: nbo-r91-manuscript.tar.gz
+          compression-level: 0
+          retention-days: 30
