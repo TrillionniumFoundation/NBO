@@ -1,0 +1,92 @@
+name: NBO R92 complete original-paper revision
+on:
+  push:
+    branches: [revision/econometrica-nbo-r92-referee-revision-2026-10-13]
+    paths: [.github/workflows/nbo-r92-publication.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r92-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      SOURCE_DATE_EPOCH: '1791849600'
+      FORCE_SOURCE_DATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        id: checkout
+        with:
+          fetch-depth: 100
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-13-r92/
+            /revisions/*/code/
+            /revisions/*/inputs/revisions/*/code/
+            /revisions/2026-10-11-r73/results73/
+            /reviews/2026-10-12-econometrica-numerical-methods-r84/
+      - name: Install numerical and publication dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-sklearn pandoc poppler-utils texlive-latex-extra texlive-fonts-recommended texlive-science
+      - name: Integrate and freeze ordinary manuscript before new execution
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          /usr/bin/python3 revisions/2026-10-13-r92/code/apply92.py
+          /usr/bin/python3 - <<'PY'
+          import ast,pathlib
+          for p in pathlib.Path('revisions/2026-10-13-r92/code').glob('*92.py'):
+              ast.parse(p.read_text(),filename=str(p))
+          PY
+          git add --sparse -f revisions/2026-10-13-r92
+          if ! git diff --cached --quiet; then
+            git commit -m 'R92: freeze ordinary complete manuscript and independent checker before diagnostic execution'
+          fi
+          git push --atomic origin HEAD:refs/heads/revision/econometrica-nbo-r92-referee-revision-2026-10-13 HEAD:refs/heads/revision/econometrica-nbo-r92-source-2026-10-13
+      - name: Full unskipped tests, original-law independent replay and clean scientific/typesetting reconstruction
+        id: verify
+        run: /usr/bin/python3 revisions/2026-10-13-r92/code/reproduce92.py
+      - name: Preserve actual successful or failed outputs on this revision only
+        if: always() && steps.checkout.outcome == 'success'
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email 'nbo-revision@users.noreply.github.com'
+          git add --sparse -f revisions/2026-10-13-r92
+          if ! git diff --cached --quiet; then
+            git commit -m 'R92: retain actual source-bound execution, independent audits and current-document outputs'
+          fi
+          git push origin HEAD:refs/heads/revision/econometrica-nbo-r92-referee-revision-2026-10-13
+          if test -f revisions/2026-10-13-r92/audit/reproduction92/SUMMARY92.json; then
+            cat revisions/2026-10-13-r92/audit/reproduction92/SUMMARY92.json
+          fi
+      - name: Assemble inspectable manuscript and verification records
+        if: always() && steps.checkout.outcome == 'success'
+        run: |
+          python3 - <<'PY'
+          import pathlib,tarfile
+          root=pathlib.Path('revisions/2026-10-13-r92')
+          with tarfile.open('nbo-r92-manuscript.tar.gz','w:gz') as out:
+              for p in sorted(root.rglob('*')):
+                  if not p.is_file():continue
+                  rel=p.relative_to(root)
+                  if any(x in ('preserved','publication','__pycache__') for x in rel.parts):continue
+                  if any(x.startswith('results') and x!='results92' for x in rel.parts):continue
+                  if rel.parts[0]=='audit' and len(rel.parts)>1 and rel.parts[1]!='reproduction92' and '92' not in p.name:continue
+                  out.add(p,arcname=str(rel),recursive=False)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.checkout.outcome == 'success'
+        with:
+          name: nbo-r92-current-manuscript-and-verification
+          path: nbo-r92-manuscript.tar.gz
+          compression-level: 0
+          retention-days: 30
