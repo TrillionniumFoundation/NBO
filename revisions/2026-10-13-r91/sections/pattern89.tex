@@ -1,0 +1,56 @@
+\section{Shared policy patterns and sharp occupation bounds}\label{sec:pattern89}
+A common continuation restricts an entire contingent plan, including its prescriptions at states that are not reached. Pairwise exclusions need not retain that restriction after the occupation variables are relaxed. The following construction preserves the complete pattern before relaxing the state distribution. It strengthens Theorem~\ref{thm:occupation86}, rather than replacing the original Bellman problem with an unrelated finite-policy benchmark.
+
+Use the original continuous-law model, reference policy, acquisition cells and whole-cell feasible action rules of Section~\ref{sec:recursive86}. A \emph{pattern} $\sigma$ assigns one menu label $\sigma(t,C)$ to every dated cell. Let $\Sigma_\epsilon$ be the patterns actually induced by members of $\Theta_\epsilon$, with the stipulated tie convention. This is a finite set even when the parameter set is infinite. For validity, it is sufficient to retain a finite superset $\overline\Sigma_\epsilon$ containing every actual pattern and satisfying all previously certified conflicts. A numerical search that finds some patterns does not establish such coverage. Conversely, asserting that a retained pattern is attained requires a qualified parameter witness; a fractional solution is not that witness.
+
+For each retained pattern introduce a weight $\lambda_\sigma\ge0$, cell masses $m^\sigma_{tC}$ and transition masses $z^\sigma_{tCD}\ge0$. Define the disaggregated flow polytope by
+\begin{align}\label{eq:pattern-flow89}
+ \sum_\sigma\lambda_\sigma&=1,&
+ m^\sigma_{0C}&=\lambda_\sigma\mu_C,\notag\\
+ \sum_D z^\sigma_{tCD}&=m^\sigma_{tC},&
+ m^\sigma_{t+1,D}&=\sum_C z^\sigma_{tCD},\notag\\
+ \underline p_{tC\sigma(t,C)D}m^\sigma_{tC}
+ &\le z^\sigma_{tCD}
+ \le\overline p_{tC\sigma(t,C)D}m^\sigma_{tC}.&&
+\end{align}
+All initial probabilities, transition enclosures and advantage enclosures are the original-law inputs in \eqref{eq:occupation-input86}. In particular, the transition restrictions cover the whole cell and its feasible repair, not just an acquired point. Put
+\begin{align}\label{eq:pattern-objective89}
+ L_\epsilon^{\rm pat}
+ &=\min\sum_{\sigma,t,C}B_t\ell_{tC\sigma(t,C)}m^\sigma_{tC},\notag\\
+ U_\epsilon^{\rm pat}
+ &=\max\sum_{\sigma,t,C}B_tu_{tC\sigma(t,C)}m^\sigma_{tC},
+\end{align}
+where both extrema are over \eqref{eq:pattern-flow89}.
+
+\begin{theorem}[Pattern-consistent transfer and its approximation error]\label{thm:pattern89}
+Suppose the qualification class is nonempty and the preceding coverage and enclosure conditions hold. Then every $\theta\in\Theta_\epsilon$ satisfies
+\[
+ L_\epsilon\le L_\epsilon^{\rm pat}
+ \le J_0^{\pi_\theta}-J_0^\tau
+ \le U_\epsilon^{\rm pat}\le U_\epsilon.
+\]
+The outer pair $(L_\epsilon,U_\epsilon)$ is that of Theorem~\ref{thm:occupation86} with the same conflicts and transition inputs. Valid exclusion of additional whole patterns can only improve the new pair. Certified lower and upper dual bounds remain sufficient for implementation.
+
+Suppose further that the retained patterns are exactly the attainable patterns, and each has a qualification witness. Define
+\begin{align*}
+ \omega_t&=\max_{C,a}(u_{tCa}-\ell_{tCa}),&
+ M_t&=\max_{C,a}\max\{|\ell_{tCa}|,|u_{tCa}|\},\\
+ \delta_t&=\max_{C,a}\sum_D
+       (\overline p_{tCaD}-\underline p_{tCaD}),&
+ e_t&=\min\left\{2,\sum_{s<t}\delta_s\right\},
+\end{align*}
+with $e_0=0$, and put $\mathcal E=\sum_{t<T}B_t(\omega_t+M_te_t)$. If $j_-$ and $j_+$ are the minimum and maximum true class-cost differences, respectively, then
+\begin{equation}\label{eq:pattern-error89}
+ j_- -\mathcal E\le L_\epsilon^{\rm pat}\le j_-\le j_+
+ \le U_\epsilon^{\rm pat}\le j_++\mathcal E.
+\end{equation}
+In particular, exact finite-state transitions and advantages give the exact class-cost extrema, attained by qualified patterns. More generally, any refinement sequence for which the displayed $\mathcal E$ tends to zero yields convergence of both bounds to the corresponding true extrema. The stated transition-width condition, not refinement alone, licenses this conclusion.
+\end{theorem}
+
+The full proof appears in Supplement~\ref{supp:pattern89}. It does not assume that the cell process of the continuous economy is Markov. Conditional cell-to-cell probabilities exist under each fixed policy at each date; the uniform enclosures contain those probabilities regardless of the within-cell distribution. Disaggregation prevents an optimization relaxation from buying one parameter pattern initially and a different pattern after observing its induced state.
+
+\paragraph{Why complete patterns add information.}
+The two-date example in Supplement~\ref{supp:occupation86} has two qualified signs of one shared coefficient. One sign visits the right-hand state and then selects its free action. The other sign selects the costly action there but never visits that state. Every actual policy therefore has cost zero. The pair-conflict flow relaxation permits mass $1/2$ on the right-hand state and its costly action; its upper bound is $1/2$. Disaggregation by the two attainable patterns gives upper bound zero. This strict improvement requires no new policy-cost sample, changed economic primitive or successful nonconvex fit.
+
+\paragraph{Computation and scope.}
+The number of complete patterns can be exponential in the number of dated cells. Enumeration is therefore a finite exact implementation, not a general polynomial-time claim. One may begin with an outer covering of parameter space, retain every unresolved pattern and refine only economically material branches. Every discarded branch needs a valid exclusion for the actual own-future qualification functional. Missing a branch invalidates the bound; retaining an unresolved branch only weakens it. The state-flow width in \eqref{eq:pattern-error89} and the global-pattern relaxation are distinct approximation costs. This distinction preserves both the original continuous economy and the original-optimum policy sandwich while making the added qualification work explicit.
