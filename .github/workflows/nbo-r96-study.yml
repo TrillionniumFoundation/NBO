@@ -8,7 +8,7 @@ permissions:
   contents: write
 concurrency:
   group: nbo-r96-primary-confirmation
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event.head_commit.message == 'R96: replace queued pre-execution delivery with final clean-build gates' }}
 jobs:
   confirmation:
     runs-on: ubuntu-24.04
@@ -24,6 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.ref_name }}
           fetch-depth: 2
           filter: blob:none
           sparse-checkout-cone-mode: false
@@ -39,14 +40,14 @@ jobs:
             /.github/workflows/nbo-r96-study.yml
       - name: Materialize ordinary R96 sources and the amended preservation contract
         id: materialize
-        run: python "$R/bootstrap96/materialize96.py"
-      - name: Publish the source and protocol before constructing any primary actor
+        run: |
+          if [ ! -f "$R/audit/reproduction96/INTEGRATION96.json" ]; then python "$R/bootstrap96/materialize96.py"; fi
+      - name: Publish ordinary source and protocol before primary construction
         run: |
           git config user.name 'NBO revision verification'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add --force --sparse -- "$R" ":(exclude)$R/**/__pycache__/**" ":(exclude)$R/**/*.pyc"
-          git commit -m 'R96: freeze ordinary manuscript, convex-order proof and prospective confirmation protocol'
-          git push origin HEAD:"$GITHUB_REF_NAME"
+          if ! git diff --cached --quiet; then git commit -m 'R96: freeze ordinary manuscript, convex-order proof and prospective confirmation protocol'; git push origin HEAD:"$GITHUB_REF_NAME"; fi
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13.5'
@@ -56,7 +57,7 @@ jobs:
           python -m pip install -r "$R/requirements95.txt"
           sudo apt-get update -qq
           sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended pandoc poppler-utils time
-      - name: Verify new precision and source-preservation tests before primary construction
+      - name: Verify new precision and preservation tests before primary construction
         run: |
           cd "$R"
           /usr/bin/time -v -o audit/reproduction96/NEW_TESTS96.time python -m unittest discover -s code -p 'tests*96.py' -v > audit/reproduction96/NEW_TESTS96.log 2>&1
@@ -64,21 +65,19 @@ jobs:
         id: prepare
         run: |
           cd "$R"
-          /usr/bin/time -v -o audit/reproduction96/PREPARE96.time python code/experiment96.py prepare > audit/reproduction96/PREPARE96.log 2>&1
-      - name: Commit and publish actual models and selector before confirmation
+          if [ ! -f results96/FREEZE96.json ]; then /usr/bin/time -v -o audit/reproduction96/PREPARE96.time python code/experiment96.py prepare > audit/reproduction96/PREPARE96.log 2>&1; fi
+      - name: Publish actual models and selector before confirmation
         id: freeze
         run: |
           git add --force --sparse -- "$R/results96" "$R/audit/reproduction96"
-          git commit -m 'R96: publish actual rank-six models, calibration selector and source identities before independent confirmation'
-          git push origin HEAD:"$GITHUB_REF_NAME"
+          if ! git diff --cached --quiet; then git commit -m 'R96: publish actual rank-six models, selector and source identities before independent confirmation'; git push origin HEAD:"$GITHUB_REF_NAME"; fi
       - name: Execute the previously unopened independent confirmation stream
         id: evaluate
         run: |
           cd "$R"
-          /usr/bin/time -v -o audit/reproduction96/EVALUATE96.time python code/experiment96.py evaluate --tag primary > audit/reproduction96/EVALUATE96.log 2>&1
+          if [ ! -f results96/evaluation-primary/RESULTS96.json ]; then /usr/bin/time -v -o audit/reproduction96/EVALUATE96.time python code/experiment96.py evaluate --tag primary > audit/reproduction96/EVALUATE96.log 2>&1; fi
       - name: Measure forty fresh-process executions with complete process boundaries
         id: timing
-        if: success()
         run: |
           cd "$R"
           /usr/bin/time -v -o audit/reproduction96/TIMING96.time python code/experiment96.py timing > audit/reproduction96/TIMING96.log 2>&1
@@ -87,20 +86,21 @@ jobs:
         if: always() && steps.evaluate.outcome == 'success'
         run: |
           cd "$R"
+          if [ -f audit/reproduction96/INDEPENDENT96-primary.json ]; then cp audit/reproduction96/INDEPENDENT96-primary.json "audit/reproduction96/INDEPENDENT96-prior-attempt-${GITHUB_RUN_ATTEMPT}.json"; fi
           /usr/bin/time -v -o audit/reproduction96/INDEPENDENT96.time python code/independent96.py --tag primary --fixtures 8 > audit/reproduction96/INDEPENDENT96.log 2>&1
       - name: Replay every inherited and new suite without skips
         id: tests
         if: always() && steps.dependencies.outcome == 'success' && steps.materialize.outcome == 'success'
         run: python "$R/code/run_tests95.py" --output-dir audit/reproduction96/tests
-      - name: Generate source-bound tables from the actual frozen observations
+      - name: Generate source-bound tables from actual frozen observations
         id: tables
         if: always() && steps.evaluate.outcome == 'success' && steps.timing.outcome == 'success'
         run: python "$R/code/report96.py" --tag primary
-      - name: Compile the four current manuscripts using the publisher class
+      - name: Compile four current manuscripts and reject unresolved references or overflow
         id: build
         if: always() && steps.tables.outcome == 'success'
         run: python "$R/code/build95.py" --audit-dir audit/reproduction96/build
-      - name: Reconstruct current PDFs again from clean source
+      - name: Reconstruct the PDFs a second time from clean source
         id: clean
         if: always() && steps.build.outcome == 'success'
         run: python "$R/code/clean96.py"
@@ -108,19 +108,16 @@ jobs:
         id: release
         if: always() && steps.materialize.outcome == 'success'
         run: python "$R/code/release96.py" --tag primary
-      - name: Retain all outcomes, current sources, raw evidence and generated PDFs
+      - name: Retain all outcomes, raw evidence and generated PDFs
         if: always() && steps.materialize.outcome == 'success'
         run: |
           git add --force --sparse -- "$R" ":(exclude)$R/**/__pycache__/**" ":(exclude)$R/**/*.pyc"
-          if ! git diff --cached --quiet; then
-            git commit -m 'R96: retain actual confirmation, independent checks, test outcomes and current publication builds'
-            git push origin HEAD:"$GITHUB_REF_NAME"
-          fi
+          if ! git diff --cached --quiet; then git commit -m 'R96: retain actual confirmation, independent checks, test outcomes and current publication builds'; git push origin HEAD:"$GITHUB_REF_NAME"; fi
           git rev-parse HEAD
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: nbo-r96-primary-${{ github.run_id }}
+          name: nbo-r96-primary-${{ github.run_id }}-${{ github.run_attempt }}
           path: revisions/2026-10-13-r96
           retention-days: 30
           if-no-files-found: error
