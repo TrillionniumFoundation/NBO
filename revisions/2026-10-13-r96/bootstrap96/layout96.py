@@ -1,4 +1,4 @@
-"""Pre-execution table layout only; numerical expressions and rows are unchanged."""
+"""Pre-execution publication completion; no empirical rule or calculation changes."""
 from pathlib import Path
 R=Path(__file__).resolve().parents[1]
 p=R/'code/report96.py'
@@ -14,4 +14,14 @@ for old,new in replacements.items():
     if old not in s:raise RuntimeError('Unexpected report source; refusing an unreviewed layout rewrite')
     s=s.replace(old,new)
 p.write_text(s)
-print('Table headings wrapped; all numerical expressions and row generation retained.')
+precision=R/'sections/precision96.tex';text=precision.read_text()
+anchor='The same argument applies to a rectangular product innovation law'
+if text.count(anchor)!=1:raise RuntimeError('Unexpected precision statement location')
+precision.write_text(text.replace(anchor,'\\input{sections/sharpness96}\n\n'+anchor))
+proof=R/'sections/proofs96.tex';proof.write_text(proof.read_text()+'\n\\input{sections/sharpness_proof96}\n')
+response=R/'response.md';text=response.read_text()
+anchor='## M1 / B9.'
+if text.count(anchor)!=1:raise RuntimeError('Unexpected response structure')
+text=text.replace(anchor,'The exact equality in [[Corollary cor:sharpness96]] also shows that the integration-rate exponent and leading constant are sharp for the stated midpoint and endpoint rules, already on explicit two-unit convex ReLU continuations. The full threshold proof and exact-rational witnesses are retained. This is not a lower bound for every possible integration algorithm or a claim of neural empirical superiority.\n\n'+anchor)
+response.write_text(text)
+print('Table headings wrapped and exact neural sharpness integrated; confirmation rules unchanged.')
