@@ -1,5 +1,6 @@
-"""Pre-execution publication completion; no empirical rule or calculation changes."""
+"""Pre-construction completion; the comparison design and empirical rules remain fixed."""
 from pathlib import Path
+import subprocess,sys
 R=Path(__file__).resolve().parents[1]
 p=R/'code/report96.py'
 s=p.read_text()
@@ -24,4 +25,5 @@ anchor='## M1 / B9.'
 if text.count(anchor)!=1:raise RuntimeError('Unexpected response structure')
 text=text.replace(anchor,'The exact equality in [[Corollary cor:sharpness96]] also shows that the integration-rate exponent and leading constant are sharp for the stated midpoint and endpoint rules, already on explicit two-unit convex ReLU continuations. The full threshold proof and exact-rational witnesses are retained. This is not a lower bound for every possible integration algorithm or a claim of neural empirical superiority.\n\n'+anchor)
 response.write_text(text)
-print('Table headings wrapped and exact neural sharpness integrated; confirmation rules unchanged.')
+subprocess.run([sys.executable,str(R/'bootstrap96/parallel_audit_patch96.py')],check=True,cwd=R)
+print('Table typography, exact sharpness and deterministic audit scheduling complete; primary comparison rules unchanged.')
