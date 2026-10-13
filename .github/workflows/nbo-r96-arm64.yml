@@ -1,0 +1,118 @@
+name: NBO R96 ARM64 frozen-model replication
+on:
+  push:
+    branches: [revision/econometrica-nbo-r96-arm64-evidence-2026-10-13]
+    paths: [.github/workflows/nbo-r96-arm64.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r96-arm64-replication
+  cancel-in-progress: false
+jobs:
+  replication:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+      PYTHONHASHSEED: '0'
+      PYTHONDONTWRITEBYTECODE: '1'
+      R: revisions/2026-10-13-r96
+      PRIMARY: revision/econometrica-nbo-r96-decision-precision-2026-10-13
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 50
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-13-r96/
+            /revisions/*/code/
+            /revisions/2026-10-10-r62/inputs/
+            /revisions/2026-10-11-r73/results73/
+            /revisions/2026-10-11-r77/results77/summary.json
+            /.github/workflows/nbo-r96-arm64.yml
+      - name: Wait for the actual remotely committed primary models and selector
+        id: source
+        run: |
+          git config user.name 'NBO independent-architecture verification'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          ready=false
+          for attempt in $(seq 1 60); do
+            git fetch --no-tags --filter=blob:none --depth=50 origin "$PRIMARY"
+            pin=$(git rev-parse FETCH_HEAD)
+            if git cat-file -e "$pin:$R/results96/FREEZE96.json" 2>/dev/null; then ready=true; break; fi
+            sleep 60
+          done
+          test "$ready" = true
+          git merge --no-edit "$pin"
+          mkdir -p "$R/audit/arm64-96"
+          printf '%s\n' "$pin" > "$R/audit/arm64-96/PRIMARY_FREEZE_COMMIT.txt"
+          git add --force --sparse -- "$R/audit/arm64-96/PRIMARY_FREEZE_COMMIT.txt"
+          git commit -m 'R96 ARM64: bind replication to the remotely committed primary model freeze'
+          git push origin HEAD:"$GITHUB_REF_NAME"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install identical numerical versions without refitting
+        id: dependencies
+        run: python -m pip install -r "$R/requirements95.txt"
+      - name: Replay the complete fixed initial-state stream on ARM64
+        id: evaluate
+        run: |
+          cd "$R"
+          /usr/bin/time -v -o audit/arm64-96/EVALUATE.time python code/experiment96.py evaluate --tag arm64 > audit/arm64-96/EVALUATE.log 2>&1
+      - name: Measure forty fresh processes without replacing primary timings
+        id: timing
+        run: |
+          /usr/bin/time -v -o "$R/audit/arm64-96/TIMING.time" python "$R/bootstrap96/replicate96.py" timing > "$R/audit/arm64-96/TIMING.log" 2>&1
+      - name: Independently check all paired statistics and sixty-four endpoint fixtures
+        id: independent
+        if: always() && steps.evaluate.outcome == 'success'
+        run: |
+          cd "$R"
+          /usr/bin/time -v -o audit/arm64-96/INDEPENDENT.time python code/independent96.py --tag arm64 --fixtures 8 > audit/arm64-96/INDEPENDENT.log 2>&1
+      - name: Replay every inherited and new test on the second architecture
+        id: tests
+        if: always() && steps.dependencies.outcome == 'success'
+        run: python "$R/code/run_tests95.py" --output-dir audit/arm64-96/tests
+      - name: Preserve independent outcomes before importing primary results
+        if: always() && steps.source.outcome == 'success'
+        run: |
+          git add --force --sparse -- "$R" ":(exclude)$R/**/__pycache__/**" ":(exclude)$R/**/*.pyc"
+          if ! git diff --cached --quiet; then git commit -m 'R96 ARM64: preserve actual frozen-service replay, rational audit, tests and process timings'; git push origin HEAD:"$GITHUB_REF_NAME"; fi
+      - name: Import committed primary outcomes for a direct comparison
+        id: primary
+        if: always() && steps.evaluate.outcome == 'success'
+        run: |
+          ready=false
+          for attempt in $(seq 1 45); do
+            git fetch --no-tags --filter=blob:none --depth=50 origin "$PRIMARY"
+            pin=$(git rev-parse FETCH_HEAD)
+            if git cat-file -e "$pin:$R/results96/evaluation-primary/RESULTS96.json" 2>/dev/null; then ready=true; break; fi
+            sleep 60
+          done
+          test "$ready" = true
+          git merge --no-edit "$pin"
+          printf '%s\n' "$pin" > "$R/audit/arm64-96/PRIMARY_RESULTS_COMMIT.txt"
+      - name: Compare frozen identities, every action and interval, and all validation gates
+        id: comparison
+        if: always() && steps.primary.outcome == 'success' && steps.independent.outcome == 'success' && steps.tests.outcome == 'success' && steps.timing.outcome == 'success'
+        run: python "$R/bootstrap96/replicate96.py" compare
+      - name: Commit the actual cross-architecture comparison
+        if: always() && steps.source.outcome == 'success'
+        run: |
+          git add --force --sparse -- "$R" ":(exclude)$R/**/__pycache__/**" ":(exclude)$R/**/*.pyc"
+          if ! git diff --cached --quiet; then git commit -m 'R96 ARM64: bind same-stream comparison to actual primary and independent evidence'; fi
+          git push origin HEAD:"$GITHUB_REF_NAME"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r96-arm64-${{ github.run_id }}-${{ github.run_attempt }}
+          path: revisions/2026-10-13-r96
+          retention-days: 30
+          if-no-files-found: error
