@@ -1,0 +1,82 @@
+\section{Representation calibration and optimization-stable policies}\label{sec:calibration81}
+The attained continuation in Section~\ref{sec:frozen72} is an economic object, not merely an optional action proposal. Its qualification must charge the represented function rather than an avoidable featurewise overestimate. We make this comparison explicit and then pass from an attained fit to a class of optimization outputs with the same implemented policy. All statements in this section retain the original two-date investment law, fixed terminal payoff, acquired cells and feasible action menus.
+
+\subsection{A common affine calibration}
+Write a two-state additive continuation as
+\[
+ h_\theta(x)=\theta_0+\sum_{j=1}^4\theta_{1j}\psi_j(x_1)
+                         +\sum_{j=1}^4\theta_{2j}\psi_j(x_2).
+\]
+For the ReLU basis, $\psi_j(s)=(s-(j-1)/4)_+$. For the Bernstein basis, $\psi_j(s)=\binom4j s^j(1-s)^{4-j}$; the omitted zeroth coefficient on each coordinate is zero. Both representations have nine coefficients and use the same coefficient box. Define
+\begin{align}
+ L_R(\theta)&=\max_{i=1,2}\max_{k=1,\ldots,4}
+                      \left|\sum_{j=1}^k\theta_{ij}\right|,\label{eq:relu-modulus81}\\
+ L_B(\theta)&=4\max_{i=1,2}\max_{j=1,\ldots,4}
+                      |\theta_{ij}-\theta_{i,j-1}|,
+                      \qquad \theta_{i0}=0.\label{eq:bernstein-modulus81}
+\end{align}
+These are state Lipschitz moduli for the $\ell^1$ distance. The first is exact for the represented piecewise-affine function; the second is a derivative-control bound and need not be exact for a general polynomial.
+
+Suppose the fixed-label Bellman value at nodes $x_i$ belongs to $[y_i^-,y_i^+]$, every state is within $\ell^1$ distance $\rho$ of a node, and $G$ bounds the Bellman target's state modulus. With $\phi_i^\top\theta=h_\theta(x_i)$, put
+\begin{equation}\label{eq:qualification81}
+ F(\theta)=\max_i(y_i^+-\phi_i^\top\theta)
+       -\min_i(y_i^--\phi_i^\top\theta)+2\rho\{G+L(\theta)\}.
+\end{equation}
+Here the labels, $G$, the cover and the feature map are fixed before this readout is optimized. A change in the fitted future defines a new fixed-label problem.
+
+\begin{proposition}[Affine-exact qualification]\label{prop:calibration81}
+The moduli in \eqref{eq:relu-modulus81}--\eqref{eq:bernstein-modulus81} give valid residual enclosures and the residual-oscillation upper bound \eqref{eq:qualification81}. The objective is convex and admits a finite linear-programming representation. For every common affine continuation $h(x)=a+u x_1+v x_2$, whenever its two coefficient representations are feasible, both moduli equal $\max\{|u|,|v|\}$. Thus, for common labels, node cover and target modulus, the two qualification objectives agree on this affine function.
+\end{proposition}
+
+\begin{proof}
+A ReLU coordinate has the displayed cumulative slopes on its four affine intervals. The dual norm of $\ell^1$ is $\ell^\infty$, so their largest coordinate magnitude gives the state modulus. A Bernstein derivative is a convex combination of $4(\theta_{ij}-\theta_{i,j-1})$ with degree-three Bernstein weights. This proves its bound. Residuals change by at most $(G+L)\rho$ between a node and a covered state, proving the enclosure and its oscillation bound. Each term in \eqref{eq:qualification81} is a maximum of finitely many affine functions. For an affine function, the ReLU coefficients are $(u,0,0,0)$ and $(v,0,0,0)$; the Bernstein coefficients are $(u/4,u/2,3u/4,u)$ and the analogous vector for $v$. All relevant slopes or derivative controls are $u$ or $v$.
+\end{proof}
+
+This calibration does not identify the two non-affine function classes, equalize every numerical conditioning effect, or remove all conservatism from Bernstein controls. It isolates a particular qualification difference. For example, the old coefficientwise modulus charges $ux_1$ as $|u|$ in its ReLU encoding but as $10|u|$ in its Bernstein encoding. The calibrated modulus charges both as $|u|$. The factorial experiment below retains the old fits and evaluates the new fits separately; the calibration is not an ex post correction of their recorded costs.
+
+\subsection{Exact certificates for action stability}
+Fix the terminal-label qualification problem and an attained coefficient vector $\widehat\theta$, with $U=F(\widehat\theta)$. On each first-date observation cell $C$, let $a_C$ be its attained robust greedy action, evaluated at the declared cell representative. The terminal policy is fixed by the common terminal payoff. For each different action $b$ in the same robust menu, exact conditional integration gives an affine contrast
+\[
+ g_{Cb}(\theta)=Q^{h_\theta}(x_C,b)-Q^{h_\theta}(x_C,a_C)
+                       =c_{Cb}+d_{Cb}^\top\theta.
+\]
+The switch problem minimizes $F(\theta)$ on the coefficient box subject to $g_{Cb}(\theta)\le0$. Let $D_{Cb}$ be any verified lower bound on its infimum. If the constraint is infeasible, its infimum is $+\infty$. Define $D_C=\min_{b\ne a_C}D_{Cb}$ and
+\begin{equation}\label{eq:stable-cells81}
+ \mathcal S_\epsilon=\{C:D_C>U+\epsilon\},\qquad \epsilon\ge0.
+\end{equation}
+Strict inequality excludes ties as well as strict reversals.
+
+\begin{theorem}[Optimization-to-policy transfer]\label{thm:stability81}
+Every feasible readout satisfying $F(\theta)\le U+\epsilon$ selects exactly $a_C$ on every cell in $\mathcal S_\epsilon$. In particular this holds for every $\epsilon$-optimal solution of the fixed-label qualification problem, because its optimum is at most $U$.
+
+Let $q_\epsilon$ be the initial-law probability of the cells outside $\mathcal S_\epsilon$. Suppose the total cash cost of every such complete feasible controller belongs to $[0,H]$. With the terminal policy fixed as above,
+\begin{equation}\label{eq:cost-stability81}
+ \sup_{F(\theta)\le U+\epsilon}
+       |J^{\pi_\theta}-J^{\pi_{\widehat\theta}}|
+                       \le Hq_\epsilon.
+\end{equation}
+If all cells are certified, every readout in that sublevel gives the same complete policy and the same original-law cost. Under the uniform initial law on $[0,1]^2$ and an $n$-by-$n$ equal-cell cover, $q_\epsilon$ is exactly the fraction of uncertified cells; boundary assignments do not change that probability.
+\end{theorem}
+
+\begin{proof}
+If $b$ weakly displaced $a_C$, the readout would be feasible for its switch problem and hence $F(\theta)\ge D_{Cb}\ge D_C$. This contradicts $F(\theta)\le U+\epsilon<D_C$. Couple the attained and alternative controllers with the same initial state and innovations. On a certified initial cell their first actions agree, their next states agree, and their fixed terminal-policy actions agree. Their cash costs are identical there. Elsewhere the absolute cash-cost difference is at most $H$, giving \eqref{eq:cost-stability81} by integration.
+\end{proof}
+
+The theorem does not replace failed switch certificates by successful ones: a nonpositive surplus is unresolved. Nor does a terminal-label certificate automatically propagate through newly fitted label problems at a longer horizon. The numerical result here concerns exactly the two-date construction for which only $h_1$ determines the first-date action and the terminal actor is common.
+
+The switch bounds have an exact dual representation. Write $L(\theta)=\max_j|s_j^\top\theta|$, coefficient limits $|\theta_k|\le B_k$, and $\alpha=2\rho$. For probability vectors $p,q$, nonnegative multipliers $\xi_j^+,\xi_j^-$ with $\sum_j(\xi_j^++\xi_j^-)\le\alpha$, and $\nu\ge0$, set
+\begin{align}
+ z&=\sum_i(q_i-p_i)\phi_i
+       +\sum_j(\xi_j^+-\xi_j^-)s_j+\nu d_{Cb},\nonumber\\
+ D(p,q,\xi,\nu)&=p^\top y^+-q^\top y^-+2\rho G
+                        +\nu c_{Cb}-\sum_kB_k|z_k|.\label{eq:switch-dual81}
+\end{align}
+Every such number is a valid $D_{Cb}$. The proof and independent exact replay are given in Appendix~\ref{app:dual81}. A floating optimizer supplies proposed multipliers only; their nonnegativity, normalization, total mass and lower-bound value are verified rationally.
+
+\subsection{Simultaneous economic conclusions for optimizer classes}
+Suppose the frozen attained-policy comparison supplies a simultaneous interval $[l_{jk},u_{jk}]$ for $J^{\pi_j}-J^{\pi_k}$. Apply Theorem~\ref{thm:stability81} separately to their fixed-label sublevels, with radii $v_j=H_jq_j$ and $v_k=H_kq_k$. Then, on the same event,
+\begin{equation}\label{eq:uniform-comparison81}
+ J^{\pi_\theta}-J^{\pi_\vartheta}
+       \in[l_{jk}-v_j-v_k,\ u_{jk}+v_j+v_k]
+\end{equation}
+simultaneously for every pair of readouts in those sublevels. No union bound over an uncountable optimizer class is needed: the extension is deterministic on the original finite-policy event. When both covers are entirely stable the interval is unchanged. Sharp controller-choice and deployment-allocation results in Section~\ref{sec:allocation79} can therefore be applied directly to these qualified optimizer classes after the stated enlargement. This transfers attained-cost evidence without identifying numerical fitting success with either population training reliability or a new economic observation.

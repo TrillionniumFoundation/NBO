@@ -1,0 +1,64 @@
+\section{Winner and common-readout support certificates}\label{app:compatible84}
+The coefficient vector is shared across the acquisition cells. This appendix gives the exact certificates used to retain that restriction in the main economic bound. All coefficients in the executed fixed-feature problem are rational. Floating optimization proposes multipliers; the formulas below, evaluated in rational arithmetic, decide whether those proposals are admissible.
+
+\subsection{A full-menu lower qualification bound}
+Write $\alpha=2\rho$, let $\phi_i$ be the frozen feature rows, and let $r_j$ be the rows defining the calibrated derivative bound. The objective is
+\[
+ F(\theta)=\max_i(y_i^+-\phi_i^{\mathsf T}\theta)
+        +\max_i(\phi_i^{\mathsf T}\theta-y_i^-)
+        +\alpha G+\alpha\max_j|r_j^{\mathsf T}\theta|.
+\]
+For one winner or a collection of winners, assemble the inequalities
+$d_k^{\mathsf T}\theta+c_k\le0$. These include every competing menu action for each specified winner. Take probability vectors $p,q$, nonnegative derivative multipliers $\xi_j^+,\xi_j^-$ satisfying
+$\sum_j(\xi_j^++\xi_j^-)\le\alpha$, and arbitrary nonnegative event multipliers $\nu_k$. Define
+\begin{align*}
+ s&=\sum_i(q_i-p_i)\phi_i
+       +\sum_j(\xi_j^+-\xi_j^-)r_j+\sum_k\nu_kd_k,\\
+ D&=\sum_ip_i y_i^+-\sum_iq_i y_i^-+\alpha G
+                       +\sum_k\nu_kc_k-\sum_mB_m|s_m|.
+\end{align*}
+Then $D$ is a lower bound on the infimum of $F$ over the event and the coefficient box.
+
+To see this, each of the first two maxima dominates its corresponding probability-weighted average. The derivative term dominates the signed derivative combination because its total nonnegative multiplier mass is at most $\alpha$. For a feasible event, adding $\sum_k\nu_k(d_k^{\mathsf T}\theta+c_k)$ cannot increase the resulting lower expression. Minimizing its linear part over $|\theta_m|\le B_m$ gives $-\sum_m B_m|s_m|$. This proves the bound without strong duality, a constraint qualification or a successful numerical minimizer. Taking the maximum with an inherited lower bound preserves validity.
+
+The numerical implementation scales the event rows before proposing multipliers. It then undoes that scaling exactly. Probability multipliers are projected to a rational simplex; derivative multipliers are made nonnegative and rescaled only when their total mass exceeds the exact derivative budget. Event multipliers are nonnegative rationals obtained from the proposed binary values and the exact row scales. The independent checker reconstructs every feature integral from the separate antiderivative implementation, every menu comparison, and the final coefficient-box support value. It does not call the production optimizer or production certificate routine.
+
+\subsection{Empty events require a separate proof}
+For nonnegative weights $\lambda_k$, set
+\[
+ \eta=\sum_k\lambda_kc_k-
+        \sum_mB_m\left|\sum_k\lambda_kd_{km}\right|.
+\]
+If $\eta>0$, the event is empty. Indeed, the left side is the minimum over the box of $\sum_k\lambda_k(d_k^{\mathsf T}\theta+c_k)$, whereas an event-feasible point would make this sum nonpositive. The executed slack problem additionally imposes $\sum_k\lambda_k\le1$ when proposing the weights; this normalization is convenient but is not needed for the implication once strict positivity has been checked exactly.
+
+An infeasible numerical solver status is not a proof of $\eta>0$. When no positive exact separation is obtained, the event receives only its valid ordinary objective lower bound and remains possible whenever that bound does not exceed the stated sublevel. The numerical catalogue preserves every such solver status. In the executed study, all 104 nonsuccess statuses correspond to positive independently checked separation certificates, rather than to silently discarded observations or failed fitting attempts.
+
+\subsection{Exact economic assignment duals}
+For a chosen tolerance, the pair-conflict relaxation has nonnegative variables $z_i$, one unit of mass per acquisition cell, and $z_i+z_j\le1$ for each verified incompatible pair. Given nonnegative rational pair multipliers $\lambda_{ij}$ and weights $w_i$, the construction
+\[
+ \alpha_C=\max\left\{0,\max_{i\text{ in }C}
+                   \left(w_i-\sum_{j:\{i,j\}\text{ is a cut}}\lambda_{ij}\right)\right\}
+\]
+satisfies every assignment-dual inequality. Its value is $\sum_C\alpha_C+\sum_{\{i,j\}}\lambda_{ij}$. The zero reference action explains why nonnegative $\alpha_C$ is a harmless conservative choice. The lower cost endpoint uses the negative conditional lower-cost weights and has a separately verified dual.
+
+The pair multipliers are rounded to nonnegative dyadic rationals. Every remaining residual is paid by the exact cell maximum; no floating primal optimum is used as a certified upper bound. Setting all pair multipliers to zero recovers the full-menu cellwise extrema. Whenever a proposed dual is less useful, that valid fallback is retained. The independent checker verifies every variable's covering inequality, all signs, all objective sums, and every final interval transfer.
+
+\subsection{Why both refinements matter}
+For three action scores $0,-1,-2$, the second action defeats the reference score zero but cannot win the full menu. A reference-only barrier can therefore remain inconclusive even though the complete winner event is empty. This is a distinction about the implemented argmin, not a change in the economic action set.
+
+For the shared-coefficient restriction, take $\theta\in[-1,1]$ and two cells. An adverse action in the first cell requires $\theta\ge1$; one in the second requires $\theta\le-1$. Both events are separately feasible but their intersection is empty. If each adverse action contributes $1/2$ to aggregate cost, independent cell bounds allow a cost increase of one. The compatible bound is $1/2$, and it is attained by one endpoint of the parameter interval. This supplies a strict example for the improvement claimed by the theorem.
+
+Pair restrictions need not characterize every feasible policy. With three unit-weight alternatives and all three pair conflicts, an assignment relaxation permits mass $1/2$ on each alternative, even though a zero--one assignment can select at most one. The corresponding fractional support can therefore be larger than the true worst cost. More generally, pairwise intersection does not imply joint intersection of all winner regions. The manuscript consequently calls the computed object an enclosure, not the exact attainable policy set or the exact worst optimizer output. Additional certified joint events may strengthen it without invalidating any existing bound.
+
+\subsection{Work, storage and continuation scope}
+Let $P$ be the number of admitted alternatives, $K$ the number of declared joint events, $m$ the maximum menu size, $d$ the readout dimension, $N$ the number of cells, and $E$ the number of retained pair cuts at a tolerance. A singleton event adds at most $m-1$ rows and a pair event at most $2(m-1)$ rows to the same fixed qualification problem. The experiment executes exactly $P+K$ qualification problems. It does not claim a dimension-independent bound on an LP solver's arithmetic or bit complexity.
+
+Once multipliers have been obtained, checking a qualification certificate takes a number of rational operations linear in its feature, derivative and event coefficients. Checking one assignment dual takes $O(P+N+E)$ rational operations and storage linear in its retained variables, cells and cuts. Constructing and solving the assignment LP is separate work. The executed pair budget limits qualification work without assuming that unchecked intersections are feasible or infeasible. Previously purchased conditional integration remains an explicit prerequisite, not free computation.
+
+The identity transferring conditional contrasts to aggregate policy cost holds because the policies share the stated future controller and only their first acquired action varies. A longer horizon can use the same identity when its entire fixed-continuation conditional cost is enclosed. Jointly refitting that future controller changes the estimand and requires another qualification argument. The results therefore do not claim that the present pair graph certifies arbitrary changes at every date or regenerates the large vector-control descendant tree.
+
+\section{Complete common-readout numerical records}\label{app:records84}
+\input{tables/all-bounds84}
+\input{tables/all-comparisons84}
+\input{tables/work84}
+Every alternative previously admitted up to $2^{-12}$ is included in the singleton roster. The fixed pair-selection rule, including its deterministic cost-based ordering and tie handling, is part of the source lock. Its execution contributes no additional independent cost row or fit. The 24 model--tolerance records and 36 class comparisons use the already covered original-law cost family. Source, output and execution-clock hashes are retained with the exact multipliers, all 104 infeasibility certificates, and all 16,548 independently checked assignment inequalities.
