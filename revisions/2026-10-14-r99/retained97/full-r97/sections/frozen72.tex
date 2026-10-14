@@ -1,0 +1,78 @@
+\section{Frozen neural continuations and policy-cost precision}\label{sec:frozen72}
+The optimal-advantage estimator in Section~\ref{sec:centered69} makes a policy comparison informative, but its conditional optimal-value queries are expensive. A fitted continuation can replace those queries without changing the estimand. The necessary certificate concerns its Bellman residual across states, not its distance from an unknown optimizer. This places the original NBO continuation, rather than only a proposed action, inside the evaluation calculation.
+
+\subsection{Residual oscillation is the relevant range}
+Consider the bounded expected-cost model with common terminal cost $g$, discounts $\beta_t\ge0$, and a common initial-state law. Write $b_0=1$ and $b_t=\prod_{j<t}\beta_j$. Fix bounded measurable continuations $h_0,\ldots,h_T$, conditionally on their construction. Define
+\begin{align*}
+ Q_t^h(x,a)&=c_t(x,a)+\beta_tP_t^a h_{t+1}(x),\\
+ r_t^h(x)&=\inf_{a\in A_t(x)}Q_t^h(x,a)-h_t(x),\\
+ a_t^{h,\pi}(x)&=Q_t^h(x,\pi_t(x))-\inf_{a\in A_t(x)}Q_t^h(x,a).
+\end{align*}
+The infimum is over the original continuous feasible set. Suppose verified constants give $0\le a_t^{h,\pi}\le\eta_t^\pi$, and likewise for $\nu$, throughout the true state domain. Let $\omega_t$ bound the oscillation of $r_t^h$, and $\omega_T$ that of $g-h_T$. Set
+\[
+ \Omega_h=\sum_{t<T}b_t\omega_t+b_T\omega_T,
+ \qquad H_h^\pi=\sum_{t<T}b_t\eta_t^\pi.
+\]
+These constants include acquisition, action rounding and arithmetic allowances wherever those operations affect the implemented policy or the verified functions. A small empirical residual alone is not such a certificate.
+
+\begin{theorem}[Frozen-continuation comparison]\label{thm:frozen72}
+Along the actual trajectory of $\pi$, put
+\begin{equation}\label{eq:frozen-observation72}
+ Z_h^\pi=\sum_{t<T}b_t\bigl[Q_t^h(X_t^\pi,\pi_t(X_t^\pi))-h_t(X_t^\pi)\bigr]
+                 +b_T(g-h_T)(X_T^\pi).
+\end{equation}
+For any coupling of the two original trajectory laws, $D_h=Z_h^\pi-Z_h^\nu$ satisfies
+\begin{align}
+ \mathbb E D_h&=\mathbb E[J_0^\pi-J_0^\nu],\label{eq:frozen-identity72}\\
+ -\Omega_h-H_h^\nu&\le D_h\le\Omega_h+H_h^\pi.\label{eq:frozen-range72}
+\end{align}
+Moreover, at every initial state,
+\begin{equation}\label{eq:frozen-regret72}
+ 0\le J_0^\pi-V_0^*\le\Omega_h+H_h^\pi.
+\end{equation}
+Adding an arbitrary state-independent constant to each $h_t$ changes neither $D_h$ nor these oscillation bounds. With $h_t=V_t^*$, the result reduces to optimal-advantage centering.
+\end{theorem}
+\noindent The proof is in Supplement, Section~\ref{supp:frozen72}.
+
+The terminal correction in \eqref{eq:frozen-observation72} is essential unless $h_T=g$. Conditional expectation, not pathwise equality with the realized cash-cost difference, supplies \eqref{eq:frozen-identity72}. The result uses the actual kernels and costs; it assumes neither a correct statistical transition model estimated from data nor a convex neural fit. The pointwise policy certificate also applies conditionally after an adaptive choice among valid continuations. The independent-sample confidence statement below requires its additional sampling conditions.
+
+For $M$ conditionally fixed comparisons, suppose independent trajectory rows yield outward enclosures $[L_i,U_i]$ of $D_h$, intersected with its valid support. Write $R_h=2\Omega_h+H_h^\pi+H_h^\nu$. A simultaneous interval with failure probability at most $\alpha$ is
+\begin{equation}\label{eq:frozen-ci72}
+ \left[\overline L-R_h\sqrt{\frac{\log(2M/\alpha)}{2n}},\quad
+       \overline U+R_h\sqrt{\frac{\log(2M/\alpha)}{2n}}\right].
+\end{equation}
+This follows by the bounded-sum inequality applied to both endpoint samples and a union bound. The numerical and sampling width allocations of Corollary~\ref{cor:precision69} apply with $R_h$. Fitting, uniform residual qualification, conditional integration and any subsequent selection are distinct paid operations. In particular, a cache that adapts across rows changes the controller's history: its rows cannot be treated as independent evaluations of one frozen Markov policy. A fixed cache or an independent episode-reset design is sufficient to retain the stated sampling construction.
+
+\subsection{Conditional integration of an actual neural continuation}
+A shallow rational affine--ReLU continuation has the form
+\[
+ h(y)=c+\ell^\top y+\sum_{j=1}^K v_j(w_j^\top y+u_j)_+.
+\]
+Its readout weights may have either sign. In the original investment laws the next state, conditional on $(x,a)$, is affine in one or two independent centered uniform innovations. A neuron therefore has projected center $z$ and nonnegative projection radii $A,B$. Write $z_+=\max\{0,z\}$.
+
+\begin{proposition}[Exact conditional ReLU moments]\label{prop:moment72}
+For independent uniform projections of radii $A,B>0$, the conditional means of a neuron are
+\begin{align}
+ \mathcal M_1(z;A)&=\frac{(z+A)_+^2-(z-A)_+^2}{4A},\label{eq:moment-one72}\\
+ \mathcal M_2(z;A,B)&=\frac{1}{24AB}\bigl[(z+A+B)_+^3-(z+A-B)_+^3\nonumber\\
+ &\hspace{37mm}-(z-A+B)_+^3+(z-A-B)_+^3\bigr].\label{eq:moment-two72}
+\end{align}
+A zero projection radius is removed; if all radii vanish the mean is $z_+$. Consequently $P^ah$ is a finite exact rational calculation for rational primitives, states, actions and weights. For $n$ trajectories and at most $K$ neurons per date, its arithmetic-operation count is $O(nTKd)$, exclusive of fitting, trajectory construction and uniform qualification. No optimal-value descendant query occurs in this calculation.
+\end{proposition}
+\noindent The proof is in Supplement, Section~\ref{supp:moments72}.
+
+The operation count does not bound rational bit complexity. Near-zero projected radii can also make a naive floating evaluation unstable; directed rounding or rational evaluation, including the zero-radius branches, is required. The executed moment catalogue checks the rational identities against an independently written polygon integral. It is a conditional-integration experiment, not a new trained-policy cost comparison. The formulas do not imply that the achieved residual oscillation of an arbitrary fitted network is small.
+
+\subsection{Qualifying a fitted continuation without a Bellman tree}
+Uniform qualification need not query $V^*$. Suppose $Q_t^h$ is Lipschitz in state and action with constants $L_{x,t},L_{a,t}$, and $h_t$ has constant $L_{h,t}$, all in $\ell^1$. In the investment capacity simplex, an action feasible at $y$ can be repaired continuously at $x$ with displacement at most $\kappa\|x-y\|_1$, where $\kappa=1/(8d)$. Thus a valid residual Lipschitz constant is
+\[
+ L_{r,t}=L_{x,t}+\kappa L_{a,t}+L_{h,t}.
+\]
+Let a finite state cover have fill radius $\rho$, and let $[l_j,u_j]$ enclose $r_t^h$ at every cover point. Then
+\begin{equation}\label{eq:residual-cover72}
+ \min_jl_j-L_{r,t}\rho\le r_t^h(x)
+       \le\max_ju_j+L_{r,t}\rho
+\end{equation}
+throughout the cube. At a cover point, a feasible action mesh of fill radius $s$ gives a lower infimum bound by subtracting $L_{a,t}s$ from the smallest action-value lower endpoint; the smallest upper endpoint is an upper bound. Exact moments can supply those action endpoints. None of these steps requires convexity of $h$ or a true-value curvature minorant for $Q^h$.
+
+For $N_t$ state-cover points and $A_t$ actions per point, this qualification costs $O(\sum_tN_tA_tK_{t+1}d)$ arithmetic operations, plus certification of the moduli and any actor-specific greedy-gap bound. Its cover can still be expensive in high dimension. The result replaces a recursive optimal-value oracle by an explicit approximation-and-qualification tradeoff; it does not make that qualification free. The residual-cover proof, the action-mesh argument and the terminal allowance are given in the supplement. Value-function control variates have an established variance-reduction literature \citep{munos2006variance}; the additional requirement here is an original-law, whole-domain certificate for the fitted NBO continuation and the actual acquired policy.
