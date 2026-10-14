@@ -1,0 +1,43 @@
+name: NBO R98 pinned source inspection
+on:
+  push:
+    branches: [revision/econometrica-nbo-r98-research-2026-10-14]
+    paths: [.github/workflows/nbo-r98-inputs.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inputs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-14-r97/
+            /revisions/2026-10-13-r96/
+            /revisions/*/code/
+            /revisions/2026-10-10-r62/inputs/
+            /revisions/2026-10-11-r73/results73/
+            /revisions/2026-10-11-r77/results77/summary.json
+            /reviews/2026-10-14-econometrica-numerical-methods-r97/
+            /econsocart.cls
+            /econsocart.cfg
+            /ecta-fullname.bst
+            /.github/workflows/nbo-r98-inputs.yml
+      - name: Archive current source and inherited test closure
+        run: |
+          git rev-parse HEAD > SOURCE_COMMIT98.txt
+          git ls-files > TRACKED_PATHS98.txt
+          tar --exclude=.git -czf "$RUNNER_TEMP/nbo-r98-inputs.tar.gz" .
+          sha256sum "$RUNNER_TEMP/nbo-r98-inputs.tar.gz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r98-inputs-${{ github.run_id }}
+          path: ${{ runner.temp }}/nbo-r98-inputs.tar.gz
+          if-no-files-found: error
+          retention-days: 30
