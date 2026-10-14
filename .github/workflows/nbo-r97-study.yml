@@ -1,0 +1,139 @@
+name: NBO R97 referee revision and complete acquisition
+on:
+  push:
+    branches: [revision/econometrica-nbo-r97-referee-revision-2026-10-14]
+    paths: [.github/workflows/nbo-r97-study.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r97-referee-revision
+  cancel-in-progress: false
+jobs:
+  revision:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+      PYTHONHASHSEED: '0'
+      PYTHONDONTWRITEBYTECODE: '1'
+      R: revisions/2026-10-14-r97
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 2
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-13-r96/
+            /revisions/2026-10-14-r97/
+            /revisions/*/code/
+            /revisions/2026-10-10-r62/inputs/
+            /revisions/2026-10-11-r73/results73/
+            /revisions/2026-10-11-r77/results77/summary.json
+            /econsocart.cls
+            /econsocart.cfg
+            /ecta-fullname.bst
+            /.github/workflows/nbo-r97-study.yml
+      - name: Materialize ordinary manuscript and executable sources before execution
+        id: materialize
+        run: python "$R/bootstrap97/materialize97.py"
+      - name: Incorporate pinned historical ARM64 evidence without merging its scientific branch
+        id: architecture
+        run: |
+          ARM=462fb1564dd99d4c3ad31881836fc6486b630899
+          git fetch --depth=1 origin "$ARM"
+          mkdir -p .ci-arm97 "$R/evidence97/arm64-r96"
+          git archive "$ARM" \
+            revisions/2026-10-13-r96/audit/arm64-96 \
+            revisions/2026-10-13-r96/audit/reproduction96/INDEPENDENT96-arm64.json \
+            revisions/2026-10-13-r96/bootstrap96/replicate96.py \
+            revisions/2026-10-13-r96/results96/evaluation-arm64 \
+            revisions/2026-10-13-r96/results96/timing-arm64 | tar -x -C .ci-arm97
+          cp -a .ci-arm97/revisions/2026-10-13-r96/. "$R/evidence97/arm64-r96/"
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json,os
+          r=Path(os.environ['R']);a=r/'evidence97/arm64-r96'
+          out={'source_commit':'462fb1564dd99d4c3ad31881836fc6486b630899','scope':'Historical same-model and same-state R96 ARM64 service replay; zero new fits or independent observations; no new R97 ARM acquisition or energy claim.','sha256':{str(p.relative_to(a)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(a.rglob('*')) if p.is_file()}}
+          (r/'audit97/ARM_LINEAGE97.json').write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+          PY
+      - name: Publish ordinary source and source-frozen branch before primary campaign
+        id: source
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --force --sparse -- "$R" ":(exclude)$R/**/__pycache__/**" ":(exclude)$R/**/*.pyc"
+          if ! git diff --cached --quiet; then git commit -m 'R97: publish ordinary revised paper, proofs, response, frozen experiment and pinned ARM evidence'; git push origin HEAD:"$GITHUB_REF_NAME"; fi
+          SOURCE=$(git rev-parse HEAD)
+          echo "NBO_SOURCE97=$SOURCE" >> "$GITHUB_ENV"
+          echo "NBO_SOURCE_COMMIT=$SOURCE" >> "$GITHUB_ENV"
+          FROZEN=revision/econometrica-nbo-r97-source-frozen-2026-10-14
+          if ! git ls-remote --exit-code --heads origin "$FROZEN"; then git push origin "HEAD:refs/heads/$FROZEN"; fi
+          echo "$SOURCE"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install pinned numerical and publisher dependencies
+        id: dependencies
+        run: |
+          python -m pip install -r "$R/requirements95.txt"
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq texlive-latex-extra texlive-fonts-recommended pandoc poppler-utils time
+      - name: Replay every inherited test with repository fixtures
+        id: inherited
+        run: python "$R/code/run_tests95.py" --output-dir audit97/inherited-tests > "$R/audit97/INHERITED_TESTS97.log" 2>&1
+      - name: Verify new theorem arithmetic, deployment and independent-proposal tests
+        id: newtests
+        run: /usr/bin/time -v -o "$R/audit97/NEW_TESTS97.time" python "$R/new/test97.py" > "$R/audit97/NEW_TESTS97.log" 2>&1
+      - name: Execute all 84 acquisitions and 42 sequential fresh-process timing workloads
+        id: campaign
+        run: |
+          if [ ! -f "$R/results97/CAMPAIGN97.json" ]; then /usr/bin/time -v -o "$R/audit97/CAMPAIGN97.time" python "$R/new/study97.py" campaign > "$R/audit97/CAMPAIGN97.log" 2>&1; fi
+      - name: Reimplement all R96 proposals and audit exact statistics and difficult endpoints
+        id: independent
+        run: /usr/bin/time -v -o "$R/audit97/INDEPENDENT97.time" python "$R/new/independent97.py" > "$R/audit97/INDEPENDENT97.log" 2>&1
+      - name: Reconstruct original models and retain exact function-difference bounds
+        id: reconstruction
+        run: /usr/bin/time -v -o "$R/audit97/RECONSTRUCTION97.time" python "$R/new/forensic97.py" > "$R/audit97/RECONSTRUCTION97.log" 2>&1
+      - name: Generate tables and all conditional price regions from the complete campaign
+        id: report
+        run: python "$R/new/report97.py" > "$R/audit97/REPORT97.log" 2>&1
+      - name: Compile all four current manuscripts with fail-closed reference and overflow checks
+        id: build
+        run: python "$R/code/build97.py" > "$R/audit97/BUILD97.log" 2>&1
+      - name: Record actual current release gates without asserting scientific closure
+        id: release
+        if: always() && steps.materialize.outcome == 'success'
+        run: python "$R/new/release97.py"
+      - name: Retain all actual source, evidence, failures and current PDFs on the revision branch
+        if: always() && steps.materialize.outcome == 'success'
+        run: |
+          git config user.name 'NBO revision verification'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --force --sparse -- "$R" ":(exclude)$R/**/__pycache__/**" ":(exclude)$R/**/*.pyc"
+          if ! git diff --cached --quiet; then git commit -m 'R97: retain complete acquisition campaign, independent replay, test outcomes and current publication builds'; git push origin HEAD:"$GITHUB_REF_NAME"; fi
+          git rev-parse HEAD
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.materialize.outcome == 'success'
+        with:
+          name: nbo-r97-referee-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            revisions/2026-10-14-r97/build/
+            revisions/2026-10-14-r97/new/
+            revisions/2026-10-14-r97/audit97/
+            revisions/2026-10-14-r97/results97/
+            revisions/2026-10-14-r97/tables/
+            revisions/2026-10-14-r97/README97.md
+            revisions/2026-10-14-r97/PROTOCOL97.md
+            revisions/2026-10-14-r97/RELEASE97.json
+            revisions/2026-10-14-r97/response.md
+            revisions/2026-10-14-r97/ECTA.tex
+            revisions/2026-10-14-r97/supp.tex
+            revisions/2026-10-14-r97/appendix.tex
+          retention-days: 30
+          if-no-files-found: error
