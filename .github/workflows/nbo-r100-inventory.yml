@@ -1,0 +1,69 @@
+name: NBO R100 pinned scientific inventory
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r100-recursive-action-certificates-2026-10-15']
+    paths: ['.github/workflows/nbo-r100-inventory.yml']
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Export immutable manuscript and review evidence without checking out the large repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          mkdir -p export/audit/blobs
+          cat > /tmp/inventory.py <<'PY'
+          import os,json,urllib.request,base64,hashlib,pathlib,concurrent.futures,time
+          out=pathlib.Path('export'); audit=out/'audit'; base='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          def get(path):
+              req=urllib.request.Request(base+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'NBO-R100-scientific-inventory'})
+              for attempt in range(4):
+                  try:
+                      with urllib.request.urlopen(req,timeout=90) as f:return json.load(f)
+                  except Exception:
+                      if attempt==3:raise
+                      time.sleep(2**attempt)
+          def save(path,obj):
+              path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(obj,indent=2,sort_keys=True)+'\n')
+          refs=[];page=1
+          while True:
+              rows=get('branches?per_page=100&page='+str(page));refs+=rows
+              if len(rows)<100:break
+              page+=1
+          save(audit/'branches.json',refs)
+          shas=sorted({r['commit']['sha'] for r in refs})
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+              roots=dict(zip(shas,pool.map(lambda s:get('git/trees/'+s),shas)))
+          save(audit/'branch_root_trees.json',roots)
+          review_trees=sorted({e['sha'] for t in roots.values() for e in t.get('tree',[]) if e['type']=='tree' and any(w in e['path'].lower() for w in ('review','referee'))})
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+              trees=dict(zip(review_trees,pool.map(lambda s:get('git/trees/'+s+'?recursive=1'),review_trees)))
+          save(audit/'review_trees.json',trees)
+          entries={e['sha']:e for t in trees.values() for e in t.get('tree',[]) if e['type']=='blob' and e['path'].endswith(('.md','.txt','.tex','.json','.py'))}
+          def blob(item):
+              sha,e=item;b=get('git/blobs/'+sha);data=base64.b64decode(b['content'])
+              assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()==sha
+              p=audit/'blobs'/(sha+pathlib.Path(e['path']).suffix);p.write_bytes(data)
+              return {'git_blob':sha,'path':e['path'],'local':str(p.relative_to(out)),'sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data)}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool: rec=list(pool.map(blob,entries.items()))
+          save(audit/'review_blob_index.json',rec)
+          sha='f39d707c2d831c390090d2263a2e6d2aa0b1df5b'; b=get('git/blobs/'+sha);data=base64.b64decode(b['content'])
+          assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()==sha
+          (out/'NBO_R99_referee_package.zip').write_bytes(data)
+          save(audit/'source_package.json',{'manuscript_commit':'f78d7fcec9f657dfec56a0af7899fe967948652d','package_git_blob':sha,'sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data),'export_workflow_sha':os.environ['GITHUB_SHA']})
+          for status in ('in_progress','queued','waiting'):
+              save(audit/('workflow_'+status+'.json'),get('actions/runs?status='+status+'&per_page=100'))
+          save(audit/'inventory_status.json',{'branches':len(refs),'unique_root_trees':len(roots),'review_trees':len(trees),'review_blobs':len(rec),'truncated_review_trees':[s for s,t in trees.items() if t.get('truncated')],'scope':'branch roots and all discoverable root review subtrees; not a claim to have reread every historical scientific file'})
+          print(json.dumps({'branches':len(refs),'review_blobs':len(rec),'package_bytes':len(data)}))
+          PY
+          python /tmp/inventory.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r100-pinned-scientific-inventory
+          path: export/
+          if-no-files-found: error
+          retention-days: 30
