@@ -1,0 +1,113 @@
+name: NBO R104 frozen scientific reproduction
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r104-safeguarded-action-repair-2026-10-15']
+    paths: ['.github/workflows/nbo-r104-reproduce.yml']
+permissions:
+  contents: write
+jobs:
+  reproduce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Materialize immutable baseline and frozen R104 source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p export work/revisions
+          cat > /tmp/r104-prepare.py <<'PY'
+          import os,json,urllib.request,base64,hashlib,pathlib,zipfile,io,subprocess
+          API='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          def get(path):
+              req=urllib.request.Request(API+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'NBO-R104-reproduction'})
+              with urllib.request.urlopen(req,timeout=120) as f:return json.load(f)
+          def blob(sha):
+              b=get('git/blobs/'+sha);d=base64.b64decode(b['content'])
+              assert hashlib.sha1(b'blob '+str(len(d)).encode()+b'\0'+d).hexdigest()==sha
+              return d
+          data=blob('f39d707c2d831c390090d2263a2e6d2aa0b1df5b')
+          assert hashlib.sha256(data).hexdigest()=='0cb3127b1eb9730916588c9543c5ff3e1a4b866f19542c609f9a5120dcb349b1'
+          dest=pathlib.Path('work/revisions/2026-10-14-r99');dest.mkdir(parents=True,exist_ok=True)
+          with zipfile.ZipFile(io.BytesIO(data)) as z:
+              for name in z.namelist():
+                  p=pathlib.PurePosixPath(name)
+                  if name.endswith('/'):continue
+                  assert not p.is_absolute() and '..' not in p.parts
+                  if p.parts[0]=='NBO_R99':p=pathlib.PurePosixPath(*p.parts[1:])
+                  target=dest/pathlib.Path(str(p));target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(z.read(name))
+          path='revisions/2026-10-15-r104';root=pathlib.Path('work')/path
+          def walk(rel):
+              for e in get('contents/'+rel+'?ref='+os.environ['GITHUB_SHA']):
+                  if e['type']=='dir':walk(e['path'])
+                  elif e['type']=='file':
+                      target=pathlib.Path('work')/e['path'];target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(blob(e['sha']))
+          walk(path)
+          subprocess.run(['python',str(root/'materialize104.py')],check=True)
+          pathlib.Path('export/SOURCE.json').write_text(json.dumps({'workflow_sha':os.environ['GITHUB_SHA'],'protocol_commit':'fbddd01b3b91d220b6b9a913f71f3f4486aa8248','pre_execution_hash_commit':'834ab507f52c123c60b41e027fc205f0432e739b','source_archive_sha256':'7a279d88d4a74f608e5e79d00f904a4c8bbb17e145148b8fab4198034422719b','scope':'A separate CI replay of frozen R104. Not the local primary clock sample, and not R98-R103.'},indent=2)+'\n')
+          PY
+          python /tmp/r104-prepare.py
+      - name: Install exact numerical versions
+        run: python -m pip install numpy==2.3.5 scipy==1.17.0
+      - name: Run frozen tests and all five declared stages
+        run: |
+          cd work/revisions/2026-10-15-r104
+          mkdir -p results104/ci-logs
+          PYTHONPATH=code:code104 python -m unittest discover -s code104 -p test104.py -v > results104/ci-logs/tests.log 2>&1
+          python code104/exact104.py > results104/ci-logs/exact.log 2>&1
+          for stage in acquire catalogue reference identity clocks; do
+            python code104/campaign104.py "$stage" > "results104/ci-logs/$stage.log" 2>&1
+          done
+      - name: Preserve replay evidence only on the isolated R104 branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > /tmp/r104-publish.py <<'PY'
+          import os,json,pathlib,urllib.request,base64,hashlib,concurrent.futures,shutil,platform,sys
+          API='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          BRANCH='revision/econometrica-nbo-r104-safeguarded-action-repair-2026-10-15'
+          assert os.environ['GITHUB_REF_NAME']==BRANCH
+          def api(path,data=None,method=None):
+              req=urllib.request.Request(API+path,data=None if data is None else json.dumps(data).encode(),method=method,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json','User-Agent':'NBO-R104-isolated-evidence'})
+              with urllib.request.urlopen(req,timeout=120) as f:return json.load(f)
+          root=pathlib.Path('work/revisions/2026-10-15-r104');out=pathlib.Path('export');out.mkdir(exist_ok=True)
+          results=root/'results104'
+          markers=['acquisition.success.json','catalogue.success.json','reference.success.json','identity.success.json','clocks.success.json']
+          success=all((results/m).is_file() for m in markers)
+          record={'scientific_stages_completed':success,'run_id':os.environ['GITHUB_RUN_ID'],'workflow_sha':os.environ['GITHUB_SHA'],'python':sys.version,'platform':platform.platform(),'scope':'Independent frozen R104 CI replay; does not replace local primary observations or complete any separately frozen study. Final workflow conclusion must still be checked.'}
+          (out/'CI104.json').write_text(json.dumps(record,indent=2)+'\n')
+          if results.exists():shutil.copytree(results,out/'results104',dirs_exist_ok=True)
+          files=[p for p in sorted(out.rglob('*')) if p.is_file()]
+          prefix='revisions/2026-10-15-r104/ci104/'+os.environ['GITHUB_RUN_ID']+'/'
+          def put(p):
+              raw=p.read_bytes();sha=api('git/blobs',{'content':base64.b64encode(raw).decode(),'encoding':'base64'})['sha']
+              assert sha==hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
+              return {'path':prefix+str(p.relative_to(out)),'mode':'100644','type':'blob','sha':sha}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:entries=list(pool.map(put,files))
+          # Publish the already frozen executable files as readable source too.
+          for p in sorted((root/'code104').glob('*.py')):
+              raw=p.read_bytes();sha=api('git/blobs',{'content':base64.b64encode(raw).decode(),'encoding':'base64'})['sha']
+              entries.append({'path':'revisions/2026-10-15-r104/code104/'+p.name,'mode':'100644','type':'blob','sha':sha})
+          parent=api('git/ref/heads/'+BRANCH)['object']['sha'];base=api('git/commits/'+parent)['tree']['sha']
+          tree=api('git/trees',{'base_tree':base,'tree':entries})['sha']
+          commit=api('git/commits',{'message':'R104: preserve source-bound independent CI replay '+os.environ['GITHUB_RUN_ID'],'tree':tree,'parents':[parent]})['sha']
+          api('git/refs/heads/'+BRANCH,{'sha':commit,'force':False},'PATCH')
+          (out/'REMOTE_COMMIT.txt').write_text(commit+'\n')
+          print(json.dumps({'commit':commit,'stages_completed':success,'files':len(entries)}))
+          PY
+          python /tmp/r104-publish.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r104-independent-reproduction
+          path: export/
+          if-no-files-found: error
+          retention-days: 90
