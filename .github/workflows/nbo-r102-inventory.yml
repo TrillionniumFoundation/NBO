@@ -1,0 +1,59 @@
+name: NBO R102 immutable source inventory
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r102-randomized-risk-resolution-2026-10-15']
+    paths: ['.github/workflows/nbo-r102-inventory.yml']
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Export immutable scientific sources and branch metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p export
+          python - <<'PY'
+          import os,json,urllib.request,base64,hashlib,pathlib,concurrent.futures,time
+          out=pathlib.Path('export');base='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          def get(p):
+            for attempt in range(4):
+              try:
+                q=urllib.request.Request(base+p,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'NBO-R102-source-export'})
+                with urllib.request.urlopen(q,timeout=90) as f:return json.load(f)
+              except Exception:
+                if attempt==3:raise
+                time.sleep(2**attempt)
+          def save(name,x):(out/name).write_text(json.dumps(x,indent=2)+'\n')
+          bs=[]
+          for p in range(1,100):
+            x=get('branches?per_page=100&page='+str(p));bs+=x
+            if len(x)<100:break
+          save('branches.json',bs)
+          shas=sorted({b['commit']['sha'] for b in bs})
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:roots=dict(zip(shas,ex.map(lambda s:get('git/trees/'+s),shas)))
+          save('root_trees.json',roots)
+          review_roots=sorted({e['sha'] for r in roots.values() for e in r.get('tree',[]) if e['type']=='tree' and ('review' in e['path'].lower() or 'referee' in e['path'].lower())})
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:reviews=dict(zip(review_roots,ex.map(lambda s:get('git/trees/'+s+'?recursive=1'),review_roots)))
+          save('review_trees.json',reviews)
+          blobs={e['sha']:e for r in reviews.values() for e in r.get('tree',[]) if e['type']=='blob' and e['path'].endswith(('.md','.tex','.txt','.json','.py'))}
+          (out/'review_blobs').mkdir()
+          def export_blob(item):
+            sha,e=item;d=base64.b64decode(get('git/blobs/'+sha)['content'])
+            assert hashlib.sha1(b'blob '+str(len(d)).encode()+b'\0'+d).hexdigest()==sha
+            rel='review_blobs/'+sha+pathlib.Path(e['path']).suffix;(out/rel).write_bytes(d)
+            return {'path':e['path'],'git_blob':sha,'local':rel,'sha256':hashlib.sha256(d).hexdigest()}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:save('review_index.json',list(ex.map(export_blob,blobs.items())))
+          sha='f39d707c2d831c390090d2263a2e6d2aa0b1df5b';d=base64.b64decode(get('git/blobs/'+sha)['content'])
+          assert hashlib.sha1(b'blob '+str(len(d)).encode()+b'\0'+d).hexdigest()==sha
+          (out/'NBO_R99_referee_package.zip').write_bytes(d)
+          save('identity.json',{'baseline':'f78d7fcec9f657dfec56a0af7899fe967948652d','package_blob':sha,'package_sha256':hashlib.sha256(d).hexdigest(),'branch_count':len(bs),'review_blobs':len(blobs),'truncated_review_trees':[s for s,r in reviews.items() if r.get('truncated')],'scope':'all branch roots and discoverable root review trees; not a full historical proof replay'})
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r102-pinned-inventory
+          path: export/
+          if-no-files-found: error
+          retention-days: 30

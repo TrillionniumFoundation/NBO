@@ -1,0 +1,11 @@
+# R102 author-revision boundary
+
+15 October 2026. Neural Bellman Operators; Econometrica numerical-methods author revision.
+
+Complete author baseline: R99 f78d7fcec9f657dfec56a0af7899fe967948652d (tree 17d4484b5201e280d27d8387b7ef08567cdf781d), not the highest-numbered branch. Controlling persisted advisory report: R97 9723c6cd2cc8b3e071422f3e522d4a843946db63, which reviews f802fe64d91d9f5c1c8f86123b0fbe114e622279; the report is not an Econometric Society editorial decision. R99 already adds action-support and nonuniform/randomized information results.
+
+R98's independent prospective actor campaign remains separate. R100's inventory and any unhanded research remain separate. R101 was inspected at 5afe482dc53189a0f46453d5e6c70263fb9df957: its source-freeze and post-primary S1 protocol are present, but the current folder has no full new manuscript or primary source/data package. Its claim of completed primary computations is not used as executed evidence here. R101, its primary protocol 89e7fedbe05c774ce35a6ddcdaaa139b2b0e437b and its secondary experiment must not be overwritten, reproduced as new independent observations or replaced by R102.
+
+This branch investigates the open randomized-information upper bound left by R99: construct implementable, explicitly quantified continuous-law AVaR estimators and decision certificates. The intended tool is a convex pointwise envelope plus importance sampling of its unresolved gap and certified tail localization. It must be checked against prior randomized integration and risk-control literature. Classical tools are attributed; representation-neutral results are not neural-specific claims. The original investment primitives and neural Bellman construction are retained. Existing negative computational and economic evidence is retained byte-for-byte.
+
+No stochastic primary experiment has yet run. A separate protocol and source freeze must precede any such execution. Analytic derivation and exploratory code checks are not preregistered confirmations. Statistical intervals must never be called pathwise-sound deterministic certificates. High-probability risk evaluation must account for every adaptively requested query before it can certify an original-law action. No original-risk objective is replaced by static risk, expectation, or a discrete-shock model.
