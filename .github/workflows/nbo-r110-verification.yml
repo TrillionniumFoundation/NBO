@@ -1,0 +1,95 @@
+name: NBO R110 independent reproduction and publication
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r110-verified-author-revision-2026-10-16']
+    paths: ['.github/workflows/nbo-r110-verification.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Export immutable current source without the large repository checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          mkdir -p publication
+          cat > /tmp/export110.py <<'PY'
+          import urllib.request,json,base64,hashlib,pathlib,concurrent.futures,time,zipfile,io,os
+          O=pathlib.Path('publication/NBO_R110');O.mkdir(parents=True,exist_ok=True)
+          B='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          def get(p):
+              for k in range(5):
+                  try:
+                      with urllib.request.urlopen(urllib.request.Request(B+p,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'NBO-R110-independent-verification'}),timeout=90) as r:return json.load(r)
+                  except Exception:
+                      if k==4:raise
+                      time.sleep(2**k)
+          def blob(s):
+              x=get('git/blobs/'+s);d=base64.b64decode(x['content'])
+              assert hashlib.sha1(b'blob '+str(len(d)).encode()+b'\0'+d).hexdigest()==s
+              return d
+          z=blob('f39d707c2d831c390090d2263a2e6d2aa0b1df5b');cache={}
+          with zipfile.ZipFile(io.BytesIO(z)) as a:
+              for n in a.namelist():
+                  if n.endswith('/'):continue
+                  d=a.read(n);cache[hashlib.sha1(b'blob '+str(len(d)).encode()+b'\0'+d).hexdigest()]=d
+          tree=get('git/trees/5885983fdef89cdc11fe471753cccfa46160956f?recursive=1')
+          assert not tree.get('truncated')
+          skip=('archive110/','retained109-native/','retained109-tools/','retained99/','source-support110/.')
+          files=[e for e in tree['tree'] if e['type']=='blob' and not e['path'].startswith(skip)]
+          missing=sorted({e['sha'] for e in files if e['sha'] not in cache})
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:
+              for s,d in zip(missing,ex.map(blob,missing)):cache[s]=d
+          records=[]
+          for e in files:
+              p=O/e['path'];p.parent.mkdir(parents=True,exist_ok=True);d=cache[e['sha']];p.write_bytes(d)
+              records.append({'path':e['path'],'git_blob':e['sha'],'sha256':hashlib.sha256(d).hexdigest()})
+          (O/'REMOTE_SOURCE_EXPORT110.json').write_text(json.dumps({'workflow_commit':os.environ['GITHUB_SHA'],'revision_tree':tree['sha'],'files':records,'scope':'Exact current source export; archive remains in Git; no scientific success inferred'},indent=2)+'\n')
+          PY
+          python /tmp/export110.py
+          cd publication/NBO_R110
+          python materialize110.py
+      - name: Install the recorded scientific environment and typesetter
+        shell: bash
+        run: |
+          python -m pip install -r publication/NBO_R110/requirements110.txt
+          sudo apt-get update
+          sudo apt-get install -y texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended
+      - name: Rebuild current documents with explicit publication-only verification
+        shell: bash
+        run: |
+          cd publication/NBO_R110
+          sh code110/build110.sh --publication-only
+      - name: Run both frozen campaigns as a separately identified new-host reproduction
+        shell: bash
+        run: |
+          cd publication/NBO_R110
+          sh code110/reproduce110.sh "$GITHUB_WORKSPACE/publication/independent-host-reproduction"
+      - name: Bind actual output and source identities without replacing local measurements
+        if: always()
+        env:
+          WORKFLOW_STATUS: ${{ job.status }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import pathlib,json,hashlib,os,time
+          root=pathlib.Path('publication');out=[]
+          for p in sorted(root.rglob('*')):
+              if not p.is_file() or '__pycache__' in p.parts:continue
+              out.append({'path':str(p.relative_to(root)),'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()})
+          receipt={'workflow_commit':os.environ['GITHUB_SHA'],'run_id':os.environ['GITHUB_RUN_ID'],'job_status_before_receipt':os.environ['WORKFLOW_STATUS'],'written_unix':time.time(),'files':out,'scope':'This is a distinct remote source/build/reproduction attempt. New-host clocks never replace published local measurements. Missing or failed steps remain failed; no full historical replay or human proof verdict.'}
+          (root/'REMOTE_ATTEMPT110.json').write_text(json.dumps(receipt,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r110-independent-attempt-${{ github.run_id }}
+          path: publication/
+          if-no-files-found: error
+          retention-days: 30

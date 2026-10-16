@@ -1,0 +1,61 @@
+\section{Information bounds and certificate-oriented acquisition}\label{sec:proofs97}
+\subsection{Proof of Theorem~\ref{thm:information97}}
+Put $q=-R+2R\alpha$ and $L=R-q=2R(1-\alpha)$. Answer the algorithm's queries with
+\[
+ f_0(z)=\frac{K}{2L}(z-q)_+^2.
+\]
+This function is convex and nondecreasing. Its derivative is zero to the left of $q$, and equals $K(z-q)/L$ to the right, so its Lipschitz constant on $[-R,R]$ is $K$. After the algorithm terminates, collect all distinct query points in $(q,R)$ and augment them by $q$ and $R$. They partition the tail interval into $s\leq N+1$ nonempty intervals of lengths $h_1,\ldots,h_s$.
+
+Let $f_1=f_0$ on $[-R,q]$ and let $f_1$ equal the chord of $f_0$ on each interval of this partition. For endpoints $a<b$ in $[q,R]$, the chord slope is $K(a+b-2q)/(2L)$. These slopes increase along the partition, lie in $[0,K]$, and are compatible with the zero left derivative at $q$. Hence $f_1\in\mathcal C_{K,R}$ and is nondecreasing. The two functions agree at every query point, including any points outside the tail. By induction on the number of queries, a deterministic adaptive algorithm receives exactly the same transcript on $f_0$ and $f_1$, chooses the same next points, and stops with the same output. The partition is constructed after running the algorithm on $f_0$; the argument therefore does not assume nonadaptive sampling.
+
+For any nondecreasing continuous $f$, the quantile representation of AVaR gives
+\[
+ \operatorname{AVaR}_\alpha(f(Z))=\frac{1}{L}\int_q^R f(z)\,dz.
+\]
+This also holds at $\alpha=0$ and in the presence of the flat portion of these functions. On an interval $[a,b]$ of length $h$, the chord minus the quadratic equals $K(z-a)(b-z)/(2L)$. Its integral is $Kh^3/(12L)$. Consequently,
+\begin{align*}
+ \operatorname{AVaR}_\alpha(f_1(Z))-\operatorname{AVaR}_\alpha(f_0(Z))
+ &=\frac{K}{12L^2}\sum_{i=1}^s h_i^3\\
+ &\geq \frac{K}{12L^2}\frac{(\sum_{i=1}^s h_i)^3}{s^2}
+ \geq\frac{KL}{12(N+1)^2}
+ =\frac{KR(1-\alpha)}{6(N+1)^2}.
+\end{align*}
+The first inequality follows from convexity of the cube. A valid interval returned on the common transcript must contain both values. A point estimate has error at least half their separation on one input. The midpoint--endpoint upper bound already proved in the article uses $n$ midpoint values and $n+1$ distinct endpoint values. Taking $n=\lfloor(N-1)/2\rfloor$ for $N\geq3$ gives the stated upper order. The constants on the two sides have different $\alpha$ dependence; the conclusion concerns the exponent at fixed $\alpha$, not uniform constant optimality.\qed
+
+The construction deliberately permits exact function values to the lower-bound algorithm. Thus any finite-precision procedure with no additional information cannot evade the bound by using more accurate arithmetic. Conversely, this lower bound does not price arithmetic, optimization, or the work of acquiring a continuation formula; those costs enter the service ledger. Providing the entire piecewise representation of $f$ for free would change the information model and invalidate this comparison.
+
+\subsection{Proof of Proposition~\ref{prop:ridge97}}
+For $g(x)=a(x_1)+b(x_2)$ the corner difference
+\[
+ g(1,1)-g(1,0)-g(0,1)+g(0,0)
+\]
+is zero. For $v$ it equals one. If $\|v-g\|_\infty\leq e$, the triangle inequality gives $1\leq4e$. Equality is attained by $g(x)=(x_1+x_2)/2-1/4$, because with $s=x_1+x_2\in[0,2]$ the error is $1/4-s/2$ for $s\leq1$, and $s/2-3/4$ for $s\geq1$.
+
+For a total-degree-two polynomial, restrict to $x_1=x_2=(u+1)/2$, $u\in[-1,1]$. If $p$ approximates $u_+$ with error at most $e$, then $r(u)=2p(u)-u$ approximates $|u|$ with error at most $2e$. Symmetrizing $r$ does not increase the error and produces an even polynomial $a u^2+c$. The linear functional
+\[
+ \mathcal L f=f(1/2)-\tfrac14 f(1)-\tfrac34 f(0)
+\]
+annihilates every such polynomial, has sum of absolute weights two, and satisfies $\mathcal L|u|=1/4$. Therefore its approximation error for $|u|$ is at least $1/8$, and $e\geq1/16$. The polynomial
+\[
+ p(x)=\tfrac12\{u+u^2+1/8\},\qquad u=x_1+x_2-1,
+\]
+attains the bound: $|u|-u^2$ ranges from zero to $1/4$. Finally, $v$ is precisely one ReLU with weight $(1,1)$ and offset $-1$.\qed
+
+The distinction between function and decision error matters. Cash shifts do not affect an action choice, and even a nonconstant approximation error may preserve the minimizer. No lower bound for policy regret follows from this proposition without a further decision construction. In particular, the proposition is not used to reinterpret the R96 quadratic winner as a neural winner.
+
+\subsection{Proof of Proposition~\ref{prop:readout97}}
+By definition, $L(h)\leq V(z)-h(z)\leq U(h)$ on the entire covered domain. Substitute $z=F(\omega)$, use monotonicity of $\rho$, and then use cash invariance to obtain \eqref{eq:readout-risk97}. After the numerical candidate is rounded, the whole-domain enclosure is recomputed for those \emph{actual} coefficients. The selection rule compares two valid enclosure widths and chooses the smaller one. This proves the width statement independently of the linear-program solver's termination tolerance.\qed
+
+For completeness, a general finite-site extension makes the distinction between node and domain certificates explicit. Suppose $V$ and $h$ have known Lipschitz constants $L_V$ and $L_h$, the sites have covering radius $\delta$, and $V(z_i)\in[\ell_i,u_i]$. Then
+\begin{align*}
+ \inf_z(V-h)(z)&\geq \min_i\{\ell_i-h(z_i)\}-(L_V+L_h)\delta,\\
+ \sup_z(V-h)(z)&\leq \max_i\{u_i-h(z_i)\}+(L_V+L_h)\delta.
+\end{align*}
+Indeed, choose a nearest site and apply the Lipschitz inequality to $V-h$. Directed rounding must enclose the displayed arithmetic. The implementation retains the stronger inherited convex-cell residual construction rather than replacing it by this generic bound. Its linear program is only a candidate generator; both the baseline and candidate are evaluated by the same whole-domain validator.
+
+The LP fixes the intercept to zero, bounds the two affine slopes in $[-10^4,10^4]$, and bounds nonlinear coefficients in $[0,10^4]$. These are explicit acquisition restrictions, not claimed characterizations of the best neural approximation. The two residual endpoints are unrestricted. Setting all readout coefficients to zero and choosing endpoints to enclose all acquired value intervals is feasible, so a solver failure is an execution failure, not evidence that the mathematical program is infeasible. The retained nonnegative nonlinear coefficients remain convex after dyadic rounding. All attempted feature fits, rank rejections, selection ties, and LP iterations are retained in construction receipts.
+
+\subsection{Proof of Theorem~\ref{thm:purchase97}}
+Subtract total candidate cost $m\{B\mathbb E J^a+\lambda c_a\}+\lambda K_a+F$ from comparator cost $m\{B\mathbb E J^b+\lambda c_b\}+\lambda K_b$. This gives \eqref{eq:purchase97}. Monotonicity of this affine expression in each interval argument, using $m,B\geq0$ and $\lambda\geq0$, gives \eqref{eq:gainlower97}--\eqref{eq:gainupper97}. The strict inequality $mq>C$ is equivalent to $m> C/q$ when $q>0$, yielding the first integer stated in the theorem.\qed
+
+If $q\leq0$ and $C\geq0$, this sufficient lower-bound test never certifies adoption at a positive workload count. That is an unresolved or negative \emph{comparison}, not a failure of the research program. An upper bound strictly below zero certifies rejection for the specified prices and workload. An equality at zero is kept distinct from either strict conclusion. When each service satisfies $0\leq J^a(x)-J^*(x)\leq\tau$, subtraction gives $-\tau\leq J^a(x)-J^b(x)\leq\tau$ pointwise and hence after expectation. No independence assumption is needed for this deterministic bound. For sample-based refinements, independence concerns initial-state draws; the paired services intentionally share each initial state and their deterministic original-law integration. The factor $B$ cannot be dropped merely because the services share these draws.

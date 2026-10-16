@@ -1,0 +1,60 @@
+\section{Certified remaining gain and paid stopping}\label{sec:budget110}
+A completed NBO service should not keep paying for improvements that cannot be economically material. The relevant stopping quantity is not a critic's training residual. It is an upper bound on the remaining improvement in the original decision problem. We turn that bound into a statewise allocation rule, with an explicit price in possible foregone policy improvement. The rule is available to every representation; it is not a neural-specific optimization principle.
+
+\subsection{A certificate interface in units of original cost}
+Fix a state, the original information and law, and the same implemented future policy. An incumbent action is already feasible and qualified. Its cost is $J$, its verified interval is $[l,u]$, and $b\le V^*$ is a verified lower bound for the original optimal value. Let
+\[
+ e=\operatorname{up}(u-b),\qquad e\ge0,
+\]
+where $\operatorname{up}$ denotes a genuine outward arithmetic bound, not a favorable rounding of an optimizer's return value. Qualification still means the original loss and policy-width targets. Choose an additional, separately declared improvement budget $\theta\ge0$.
+
+\begin{theorem}[Remaining-gain stopping and a complete-service comparison]\label{thm:budget110}
+If $e\le\theta$, retaining the incumbent and stopping all further improvement at that state preserves its qualification and, for every feasible original policy $\nu$, gives
+\begin{equation}\label{eq:stopgain110}
+ (J-J^\nu)_+\le e\le\theta.
+\end{equation}
+The competitor may have a better future policy: the lower bound $b$ concerns the original optimum, not only the fixed-future action optimum.
+
+Consider a finite safeguarded improvement procedure and a shortened version that starts from the same completed incumbent. The shortened procedure uses the same trial and acceptance rules until it stops by \eqref{eq:stopgain110}; at an un-stopped state suppose its complete trace agrees with the full procedure. Denote the returned policy costs by $J^{\rm short}$ and $J^{\rm full}$. Then
+\begin{equation}\label{eq:short110}
+ (J^{\rm short}(x)-J^{\rm full}(x))_+
+ \le\boldsymbol1_{\{\text{stopped at }x\}}e_{\rm stop}(x).
+\end{equation}
+For a declared finite catalogue with nonnegative weights $w_i$ summing to one, the weighted mean positive-part loss is at most
+$\sum_{i:\,\mathrm{stopped}}w_i e_{\rm stop}(x_i)$.
+For identical returned actions and the same future policy, the cost contrast is exactly zero, not the width of two independently subtracted intervals.
+
+From $[l,u]$ and $b$ alone, the ceiling $u-b$ cannot generally be reduced. This is sharpness of the declared certificate interface, not an information lower bound against a solver given additional formulas, derivative information or a sharper feasible-policy enclosure.
+\end{theorem}
+
+A final state can have $e>\theta$ after using all allowed trials without stopping. It must still meet the unchanged original qualification target. Thus $\theta$ is \emph{not} a relaxed or tightened substitute for the original policy-regret tolerance. The trace-agreement premise also matters in floating arithmetic: batching only the active rows can alter arithmetic order in an implementation that is not rowwise deterministic. Our protocol records and checks that issue; a mathematical stopping bound does not itself establish bitwise equality of all un-stopped computations.
+
+The complete implementation first runs the compiled original-law service to qualification. It then considers the same three support-step fractions $1,1/2,1/4$ as the full safeguard. Before each round it stops a row when $e\le\theta$, retaining that row's action and certificate. Remaining rows pay for the original-law supporting query and fresh policy-cost enclosure. A changed action is accepted only by strict interval separation and both original qualification predicates. The stopping comparisons, active masks, refused trials and omitted trial slots are all recorded. Neither a cheap surrogate loss nor a noncertified estimate of improvement authorizes stopping.
+
+\subsection{What propagates through a recursive problem}
+A root-state guarantee with a fixed future policy is not a uniform multi-date policy guarantee. The following result states the additional condition. Use the bounded original discounted policy operators and the common dual risk sets of Theorem~\ref{thm:improve109}. Let $\pi_s$ be a shortened policy and $\pi_f$ a comparator. Suppose, \emph{uniformly over the relevant state domain},
+\begin{equation}\label{eq:recursivebudget110}
+ T_{\pi_s}J^{\pi_f}-J^{\pi_f}\le e,
+ \qquad e\ge0.
+\end{equation}
+This is a residual evaluated against the comparator's continuation, not a training residual against a different critic. Define
+\[
+ P^+_{\pi_s}v(x)=\sup_{q\in\mathcal Q(x,\pi_s(x))}
+                       \int v(F(x,\pi_s(x),z))\,dq(z).
+\]
+Assume this map preserves bounded measurability.
+\begin{proposition}[Risk-distorted composition of foregone-gain budgets]\label{prop:compose110}
+The unique bounded fixed point $E=e+\beta P^+_{\pi_s}E$ satisfies
+\begin{equation}\label{eq:composedgain110}
+ (J^{\pi_s}-J^{\pi_f})_+\le E.
+\end{equation}
+If $e\le\theta$ uniformly, then $E\le\theta/(1-\beta)$. For a finite horizon, the corresponding backward account is
+$E_t=e_t+\beta_tP^+_{\pi_s,t}E_{t+1}$, with the declared terminal positive-part discrepancy as $E_T$. Uniform scalar budgets compose by the dated discounted sum, not by an unqualified physical-state average.
+\end{proposition}
+
+The proof uses monotonicity and the common-risk-envelope difference bound, without exchanging the control infimum and risk supremum. The executed two-date catalogue verifies the fixed-future statement in Theorem~\ref{thm:budget110}; it does not establish the uniform premises in \eqref{eq:recursivebudget110} for an untested longer-horizon controller.
+
+\subsection{A computable economic trade-off, not an invented purchase price}
+If an improvement operation has an unavoidable charge $c$ expressed in the same economic units as $J$, and $c\ge e$, no replacement can generate a strictly positive net gain at this decision. This is a dominance rule, not a globally optimal policy for learning which future computations are useful. When a continuation is reused for $B$ decisions, its acquisition cost and the appropriate joint or weighted gain bound must be compared in common units; $B$ is not supplied for free by a benchmark.
+
+Our primary numerical budget is $\theta=2^{-16}$, with all three prespecified sensitivities $2^{-12},2^{-14},2^{-18}$ reported. It is an engineering foregone-gain budget, not an empirically calibrated welfare margin. The comparison charges all common acquisition and all active and refused work. It reports the actual cost sacrifice against the full safeguard, including positive sacrifice, alongside the computational saving. This directly answers a delivered-service question that a smaller global residual span alone cannot answer. Complete proofs follow in Supplement Section~\ref{supp:budget110}.

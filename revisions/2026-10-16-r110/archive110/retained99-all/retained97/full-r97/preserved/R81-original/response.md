@@ -1,0 +1,83 @@
+# Response to the Referee
+
+## Neural Bellman Operators — Revision R81
+
+We thank the referee for the careful distinction between a valid certificate, the performance of a neural proposal, and the economic cost of the complete returned policy. We revise the original Neural Bellman Operators paper rather than replace it with a different search paper. The title, author, investment primitives, constructive own-future continuation, acquired-state feasibility and original Bellman optimum are unchanged.
+
+The controlling advisory report is dated 11 October 2026, on review commit `4b27b56f4514f6c1d77b69fe707f7202f8b06b19`, and reviews R67 manuscript commit `eacd3e217ae1e2e9ea6e154b48da7d103159d051`. We have also examined the intervening derivations and experiments. The present integration starts from the executed R80 snapshot `ec8d40a058bfc03a88a62a223559698c5e849b22`, which contained the R79 ordinary manuscript and a separately frozen R80 factorial experiment that had not yet been incorporated into the article. R81 supplies that incorporation and new results on representation-calibrated qualification and optimization-stable policy classes. The report is an owner-commissioned advisory review, not a decision of the Econometric Society.
+
+The new central sections are **Representation calibration and optimization-stable policies** and **Qualification, representation, and attained economic cost**. Complete dual proofs, all ninety-four cost estimands and precision components appear in the Numerical and Development Appendix. Every inherited active section is compiled once, byte-identically; original wrappers and historical evidence are preserved. Relocation is recorded in the content map rather than treated as deletion.
+
+## B1, M1 and M10: The NBO contribution and the role of a predictor
+
+The referee is right that the validity of the safeguarded query procedure does not identify a neural performance advantage. The revised introduction keeps the original constructive NBO continuation central and distinguishes it from the optional action-query proposal. A continuation is fitted against its own attained future, qualifies residual oscillation and original-optimum policy loss, and constructs a complete robust controller. Exact conditional integration of a shallow continuation does not require an optimal-value descendant tree. These are constructive results about the NBO itself, not conclusions inferred from the safe return of an optional predictor.
+
+The new question is whether qualification charges the represented function consistently and whether a policy-cost result depends on a single numerically selected readout. The affine-exact qualification proposition proves a common calibration for the two fixed bases. The optimization-to-policy theorem and exact switch duals certify a class of readouts rather than only an optimizer seed. The observed cost intervals can then extend to those classes without adding a statistical union bound. This develops the original operator-to-policy-to-economic-cost chain while retaining the method-neutral query theorem as a complementary result.
+
+The title remains *Neural Bellman Operators*. We do not claim that every optional neural component improves work, or that the present expected-cost identities prove results for all historical nonlinear recursive objectives. Those distinctions identify the actual mathematical objects rather than substitute a new topic.
+
+## B2 and M8: Cold-start work and timing interpretation
+
+All adverse R67 cold-start observations are retained. Small endpoint-query savings do not imply complete-service savings. The corrected 212-process catalogue, fitting warnings, original timing repetitions, frequency information, fallback and durable-output costs retain their original meaning. No later observation is used to retroactively declare that ReLU won those services.
+
+The new calibration experiment concerns actual attained-controller costs. Its legacy construction clocks include a fixed-label loss ablation, whereas the calibrated construction clocks do not. We explicitly identify this difference in the work table; their raw difference is not an equal-boundary timing comparison. Action-value and expected-feature evaluation counts are separately displayed, and the complete cost-inference, barrier and publication services retain separate clocks. No uncontrolled-frequency timing sample is presented as a population speed advantage.
+
+## B3 and M4: Prospective reuse
+
+The intervening completed material extends the original reuse investigation to the retained sixty-four-block and witnessed-reuse designs. The manuscript and appendix retain their model identities, first fills, failed validations, fallbacks, descendants, load and record costs. The bounded-cache contract is distinguished from a full-cover fill theorem, and localized workloads are not counted as direct policy-cost observations.
+
+R81 adds neither a new reuse timing population nor a claimed neural crossing that the saved services do not establish. It instead makes a different kind of reuse of qualified evidence precise: a cost interval for an attained controller transfers unchanged to every readout in a fully action-stable qualification sublevel. This deterministic evidence transfer does not erase model-loading or verification costs and is not an amortized runtime result. The two notions are stated separately.
+
+## B4 and M5: Useful precision for actual original-law costs
+
+The inherited recursive-policy comparisons and the later attained-controller comparisons concern different policies. We preserve that distinction. The R80 protocol froze nine complete actors, 524,288 new four-coordinate continuous-bin rows, forty-bit bins, two estimators and ninety-four estimands before the new cost stream was evaluated. The predeclared paired-width and equivalence margin is $1/256$. Cash cost and exact last-innovation conditional expectation target the same original-law expected costs and share one simultaneous failure allowance below $1/100$; they do not double the sample count.
+
+The new appendix displays all marginal, paired and interaction intervals and decomposes width into endpoint sampling-variance allowances, the finite-support term and actual mean numerical enclosure width. The numerical term includes continuous-bin, acquisition and arithmetic propagation; no invented additive attribution to separate intermediate operations is asserted. The paired target is not retrospectively imposed as a success condition on marginal costs. The finite-support term dominates the fine calibrated basis comparison, so additional variance reduction alone would not remove its principal uncertainty.
+
+There are now identified own-controller gains and matched cost rankings. For example, the fine calibrated ReLU controller improves on its own legacy construction by an interval approximately $[0.005159,0.006341]$. The calibrated fine ReLU-minus-Bernstein difference is approximately $[0.000955,0.002013]$. The latter identifies lower Bernstein cost while also satisfying the specified equivalence margin; strict order and small-margin equivalence can both hold. No zero-containing interval is relabeled as equality or superiority, and the original unresolved R67 comparisons remain unchanged.
+
+## B5, M2 and M3: Executed training, comparable information and attribution
+
+The intervening retained studies include the certificate-aware fixed-feature readout, matched conventional features, independent-context validation, longer reuse and trained vector proposals. They are not relabeled versions of R67's L-BFGS fits. Their hypotheses and complete evidence remain in the appendix. A predictor-independent validation stream and recursively generated endogenous contexts continue to have different statistical contracts.
+
+The attained-continuation experiment supplies an additional representation comparison. Both bases use nine coefficients, the same coefficient limits, primitive information, robust action menus and acquisition resolutions. Inspection of the qualification objective showed that the old coefficientwise modulus charged a common affine function ten times as much in its Bernstein representation as in its ReLU representation. The new derivative-control moduli charge those affine functions identically. The ReLU modulus is exact for its piecewise-affine function; the Bernstein bound is valid but need not be exact for a general polynomial. We therefore call this affine calibration, not equality of nonlinear hypothesis classes.
+
+The separately frozen factorial experiment retains the legacy actors and reconstructs both fitted futures under calibrated qualification. Both bases improve their own attained policy costs. The matched ordering reverses: legacy ReLU has lower cost, but calibrated Bernstein has lower cost at both resolutions. The two predeclared interactions identify the change. Both findings are reported. This supplies a positive explanation of how qualification affects actual economic decisions; it does not protect a preferred ranking by discarding a stronger conventional result.
+
+## B6 and M6: Vector controls and horizon cost
+
+The original vector theorem, its primitive curvature and feasibility premises, the R67 horizon-four descendant count, and subsequent trained two-output comparisons are retained with their actual records. The costly vector recursion is not reclassified as solved because a tensor state lattice is absent. The main reading path points to the complete vector material in the appendix rather than dropping it.
+
+The new action-stability theorem is executed for the two-date construction with a fixed terminal actor. A separate first-disagreement proposition states the exact coupling and uniform action-agreement conditions required for a longer-horizon cost transfer. It does not claim that those longer-horizon stable classes have been numerically constructed. In particular, a changed fitted future changes upstream labels and needs a new qualification; independent small optimization gaps at different label problems do not automatically compose into the new stability result.
+
+## B7 and M7: Independent numerical implementation
+
+The R80 cost experiment uses two independently implemented whole-bin evaluators inherited from the repaired R77 execution: outward binary64 arithmetic and directed-integer arithmetic. Their hull, intersected with proved support, is used rather than a favorable intersection. Exact rational midpoint trajectories provide a third check. The R81 publication replay re-evaluates all 524,288 bins for each of the nine actors in both implementations and recomputes all ninety-four exact inference quantities. It reconstructs every new construction label, feasible actor and primal--dual qualification certificate.
+
+R81 also supplies a new independent action-switch verifier. It does not import the construction's LP, derivative-control, feature-expectation or dual routines. Conditional polynomial moments are integrated through monomial antiderivatives instead of the earlier even-moment expansion; hinge expectations are computed directly. It reconstructs all robust menus, checks reference greediness, verifies rational multiplier feasibility and recomputes all 20,480 switch lower bounds. The recorded LP proposals are not rerun to obtain more favorable values.
+
+This is end-to-end independent verification of the newly integrated critical controller-cost and stability calculations. It does not independently regenerate the old eight-million-query vector recursion, and the manuscript does not describe hashes or finite tests as doing so. Original disagreements, aliasing counterexamples, repairs and failed attempts remain in the historical directories. R81 adds no new independent cost rows and does not replace scientific clocks with replay clocks.
+
+## B8: Fitting reliability versus return reliability
+
+The new theorem addresses a precise deterministic reliability question. Let $U$ be the attained feasible readout's qualification objective. A verified switch lower bound exceeding $U+\epsilon$ excludes every competing action throughout that objective sublevel, including ties. Since the unknown optimum is at most $U$, every $\epsilon$-optimal readout belongs to that sublevel.
+
+Three of the four calibrated terminal-label problems have fully stable first-date covers at zero extra allowance. Every exact minimizer of each such problem yields the attained complete policy, and positive uniform dyadic allowances are also reported. Larger allowances leave some cells unresolved; coarse ReLU is partially unresolved even at zero. For partial coverage the theorem gives an explicit original-law cost enlargement based on the initial mass of uncertified cells. These enlargements are not presumed small enough to preserve every empirical sign.
+
+Thus an attained-policy comparison can hold uniformly across qualified optimizer classes without sampling optimizers or claiming a hidden-layer convergence rate. Practical solver attainment is still separately certified by its actual feasible iterate and dual gap. Safe return via a conventional fallback remains a different property, and fitting warnings are not removed.
+
+## B9 and M9: The economic decision
+
+The new actual-cost intervals give nonempty conditional charge regions. For the fine calibrated basis comparison, a Bernstein per-deployment premium below the lower ReLU-minus-Bernstein cost endpoint is covered by its identified policy-cost saving; a premium above the upper endpoint favors ReLU after charges. The intermediate region is unresolved. Both estimators' marginal and pair intervals can be combined on their original simultaneous event, and exact difference-constraint closure sharpens these regions without additional sampling.
+
+The attaining cost potentials and the zero-charge pure-choice regret calculation for the nine-controller catalogue are deposited. Four-term interaction intervals are reported separately rather than silently treating the pair-constraint solution as sharp for a smaller set including those extra restrictions. The preceding sharp deployment-allocation and finite-cohort theorems remain available under their original premises.
+
+The amounts are normalized model units. We do not invent a monetary loss scale, deployment count, processor price or installation charge, nor substitute a sample count for an economic deployment horizon. The economic advance is an identified constructed-policy cost and conditional choice region, including an optimizer-class interpretation where stability is certified. It is not an empirical calibration or a general representation-specific purchase recommendation.
+
+## Preservation, exposition and release
+
+The article follows the original operator, attained continuation, qualification, policy stability and economic cost chain. The technical supplement retains the core proofs, and the Numerical and Development Appendix compiles each relocated recursive, vector and historical evidence section once. The new complete dual and coupling proofs and all factorial outcomes are in that appendix. Original wrappers, prior PDFs and every adverse scientific record remain preserved with their provenance.
+
+The release build checks ordinary sources, exact regressions, inherited suites without skipped tests, all new bin trajectories and inference quantities, all new switch duals, source manifests, original section hashes and cross-references. A clean source-archive rebuild is a separate check. Automated compilation and text checks are not described as visual inspection or external mathematical approval. Any visual inspection is separately reported against the actual PDF identities.
+
+The submission therefore develops the original NBO paper positively: affine-calibrated residual qualification is connected to attained policy costs; exact optimization barriers yield policy-class stability; and simultaneous economic intervals transfer to the qualified classes. The new results coexist with the stronger calibrated conventional comparator, unresolved sublevels and costly historical recursive trees. None is removed to obtain a favorable conclusion.

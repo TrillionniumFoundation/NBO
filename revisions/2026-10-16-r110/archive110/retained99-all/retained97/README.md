@@ -1,0 +1,9 @@
+# Neural Bellman Operators — R96
+
+The current revision addresses the R95 report at `2fcf0bbd5926ee927c14a5f6d122fb50bb420988` and descends from its reviewed R95 manuscript. The original NBO title, author, economic primitives and scientific sections remain. The paper adds convex-order risk precision, complete-service admission and prespecified resolving power, a rank/label/payload-matched confirmation, and an acquisition-and-reuse region.
+
+Read `ECTA.tex`, `supp.tex`, `appendix.tex` and `response.md`. The full protocol is `PROTOCOL96.md`; constant-to-code assignments are in `CONSTANTS96.json`. New tables embed the actual confirmation source commit and freeze hash. All prior scientific section files are retained unchanged and assigned exactly once; `audit/reproduction96/INTEGRATION96.json` records that check. The failed R95 preservation declaration is retained under `preserved/R95-source/` and repaired by explicitly distinguishing amended from unchanged source.
+
+The workflow commits ordinary sources and then actual fitted models and calibration before opening a new confirmation stream. The scientific sources cannot change after that freeze. Four current PDFs, when built, are in `build/`. `RELEASE96.json` records actual gates; an old release or a submitted job is not R96 approval. The primary experiment remains scalar-control and two-date. No full largest-vector execution, field-calibrated monetary welfare claim or universal neural superiority is asserted.
+
+From this directory: `python code/run_tests95.py --output-dir audit/reproduction96/tests`, `python code/build95.py --audit-dir audit/reproduction96/build`. Frozen confirmation can be reproduced under a new tag with `python code/experiment96.py evaluate --tag replay`; the same stream adds no independent observations. Run from a full repository checkout because historical suites require original repository fixtures outside this directory.

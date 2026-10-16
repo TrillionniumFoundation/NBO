@@ -1,0 +1,85 @@
+# Response to the Referee: Neural Bellman Operators, R92
+
+We thank the referee for distinguishing a valid certificate from evidence of computational or economic advantage. We respond to the latest deposited report, \nolinkurl{b030d87d7e96440eb25a3178c94ee6a87940cdb0}, which reviews the R84 delivery. The intervening completed R91 manuscript at \nolinkurl{368a9e754f5de04eb1957e152f22d6ef2c34f2fe} is the baseline for this revision. Its original title, author, economic primitives, full-policy objective, broader applications, active sections and unfavorable evidence are retained. We have not adopted the recommendation to replace the original paper with a narrower stopping-method article.
+
+The new analytical contribution is reference-centered qualification under the original recursive preference. A state-dependent error is propagated through the original conditional risk operator rather than charged by an independent worst state at every date. Centering the risk dual at the actual stored NBO continuation supplies a nonnegative penalty. Theorem `thm:centeredrisk92` compares the complete implemented policy with the original Bellman optimum. Proposition `prop:riskflow92` gives an exact penalized risk-occupation representation for a finite affine risk primitive and independently checkable primal and dual witnesses. A strict support-function inequality excludes risk pieces only on a previously verified error set. Full proofs, sharp threshold examples and objective-preservation counterexamples are in the Technical Supplement.
+
+The verification manifest, not this response, determines which execution and publication checks have passed. New exact diagnostics are not counted as fitting attempts or independent economic observations.
+
+## M1 / B1. A complete source-bound package
+
+The prior R91 directory is copied by its exact Git tree before amendments. Every previously active section remains in the article, supplement or appendix, and old wrappers and PDFs are preserved with R91 identities. Ordinary integrated TeX is committed before the new execution. The current bibliography retains unique keys and the original class files are not modified.
+
+The new reproduction command runs all current inherited suites without skips, the new adversarial tests, independent original-law and common-readout replays, all required tables, and four current documents. The new rational catalogue also has a clean source-only rerun whose deterministic case files must match. Clean typesetting compares both extracted text and PDF hashes. These are separate checks: a clean typesetting reconstruction does not stand in for scientific replay, and old numerical records do not stand in for a new independent sample. The manifest records actual failures. Current-PDF visual inspection is separately source-bound and its coverage is disclosed rather than inferred from compilation.
+
+## M2 / B2. Keeping the original problem and scope
+
+The article remains Neural Bellman Operators. Its main construction, feasible witnesses, complete-policy objective, joint state-context extension, diffusions, endogenous preferences, temporal selves and games are retained under their original assumptions. The added theorem is formulated on the original augmented state space, not only a first-date finite partition. It permits actions and endogenous occupations to change at every date.
+
+A dual representation is explicitly required for the centered-risk result. When a recursive aggregator lacks that representation, the existing order and continuation-modulus results remain active. This separates the conditions of different results without removing the corresponding original economic problems. We do not reinterpret an expected-cost experiment as evidence for every preference primitive.
+
+## M3. Complete-policy qualification under nonlinear preferences
+
+At the actual stored continuation, the centered operator is exactly the original risk of the continuation plus its error, minus the original risk of the stored continuation. Its dual penalty retains the cost of moving away from a risk-maximizing reference kernel. The policy upper certificate and optimum lower certificate propagate state-dependent errors at every date. The lower certificate covers all original feasible actions; a sampled-action minimum cannot establish it.
+
+The exact state-dependent recursion is no looser than the earlier signed scalar account. A two-state, two-action absorbing example makes the distinction strict at every declared horizon: the earlier scalar charge equals the horizon while the new certificate is zero. The state-dependent bias is propagated, not cancelled without justification. A risk kernel inactive at the reference can become active after perturbation; an exact two-outcome example shows that freezing the reference maximizer would give an invalid upper bound. Equalities at the exclusion threshold are retained.
+
+## M4 / B4. Shared continuations and population claims
+
+The joint-domain construction and adaptive acquisition results in `population86` remain active. Their verified primitive regularity, feasible action transport and whole-domain coverage conditions are unchanged. The held-out shared-proposal study retains its fixed parameters, calibration/evaluation split and unseen dimension.
+
+The new theorem fixes one common continuation sequence and one complete feasible policy for each qualified parameter before propagating errors. A class conclusion requires the stated inequalities for each member; it cannot be obtained by combining a favorable continuation from one parameter with an action from another. This pointwise analytical extension neither assumes independent endogenous contexts nor turns a finite diagnostic catalogue into a distribution-free learning result.
+
+## M5 / B3 / B6. Work, runtime and the neural contribution
+
+The new support exclusions depend on the continuation through its centered penalty. They therefore identify a concrete channel through which a constructed continuation can change verification work. Equivalent neural and non-neural representations have the same guarantee. A representation-specific speed advantage still requires a matched experiment, and the earlier negative incremental ReLU result is preserved.
+
+The finite recurrence stores successor layers rather than re-expanding histories. Its arithmetic bound includes every retained risk-piece support, while construction, original-law integration, model evaluation, support certificates and rational bit complexity are separately charged. The diagnostics report a defined support-term count, retained rational bit lengths and measured process durations without calling a partial operation count an end-to-end resource model. Existing complete-time and cross-machine evidence remains unchanged. Energy and application-specific monetary calibration are not measured by the new diagnostic calculation.
+
+## M6 / B7. Original-law economic inference
+
+The independently evaluated investment policies, prespecified margin, simultaneous error allocation and complete pairwise catalogue remain in the manuscript. Identified improvements and noninferiority remain separate from unresolved strict rankings. Sampling variation, numerical enclosure and optimizer-class enlargement retain their different meanings.
+
+The added models have exact rational primitives and original nested average value at risk. They test certificate identities and failures, not investment welfare. They generate no additional independent cost row and do not reduce any inherited statistical interval. The entropic representation is proved analytically; rational tail-risk diagnostics are not presented as an entropic numerical experiment.
+
+## M7 / B8. Prices and occupation-sensitive precision
+
+All prior uniform price-fee regions, unfavorable fee ceilings and capacity constraints remain. The new occupation budget bounds how local residual allowances can affect a fixed-policy risk value. It improves on a separate worst-state charge at each date while keeping the penalty and original preference fixed. This is a sufficient numerical-accuracy budget, not an estimate of the value of computation.
+
+Changing the stored continuation changes the penalty and requires new qualification. Choosing a risk parameter or a price after seeing results is not permitted as evidence of a favorable economic ranking. The original conditional purchase interpretation and the absence of an application-specific monetary calibration remain explicit.
+
+## M8 / B5. Prospective service selection
+
+The existing prospective experiments and fixed calibration/evaluation separation are retained without refitting or reselection. The finite exact winner remains qualified by its catalogue and declared objective. The new prescribed shared circuits are mathematical fixtures; no claim of learning success, population regret or improved service selection is attached to them.
+
+The centered certificate can be an input to the existing prospective rule once independently qualified. Its smaller deterministic bound does not, by itself, provide new observations about a workload distribution. These are distinct stages of the original NBO pipeline.
+
+## M9 / B10. Horizon growth and a qualified stored recursion
+
+The new finite risk-occupation formulation and backward recurrence eliminate repeated descendant evaluation for the stated finite risk representation. They do not erase state-dimension, action-dimension or risk-envelope complexity. In particular, enumerating risk vertices can itself be expensive, and a continuous-state aggregation requires original-law enclosure before this finite implementation supplies a valid certificate for that model.
+
+All declared diagnostic horizons, from two through 64 dates, are retained. Their state count is three, and their original preference is fixed before execution. The two shortest horizons also permit exhaustive complete-policy and descendant-tree comparison. The longer cases are not described as the original high-dimensional vector problem. The inherited adverse vector query counts remain visible, and the independent largest-vector reimplementation and full matched vector comparator tournament remain uncompleted empirical obligations rather than being replaced by these fixtures.
+
+## M10 / B9. Predictor and verifier diagnostics
+
+Existing fitting warnings, invalid predictions, repairs, protected fallbacks, screen closures, zero-progress probes and full service statuses remain separate. No new fitting attempt occurs in the rational catalogue. A certificate return is not a successful learning event.
+
+The new failure tests concern the verifier itself: reversed error boxes, invalid probabilities, missing risk nodes, forged penalties, corrupted risk-flow masses and invalid supersolutions must be rejected. Those results are not added to the denominator of the older predictor-reliability study.
+
+## M11 / B11. Independent critical-kernel checking
+
+The production calculation enumerates capped-simplex vertices using bound/free-coordinate constraints and then evaluates centered risk recursions. The independent code uses the scalar-threshold variational formula for original risk values, a separate original-policy/optimal-value recursion and a different greedy-ordering construction to check completeness of the risk vertices. It reads serialized primitive inputs and does not import the production centered-risk module.
+
+The independent audit checks every reported potential inequality against original values, every strict risk-piece exclusion, all fixed-policy risk-flow equalities and every risk dual inequality. It also enumerates all complete Markov policies at horizons two and three and compares an un-memoized descendant evaluator with its backward evaluator. A clean rerun must reproduce all deterministic case-file hashes. This is new, explicitly scoped independent kernel evidence, not a claim to have completed the still-missing largest-vector solver.
+
+## M12 / B12. Organization, novelty and preserved content
+
+The original theorem-to-algorithm-to-evidence chain remains active. The centered-risk result follows the signed original-law theorem; its full proof is placed in the supplement and the complete deterministic catalogue in the numerical appendix. The integration manifest checks every preceding active section input, and all adverse numerical evidence remains available. The earlier response is preserved rather than silently replaced in history.
+
+We attribute conditional risk duality and risk-averse dynamic programming to existing work and do not claim priority for entropic variational duality, weak duality or finite backward recursion. The contribution here is their reference-centered use for the same constructed NBO continuation, with original-action lower certificates, state-dependent complete-policy error, exact penalized occupations, safe risk-piece exclusion and explicitly paid precision. Whether that development meets the journal's contribution threshold remains for substantive review; compilation and exact examples are not editorial acceptance.
+
+## Minor comments and actual verification status
+
+Exact finite winners, deterministic work, complete runtime, risk-distorted occupation, physical occupation and independent economic observations are explicitly distinguished. Original source, integration, execution, clean reconstruction and delivery identities are recorded separately. All horizons, risk levels, parameters and residual radii are retained, including no-pruning cases. Current bibliography and document checks reject missing or stale outputs. Actual visual coverage is reported against the current PDF hashes.
+
+This is a substantive amendment to the original paper, not a new topic or a restriction to the first-date finite-menu problem. The current verification and delivery records state completed and outstanding checks precisely. No unresolved empirical obligation is represented as closed by the new mathematical diagnostics.
