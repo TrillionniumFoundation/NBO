@@ -1,0 +1,61 @@
+name: NBO R110 immutable source recovery
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r110-verified-author-revision-2026-10-16']
+    paths: ['.github/workflows/nbo-r110-source-recovery.yml']
+permissions:
+  contents: read
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Recover source trees without changing prior branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p export
+          cat > /tmp/recover.py <<'PY'
+          import urllib.request,json,base64,hashlib,pathlib,concurrent.futures,time,zipfile,io,os
+          O=pathlib.Path('export');B='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          def get(p):
+              for k in range(5):
+                  try:
+                      with urllib.request.urlopen(urllib.request.Request(B+p,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'NBO-R110-source-custody'}),timeout=90) as r:return json.load(r)
+                  except Exception:
+                      if k==4:raise
+                      time.sleep(2**k)
+          def blob(s):
+              d=base64.b64decode(get('git/blobs/'+s)['content']);assert hashlib.sha1(b'blob '+str(len(d)).encode()+b'\0'+d).hexdigest()==s;return d
+          package=blob('f39d707c2d831c390090d2263a2e6d2aa0b1df5b')
+          cache={}
+          with zipfile.ZipFile(io.BytesIO(package)) as z:
+              for n in z.namelist():
+                  if n.endswith('/'):continue
+                  d=z.read(n);cache[hashlib.sha1(b'blob '+str(len(d)).encode()+b'\0'+d).hexdigest()]=d
+          trees={'native109':'7c45e1fab219289b89df42d7ff0e22039f4d93d6','tools109':'da10f57ce7fb5ccdf7839425b11043be1a5dbfca','reviews':'b9523a01241c744c3f50599ee5719e5460580400'}
+          todo=[];inventory={}
+          for name,s in trees.items():
+              t=get('git/trees/'+s+'?recursive=1');assert not t.get('truncated');inventory[name]=t
+              todo.extend((name+'/'+v['path'],v['sha']) for v in t['tree'] if v['type']=='blob')
+          missing=sorted({s for p,s in todo if s not in cache})
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:
+              for s,d in zip(missing,ex.map(blob,missing)):cache[s]=d
+          for p,s in todo:
+              f=O/p;f.parent.mkdir(parents=True,exist_ok=True);f.write_bytes(cache[s])
+          (O/'TREES.json').write_text(json.dumps(inventory,indent=2))
+          refs=[];page=1
+          while True:
+              x=get('branches?per_page=100&page='+str(page));refs+=x
+              if len(x)<100:break
+              page+=1
+          (O/'BRANCHES.json').write_text(json.dumps(refs,indent=2))
+          (O/'RECOVERY.json').write_text(json.dumps({'workflow_source':os.environ['GITHUB_SHA'],'immutable_trees':trees,'files':len(todo),'new_blob_downloads':len(missing),'source_recovery_only_not_scientific_execution':True},indent=2))
+          PY
+          python /tmp/recover.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r110-recovered-native-source
+          path: export/
+          if-no-files-found: error
+          retention-days: 30

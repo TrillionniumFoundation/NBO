@@ -1,0 +1,98 @@
+# Response to the Referee
+## Neural Bellman Operators — Revision R83
+
+We thank the referee for the detailed distinction between a valid safeguarded numerical method and evidence that its neural proposal is economically useful. We revise the original **Neural Bellman Operators** paper. Its title, controlled economy, constructive own-future continuation, original Bellman optimum, feasibility requirements and broader development are retained. The response uses the report on R67 dated 11 October 2026 (review commit `4b27b56f4514f6c1d77b69fe707f7202f8b06b19`, manuscript `eacd3e217ae1e2e9ea6e154b48da7d103159d051`). This commissioned advisory review is not represented as a decision of the Econometric Society.
+
+The report predates substantial deposited work. R69–R73 develop and execute qualification, protected reuse and predictable evaluation; R77–R81 add complete attained controllers, higher-precision original-law costs, affine-calibrated qualification, independently verified switch barriers and economic allocation. We preserve their statements, assumptions and adverse observations rather than relabeling them as fresh experiments. The completed R81 manuscript is retained within the pinned R82 attempt. R83 integrates the subsequent actionwise development and adds a new continuum-of-tolerances economic stopping theorem, an exact frontier algorithm and an independent finite-catalogue verification.
+
+The principal new result is constructive. An action-switch lower bound identifies which acquired actions remain possible throughout an optimization sublevel. Original-law conditional cost differences price those actions individually. Their exact threshold knots then determine the entire region of verified optimization errors for which an economic ranking, equivalence statement or replacement decision is valid. A verified primal–dual gap places a numerical output in that region without a probability model for the fitting algorithm. This connects the accuracy of a completed NBO continuation to an actual economic endpoint; it is not merely an extra gate for an optional warm start.
+
+The article contains **Economic accuracy of approximately optimized continuations**, **Economically sufficient optimization accuracy**, and **Economic stopping regions in the investment economy**. The Numerical and Development Appendix contains the interval proofs, all refinement levels, all eighteen frontier targets and fixed-reference gains. The core Technical Supplement remains intact. Every one of the 35 inherited active sections remains byte-identical and compiled once in its original document. Original wrappers, historical companion editions and the interrupted R82 attempt are preserved separately.
+
+## M1 / B1: The contribution and the role of neural construction
+
+The original paper now distinguishes three contributions rather than assigning all of them to the neural proposal. The constructive NBO produces an attained own-future continuation and its feasible action witnesses. A common verifier supplies original-optimum accuracy independently of whether a proposed warm start helps. A representation-sensitive qualification rule and its optimizer-class transfer determine which constructed continuations can be used and what their implemented policies cost. The nonlinear investment study compares the returned complete controllers, not a neural label attached to an unchanged classical envelope.
+
+We retain the original title because the constructive neural operator remains a substantive object of the paper. Its primitive error account, feasible witnesses, affine–ReLU construction and acquired implementation are not replaced with a different model or a generic certification framework. At the same time, the actionwise and stopping theorems are available to conventional representations. The numerical evidence cannot be converted into a neural advantage by making those common theorems representation-specific in the exposition.
+
+The new positive conclusion is that verified approximate optimization can preserve an identified economic decision even when it does not preserve every acquired action. The fine-grid comparison below applies to an entire continuum of qualified readout outputs, with an explicit sufficient stopping frontier and no further fitting or sampling. Its meaning is stronger than reproducing one fitted coefficient vector and different from claiming a universal neural ranking.
+
+## M2 / B2: Strong matched baselines and the qualification objective
+
+The retained qualification development includes fixed-feature ReLU and conventional Bernstein readouts, exact convex primal–dual qualification, matched label-loss ablations in their declared construction services and realized whole-policy costs. The subsequent affine-calibrated rule isolates a representation-dependent qualification charge instead of attributing an outcome solely to a basis name. Both own-future dates, feasibility rules, action menus, acquisition resolutions and callable identities are deposited.
+
+The R80 factorial catalogue compares both bases, both qualification rules and both resolutions, together with the zero controller. Calibrated qualification improves both bases and reverses their earlier matched cost ordering. Both the earlier ReLU advantage under the legacy rule and the Bernstein advantage under the calibrated rule remain visible. The calibrated services did not repeat the complete label-loss ablation; their metadata state that boundary explicitly. Their construction clocks therefore are not used as a matched universal speed comparison with the legacy services.
+
+R83 extends these attained-controller conclusions to outputs satisfying verified objective guarantees. At excess objective $2^{-16}$, the fine-grid ReLU-minus-Bernstein class interval is `[0.000496, 0.002503]`, rounded outward. The original binary uncertified-mass transfer gives `[-0.421558, 0.424526]` from the same attained-cost interval. Individually pricing the possible switches identifies the ordering throughout the stated sublevels, although some actions remain unresolved. No new candidate is selected because it produces a favorable realized comparison.
+
+These classes hold the fitted labels and terminal actor fixed. They are not a statement about all jointly refitted hidden layers or arbitrary new future controllers. This distinction preserves the constructive theorem while making the new optimization guarantee precise.
+
+## M3 / B3: Predictability, validation loss and nonstationary queries
+
+The retained predictable-evaluation and protected-query sections address the separation between construction information and evaluation observations. Work–loss admission is based on the declared validation experiment and timing convention, while the sequential results retain their filtration and predictability conditions. An original-optimum verifier does not, by itself, establish a population speed advantage for a trained proposal. The past warnings and unsuccessful admissions remain in the compiled appendix.
+
+The new stopping frontier addresses a different source of post-selection risk. Once the finite attained-policy cost family is covered, deterministic actionwise inequalities hold simultaneously for every readout in every enclosed sublevel. The frontier may therefore be inspected and a tolerance selected on that same event. No extra union bound over an uncountable continuum is needed. This is proved from containment, not from treating reused query or cost records as independent.
+
+Changing the observation law, frozen labels, terminal actor or cost estimand is outside that event unless independently qualified. In particular, the theorem is not offered as a substitute for prospective validation of a new predictor under distribution shift.
+
+## M4 / B4: Reuse, amortization and complete work
+
+The R72 and R73 retained studies execute longer reuse catalogues with protected fallback, query counts and complete service records. Earlier failed reuse and adverse timing results are not deleted. Their full phase records, not only the most favorable last block, remain available in the Numerical and Development Appendix. The reuse claims retain their declared query law, workload and charging conventions.
+
+The R83 frontier is an additional precisely defined reuse object. After the actionwise integrals have been verified, all tolerance strata are formed by sorting the exact switch thresholds and updating cell extrema. With $P$ admitted alternatives and $N$ cells this takes $O(P\log P+N)$ arithmetic operations and $O(P+N)$ storage. Two monotone tolerance lists then yield each sufficient two-dimensional frontier with at most the sum of their stratum counts in predicate evaluations. Integration work is excluded from this incremental count only because it is reported separately and has already been paid, not because it is assumed free. Rational bit complexity is also distinguished from the arithmetic-operation count.
+
+All four integration rungs are charged. The first completed R83 recovery has its own phase, total-verification and memory records; subsequent replay has separately named timings. The original failed R82 run retains its printed phase clocks, but those partial clocks are not invented into a missing complete-service wall clock. Neither the frontier operation count nor the recovery runtime is a matched measurement of neural fitting speed.
+
+## M5 / B5: Cost precision and the economic endpoint
+
+The higher-precision original-law experiment already deposited in R80 uses 524,288 common bin rows and the declared nine-controller family. Exact conditional integration, continuous-bin uncertainty, arithmetic enclosure and bounded-sample inference have separate roles. The confidence event is the original preallocated event, not a new family inferred from R83 postprocessing. Both conditional and ordinary cash-cost estimands remain recorded, as do the control identities and all ninety-four declared estimands.
+
+R83 makes a previously conservative part of the cost transfer explicit. The independent actionwise integration concerns every allowed first-date switch conditional on its entire acquisition cell. It preserves the original continuous initial and innovation laws and the fixed terminal actor. Both arithmetic implementations reproduce all 18,270,720 paired integration boxes per implementation, with 15,616 separately evaluated rational midpoint checks. The checks supplement rather than replace the whole-bin proof. This is a full re-integration, not simply a replay of saved interval endpoints.
+
+The all-tolerance calculation has 118 model strata and 18 comparison targets. A separate exhaustive product-grid calculation verifies all 12,732 returned and excluded stratum-pair tests. For fine ReLU versus fine Bernstein, the strict positive-ordering region on the equal-tolerance diagonal extends to an exact rational supremum of approximately $0.0000674917368$, excluded at equality. Coarse Bernstein versus fine ReLU is economically equivalent within $1/256$ throughout $[0,2^{-12}]$; its final band is `[-0.001622, 0.003879]`. These are different economic statements and both are reported.
+
+Coarse ReLU pairwise class comparisons remain inconclusive even at zero excess under these sufficient bounds. An inconclusive bound is not a claim that the corresponding actual optimizer has failed. The complete tables retain that case and every adverse or unresolved outcome. R83 adds zero independent cost rows and zero fitting attempts.
+
+## M6 / B6: Vector controls and horizon dependence
+
+The vector-control construction, simplex refinement, derivative bounds and observed descendant growth remain in their original appendix sections. The new actionwise theorem allows any finite horizon for which the conditional contrasts with a fixed continuation are enclosed. This is not evidence that the particular vector recursion scales favorably in dimension or horizon. Its implementation costs remain explicit.
+
+The new executed frontier concerns the original two-date, two-state investment economy and its finite robust first-action menus. No newly trained vector-control comparison or new sparse high-dimensional experiment is claimed. Those questions are not answered by relabeling nonuniform tensor coordinates as a non-tensor method, or by treating a smaller sublevel radius as a faster vector solver. The paper retains the vector results under their existing hypotheses while the new theorem strengthens the optimizer-to-economic-decision connection that is actually tested.
+
+## M7 / B7: Independent verification and failure preservation
+
+The latest R82 attempt completed and wrote its four actionwise model files before failing during the own-controller cost transfer. Its name transformation removed `calibrated-` but failed to add `legacy-`, requesting a controller that does not exist in the frozen R80 roster. R83 retains this source and exception, reproduces the erroneous lookup as a negative regression, and uses a checked explicit calibrated-to-legacy mapping. The zero controller is validated against the full callable roster, not a metadata dictionary that contains only fitted controllers. Reverse contrasts negate and reverse the endpoints, and unknown names fail closed.
+
+The original `SOURCE_FREEZE82.json`, four model files, input construction records and barrier certificates remain byte-identical. R83 reevaluates every paired bin in both independent implementations and requires exact equality of every reconstructed model record, including endpoint-stream digests, integer sums and refinement intersections. It then reconstructs all 72 class-pair and 24 own-controller transfers without altering the original statistical event. Eighteen new regression tests cover ties, endpoint inclusion, reversed contrasts, missing identities, a shared-parameter toy optimization class and exhaustive frontier agreement.
+
+The publication build also reruns the inherited unskipped test suites, the R77 and R80 full-bin evaluations and the independent switch duals. The largest retained vector tree is not independently regenerated in this release. That specific boundary is recorded; complete verification of the new actionwise kernel is not described as verification of an unexecuted large vector computation.
+
+## M8 / B8: Numerical fitting reliability
+
+We distinguish a verifier's ability to return a safe object, the performance of a particular completed fitting service and a population claim about optimizer success. The historical multiple-start and warning records remain unchanged. A small seed catalogue is not turned into a success probability, and a verified readout after numerical fitting does not imply reliability of unrestricted hidden-layer training.
+
+The new theorem instead provides a deterministic stopping implication. If a feasible output has primal value $F(\theta)$ and verified dual value $d\le\inf F$, with $F(\theta)-d\le\epsilon$, then $F(\theta)\le\inf F+\epsilon\le U+\epsilon$. Its controller therefore belongs to the covered class. A gap pair inside the economic region certifies the intended decision regardless of which admissible output the fitting algorithm returned. This is useful without an unobserved error norm or a fitted success-frequency model.
+
+The region is the largest one furnished by the supplied rectangular action bounds. It is not asserted to be the exact jointly attainable optimizer region, because different cellwise switches can require incompatible common coefficients. Strict comparisons also require exact boundary handling; an open supremum is not an admissible stopping tolerance merely because its rounded decimal looks feasible.
+
+## M9 / B9: The economic decision, fees and deployment
+
+Actual implemented cost is the endpoint. For the fine-grid comparison at allowance $2^{-16}$, every additional Bernstein charge below $0.000496$ is covered by a strictly positive classwide saving in the normalized investment units. Subtracting a supplied fee from both cost-difference endpoints gives the full supported, unresolved and opposite-choice regions. The paper does not substitute a wall-clock second for a monetary charge or invent an estimated installation cost.
+
+All four calibrated classes retain a positive saving relative to the zero controller over the entire integrated tolerance domain. The lower endpoints at its largest allowance are approximately $0.153634$, $0.169562$, $0.170436$ and $0.171910$ for coarse ReLU, coarse Bernstein, fine ReLU and fine Bernstein respectively; authoritative interval endpoints are rounded outward in the tables. Coarse ReLU versus its legacy controller remains unresolved. These comparisons concern policies in the original model, not an unrelated benchmark inserted to obtain a favorable result.
+
+The inherited priced-selection and deployment-allocation theorems retain separate loss scales, deployment counts, information prices and compute charges. The frontier supplies an optimizer-accuracy input to those decisions. It does not count Monte Carlo rows as deployments or claim empirically calibrated welfare effects.
+
+## M10 / B10: Manuscript organization and original scope
+
+The main article follows the chain from constructive NBO continuation through original-optimum accuracy, attained qualification, affine calibration, optimizer-class transfer, economic stopping and actual policy costs. The new transfer and stopping theorems include their proofs in the main text. Numerical integration details, complete tolerance and reference catalogues, and the linear frontier algorithm are in the Numerical and Development Appendix. Core supplementary proofs remain where they were.
+
+All 35 inherited active sections remain compiled once, in the same document, without text changes. The introduction and conclusion are rewritten to connect the additional theorem to the original paper rather than repeatedly append revision-status paragraphs. Their prior versions are preserved. The unintegrated R82 editorial sources are also preserved before corrections to their execution-status wording. The main title, author information, original scientific records and old branches are unchanged.
+
+The broader developments involving diffusions, recursive or endogenous preferences, temporal selves and games retain their own assumptions in the preserved companion editions. The present expected-cost identities are not silently extended to nonlinear recursive preferences. This preserves the original scientific program without using its breadth to claim an unproved extension of the new theorem.
+
+## Reproduction and submission status
+
+The R83 package provides ordinary LaTeX sources, a point-by-point response, exact actionwise transfers, the complete rational tolerance frontiers, source and output hash manifests, and the full build logs. The final release requires all inherited and new unskipped tests, source preservation, both new full-bin implementations, four-document compilation and a clean archive rebuild. Visual inspection is recorded separately against the actual PDF hashes; a successful compiler is not a visual certificate or mathematical peer approval.
+
+The submitted addition is a constructive optimization-to-economic-decision theorem and its complete original-law numerical realization. It strengthens the paper with positive classwide gains, nonzero stopping tolerances and explicit recovery and verification costs. Representation-specific universal superiority, unqualified hidden-layer fitting reliability, empirically calibrated fees and an independently regenerated largest vector tree are not inferred from these results.

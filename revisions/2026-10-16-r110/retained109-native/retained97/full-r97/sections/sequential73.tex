@@ -1,0 +1,33 @@
+\section{Sequential qualification of policy costs}\label{sec:sequential73}
+A fixed-sample interval does not by itself justify repeated inspection until a controller appears acceptable. Nor do cost observations from changing controllers identify the last controller's cost. We extend the frozen-continuation identity to predictable episodes and distinguish these targets. This uses established time-uniform concentration principles \citep{howard2020time}; confidence sequences have also been used for gated deployment in contextual bandits \citep{karampatziakis2021}. Here the observations are verified, continuous-law NBO cost contrasts, not importance-weighted bandit rewards.
+
+Let $\mathcal F_{i-1}$ contain all information before episode $i$. Conditional on it, choose two complete controllers, a common initial law, a continuation $h_i$ fixed through the episode, and valid coefficients of Theorem~\ref{thm:frozen72}. The resulting cost contrast $D_i$ has conditional mean $\Delta_i$ equal to the original-law expected cost difference and predictable support $[a_i,b_i]$. Let $[L_i,U_i]\subseteq[a_i,b_i]$ enclose $D_i$ for the entire continuous innovation cell. Write $V_n=\sum_{i\le n}(b_i-a_i)^2$. For fixed positive numbers $\lambda_j,w_j$, $1\le j\le J$, with $\sum_jw_j\le1$, define
+\begin{equation}\label{eq:anytime-boundary73}
+ B_n=\min_{1\le j\le J}
+       \left\{\frac{\log(2/(\alpha w_j))}{\lambda_j}
+                    +\frac{\lambda_j V_n}{8}\right\}.
+\end{equation}
+
+\begin{theorem}[Predictable original-law cost certificate]\label{thm:anytime73}
+Under the preceding conditional-law, support and enclosure conditions, with probability at least $1-\alpha$, simultaneously for every $n\ge1$,
+\begin{equation}\label{eq:anytime-interval73}
+ \frac{\sum_{i\le n}L_i-B_n}{n}
+ \ \le\ \frac1n\sum_{i\le n}\Delta_i
+ \ \le\ \frac{\sum_{i\le n}U_i+B_n}{n}.
+\end{equation}
+Each endpoint may also be intersected with the corresponding average predictable support endpoint. The assertion holds at every almost surely finite stopping time. If the complete controller pair and initial-law/reset contract stay fixed, then $\Delta_i=\Delta$, even when the qualified continuation changes predictably between episodes. Otherwise the target is the average conditional cost difference, not the last controller's cost.
+\end{theorem}
+
+The proof applies conditional Hoeffding bounds to each endpoint and Ville's inequality to a finite collection of nonnegative supermartingales. It requires no independent or identically distributed deployment contexts. It does require the stated conditional transition laws. Within-episode cache adaptation is allowed only when the controllers are treated as history-dependent algorithms and the greedy-gap qualification covers every memory state that can occur. Repeating the same program identifier while carrying a different cache state does not establish a fixed conditional target.
+
+The implementation uses a finite dyadic collection of $\lambda_j$ and exact rational upper bounds for the logarithms. These give conservative, computable versions of \eqref{eq:anytime-boundary73}. It reserves the support and target identity before accepting an episode. A failed numerical evaluation consumes the full previously qualified support interval and its actual work; it is not deleted after inspecting its outcome. A failure of the support certificate itself stops qualification.
+
+\begin{corollary}[Costed replacement after optional stopping]\label{cor:adoption73}
+For a fixed target pair, let $[l_N,u_N]$ be the interval at a finite stopping time $N$. Let a declared deployment count be $m\ge1$, a one-time replacement and qualification charge be $F\ge0$, and the incremental per-deployment charge be $c$, all in the same units as the policy cost. On the simultaneous event of Theorem~\ref{thm:anytime73}, the net incremental cost lies in
+\[
+ [l_N+F/m+c,\ u_N+F/m+c].
+\]
+Consequently $u_N+F/m+c<0$ certifies strict net improvement. Inclusion of $[l_N,u_N]$ in a declared equivalence band certifies equivalence at that band, not strict superiority. New adaptively selected controller pairs may be qualified in separate epochs with conditional error allocations whose sum is at most the overall error budget.
+\end{corollary}
+
+A wall-clock reading is not a monetary charge. Measured setup, validation, rejected evaluations and successful retrievals are retained separately; prices are explicit decision inputs. The number of qualification episodes is not automatically the number of deployments over which a setup cost is amortized. These distinctions let the original investment decision use a valid stopping rule without silently changing either its estimand or its units.

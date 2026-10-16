@@ -1,0 +1,62 @@
+\section{Information, representation, and the price of a complete policy}\label{sec:theory97}
+The validity of a Bellman comparison and the usefulness of its neural representation are different mathematical questions. Original-model qualification answers the first. The approximation class, its acquisition cost, and the work of rejected proposals answer the second. This section sharpens the distinction without changing the policy-construction problem.
+
+\subsection{An information bound for continuous-law risk}
+Let $\mathcal C_{K,R}$ be the convex, $K$-Lipschitz real functions on $[-R,R]$, and let $P$ be uniform on this interval. An admissible information procedure chooses at most $N$ locations, possibly as deterministic functions of earlier observed function values. It has no derivative oracle, functional formula, or uncharged continuation labels. Its output is an interval containing $\operatorname{AVaR}_\alpha(f(Z))$ for every $f\in\mathcal C_{K,R}$ consistent with its observations. Constants $K,R>0$ and $0\leq\alpha<1$ are known.
+
+\begin{theorem}[Deterministic information lower bound]\label{thm:information97}
+Every such procedure has an input for which the reported interval has width at least
+\begin{equation}\label{eq:information97}
+ \frac{KR(1-\alpha)}{6(N+1)^2}.
+\end{equation}
+The worst-case absolute error of any point-valued procedure is at least half this quantity. Conversely, the midpoint--endpoint bracket with $n$ cells uses $2n+1$ distinct function values and has width at most $KR/\{(1-\alpha)n^2\}$. Thus, for every fixed $\alpha<1$, the optimal deterministic information exponent is two.
+\end{theorem}
+
+The proof constructs two convex continuations with the same adaptive transcript but different tail integrals. It is given in the supplement rather than inferred from the sharpness of a particular quadrature rule. This is an information-class statement, whereas the earlier two-ReLU construction attains the constant of the specified midpoint--endpoint pair. Neither statement establishes a constant optimal uniformly in $\alpha$, a randomized lower bound, or a dimension-independent bound. With $p$ independent coordinates and $n_j$ cells per coordinate, the direct product implementation evaluates $\prod_{j=1}^p n_j$ midpoint locations and $\prod_{j=1}^p(n_j+1)$ endpoint locations. The additive coordinatewise error estimate must be read together with these counts.
+
+The argument uses classical information-based lower-bound reasoning, not a claim that indistinguishable-input arguments originate here; see \citet{Novak2015Integration97}. Likewise, the AVaR variational representation is due to \citet{RockafellarUryasev2000}. The contribution here is the explicit convex-Lipschitz tail construction, its admissible information class, and its connection to the certified recursive-policy resolution problem. Convexity of a \emph{class} of inputs is not the same as convexity of each input function; the proof does not invoke a theorem requiring a balanced class.
+
+\subsection{What a neural representation can contribute}
+A representation-neutral verifier does not imply representation-neutral approximation cost. The following comparison isolates one elementary source of a neural advantage and one limit to that interpretation.
+
+\begin{proposition}[An oblique continuation]\label{prop:ridge97}
+On $[0,1]^2$, let $v(x)=(x_1+x_2-1)_+$. A single oblique ReLU represents $v$ exactly. The best uniform approximation errors from arbitrary additive functions $a(x_1)+b(x_2)$ and from polynomials of total degree at most two are, respectively, $1/4$ and $1/16$.
+\end{proposition}
+
+This is a structural example in the continuation class, not a claim that the investment value function equals this ridge, that its action loss equals its value-approximation error, or that every conventional method is separated. A conventional method with the same oblique hinge also represents it exactly. Consequently, the identifiable object is acquired geometry, rather than the name attached to an equivalent formula. In the investment experiment the quadratic arm remains the observed computational winner. The proposition explains why that result neither proves a universal quadratic advantage nor supplies evidence of a neural advantage in that particular application.
+
+For the investment continuations, write a fixed-feature readout as $h_\theta(z)=\phi(z)'\theta$. At acquired sites $z_i$, the original-model computation gives $V(z_i)\in[\ell_i,u_i]$. An interval-aware construction solves
+\begin{equation}\label{eq:readout97}
+ \min_{\theta,l,u}\ u-l\quad\text{subject to}\quad
+ \phi(z_i)'\theta+l\leq\ell_i,\qquad
+ \phi(z_i)'\theta+u\geq u_i\quad\text{for every }i.
+\end{equation}
+Nonnegative nonlinear coefficients preserve convexity; the constant coefficient can be fixed because residual span is invariant to an additive constant. Numerical feasibility of this finite program is not itself a certificate on the state domain.
+
+\begin{proposition}[Verified readout improvement]\label{prop:readout97}
+Let $C(h)=[L(h),U(h)]$ be a valid whole-domain enclosure of $V-h$ for every candidate readout. Starting from $h_0$, construct and round a candidate $h_1$, recompute both enclosures, and retain $h_1$ only when $U(h_1)-L(h_1)\leq U(h_0)-L(h_0)$. Otherwise retain $h_0$. The retained readout has no larger certified residual span than the baseline, regardless of optimization error in \eqref{eq:readout97}. For a monotone, cash-invariant risk functional,
+\begin{equation}\label{eq:readout-risk97}
+ L(h)\leq \rho(V\circ F)-\rho(h\circ F)\leq U(h)
+\end{equation}
+whenever $F$ takes values in the covered domain.
+\end{proposition}
+
+This gives a finite certificate-aware neural readout that is actually executable. It does not turn a nodewise linear program into a globally optimal approximation problem, and it does not guarantee lower rejection rates or shorter service time. Acquisition includes the candidate solve, its validation, and a rejected candidate. The experiment compares this rule with least squares using the same selected features and available labels, and applies the same comparison to the quadratic and spline families. These controls distinguish the value of certificate-oriented fitting from the value of neural geometry.
+
+\subsection{A workload-consistent purchase frontier}
+Let $a$ be a candidate complete policy service and $b$ its comparator. The per-decision policy-cost difference is $d=\mathbb E[J^a-J^b]$. A purchased workload contains $B$ initial-state decisions; $c_a,c_b$ are seconds per \emph{whole} workload, and $K_a,K_b$ are one-time acquisition seconds. Let $\lambda\geq0$ be a price in normalized model-cost units per second and $F\geq0$ an additional adoption fee. For $m$ workloads, the gain from choosing $a$ is
+\begin{equation}\label{eq:purchase97}
+ G(m)=m\{\lambda(c_b-c_a)-B d\}-\lambda(K_a-K_b)-F.
+\end{equation}
+The factor $B$ is essential: a cost estimate for one initial state cannot be combined directly with the clock of a 32-state process.
+
+\begin{theorem}[Interval purchase decisions]\label{thm:purchase97}
+Suppose jointly valid bounds are $d\in[d^-,d^+]$, $c_b-c_a\in[s^-,s^+]$, $K_a-K_b\in[k^-,k^+]$, and $F\in[F^-,F^+]$. Then, simultaneously for every integer $m\geq1$ and $\lambda\geq0$,
+\begin{align}
+ G^-(m)&=m(\lambda s^- -B d^+)-\lambda k^+-F^+\leq G(m),\label{eq:gainlower97}\\
+ G(m)&\leq m(\lambda s^+ -B d^-)-\lambda k^- -F^-=G^+(m).\label{eq:gainupper97}
+\end{align}
+Positive $G^-$ certifies adoption; negative $G^+$ certifies rejection. Otherwise the available information leaves the decision unresolved. If $q=\lambda s^- -B d^+>0$ and $C=\lambda k^++F^+\geq0$, the first strictly certified workload count is $\lfloor C/q\rfloor+1$.
+\end{theorem}
+
+If every qualified service has pointwise regret in $[0,\tau]$, the distribution-free choice $[d^-,d^+]=[-\tau,\tau]$ is valid without a statistical sample. Sharper simultaneous cost intervals may replace it for the \emph{same frozen services}. They may not be transferred from one fitted model to a later refit. Observed clock ranges do not, by themselves, give probability bounds for future clocks: a frontier using those ranges is conditional on their continued applicability. The economic accounting is exact; the empirical strength of its inputs remains an independently assessable question.
