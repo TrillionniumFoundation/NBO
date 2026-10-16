@@ -1,0 +1,66 @@
+name: NBO R112 compact immutable source recovery
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r112-coupled-action-gain-2026-10-16']
+    paths: ['.github/workflows/nbo-r112-source-export.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Extract compact source from the successful pinned R110 artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          mkdir -p export/audit
+          cat > /tmp/export.py <<'PY'
+          import urllib.request,os,json,pathlib,zipfile,hashlib,concurrent.futures,time
+          out=pathlib.Path('export');base='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          def req(path):return urllib.request.Request(base+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'NBO-R112-source-custody'})
+          def get(path):
+              for n in range(4):
+                  try:
+                      with urllib.request.urlopen(req(path),timeout=90) as f:return json.load(f)
+                  except Exception:
+                      if n==3:raise
+                      time.sleep(2**n)
+          target=pathlib.Path('/tmp/r110.zip');h=hashlib.sha256()
+          with urllib.request.urlopen(req('actions/artifacts/12053947106/zip'),timeout=180) as f,target.open('wb') as g:
+              while True:
+                  b=f.read(1024*1024)
+                  if not b:break
+                  h.update(b);g.write(b)
+          expected='dff93fc7dbf82f7a36ffbfde0c9c74a7b8ebc1006e3fd72ba33927c065e430cb'
+          if h.hexdigest()!=expected:raise RuntimeError('Pinned R110 artifact hash mismatch')
+          selected=[];excluded=[]
+          with zipfile.ZipFile(target) as z:
+              for i in z.infolist():
+                  name=i.filename;p=pathlib.PurePosixPath(name)
+                  if '..' in p.parts or p.is_absolute():raise RuntimeError('Unsafe artifact path')
+                  # Keep full editorial sources, all scripts, published PDFs and compact ledgers.
+                  skip=any(w in p.parts for w in ('raw','catalogue','timing','independent-host-reproduction','__pycache__'))
+                  keep=not skip and i.file_size<12000000 and (p.suffix in ('.tex','.bib','.cls','.cfg','.bst','.py','.sh','.md','.txt','.json','.pdf','.xz','.bin') or 'source-support110' in p.parts)
+                  if keep and not i.is_dir():
+                      b=z.read(i);dest=out/'R110-artifact'/name;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(b)
+                      selected.append({'path':name,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()})
+                  else:excluded.append({'path':name,'bytes':i.file_size})
+          branches=[]
+          for page in range(1,20):
+              rows=get('branches?per_page=100&page='+str(page));branches+=rows
+              if len(rows)<100:break
+          (out/'audit/current_branches.json').write_text(json.dumps(branches,indent=2))
+          (out/'audit/ARTIFACT_CUSTODY.json').write_text(json.dumps({'run':38899876276,'artifact':12053947106,'sha256':expected,'selected':selected,'excluded':excluded,'scope':'Exact source and compact record extraction, not scientific re-execution; large raw records stay in the original successful artifact.'},indent=2))
+          print('Selected',len(selected),'files; branches',len(branches))
+          PY
+          python /tmp/export.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r112-compact-pinned-r110-source
+          path: export/
+          if-no-files-found: error
+          retention-days: 30
