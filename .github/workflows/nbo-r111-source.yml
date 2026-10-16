@@ -1,0 +1,75 @@
+name: NBO R111 pinned source and review recovery
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r111-paired-risk-policy-certificates-2026-10-16']
+    paths: ['.github/workflows/nbo-r111-source.yml']
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Recover pinned complete R110 source and current scientific inventory
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p export
+          cat > /tmp/export.py <<'PY'
+          import os,json,urllib.request,base64,hashlib,pathlib,concurrent.futures,time
+          out=pathlib.Path('export'); base='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          def get(p):
+            req=urllib.request.Request(base+p,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'NBO-R111-source-recovery'})
+            for k in range(4):
+              try:
+                with urllib.request.urlopen(req,timeout=90) as f:return json.load(f)
+              except Exception:
+                if k==3:raise
+                time.sleep(2**k)
+          def save(p,o):
+            p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(o,indent=2,sort_keys=True)+'\n')
+          pinned='4ba2bbaa11b5fa59f83705b28b35bf82a63ca169'
+          t=get('git/trees/'+pinned)
+          for name in ['revisions','2026-10-16-r110']:
+            sha=next(e['sha'] for e in t['tree'] if e['path']==name);t=get('git/trees/'+sha)
+          tree=get('git/trees/'+sha+'?recursive=1');assert not tree.get('truncated')
+          save(out/'audit/r110_tree.json',tree)
+          entries=[e for e in tree['tree'] if e['type']=='blob' and not e['path'].startswith(('build/','publication/','evidence/','evidence110/','results110/raw/')) and e.get('size',0)<12000000]
+          def fetch(e):
+            b=get('git/blobs/'+e['sha']);d=base64.b64decode(b['content']);assert hashlib.sha1(b'blob '+str(len(d)).encode()+b'\0'+d).hexdigest()==e['sha']
+            p=out/'R110'/e['path'];p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(d)
+            return {'path':e['path'],'git_blob':e['sha'],'sha256':hashlib.sha256(d).hexdigest(),'bytes':len(d)}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:records=list(pool.map(fetch,entries))
+          save(out/'audit/source_inventory.json',{'commit':pinned,'tree':sha,'files':records,'excluded':[e for e in tree['tree'] if e['type']=='blob' and e not in entries]})
+          refs=[];page=1
+          while True:
+            rows=get('branches?per_page=100&page='+str(page));refs+=rows
+            if len(rows)<100:break
+            page+=1
+          save(out/'audit/current_branches.json',refs)
+          reviews=[r for r in refs if r['name'].startswith('review/')]
+          save(out/'audit/current_review_refs.json',reviews)
+          roots={}
+          for r in refs:
+            if r['commit']['sha'] not in roots:roots[r['commit']['sha']]=get('git/trees/'+r['commit']['sha'])
+          save(out/'audit/all_branch_roots.json',roots)
+          rtrees=sorted({e['sha'] for t in roots.values() for e in t['tree'] if e['type']=='tree' and any(w in e['path'].lower() for w in ['review','referee'])})
+          allreviews={}
+          for s in rtrees:
+            tt=get('git/trees/'+s+'?recursive=1');assert not tt.get('truncated');allreviews[s]=tt
+          save(out/'audit/all_review_trees.json',allreviews)
+          blobs={e['sha']:e for t in allreviews.values() for e in t['tree'] if e['type']=='blob' and e['path'].endswith(('.md','.tex','.txt','.json','.py'))}
+          for s,e in blobs.items():
+            bb=get('git/blobs/'+s);d=base64.b64decode(bb['content']);assert hashlib.sha1(b'blob '+str(len(d)).encode()+b'\0'+d).hexdigest()==s
+            p=out/'audit/reviews'/(s+pathlib.Path(e['path']).suffix);p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(d)
+          save(out/'audit/review_blob_paths.json',blobs)
+          save(out/'audit/runs.json',get('actions/runs?per_page=100'))
+          save(out/'audit/STATUS.json',{'scope':'source and inventory only; not numerical CI or a full rereading/replay of every historical scientific blob','source_files':len(records),'branches':len(refs),'review_blobs':len(blobs)})
+          PY
+          python /tmp/export.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r111-pinned-r110-source
+          path: export/
+          if-no-files-found: error
+          retention-days: 30
