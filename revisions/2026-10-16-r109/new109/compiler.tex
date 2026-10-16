@@ -1,0 +1,46 @@
+\section{An active-region compiler for the original Bellman oracle}\label{sec:compiler109}
+A learned continuation must compete with the structure available in the original economy. In \eqref{eq:investment95}--\eqref{eq:cost95}, that structure includes an algebraic last-date Bellman oracle. Giving this oracle only to a neural method would confound representation with information. We derive it explicitly and give its implementation to every comparator.
+
+Put $R=1/32$, $t=1-\alpha$, $r_j=F_j(x,0,0)$, and
+\begin{align*}
+ H_x&=\tfrac12-2\bar r,& k_x&=\frac{10}{d}\sum_js_jr_j,\\
+ C_x&=\frac8d\sum_jb_j(r_j-5/8)
+ +\frac1{2d}\sum_j(b_j-b_{j+1})(r_j-r_{j+1}).
+\end{align*}
+The following formula uses the original continuous law, not a fitted transition or a finite-shock replacement.
+\begin{theorem}[Exact tail algebra and constrained Bellman regions]\label{thm:compiler109}
+For $z\sim\operatorname{Unif}[-R,R]$ and $0<\alpha<1$, define
+\begin{equation}\label{eq:tailpoly109}
+ \mathcal R_\alpha(k)=\operatorname{AVaR}_\alpha(5z^2+kz)
+ =\begin{cases}
+ \dfrac{5R^2(1+\alpha+\alpha^2)}3+\dfrac{\alpha k^2}{20t},& |k|\le10Rt,\\[2mm]
+ \dfrac{5R^2(4\alpha^2-2\alpha+1)}3+\alpha R|k|,& |k|\ge10Rt.
+ \end{cases}
+\end{equation}
+The two expressions and their first derivatives agree at their junctions. For every even $d$ and every original state $x$, the last-date action derivative is
+\begin{equation}\label{eq:cubic109}
+\begin{split}
+ \partial_a Q_1(x,a)={}&16a^3+2a+\beta\{C_x+41a/32-3(H_x-3a/4)_+\}\\
+ &+\frac{5\beta}{4}\operatorname{clip}\!\left(\frac{\alpha(k_x+5a/4)}{10t},-\alpha R,\alpha R\right).
+\end{split}
+\end{equation}
+It is continuous and strictly increasing, with slope at least two wherever its second derivative is defined. The interval $[0,A(x)]$ has at most four regions separated by
+$H_x/(3/4)$ and the two solutions of $k_x+5a/4=\pm10Rt$.
+On each region \eqref{eq:cubic109} is $16a^3+pa+q$, with $p\ge2$.
+There is a unique constrained minimizer: zero or capacity when the corresponding endpoint derivative has the appropriate sign, and otherwise the unique interior root. With $u=\sqrt{p/48}$, that root on its region is
+\[
+ a=-2u\sinh\!\left\{\tfrac13\operatorname{arsinh}(q/(32u^3))\right\}.
+\]
+Coefficient preparation costs $O(d)$ arithmetic; region identification and the number of scalar inversions are bounded independently of $d$.
+\end{theorem}
+
+The complexity statement counts real arithmetic and scalar inversions, not unit-cost exact transcendental evaluation. The implementation uses floating inversion only to propose a dyadic action. It then applies the unchanged outward original-law supporting certificate, including the state-capacity multiplier and its stationarity allowance. A failed compiled certificate pays for its failed attempt and the original terminal oracle. Consequently compiler error can change work but cannot acquire certificate authority. The full terminal policy used in nested policy-cost evaluation is not replaced by the compiler. In particular, more accurate optimal-continuation information and a different deployed future policy are distinct interventions.
+
+\paragraph{Gradients and the computational graph.}
+The last-date value is continuously differentiable on the relative interior of the state cube, with the one-sided boundary interpretation, and
+\begin{equation}\label{eq:envelope109}
+ \nabla V_1(x)=\nabla_xQ_1(x,a^*(x))-\lambda(x)\nabla A(x),\qquad
+ \lambda(x)=\boldsymbol1_{\{a^*=A(x)\}}[-\partial_aQ_1(x,a^*)]_+.
+\end{equation}
+Within a smooth interior action region,
+$\nabla a^*=-\partial_{ax}Q_1/\partial_{aa}Q_1$; within a strictly active endpoint region it is respectively zero or $\nabla A$. No global differentiability of the actor across region changes is asserted. In particular, differentiating the rounded actor or treating a feasible witness slope as this exact gradient is incorrect. Supplement Section~\ref{supp:compiler109} proves the formulas, uniqueness, boundary rules and certificate invariance. The original general own-future construction remains Theorem~\ref{thm:construct49}; the new experiment isolates its acquired last-continuation slice, not a newly trained long-horizon network.
