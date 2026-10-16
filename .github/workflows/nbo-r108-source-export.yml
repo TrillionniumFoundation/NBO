@@ -1,0 +1,82 @@
+name: NBO R108 pinned source and branch export
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r108-original-law-policy-improvement-2026-10-16']
+    paths: ['.github/workflows/nbo-r108-source-export.yml']
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Export pinned source bytes and current branch inventory
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          mkdir -p export
+          cat > /tmp/export.py <<'PY'
+          import os,json,urllib.request,base64,hashlib,pathlib,concurrent.futures,time
+          out=pathlib.Path('export'); base='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          def get(path):
+              request=urllib.request.Request(base+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'NBO-R108-source-export'})
+              for k in range(4):
+                  try:
+                      with urllib.request.urlopen(request,timeout=60) as f:return json.load(f)
+                  except Exception:
+                      if k==3:raise
+                      time.sleep(2**k)
+          def save(path,obj):
+              p=out/path;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(obj,indent=2,sort_keys=True)+'\n')
+          def blob(sha):
+              b=get('git/blobs/'+sha);data=base64.b64decode(b['content']);actual=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+              if actual!=sha:raise ValueError('Git blob mismatch '+sha)
+              return data
+          refs=[]
+          for page in range(1,100):
+              rows=get('branches?per_page=100&page='+str(page));refs.extend(rows)
+              if len(rows)<100:break
+          else:raise RuntimeError('Branch pagination incomplete')
+          save('audit/branches.json',refs)
+          shas=sorted({r['commit']['sha'] for r in refs})
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:roots=dict(zip(shas,pool.map(lambda s:get('git/trees/'+s),shas)))
+          save('audit/branch_roots.json',roots)
+          rtrees=sorted({e['sha'] for r in roots.values() for e in r['tree'] if e['type']=='tree' and any(x in e['path'].lower() for x in ('review','referee'))})
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:reviews=dict(zip(rtrees,pool.map(lambda s:get('git/trees/'+s+'?recursive=1'),rtrees)))
+          if any(t.get('truncated') for t in reviews.values()):raise RuntimeError('Truncated review tree')
+          save('audit/review_trees.json',reviews)
+          entries={e['sha']:e for t in reviews.values() for e in t['tree'] if e['type']=='blob' and e['path'].endswith(('.md','.txt','.tex','.json','.py'))}
+          def download_review(item):
+              sha,e=item;data=blob(sha);p=out/'audit'/'review_blobs'/(sha+pathlib.Path(e['path']).suffix);p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
+              return {'path':e['path'],'git_blob':sha,'sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data)}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:records=list(pool.map(download_review,entries.items()))
+          save('audit/review_index.json',records)
+          pinned='b6cc72c01ca9e86683a267c8133bed8c2dae8320'
+          def subtree(path):
+              tree=get('git/trees/'+pinned)
+              for part in path.split('/'):
+                  entry=next(e for e in tree['tree'] if e['path']==part and e['type']=='tree');tree=get('git/trees/'+entry['sha'])
+              result=get('git/trees/'+entry['sha']+'?recursive=1')
+              if result.get('truncated'):raise RuntimeError('Truncated source tree')
+              return result
+          source_records=[]
+          for dirname in ('2026-10-15-r104','2026-10-15-r105','2026-10-15-r107'):
+              tree=subtree('revisions/'+dirname);save('audit/'+dirname+'-tree.json',tree)
+              for e in tree['tree']:
+                  if e['type']!='blob':continue
+                  data=blob(e['sha']);p=out/dirname/e['path'];p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
+                  source_records.append({'path':str(p.relative_to(out)),'git_blob':e['sha'],'sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data)})
+          data=blob('f39d707c2d831c390090d2263a2e6d2aa0b1df5b');(out/'NBO_R99_referee_package.zip').write_bytes(data)
+          save('audit/source_index.json',source_records)
+          for status in ('queued','in_progress','waiting'):
+              save('audit/workflows-'+status+'.json',get('actions/runs?status='+status+'&per_page=100'))
+          save('audit/EXPORT.json',{'export_sha':os.environ['GITHUB_SHA'],'pinned_source_commit':pinned,'manuscript_commit':'f78d7fcec9f657dfec56a0af7899fe967948652d','branches':len(refs),'unique_heads':len(shas),'review_blobs':len(records),'r99_package_sha256':hashlib.sha256(data).hexdigest(),'scope':'Complete branch enumeration and root review-subtree export; selected immutable executable closures. Not a claim that every historical scientific blob was reread or re-executed.'})
+          PY
+          python /tmp/export.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r108-pinned-source-export
+          path: export/
+          if-no-files-found: error
+          retention-days: 30
