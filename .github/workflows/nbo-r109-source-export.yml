@@ -1,0 +1,61 @@
+name: NBO R109 immutable source export
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r109-author-completion-2026-10-16']
+    paths: ['.github/workflows/nbo-r109-source-export.yml']
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Export source and latest identities without checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p export
+          cat > /tmp/export.py <<'PY'
+          import urllib.request,json,base64,pathlib,hashlib,os,time,concurrent.futures
+          O=pathlib.Path('export'); B='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          def get(p):
+              for k in range(4):
+                  try:
+                      with urllib.request.urlopen(urllib.request.Request(B+p,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'NBO-R109-custody'}),timeout=60) as r:return json.load(r)
+                  except Exception:
+                      if k==3:raise
+                      time.sleep(2**k)
+          def save(p,x):
+              p=O/p;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
+          refs=[];page=1
+          while True:
+              a=get('branches?per_page=100&page='+str(page));refs+=a
+              if len(a)<100:break
+              page+=1
+          save('branches.json',refs)
+          sha='29180a4ce4a6db7298e7458ecdfff3da08abb08f'
+          entries=get('contents/revisions/2026-10-16-r108?ref='+sha)
+          files=[]
+          for e in entries:
+              if e['type']=='file':files.append((e['name'],e['sha']))
+              elif e['name']=='code108':
+                  t=get('git/trees/'+e['sha']+'?recursive=1');assert not t.get('truncated')
+                  files.extend(('code108/'+x['path'],x['sha']) for x in t['tree'] if x['type']=='blob')
+          def blob(pair):
+              p,s=pair;x=get('git/blobs/'+s);b=base64.b64decode(x['content'])
+              assert hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()==s
+              f=O/'r108'/p;f.parent.mkdir(parents=True,exist_ok=True);f.write_bytes(b)
+              return {'path':p,'git_blob':s,'sha256':hashlib.sha256(b).hexdigest(),'bytes':len(b)}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:records=list(ex.map(blob,files))
+          save('r108_export.json',{'source_commit':sha,'files':records,'export_head':os.environ['GITHUB_SHA']})
+          for status in ['in_progress','queued','waiting']:
+              save('actions_'+status+'.json',get('actions/runs?status='+status+'&per_page=100'))
+          save('source_commits.json',{r['name']:get('git/commits/'+r['commit']['sha']) for r in refs if any(('nbo-r'+str(n)+'-') in r['name'] for n in range(98,110))})
+          PY
+          python /tmp/export.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r109-immutable-source
+          path: export/
+          if-no-files-found: error
+          retention-days: 30
