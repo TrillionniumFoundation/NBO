@@ -1,0 +1,49 @@
+name: NBO R105 immutable source recovery
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r105-integrated-author-revision-2026-10-15']
+    paths: ['.github/workflows/nbo-r105-export.yml']
+permissions:
+  contents: read
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Recover frozen bytes and current reference census
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os,json,base64,hashlib,pathlib,urllib.request,io,zipfile
+          out=pathlib.Path('export');out.mkdir()
+          base='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          def get(path):
+              req=urllib.request.Request(base+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+              return json.load(urllib.request.urlopen(req,timeout=90))
+          shas=['535b7c4d272de7593164d37ccf9cc000eca8b550','2d1b4ebe92772d4373180151d1460c3de2cf338d','fb502aa7a0473ebebf526346705c5c7cd1aac155','49a8866ad194f81bd358b1556079a3f524b4d6f0','0630082a445d2265d3c4b781ff4d947daf3bb908','aed72d89031851aaed89bb0c012b574f90f0e8d4','d042290600b3b55cc4cbfd7ecc38548633b2cf1c','d829cd5b58765c577b28fab711c19a5e8ae372bf']
+          def blob(sha):
+              d=base64.b64decode(get('git/blobs/'+sha)['content'])
+              assert hashlib.sha1(b'blob '+str(len(d)).encode()+b'\0'+d).hexdigest()==sha
+              return d
+          raw=base64.b64decode(b''.join(blob(s).strip() for s in shas),validate=True)
+          assert len(raw)==21708 and hashlib.sha256(raw).hexdigest()=='7a279d88d4a74f608e5e79d00f904a4c8bbb17e145148b8fab4198034422719b'
+          (out/'R104_frozen_source.zip').write_bytes(raw)
+          refs=[]
+          for page in range(1,30):
+              rows=get('branches?per_page=100&page='+str(page));refs+=rows
+              if len(rows)<100:break
+          (out/'branches.json').write_text(json.dumps(refs,indent=2))
+          for rev,sha in [('104','922964becc2e76c8d5965cb1c4a263ac8579cace')]:
+              p='revisions/2026-10-15-r'+rev+'/PROTOCOL'+rev+'.md'
+              (out/('PROTOCOL'+rev+'.md')).write_bytes(base64.b64decode(get('contents/'+p+'?ref='+sha)['content']))
+          (out/'receipt.json').write_text(json.dumps({'r104_source_commit':'922964becc2e76c8d5965cb1c4a263ac8579cace','source_sha256':hashlib.sha256(raw).hexdigest(),'branch_count':len(refs),'scope':'Source recovery only. No scientific experiment, manuscript completion or R98/R100-R104 campaign completion is asserted.'},indent=2))
+          print('Recovered',len(raw),'bytes; branches',len(refs))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r105-immutable-source-recovery
+          path: export/
+          if-no-files-found: error
+          retention-days: 30
