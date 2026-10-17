@@ -1,0 +1,7 @@
+# R115 amendment 01: preserve exact rational statistical observations
+
+This numerical-audit correction is recorded after the first executable freeze at 11ac08ddc47725ee04d2bcc902e6cd2482b45f66 and fresh acquisition, but before the actor remote barrier, any independent test bytes, or any primary policy evaluation. No model, label, acquisition rule, hypothesis, state law, sample size, arm, policy, tolerance, risk level, timing rule or inferential allocation changes.
+
+The original helper converted Fraction inputs through binary64. This is unnecessary and can lose exactness for rational sums or normalized observations. The amended helper preserves Fraction, integer and string inputs exactly. Binary64 observations continue to be interpreted as their exact binary rational values. The original source, source manifest and a failing synthetic one-third identity are retained in evidence115/amendment-01. This is a pre-sample arithmetic correction, not a selective change prompted by investment outcomes. The fresh acquisition output and ACTORS115.json remain untouched and retain the original source identity; acquisition does not call the statistical analyzer. The updated source manifest binds the corrected analyzer for all subsequent execution.
+
+The mathematical population protocol is the unchanged PROTOCOL114.md, Git blob 1b4f4451fdca812d4ad5024050c83704fdc4b33b. This correction makes its exact-product requirement operative; it does not alter its tests or thresholds. No primary numerical result or remote CI success is asserted by this amendment.

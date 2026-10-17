@@ -14,7 +14,7 @@ PREFIXES=(32,64,128,256,512,1024); TARGETS=(F(1,2**24),F(1,2**22),F(1,2**20),F(1
 ARMS=('online','quadratic','relu','hinge','spline','poly2','poly3','grid')
 SERVICES=('compiled','compiled-safe','gain-16'); KEYS=('lower','upper','optimum_lower','loss','width')
 
-def fr(x): return F(x) if isinstance(x,str) else F(float(x))
+def fr(x): return F(x) if isinstance(x,(F,str,int)) else F(float(x))
 def read(p): return json.loads(Path(p).read_text())
 def digest(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def dump(p,x):
