@@ -1,0 +1,67 @@
+\subsection{Exact risk occupations and safe kernel exclusion}
+Consider now a finite-state implementation for which the original one-step risk has a finite affine representation
+\[
+ \rho_{t,s,a}(v)=\max_{j\in\mathcal J_{t,s,a}}
+       \{q_{t,s,a,j}^{\mathsf T}v-\psi_{t,s,a,j}\}.
+\]
+The supplied complete policy is fixed before the following maximization. Write $r_{ts}=r_t(s,\pi_t(s))$, $k_{tsj}=k_t^f(s,\pi_t(s),q_j)$ and $q_{tsj}=q_{t,s,\pi_t(s),j}$. For an initial probability vector $\mu$, let $\mathcal Y^\pi$ consist of nonnegative masses satisfying
+\begin{equation}\label{eq:riskflow92}
+ m_{0s}=\mu_s,\qquad \sum_j y_{tsj}=m_{ts},\qquad
+ m_{t+1,z}=\sum_{s,j}y_{tsj}q_{tsj,z}.
+\end{equation}
+These are risk-distorted occupations, not frequencies under the physical law. Initial integration by $\mu$ is outside the conditional value function; a different original initial risk aggregation needs its own evaluation.
+
+\begin{proposition}[Penalized occupation identity and dual witness]\label{prop:riskflow92}
+For the preceding finite representation,
+\begin{align}\label{eq:riskflow-value92}
+ \mu^{\mathsf T}(V_0^\pi-f_0)
+ =\max_{\mathcal Y^\pi}\biggl\{
+ &\sum_{t<T,s}B_t r_{ts}m_{ts}
+ -\sum_{t<T,s,j}B_{t+1}k_{tsj}y_{tsj}\notag\\
+ &+B_T\sum_s(g_s-f_{Ts})m_{Ts}\biggr\}.
+\end{align}
+Any feasible occupation gives a lower bound on this fixed-policy value. Any $U$ with $U_T\ge g-f_T$ and
+\[
+ U_{ts}\ge r_{ts}+\beta_t(q_{tsj}^{\mathsf T}U_{t+1}-k_{tsj})
+ \quad\hbox{for every }t,s,j
+\]
+gives an upper bound $\mu^{\mathsf T}U_0$. Matching witnesses certify equality using rational arithmetic when the input is rational. The optimal-policy recursion retains the order $\inf_a\sup_q$; it is not obtained by minimizing jointly over policy actions and risk kernels.
+\end{proposition}
+
+A stored continuation can also exclude risk kernels, not just action events. Fix a feasible retained witness $q_0$ and a verified set $\mathcal D$ containing the successor error vector to be evaluated. Define its support function $h_{\mathcal D}(d)=\sup_{z\in\mathcal D}d^{\mathsf T}z$. Then the strict certificate
+\begin{equation}\label{eq:kernel-cut92}
+ h_{\mathcal D}(q-q_0)<k^f(q)-k^f(q_0)
+\end{equation}
+excludes $q$ from the maximizing affine pieces throughout $\mathcal D$. Equality is retained. A verified upper support bound and lower bound on the penalty difference suffice. For a box $L\le z\le U$ the support is
+\[
+ \sum_i(q_i-q_{0i})_+U_i
+       +\sum_i\min\{q_i-q_{0i},0\}L_i.
+\]
+For $\operatorname{osc}(z)\le s$, it is $s\|q-q_0\|_1/2$. The error set must be justified before exclusions are used; defining it from the same unverified pruned computation is circular. Unpruned signed or state-dependent certificates supply one valid starting set.
+
+\subsection{Preference primitives and computational implications}
+For average value at risk, $q_i\le p_i/(1-\alpha)$, $q_i\ge0$ and $\sum_iq_i=1$, with zero penalty on that capped simplex. Hence $k^f(q)=\rho_p^\alpha(f)-q^{\mathsf T}f$. Quantile atoms and zero-probability outcomes are retained \citep{rockafellaruryasev2002}. For entropic evaluation, put
+\[
+ p_f(dy)=\frac{e^{\lambda f(y)}p(dy)}{\int e^{\lambda f}\,dp}.
+\]
+Its centered penalty is $k^f(q)=\lambda^{-1}{\rm KL}(q\Vert p_f)$, and therefore
+\begin{equation}\label{eq:entropic-center92}
+ \mathcal E^f(z)=\lambda^{-1}\log\int e^{\lambda z}\,dp_f.
+\end{equation}
+The change of measure is a computational identity, not a change to the original economic law or its risk parameter. Supplement~\ref{supp:centeredrisk92} proves the representation and its support conditions. A finite affine occupation program is exact only when the stated finite representation is exact; discretizing the entropic dual without an enclosure does not meet that condition.
+
+For a fixed finite representation, backward certificate evaluation uses at most a constant multiple of
+\[
+ \sum_{t,s,a}\sum_{j\in\mathcal J_{t,s,a}}
+       |\operatorname{supp}(q_{t,s,a,j})|
+\]
+arithmetic operations once residuals and penalties are available. It stores successive value layers rather than expanding descendant histories. Kernel construction, original-law integration, neural-circuit evaluation, support certificates, rational bit lengths and stored witnesses are additional costs. Risk-envelope enumeration can itself be large. This bound does not remove state-dimension dependence, certify an unverified continuous-state aggregation, or prove a speed advantage over another implementation.
+
+For fixed penalties, increasing residuals by nonnegative local allowances $e_{ts}$ increases the fixed-policy upper value by no more than
+\begin{equation}\label{eq:occupation-budget92}
+ \max_{\mathcal Y^\pi}\sum_{t,s}B_t e_{ts}m_{ts},
+\end{equation}
+including a terminal allowance at $t=T$. This gives an occupation-sensitive sufficient precision budget in place of $\sum_t B_t\max_s e_{ts}$. The budget prices allowable numerical errors; an application-specific price of computation remains a separate input. Shared-parameter restrictions must be retained before taking an envelope over policies, as in Section~\ref{sec:pattern89}.
+
+\paragraph{Interpretation.}
+The new mechanism depends on the stored continuation through $k^f$ and on the original preference through its risk envelope. Equivalent neural and non-neural representations have identical centered guarantees. A representation-specific computational benefit requires a matched execution, not a validity theorem. The existing held-out ReLU result, warning records, unresolved economic comparisons, and adverse vector horizon evidence therefore remain unchanged. The exact finite diagnostics below test the nonlinear certificate and its independent implementation; they are not a substitute for the original large-vector comparison or new economic observations.

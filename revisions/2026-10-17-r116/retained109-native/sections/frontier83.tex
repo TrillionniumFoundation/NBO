@@ -1,0 +1,39 @@
+\section{Economically sufficient optimization accuracy}\label{sec:frontier83}
+The qualification objective and the economic loss have different units. A numerical stopping rule should therefore be connected to the decision it supports, rather than chosen by equating their tolerances. The actionwise transfer supplies this connection for every tolerance in an interval, not only for a finite list of optimizer outputs.
+
+For construction $j$, fix the labels, attained value $U_j$, action-switch bounds and continuation policy of Theorem~\ref{thm:actionwise82}. Fix $e_j>0$ and enclose every action with $D_{jCb}\le U_j+e_j$. Write $[v_j^-(\epsilon),v_j^+(\epsilon)]$ for its class-cost band. The only possible changes of this band on $[0,e_j]$ occur at
+\[
+ \mathcal K_j=\{0,e_j\}\cup
+       \{D_{jCb}-U_j:0<D_{jCb}-U_j\le e_j\}.
+\]
+At a knot the weak switch inequality is already active. Thus the band is constant on each interval between successive knots, with the left endpoint included and the right endpoint excluded; the final endpoint is evaluated separately if it is itself a switch knot. No interpolation across a knot is permitted.
+
+Let $[l_{jk},u_{jk}]$ be an attained-cost interval on the original simultaneous event. Define
+\begin{align}
+ L_{jk}(\epsilon,\eta)&=l_{jk}+v_j^-(\epsilon)-v_k^+(\eta),\label{eq:lower-frontier83}\\
+ U_{jk}(\epsilon,\eta)&=u_{jk}+v_j^+(\epsilon)-v_k^-(\eta).\label{eq:upper-frontier83}
+\end{align}
+For an additional charge $\tau\ge0$ for construction $k$, and a declared economic equivalence margin $m>0$, put
+\begin{align*}
+ \mathcal R_{jk}(\tau)&=\{(\epsilon,\eta):L_{jk}(\epsilon,\eta)>\tau\},\\
+ \mathcal E_{jk}(m)&=\{(\epsilon,\eta):-m<L_{jk}(\epsilon,\eta),\ U_{jk}(\epsilon,\eta)<m\}.
+\end{align*}
+Both sets are restricted to $[0,e_j]\times[0,e_k]$. A common-tolerance comparison is one diagonal slice; different constructions need not receive identical tolerances.
+
+\begin{theorem}[Economic stopping frontier]\label{thm:frontier83}
+On the attained-policy simultaneous event, every pair of feasible readouts satisfying
+\[
+ F_j(\theta)\le U_j+\epsilon,\qquad F_k(\vartheta)\le U_k+\eta
+\]
+has cost difference in $[L_{jk}(\epsilon,\eta),U_{jk}(\epsilon,\eta)]$, simultaneously for all tolerances in the stated rectangle. Consequently $\mathcal R_{jk}(\tau)$ certifies a strictly beneficial replacement by $k$ after its additional charge, and $\mathcal E_{jk}(m)$ certifies a cost difference strictly within the margin for the entire pair of readout classes.
+
+These two sufficient regions are downward closed in their tolerance coordinates and are finite unions of knot rectangles with the stated endpoint conventions. Their maximal extent relative to the supplied actionwise bands can be obtained without a further optimizer call or cost observation. In particular, if a feasible numerical output has a verified primal--dual gap at most $\epsilon$, it belongs to the corresponding class and may be returned whenever its gap pair is in the required region. Choosing the stopping tolerance after examining the simultaneous intervals does not require an additional probability allowance.
+\end{theorem}
+
+\begin{proof}
+As a tolerance increases, its possible-action set expands. Hence $v_j^-$ is nonincreasing and $v_j^+$ is nondecreasing. Each set changes only at the displayed switch knots, where equality retains the newly possible actions. Theorem~\ref{thm:actionwise82} gives \eqref{eq:lower-frontier83}--\eqref{eq:upper-frontier83} for every readout and every tolerance by the same deterministic argument. The lower endpoint decreases and the upper endpoint increases in either tolerance. This proves downward closure and the finite-rectangle representation, including the strict economic tests at their boundaries.
+
+If $d_j\le\inf F_j$ is a verified dual value and $F_j(\theta)-d_j\le\epsilon$, then $F_j(\theta)\le\inf F_j+\epsilon\le U_j+\epsilon$. The same argument applies to $k$. All statements therefore hold for any stopping output satisfying these verified inequalities on the original event. Nothing in this implication requires a union bound over the outputs or tolerances.
+\end{proof}
+
+A boundary of a sufficient region is not an identified failure boundary of the true optimizer class. The cellwise relaxation can combine actions that no common coefficient vector selects. Nor does a strict region necessarily include its supremum tolerance: at an exact switch knot, the added action can destroy the desired strict economic inequality. Appendix~\ref{app:frontier83} gives an exact finite algorithm, checks both sides of every knot, and separates this stopping guarantee from a distributional claim about neural fitting success.

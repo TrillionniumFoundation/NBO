@@ -1,0 +1,64 @@
+\section{Accuracy allocation with endogenous successor cost}\label{sec:coupled89}
+The separable allocation in Proposition~\ref{prop:allocation86} applies when its coefficients are fixed independently of the allowances being optimized. A dense successor circuit generally has a size that depends on its own allowance. Charging that size at the preceding date couples the two choices. We now optimize this dependency explicitly.
+
+Let $\eta=(\eta_0,\ldots,\eta_{T-1})$ be positive dated residual allowances. Primitive analysis of a specified stored-continuation implementation supplies the resource upper model
+\begin{equation}\label{eq:coupled-work89}
+ F(\eta)=F_0+\sum_{j=1}^{J}c_j\prod_{t<T}\eta_t^{-a_{jt}},
+ \qquad c_j>0,\quad a_{jt}\ge0.
+\end{equation}
+The coefficients, exponents and setup term $F_0\ge0$ are fixed before choosing $\eta$. A term $c_t\eta_t^{-p_t}\eta_{t+1}^{-s_{t+1}}$ charges date-$t$ label acquisition and evaluation of its stored successor. Compilation, terminal evaluation and storage-related work may supply other terms. An operation ledger is scalarized only at declared nonnegative resource prices; the model does not estimate monetary prices or energy use.
+
+The feasible accuracy set is
+\begin{equation}\label{eq:coupled-budget89}
+ \mathcal A=\{\eta:0<\eta_t\le\bar\eta_t,\quad
+                    \sum_{t<T}w_t\eta_t\le\varepsilon\},
+ \qquad w_t>0,\quad\bar\eta_t>0,\quad\varepsilon>0.
+\end{equation}
+For the original expected-cost sandwich, $w_t=B_t$. The caps specify where the implementation's error and resource bounds hold. A coordinate with no resource-dependent term can be fixed separately; assume here that every coordinate has a positive exponent in at least one term.
+
+\begin{theorem}[Coupled accuracy optimization with an exact certificate]\label{thm:coupled89}
+The upper-model minimization $F_* =\min_{\mathcal A}F(\eta)$ has a unique positive minimizer. It is a convex program in $\eta$ and, after $\eta_t=\exp(x_t)$, also has a convex exponential representation. Standard geometric-programming methods can propose an allocation, but their numerical status is not its certificate.
+
+For any feasible $\eta^0$, write $g=\nabla F(\eta^0)$. Let $\lambda\ge0$ and $\nu_t\ge0$ satisfy
+\begin{equation}\label{eq:coupled-certificate89}
+ g_t+\lambda w_t+\nu_t\ge0\qquad(t<T).
+\end{equation}
+Then the independently checkable bounds are
+\begin{align}\label{eq:coupled-dual89}
+ D(\eta^0,\lambda,\nu)
+ &=F(\eta^0)-g\cdot\eta^0-\lambda\varepsilon
+                  -\sum_t\nu_t\bar\eta_t,\notag\\
+ D(\eta^0,\lambda,\nu)&\le F_*\le F(\eta^0).
+\end{align}
+At the optimizer, the Karush--Kuhn--Tucker multipliers make these bounds equal. For any candidate, the choice $\nu=0$ and
+$\lambda=\max_t\{-g_t/w_t\}$ supplies a valid, possibly loose, lower bound. With integer exponents and rational inputs and candidates, every check is rational arithmetic. For other exponents, certified enclosures of the function and derivatives are required.
+
+Put $P=\max_j\sum_ta_{jt}$. Rounding each allowance down by less than a factor two preserves feasibility and gives
+\[
+ F(\eta^{\rm dyad})-F_0
+ \le2^P\{F(\eta^0)-F_0\}.
+\]
+The exponent is the total degree of a coupled term, not merely the exponent of the date at which that term is paid.
+\end{theorem}
+
+The proof in Supplement~\ref{supp:coupled89} includes attainment, strict convexity and the certificate. Convex duality and geometric programming are established techniques \citep{boyd2004,boyd2007gp}; their role here is to preserve the successor dependency in the NBO's original accuracy account. The certificate bounds the optimum of an explicitly stated resource upper model. It is not a lower bound on the work of every algorithm solving the economic problem.
+
+\begin{corollary}[A constructive horizon bound with coupled evaluation]\label{cor:coupled-horizon89}
+Suppose $w_t=1$, $\varepsilon/T\le\min\{1,\min_t\bar\eta_t\}$, $J\le KT$, $c_j\le C$, and the total degrees are bounded by a fixed $P$. Then a feasible stored-continuation implementation satisfies
+\[
+ F_*\le F_0+KC\,T^{P+1}\varepsilon^{-P}.
+\]
+For a dense successor account with label exponent $p$ and evaluation exponent $s$, the adjacent-date term has degree $p+s$. Thus a valid polynomial horizon account charges $p+s$, rather than silently holding the successor cost constant. Worsening regularity, growing cover dimension, bit lengths and setup remain explicit inputs; none is bounded by this corollary without its stated hypotheses.
+\end{corollary}
+
+\paragraph{A priced two-date allocation.}
+Consider the exact upper model
+\[
+ F(\eta_0,\eta_1)=\eta_0^{-1}
+             +(\eta_0\eta_1)^{-1}+2\eta_1^{-2},
+ \qquad\eta_0+\eta_1\le\tfrac12,\quad\bar\eta_t=1.
+\]
+The equal allocation costs $52$. The current numerical appendix gives a rational feasible allocation, its independently recomputed lower certificate and its gap. The example isolates the accuracy dependency algebraically; its resource units are not fitted runtime measurements. It also provides a regression test that rejects a negative multiplier, an infeasible budget or a forged lower bound. In the original economy the same construction applies only after its coefficients have been derived from the actual label, action, integration and stored-circuit accounts.
+
+\paragraph{Policy and resource certificates.}
+Qualification determines which policy outputs meet the economic accuracy requirement. The coupled program determines how a specified implementation distributes the corresponding dated allowances. These are different optimizations. A tight resource certificate cannot replace an original-law policy certificate, and a tight policy certificate does not determine hardware time. Keeping both accounts explicit permits constructive improvement without a claim of dimension-free or universally faster computation.
