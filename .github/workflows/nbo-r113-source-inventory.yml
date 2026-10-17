@@ -1,0 +1,87 @@
+name: NBO R113 immutable scientific source inventory
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r113-certified-policy-frontier-2026-10-16']
+    paths: ['.github/workflows/nbo-r113-source-inventory.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Recover pinned source and inventory all branch and review identities
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          mkdir -p export
+          cat > /tmp/export.py <<'PY'
+          import urllib.request,json,base64,hashlib,pathlib,concurrent.futures,time,zipfile,io,os
+          O=pathlib.Path('export'); B='https://api.github.com/repos/TrillionniumFoundation/NBO/';cache={}
+          def get(p):
+              for k in range(5):
+                  try:
+                      q=urllib.request.Request(B+p,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'NBO-R113-source-inventory'})
+                      with urllib.request.urlopen(q,timeout=120) as r:return json.load(r)
+                  except Exception:
+                      if k==4:raise
+                      time.sleep(2**k)
+          def save(p,x):
+              p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
+          def blob(s):
+              if s in cache:return cache[s]
+              x=get('git/blobs/'+s);d=base64.b64decode(x['content']);assert hashlib.sha1(b'blob '+str(len(d)).encode()+b'\0'+d).hexdigest()==s
+              cache[s]=d;return d
+          z=blob('f39d707c2d831c390090d2263a2e6d2aa0b1df5b')
+          with zipfile.ZipFile(io.BytesIO(z)) as a:
+              for n in a.namelist():
+                  if not n.endswith('/'):
+                      d=a.read(n);cache[hashlib.sha1(b'blob '+str(len(d)).encode()+b'\0'+d).hexdigest()]=d
+          tree=get('git/trees/5885983fdef89cdc11fe471753cccfa46160956f?recursive=1');assert not tree.get('truncated');save(O/'audit/R110_tree.json',tree)
+          skip=('archive110/','retained109-native/','retained109-tools/','retained99/')
+          files=[e for e in tree['tree'] if e['type']=='blob' and not e['path'].startswith(skip)]
+          missing=sorted({e['sha'] for e in files if e['sha'] not in cache})
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:list(ex.map(blob,missing))
+          for e in files:
+              p=O/'R110'/e['path'];p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(cache[e['sha']])
+          save(O/'audit/R110_export.json',{'commit':'4ba2bbaa11b5fa59f83705b28b35bf82a63ca169','tree':tree['sha'],'files':files,'excluded_prefixes':skip})
+          for tag,sha,path in [('R111','7ac51c264f835598ad0ef1a58b7a747df0b2c5dd','revisions/2026-10-16-r111'),('R112','0550bb4e1c529b27ed21548b965151d1af758e80','revisions/2026-10-16-r112')]:
+              rows=get('contents/'+path+'?ref='+sha); entries=[]
+              for e in rows:
+                  if e['type']=='file':entries.append({'path':e['name'],'sha':e['sha'],'type':'blob'})
+                  elif e['type']=='dir' and e['name']!='code':
+                      t=get('git/trees/'+e['sha']+'?recursive=1');assert not t.get('truncated')
+                      entries.extend(dict(x,path=e['name']+'/'+x['path']) for x in t['tree'] if x['type']=='blob')
+              with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:list(ex.map(blob,sorted({e['sha'] for e in entries})))
+              for e in entries:
+                  p=O/tag/e['path'];p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(cache[e['sha']])
+              save(O/'audit'/(tag+'_export.json'),{'commit':sha,'files':entries,'note':'Independent frozen research only; not executed or reclassified.'})
+          refs=[]
+          for page in range(1,100):
+              x=get('branches?per_page=100&page='+str(page));refs+=x
+              if len(x)<100:break
+          save(O/'audit/branches.json',refs);shas=sorted({r['commit']['sha'] for r in refs})
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex: roots=dict(zip(shas,ex.map(lambda s:get('git/trees/'+s),shas)))
+          save(O/'audit/branch_root_trees.json',roots)
+          review_shas=sorted({e['sha'] for t in roots.values() for e in t['tree'] if e['type']=='tree' and any(w in e['path'].lower() for w in ('review','referee'))})
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex: reviews=dict(zip(review_shas,ex.map(lambda s:get('git/trees/'+s+'?recursive=1'),review_shas)))
+          save(O/'audit/review_trees.json',reviews)
+          entries={e['sha']:e for t in reviews.values() for e in t.get('tree',[]) if e['type']=='blob' and pathlib.Path(e['path']).suffix in ('.md','.txt','.tex','.json','.py')}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:list(ex.map(blob,entries))
+          for s,e in entries.items():
+              p=O/'reviews'/(s+pathlib.Path(e['path']).suffix);p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(cache[s])
+          save(O/'audit/review_blob_index.json',entries)
+          for status in ('in_progress','queued','waiting'):save(O/'audit'/('workflow_'+status+'.json'),get('actions/runs?status='+status+'&per_page=100'))
+          save(O/'audit/STATUS.json',{'workflow_sha':os.environ['GITHUB_SHA'],'branches':len(refs),'unique_commits':len(roots),'review_trees':len(reviews),'review_blobs':len(entries),'truncated_review_trees':[s for s,t in reviews.items() if t.get('truncated')],'scope':'Complete branch/root review inventory and pinned active source recovery; not a claim to have proved or rerun all historical branches.'})
+          print('Recovered',len(files),'R110 files;',len(refs),'branches;',len(entries),'review blobs')
+          PY
+          python /tmp/export.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r113-immutable-source-inventory
+          path: export/
+          if-no-files-found: error
+          retention-days: 30
