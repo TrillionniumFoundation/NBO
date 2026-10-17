@@ -11,83 +11,68 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Split existing verified inventory without changing scientific bytes
+      - name: Recover exact active source directly from Git blobs with explicit size inventory
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          mkdir -p delivery
+          mkdir -p delivery/source
           python - <<'PY'
-          import urllib.request,os,pathlib,hashlib,zipfile,json
-          root=pathlib.Path('delivery'); z=root/'original.zip'
-          req=urllib.request.Request('https://api.github.com/repos/TrillionniumFoundation/NBO/actions/artifacts/12082776958/zip',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'NBO-R113-bounded-recovery'})
-          with urllib.request.urlopen(req,timeout=180) as r, z.open('wb') as f:
-              while True:
-                  b=r.read(8*1024*1024)
-                  if not b:break
-                  f.write(b)
-          expected='7f73209022824dfe547a6a78a0b3e946a2cd9012cf72afa5ebda3baa21c5ae6b'
-          assert hashlib.file_digest(z.open('rb'),'sha256').hexdigest()==expected
-          records=[]
-          with zipfile.ZipFile(z) as a, zipfile.ZipFile(root/'active-source.zip','w',zipfile.ZIP_DEFLATED,compresslevel=9) as out:
-              for e in a.infolist():
-                  if e.is_dir():continue
-                  p=pathlib.PurePosixPath(e.filename)
-                  take=e.file_size<20*1024*1024
-                  records.append({'path':e.filename,'bytes':e.file_size,'compressed_bytes':e.compress_size,'included_in_active_source':take})
-                  if take:out.writestr(e.filename,a.read(e))
-          parts=[]
-          with z.open('rb') as f:
-              i=0
-              while True:
-                  b=f.read(100*1024*1024)
-                  if not b:break
-                  p=root/('part-%02d.bin'%i);p.write_bytes(b)
-                  parts.append({'path':p.name,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()});i+=1
-          (root/'MANIFEST.json').write_text(json.dumps({'artifact_id':12082776958,'original_sha256':expected,'members':records,'parts':parts,'scope':'Lossless source transport only; no new scientific results'},indent=2)+'\n')
-          print('members',len(records),'parts',len(parts),'active zip bytes',(root/'active-source.zip').stat().st_size)
-          print('large excluded members',[(e['path'],e['bytes']) for e in records if not e['included_in_active_source']])
+          import urllib.request,os,pathlib,hashlib,zipfile,json,base64,concurrent.futures,time,io
+          O=pathlib.Path('delivery/source'); B='https://api.github.com/repos/TrillionniumFoundation/NBO/';cache={}
+          def get(p):
+              for k in range(5):
+                  try:
+                      req=urllib.request.Request(B+p,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'NBO-R113-bounded-source-v2'})
+                      with urllib.request.urlopen(req,timeout=90) as r:return json.load(r)
+                  except Exception:
+                      if k==4:raise
+                      time.sleep(2**k)
+          def blob(s):
+              if s not in cache:
+                  x=get('git/blobs/'+s);d=base64.b64decode(x['content']);assert hashlib.sha1(b'blob '+str(len(d)).encode()+b'\0'+d).hexdigest()==s;cache[s]=d
+              return cache[s]
+          def save(p,x):
+              p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(x,indent=2,sort_keys=True)+'\n')
+          z=blob('f39d707c2d831c390090d2263a2e6d2aa0b1df5b')
+          with zipfile.ZipFile(io.BytesIO(z)) as a:
+              for n in a.namelist():
+                  if not n.endswith('/'):
+                      d=a.read(n);cache[hashlib.sha1(b'blob '+str(len(d)).encode()+b'\0'+d).hexdigest()]=d
+          t=get('git/trees/5885983fdef89cdc11fe471753cccfa46160956f?recursive=1');assert not t.get('truncated');save(O/'audit/R110_tree.json',t)
+          skip=('archive110/','retained109-native/','retained109-tools/','retained99/')
+          entries=[e for e in t['tree'] if e['type']=='blob' and not e['path'].startswith(skip) and e.get('size',0)<2000000]
+          excluded=[e for e in t['tree'] if e['type']=='blob' and e not in entries]
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:list(ex.map(blob,sorted({e['sha'] for e in entries})))
+          for e in entries:
+              p=O/'R110'/e['path'];p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(cache[e['sha']])
+          save(O/'audit/R110_export.json',{'commit':'4ba2bbaa11b5fa59f83705b28b35bf82a63ca169','files':entries,'excluded_preserved_in_original_artifact':excluded,'original_artifact_id':12082776958,'original_artifact_sha256':'7f73209022824dfe547a6a78a0b3e946a2cd9012cf72afa5ebda3baa21c5ae6b'})
+          for tag,sha,path in [('R111','7ac51c264f835598ad0ef1a58b7a747df0b2c5dd','revisions/2026-10-16-r111'),('R112','0550bb4e1c529b27ed21548b965151d1af758e80','revisions/2026-10-16-r112')]:
+              rows=get('contents/'+path+'?ref='+sha); es=[]
+              for e in rows:
+                  if e['type']=='file':es.append({'path':e['name'],'sha':e['sha'],'type':'blob','size':e.get('size',0)})
+                  elif e['type']=='dir' and e['name']!='code':
+                      tt=get('git/trees/'+e['sha']+'?recursive=1');assert not tt.get('truncated')
+                      es.extend(dict(x,path=e['name']+'/'+x['path']) for x in tt['tree'] if x['type']=='blob')
+              excluded=[]
+              for e in es:
+                  if e.get('size',0)>2000000:excluded.append(e);continue
+                  p=O/tag/e['path'];p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(blob(e['sha']))
+              save(O/'audit'/(tag+'_export.json'),{'commit':sha,'files':es,'excluded':excluded,'scope':'Independent frozen source only; not an experiment.'})
+          refs=[]
+          for page in range(1,100):
+              rows=get('branches?per_page=100&page='+str(page));refs+=rows
+              if len(rows)<100:break
+          save(O/'audit/branches.json',refs)
+          save(O/'audit/transport.json',{'current_workflow_sha':os.environ['GITHUB_SHA'],'preserved_failed_download_run':38986314203,'failure':'Cross-host signed artifact download returned HTTP 401; no scientific data or protocol changed. Current recovery verifies Git blob identities directly.','excluded_large_data':'Full original artifact 12082776958 is preserved; this bounded archive contains active native sources, not a claim to contain all historical raw data.'})
+          print('R110 files',len(entries),'excluded',len(excluded),'branches',len(refs))
+          for e in t['tree']:
+              if e['type']=='blob' and e.get('size',0)>=2000000:print('Large retained object',e['path'],e['size'],e['sha'])
           PY
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: nbo-r113-active-source
-          path: |
-            delivery/active-source.zip
-            delivery/MANIFEST.json
-          retention-days: 30
-      - uses: actions/upload-artifact@v4
-        with:
-          name: nbo-r113-preserved-part-00
-          path: delivery/part-00.bin
-          compression-level: 0
-          retention-days: 30
-      - uses: actions/upload-artifact@v4
-        with:
-          name: nbo-r113-preserved-part-01
-          path: delivery/part-01.bin
-          compression-level: 0
-          retention-days: 30
-      - uses: actions/upload-artifact@v4
-        with:
-          name: nbo-r113-preserved-part-02
-          path: delivery/part-02.bin
-          compression-level: 0
-          retention-days: 30
-      - uses: actions/upload-artifact@v4
-        with:
-          name: nbo-r113-preserved-part-03
-          path: delivery/part-03.bin
-          compression-level: 0
-          retention-days: 30
-      - uses: actions/upload-artifact@v4
-        with:
-          name: nbo-r113-preserved-part-04
-          path: delivery/part-04.bin
-          compression-level: 0
-          retention-days: 30
-      - uses: actions/upload-artifact@v4
-        with:
-          name: nbo-r113-preserved-part-05
-          path: delivery/part-05.bin
-          compression-level: 0
+          name: nbo-r113-bounded-active-source-v2
+          path: delivery/source/
+          if-no-files-found: error
           retention-days: 30
