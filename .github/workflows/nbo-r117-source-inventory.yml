@@ -1,0 +1,103 @@
+name: NBO R117 immutable author source and research inventory
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r117-verified-action-resolution-2026-10-17']
+    paths: ['.github/workflows/nbo-r117-source-inventory.yml']
+permissions:
+  contents: read
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Recover immutable scientific sources and enumerate all branch roots
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p export
+          python3 - <<'PY'
+          import os,json,urllib.request,base64,hashlib,pathlib,concurrent.futures,time,re
+          out=pathlib.Path('export'); api='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          def get(path):
+              for attempt in range(5):
+                  try:
+                      req=urllib.request.Request(api+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'NBO-R117-source-inventory'})
+                      with urllib.request.urlopen(req,timeout=120) as f:return json.load(f)
+                  except Exception:
+                      if attempt==4:raise
+                      time.sleep(2**attempt)
+          def save(path,obj):
+              p=out/path;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(obj,indent=2,sort_keys=True)+'\n')
+          refs=[]
+          for page in range(1,100):
+              rows=get('branches?per_page=100&page='+str(page));refs+=rows
+              if len(rows)<100:break
+          else:raise RuntimeError('branch pagination incomplete')
+          save(pathlib.Path('audit/branches.json'),refs)
+          shas=sorted({r['commit']['sha'] for r in refs})
+          with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+              roots=dict(zip(shas,pool.map(lambda s:get('git/trees/'+s),shas)))
+          save(pathlib.Path('audit/branch_root_trees.json'),roots)
+          review_ids=sorted({e['sha'] for t in roots.values() for e in t['tree'] if e['type']=='tree' and any(w in e['path'].lower() for w in ('review','referee'))})
+          with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+              reviews=dict(zip(review_ids,pool.map(lambda s:get('git/trees/'+s+'?recursive=1'),review_ids)))
+          if any(t.get('truncated') for t in reviews.values()):raise RuntimeError('truncated review inventory')
+          save(pathlib.Path('audit/review_trees.json'),reviews)
+          todo={}
+          for tree in reviews.values():
+              for e in tree['tree']:
+                  if e['type']=='blob' and pathlib.Path(e['path']).suffix in {'.md','.txt','.tex','.json','.py'}:
+                      todo.setdefault(e['sha'],[]).append(('reviews/'+e['sha']+pathlib.Path(e['path']).suffix,e['path']))
+          selected={'r110':('4ba2bbaa11b5fa59f83705b28b35bf82a63ca169','revisions/2026-10-16-r110')}
+          for r in refs:
+              m=re.search(r'-r(9[89]|10[0-9]|11[1-6])-',r['name'])
+              if not m:continue
+              n=int(m.group(1)); day='2026-10-14' if n<=99 else ('2026-10-15' if n<=107 else ('2026-10-16' if n<=114 else '2026-10-17'))
+              key='r'+str(n)
+              if key not in selected:selected[key]=(r['commit']['sha'],'revisions/'+day+'-'+key)
+          manifests={};skipped=[]
+          for key,(commit,path) in sorted(selected.items()):
+              tree=roots.get(commit) or get('git/trees/'+commit)
+              found=True
+              for part in path.split('/'):
+                  entry=next((e for e in tree['tree'] if e['path']==part and e['type']=='tree'),None)
+                  if entry is None:found=False;break
+                  tree=get('git/trees/'+entry['sha'])
+              if not found:
+                  manifests[key]={'commit':commit,'path':path,'missing':True};continue
+              tree=get('git/trees/'+entry['sha']+'?recursive=1')
+              if tree.get('truncated'):raise RuntimeError('truncated '+key)
+              manifests[key]={'commit':commit,'path':path,'tree':tree}
+              for e in tree['tree']:
+                  if e['type']!='blob':continue
+                  p=pathlib.PurePosixPath(e['path'])
+                  if e.get('size',0)>3000000 or p.suffix in {'.zip','.pdf','.xz','.gz','.npz','.npy','.png','.jpg','.pyc'} or 'build' in p.parts:
+                      skipped.append({'revision':key,**e});continue
+                  todo.setdefault(e['sha'],[]).append((key+'/'+e['path'],path+'/'+e['path']))
+          save(pathlib.Path('audit/revision_trees.json'),manifests)
+          save(pathlib.Path('audit/skipped_large_binary.json'),skipped)
+          def fetch(item):
+              sha,targets=item;obj=get('git/blobs/'+sha);data=base64.b64decode(obj['content'])
+              assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()==sha
+              for local,original in set(targets):
+                  p=out/local;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
+              return {'blob':sha,'sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data),'targets':targets}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool: receipts=list(pool.map(fetch,todo.items()))
+          save(pathlib.Path('audit/materialized_sources.json'),receipts)
+          runs=[]
+          for page in range(1,30):
+              result=get('actions/runs?per_page=100&page='+str(page));rows=result['workflow_runs']
+              runs.extend({k:r.get(k) for k in ('id','name','head_branch','head_sha','status','conclusion','created_at','updated_at','run_attempt','html_url','path')} for r in rows)
+              if len(rows)<100:break
+          else:raise RuntimeError('run pagination incomplete')
+          save(pathlib.Path('audit/workflow_runs.json'),runs)
+          save(pathlib.Path('audit/scope.json'),{'branches':len(refs),'unique_branch_heads':len(roots),'review_trees':len(reviews),'materialized_unique_blobs':len(receipts),'scope':'All branch roots and root review trees; selected current and parallel revision native sources. Large binaries and raw histories remain pinned in revision_trees and skipped_large_binary. This is not a claim to have reread or replayed every historical theorem or run.','workflow_sha':os.environ['GITHUB_SHA']})
+          print(json.dumps({'branches':len(refs),'blobs':len(receipts),'skipped':len(skipped)}))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r117-pinned-native-source-inventory
+          path: export/
+          if-no-files-found: error
+          retention-days: 30

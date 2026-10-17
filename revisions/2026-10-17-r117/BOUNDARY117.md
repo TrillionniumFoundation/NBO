@@ -1,0 +1,7 @@
+# R117 original NBO author-revision boundary
+
+17 October 2026. The new isolated branch starts from complete, successfully rebuilt R110 at 4ba2bbaa11b5fa59f83705b28b35bf82a63ca169 (tree d35407c3b1bdf0159755f0f8526d596295cc912d). The latest controlling review currently identified is the persisted R97 advisory report at 9723c6cd2cc8b3e071422f3e522d4a843946db63; the new inventory checks all root review trees for later applicable reports. That report is not an editorial decision and does not purport to review R110.
+
+R98 and R100--R116 are preserved as distinct scientific or experimental identities. No R117 calculation is completion of their prospective protocols. A protocol or source-binding CI success is not an executed welfare result. R110's completed results, R99 theory, original Neural Bellman Operators identity, and all prior negative conventional/neural evidence remain intact. Large artifacts inaccessible through the 512-MB download interface are not treated as missing science: native source is recovered by immutable Git blobs, and exclusions are explicitly listed.
+
+This commit only establishes source custody and research boundaries. It makes no new experimental, proof-completion, or publication-success claim. New scientific protocols and executable freezes will be deposited before their respective primary calculations. All changes remain on this isolated R117 branch; historical review, source and evidence branches are not modified.
