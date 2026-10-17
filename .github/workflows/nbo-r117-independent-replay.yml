@@ -1,0 +1,67 @@
+name: NBO R117 independent full scientific replay
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r117-verified-action-resolution-2026-10-17']
+    paths: ['.github/workflows/nbo-r117-independent-replay.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  reproduce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Recover the already independently verified frozen source closure
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import urllib.request,os,hashlib,zipfile,io,pathlib
+          url='https://api.github.com/repos/TrillionniumFoundation/NBO/actions/artifacts/12117106866/zip'
+          req=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'NBO-R117-independent-replay'})
+          with urllib.request.urlopen(req,timeout=120) as f:data=f.read()
+          if hashlib.sha256(data).hexdigest()!='779a2fbc1db5fa1ad48ac53896d38261be7c3db804b5aaffcb7cfe65a7c96a3f':raise RuntimeError('Source artifact hash mismatch')
+          root=pathlib.Path('source');root.mkdir()
+          with zipfile.ZipFile(io.BytesIO(data)) as z:
+              for name in z.namelist():
+                  p=pathlib.PurePosixPath(name)
+                  if p.is_absolute() or '..' in p.parts:raise RuntimeError('Unsafe source path')
+                  if name.endswith('/') or '__pycache__' in p.parts:continue
+                  dest=root/p;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(z.read(name))
+          PY
+      - name: Install exact declared numerical versions
+        run: python -m pip install numpy==2.3.5 scipy==1.17.0
+      - name: Reproduce all acquisition, catalogue, clocks and independent checks
+        env:
+          OPENBLAS_NUM_THREADS: '1'
+          OMP_NUM_THREADS: '1'
+          MKL_NUM_THREADS: '1'
+          NBO_SOURCE117: 'a21e33471047b966dd375d0b9aceab6b9492e4fb'
+          NBO_PROTOCOL108: '29180a4ce4a6db7298e7458ecdfff3da08abb08f'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd source
+          mkdir -p logs117
+          python materialize117.py | tee logs117/CI_SOURCE_RECHECK117.log
+          python code117/test117.py > logs117/CI_PREFLIGHT117.log 2>&1
+          python code117/campaign117.py all --output evidence117/ci-replay 2>&1 | tee logs117/CI_CAMPAIGN117.log
+          python code117/audit117.py --output evidence117/ci-replay 2>&1 | tee logs117/CI_AUDIT117.log
+          python - <<'PY'
+          import json,os,pathlib,hashlib
+          p=pathlib.Path('evidence117/ci-replay');a=json.loads((p/'AUDIT117.json').read_text());c=json.loads((p/'CAMPAIGN117.json').read_text())
+          assert a['status']=='passed' and c['status']=='executed'
+          assert a['decision_rows']==11776 and a['rational_record_checks']==204912
+          receipt={'workflow_sha':os.environ['GITHUB_SHA'],'run_id':os.environ['GITHUB_RUN_ID'],'scientific_source':'a21e33471047b966dd375d0b9aceab6b9492e4fb','scope':'Actual independent complete R117 replay. Its clocks and machine records remain separate from the initial local primary experiment. No R98/R100--R116 observations are supplied.','completed_execution_and_audit':True,'primary_decisions':4608,'timing_decisions':7168,'record_checks':204912,'files':{str(f.relative_to(p)):hashlib.sha256(f.read_bytes()).hexdigest() for f in sorted(p.rglob('*')) if f.is_file()}}
+          pathlib.Path('CI_REPLAY117.json').write_text(json.dumps(receipt,indent=2,sort_keys=True)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r117-independent-full-replay
+          path: source/
+          if-no-files-found: error
+          retention-days: 30
