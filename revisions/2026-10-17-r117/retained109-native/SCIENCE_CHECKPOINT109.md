@@ -1,0 +1,9 @@
+# R109 executed scientific checkpoint
+
+This commit stores the new mathematical statements, their complete proofs, the current numerical discussion, and the actual local execution command receipt. It is a checkpoint during author-package transfer, not a claim that all new PDF and raw evidence bytes have already been uploaded to this branch.
+
+The unchanged R108 source at 29180a4ce4a6db7298e7458ecdfff3da08abb08f executed in a distinct R109 reproduction. There were 4,096 primary catalogue decisions, seven successful sequential fresh-process timing repetitions, 18,432 total decision records and 27,648 safeguard-trial records. The independent exact record audit passed 169,472 checks. The separate original-kernel diagnostic passed 3,072 rational checks over 384 contexts. Sixteen frozen-source preflight, fifteen R99 exact-mechanism and twenty-three new algebra/accounting tests passed. The complete inherited replay did NOT pass: 435 tests across 21 suites recorded twenty errors and one failed assertion, with missing historical dependency/evidence paths preserved in logs.
+
+New content: original-economy active-region Bellman algebra, a centered tail-switch action bound, completed-incumbent cost descent, risk-distorted recursive gain bounds, paid resolution and stopping, and a precisely delimited Brownian recursive-utility BSDE verification bridge. The exact ReLU/conventional-hinge policy identity, adverse historical residual-to-rejection result and absence of neural-exclusive adoption remain explicit.
+
+The main/supplement/development/response PDFs have been built locally at 36/41/283/5 pages with resolved references and zero overfull warnings. Native publication closure and package transport are being recorded in subsequent commits. The queued source-export workflow is not a scientific CI success. Existing branches and independently frozen experiments are unchanged.

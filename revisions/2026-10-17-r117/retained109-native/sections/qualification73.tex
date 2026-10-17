@@ -1,0 +1,28 @@
+\section{Fitting a continuation for qualification}\label{sec:qualification73}
+A continuation used to evaluate a policy should be fitted to the error that determines the evaluation cost. The residual-cover bound in \eqref{eq:residual-cover72} supplies such an objective. We now make its optimization constructive. The future continuation is held fixed at each backward step; neither an optimal-value oracle nor success of unrestricted hidden-layer training is assumed.
+
+Fix a date and suppress its subscript. Let $x_1,\ldots,x_N$ be a state cover of radius $\rho$ in the $\ell^1$ metric, and suppose
+\[
+ y_j^-\le (\mathcal T h_+)(x_j)\le y_j^+.
+\]
+These are verified bounds on the original continuous-action infimum, not only on a proposal menu. Write $h_\theta=\sum_{k=1}^K\theta_k\phi_k$, where the fixed features have verified Lipschitz constants $L_k$ and $|\theta_k|\le B_k$. The constant feature is allowed with $L_k=0$. Let $C$ be a verified Lipschitz constant of $\mathcal T h_+$, including state-dependent feasibility repair. With $F_{jk}=\phi_k(x_j)$, define
+\begin{equation}\label{eq:readout-objective73}
+ \mathcal W(\theta)=\max_j(y_j^+-F_j\theta)
+       -\min_j(y_j^--F_j\theta)
+       +2\rho\left(C+\sum_k L_k|\theta_k|\right).
+\end{equation}
+
+\begin{theorem}[Qualification-optimal readout]\label{thm:readout73}
+For every feasible $\theta$, $\operatorname{osc}(\mathcal T h_+-h_\theta)\le\mathcal W(\theta)$. Minimizing \eqref{eq:readout-objective73} is a finite linear program with $2K+2$ variables and $2N+2K$ inequality constraints, apart from variable bounds. For probability vectors $p,q$ on the nodes, set $\lambda_k=2\rho L_k$ and
+\begin{equation}\label{eq:readout-dual73}
+ \mathcal D(p,q)=p^\top y^+-q^\top y^-+2\rho C
+   -\sum_k B_k\bigl(|[F^\top(q-p)]_k|-\lambda_k\bigr)_+.
+\end{equation}
+Then $\mathcal D(p,q)\le\inf_\theta\mathcal W(\theta)$, with equality for some $p,q$. Thus any feasible readout and exact probability vectors certify an achieved optimization gap of at most $\mathcal W(\theta)-\mathcal D(p,q)$.
+\end{theorem}
+
+The proof is in the Technical Supplement. It constructs the primal constraints and dual support function explicitly. Rationalizing a solver's proposed readout and probability vectors gives a checkable certificate; a convergence flag is not the certificate. Label intervals, features, moduli, coefficient bounds and the cover remain part of the numerical contract.
+
+Applying the theorem backwards gives a fitted continuation at every date. Its achieved ranges $\mathcal W_t$, together with the terminal oscillation and the actual implemented greedy-gap bounds, can be substituted directly into Theorem~\ref{thm:frozen72}. This connects the attained fitting objective to both original-optimum regret and the range of the original-law cost observation. Each readout minimizes its stated one-step qualification bound conditional on the fixed future. It does not minimize the joint multi-date range, the true policy loss, or a hidden-feature objective. The next backward step recomputes its labels and moduli from the continuation actually returned.
+
+The label construction in \eqref{eq:residual-cover72} uses exact conditional moments for a shallow ReLU future and a verified continuous-action cover. Its work is charged in addition to the linear program, coefficient rationalization, modulus calculation and dual check. A conventional basis with the same number of coefficients receives the same labels and the same objective; it uses its own valid feature moduli. This is a comparison of qualified approximations, not an assertion that different bases span the same functions or that a neural encoding has an intrinsic advantage.

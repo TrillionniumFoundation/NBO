@@ -1,0 +1,73 @@
+name: NBO R117 frozen executable source binding
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r117-verified-action-resolution-2026-10-17']
+    paths: ['.github/workflows/nbo-r117-source-binding.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Materialize only the exact standalone scientific dependency closure
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import os,json,urllib.request,base64,hashlib,pathlib,zipfile,io,concurrent.futures
+          root=pathlib.Path('source');root.mkdir()
+          api='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          def get(path):
+              req=urllib.request.Request(api+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'NBO-R117-source-binding'})
+              with urllib.request.urlopen(req,timeout=120) as f:return json.load(f)
+          tree=get('git/trees/121c46bf702ca15e076537c99fb1828bbce4c201?recursive=1')
+          if tree.get('truncated'):raise RuntimeError('Incomplete tree')
+          entries={e['path']:e for e in tree['tree'] if e['type']=='blob'}
+          def fetch(name):
+              sha=entries[name]['sha'];data=base64.b64decode(get('git/blobs/'+sha)['content'])
+              if hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()!=sha:raise RuntimeError('Git blob identity')
+              p=root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
+              return data
+          pieces=[fetch('frozen_source117/part'+str(i)+'.b64').strip() for i in range(3)]
+          data=base64.b64decode(b''.join(pieces),validate=True)
+          if hashlib.sha256(data).hexdigest()!='fefe2817fc88d7ed843fed837f8e19bc741ee727f4cc0a9c81af4b26efafa92d':raise RuntimeError('Archive identity')
+          with zipfile.ZipFile(io.BytesIO(data)) as z:
+              expected={'SOURCE_FREEZE117.json','code117/audit117.py','code117/campaign117.py','code117/exact117.py','code117/precision117.py','code117/test117.py'}
+              if set(z.namelist())!=expected:raise RuntimeError('Unexpected source paths')
+              for name in expected:
+                  p=root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(z.read(name))
+          m=json.loads((root/'SOURCE_FREEZE117.json').read_text())
+          todo=[name for name in m['files'] if not (root/name).exists()]+['PROTOCOL117.md','materialize117.py','SOURCE_TRANSPORT117.json','BOUNDARY117.md']
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:list(pool.map(fetch,todo))
+          for name,h in m['files'].items():
+              if hashlib.sha256((root/name).read_bytes()).hexdigest()!=h:raise RuntimeError('Scientific source mismatch '+name)
+          (root/'CI_SOURCE117.json').write_text(json.dumps({'head_sha':os.environ['GITHUB_SHA'],'tree':'121c46bf702ca15e076537c99fb1828bbce4c201','frozen_files':len(m['files']),'protocol_commit':m['protocol_commit'],'scope':'Native frozen source and all imported local scientific dependencies. No primary campaign executed.'},indent=2)+'\n')
+          PY
+      - name: Install the declared numerical versions
+        run: python -m pip install numpy==2.3.5 scipy==1.17.0
+      - name: Verify actual decoded bytes and preflight fixtures
+        env:
+          OPENBLAS_NUM_THREADS: '1'
+          OMP_NUM_THREADS: '1'
+          MKL_NUM_THREADS: '1'
+          NBO_SOURCE117: ${{ github.sha }}
+          NBO_PROTOCOL108: '29180a4ce4a6db7298e7458ecdfff3da08abb08f'
+        run: |
+          cd source
+          python materialize117.py | tee SOURCE_CHECK117.log
+          python code117/test117.py > PREFLIGHT117.log 2>&1
+          python - <<'PY'
+          import json,pathlib,sys,numpy,scipy
+          pathlib.Path('CI_PREFLIGHT117.json').write_text(json.dumps({'status':'passed','tests':12,'python':sys.version,'numpy':numpy.__version__,'scipy':scipy.__version__,'primary_campaign_executed':False},indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r117-standalone-frozen-executable
+          path: source/
+          if-no-files-found: error
+          retention-days: 30
