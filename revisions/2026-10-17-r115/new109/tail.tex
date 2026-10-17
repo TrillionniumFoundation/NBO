@@ -1,0 +1,39 @@
+\section{Tail-aware action accuracy}\label{sec:tail109}
+A critic can match action derivatives pointwise in the innovation and still propose the wrong risk-averse action. The missing quantity is the change in the adverse tail. This section refines the directional account in Theorem~\ref{thm:action99}; it does not replace an original-law witness by a training statistic.
+
+Fix a state and a realized action $a$. On the same original probability space let $Z_a$ be the true continuation outcome and $H_a$ an acquired surrogate. In a neighborhood of $a$, suppose both are almost surely differentiable with integrably dominated derivatives. At $a$ assume their $\alpha$-quantiles are unique, carry no mass, and cut off upper tails of probability $t=1-\alpha$, where $0<\alpha<1$. These are local assumptions, not automatic properties of every fitted ReLU. Choose a constant $c$ and certified numbers $\epsilon,\delta\ge0$ such that
+\[
+ \|Z_a-H_a-c\|_\infty\le\epsilon,\qquad
+ \|\nabla_aZ_a-\nabla_aH_a\|_\infty\le\delta.
+\]
+The constant is an anchor-level centering; no derivative of a data-dependent centering rule is taken. Write $\eta$ for the true quantile, $B_\epsilon=\{|Z_a-\eta|\le2\epsilon\}$, and, for an arbitrary vector $v_0$,
+\[
+ G_\epsilon=\operatorname*{ess\,sup}_{B_\epsilon}\|\nabla_aH_a-v_0\|_2,
+ \qquad m_\epsilon=\min\{P(B_\epsilon),2\min(\alpha,t)\}.
+\]
+Set $G_\epsilon=0$ when $P(B_\epsilon)=0$.
+\begin{theorem}[Centered tail-switch bound]\label{thm:tail109}
+Under these hypotheses, whenever $G_\epsilon<\infty$,
+\begin{equation}\label{eq:tailgradient109}
+ \left\|\nabla_a\operatorname{AVaR}_\alpha(Z_a)
+       -\nabla_a\operatorname{AVaR}_\alpha(H_a)\right\|_2
+ \le \delta+G_\epsilon m_\epsilon/t.
+\end{equation}
+If $P(|Z_a-\eta|\le r)\le Cr^\kappa$ for the relevant $r$, the tail term is at most $G_\epsilon C(2\epsilon)^\kappa/t$. If additionally
+$\|\nabla_aH_a-v_0\|_2\le L|Z_a-\eta|$ on $B_\epsilon$, it is at most
+$LC(2\epsilon)^{\kappa+1}/t$.
+
+Suppose the original current objective $Q$ is differentiable and $\mu$-strongly convex on a compact convex action set $A$, and its stage cost is unchanged in the surrogate $\widehat Q$. If $n\in N_A(a)$ and $\|\nabla\widehat Q(a)+n\|_2\le r_a$, then
+\begin{equation}\label{eq:tailaction109}
+ 0\le Q(a)-\min_AQ
+ \le \frac{\{r_a+\beta(\delta+G_\epsilon m_\epsilon/t)\}^2}{2\mu}.
+\end{equation}
+\end{theorem}
+
+The proof localizes changed tail membership to a quantile band and uses the zero total mass of the difference between two maximizing densities. Thus a constant component of the surrogate action gradient cancels: tail \emph{gradient oscillation}, rather than its overall magnitude, controls the switching cost. Under a positive margin exponent, joint control of the centered value error and directional error gives a rate for action loss. A finite validation sample does not itself verify $C$, $\kappa$ or the essential suprema. At atoms or nonunique tails the stated differentiability theorem is unavailable; the feasible-density minorants of Theorem~\ref{thm:action99} remain the appropriate certification device. When $Z_a$ uses an optimal continuation, \eqref{eq:tailaction109} bounds the current-action gap; an imperfect implemented future policy requires its separate recursive allowance before interpreting the bound as complete-policy regret. Numerical witness slack is paid there through $U-L$, not silently dropped from \eqref{eq:tailaction109}.
+
+\paragraph{An exact diagnostic.}
+Let $z$ be uniform on $[-1,1]$, $\alpha=1/2$, $a\in[-1,1]$, and stage cost $a^2$. Take $Z_a=(a+1)z$ and $H_a=(a-1)z$. Their action derivatives are identically $z$, yet the original and surrogate optimal actions are $-1/4$ and $1/4$. Using the surrogate action incurs original loss $1/4$. This continuous-law diagnostic, independently integrated in rational arithmetic, rules out any general action-loss bound that vanishes with directional error alone. It is not the investment economy, a new population sample, or an empirical neural advantage. Its conceptual provenance in the earlier tail-aware research protocols is retained.
+
+\paragraph{Acquisition target and novelty.}
+For a family satisfying verified margin assumptions, a useful acquisition target is the bound in \eqref{eq:tailaction109}, with envelope slack and actual qualification work added. The earlier prospective finite-menu selection theorem then applies to complete services with that verified certificate. Our executed comparison below does not retroactively become a training experiment for this new loss: its frozen acquisition remains least squares. CVaR gradient estimation and decision-focused learning already have established formulations \citep{Tamar2015,LuoDelage2026,ElmachtoubGrigas2022}. The present result is a centered, tail-localized perturbation bound tied to the same constrained Bellman action and a valid complete-policy account. The static trajectory-CVaR objective of \citet{LuoDelage2026} is not the nested AVaR preference used here; its empirical gains cannot be transferred between those objectives.

@@ -1,0 +1,81 @@
+\section{Actionwise economic transfer and its complete numerical account}\label{app:actionwise82}
+Theorem~\ref{thm:actionwise82} separates two numerical tasks. The action-switch dual identifies actions that cannot be selected by a qualified readout. Original-law integration prices the actions not excluded by that dual. Neither calculation substitutes a fitted critic for the cost of the implemented continuation policy.
+
+\subsection{Conditional contrasts from the original primitives}
+For a fixed initial cell $C$, reference action $a$, and alternative action $b$, couple the two trajectories with the same first innovation $W$. Write $Y^b,Y^a$ for their next states and $B=\tau_1(Y^b)$, $A=\tau_1(Y^a)$ for the fixed last-date actor. The action pair need not agree on the two next states. Let $m(y,d)$ denote the original transition with innovation zero and action $d$. Its opposite-signed last innovation leaves the state sum unchanged, so the shortage term in the terminal cost is unaffected. The terminal quadratic terms give
+\begin{equation}\label{eq:terminal-integral82}
+ \mathbb E[g(m(y,d)+(W',-W'))\mid y,d]
+             =g(m(y,d))+5\mathbb E[(W')^2]
+             =g(m(y,d))+\frac5{3072}.
+\end{equation}
+The correction is the same for both trajectories and cancels in their difference. It cannot be omitted from an individual conditional cost. Feasibility and the inherited transition bounds ensure that the actual states remain in $[0,1]^2$; intersecting an enclosing box with this domain does not clip the economic transition law.
+
+Consequently the paired conditional cash cost is
+\begin{align}
+ Z_{Cb}(X,W)={}&c_0(X,b)-c_0(X,a)\nonumber\\
+ &+\frac{15}{16}\{c_1(Y^b,B)-c_1(Y^a,A)\}\nonumber\\
+ &+\frac{225}{256}\{g(m(Y^b,B))-g(m(Y^a,A))\}.
+ \label{eq:paired-cash82}
+\end{align}
+Its expectation conditional on $C$ is $\Delta_C(b)$. The first difference cancels the common state cost exactly. The remaining terms retain a separately propagated state difference rather than subtracting independently widened state boxes.
+
+For example, $\delta=Y^b-Y^a=((b-a)/2,(b-a)/4)$. The bilinear difference satisfies
+\[
+ Y^b_1Y^b_2-Y^a_1Y^a_2=\delta_1Y^b_2+Y^a_1\delta_2.
+\]
+This identity gives the difference of the next mean states, including the separate term $B-A$. The square identity $u^2-v^2=(u-v)(u+v)$ and the quartic identity $u^4-v^4=(u-v)(u+v)(u^2+v^2)$ preserve analogous cancellation in costs. For the shortage term, whenever an interval encloses $d=u-v$,
+\[
+ u_+-v_+\in([u]_+-[v]_+)\cap
+       [\min\{0,\underline d\},\max\{0,\overline d\}].
+\]
+Multiplication by an enclosure of $u_++v_+$ encloses the difference of their squares. An empty intersection stops verification.
+
+\begin{proposition}[Complete-bin enclosure]\label{prop:bins82}
+Partition each initial cell into $r^2$ equal rectangles and the first innovation into $q$ equal bins, with dyadic $r,q$. Evaluate \eqref{eq:paired-cash82} on every complete subbox by outward interval operations. On each next-state rectangle, enclose the fixed actor by the minimum and maximum of its action indices over every intersected acquired cell, including boundary cells. Let $[l_s,u_s]$ be the resulting paired interval on subbox $s$, intersected with the valid signed support $[-H,H]$. Then
+\[
+ \frac1{r^2q}\sum_s l_s\le\Delta_C(b)
+             \le\frac1{r^2q}\sum_s u_s.
+\]
+The hull of two independently valid interval implementations is valid. Intersecting independently valid integrated bands across refinement levels is valid as well.
+\end{proposition}
+
+\begin{proof}
+The transition and centered identities are algebraic identities for every state and innovation in the subbox. The rectangle extrema contain the actual actor action even when the rectangle crosses an actor discontinuity. Interval inclusion, propagated through each arithmetic operation and the valid intersections, therefore contains \eqref{eq:paired-cash82} pointwise. Equation~\eqref{eq:terminal-integral82} accounts for the remaining innovation under its actual continuous marginal law. All subboxes have exact conditional probability $1/(r^2q)$, so integration preserves the endpoint inequalities. Taking a hull preserves inclusion, as does intersecting two bands that separately contain the same integral.
+\end{proof}
+
+The two deposited implementations do not import each other's interval, transition, cost, partition or actor routines. The binary64 implementation uses outward next-representable-number operations and a precomputed rectangle-extremum table. The integer implementation uses Python-integer endpoints in units $2^{-48}$, directed integer division, expanded cost polynomials and direct enumeration of distinct acquisition rectangles. Their endpoint streams must overlap on every subbox. A separately written rational trajectory calculation checks four deterministic midpoint trajectories per action and rung. Those checks are regressions; the proof concerns every point in each box, not only its midpoint.
+
+The complete records retain exact integer endpoint sums, their common denominator, the digest of all four independently computed endpoint streams, the largest endpoint discrepancy and the number of processed boxes. They do not claim to deposit an additional random sample or to count the two arithmetic implementations as independent statistical observations. Full replay recomputes those endpoint streams, not only the saved sums.
+
+\subsection{Refinement and resource requirements}
+\begin{proposition}[Refinement with a discontinuous acquired actor]\label{prop:refinement82}
+In the original two-date model, fix the finite acquired actor, initial cell and feasible first-action pair. In exact interval arithmetic, the integrated width in Proposition~\ref{prop:bins82} tends to zero as $r,q\to\infty$ along dyadic partitions. The same conclusion holds with outward arithmetic whose uniform propagated padding tends to zero. The executed fixed-precision calculation retains its nonzero numerical width rather than invoking this limiting statement.
+
+If $P$ alternatives remain at the largest qualification tolerance, a level uses exactly $Pr^2q$ paired subboxes in each implementation. Its binary64 actor tables occupy $O(n^4)$ entries and the direct preprocessing used here takes at most $O(n^6)$ operations. After that preprocessing each rectangle query is constant work. The independent enumerator instead stores the $n^2$ actor indices, groups queried rectangles by sorting their codes, and can inspect up to $n^2$ indices per distinct rectangle. Its conservative worst-case work is therefore
+\[
+ O\!\left(Pr^2q\,[n^2+\log(r^2q)]\right).
+\]
+Processing one alternative at a time uses $O(n^4+r^2q)$ numerical working storage, apart from retained integrated records.
+\end{proposition}
+
+\begin{proof}
+For a fixed first action, each next-state coordinate is a polynomial of the initial state plus either $W$ or $-W$. For any terminal acquisition boundary $Y_j=k/n$, its preimage has conditional innovation measure zero for every initial state, because the coefficient of $W$ is nonzero. There are finitely many boundaries and two coupled trajectories. Fubini's theorem therefore gives a measure-zero union of their preimages in the integration domain.
+
+At every other interior point, sufficiently fine boxes intersect only the fixed actor cell containing each next state. On such boxes, \eqref{eq:paired-cash82} is a finite composition of continuous polynomial and positive-part operations with constant actor actions. Its exact interval width tends to zero. The support intersection bounds all widths by $2H$. Boundary sets of the initial partition also have measure zero. Dominated convergence now gives convergence of the integrated width. Vanishing outward padding preserves the argument. It does not justify removing the actual fixed-precision remainder from a finite calculation.
+
+There are $r^2q$ subboxes per action and $P$ retained actions. The direct binary64 precomputation enumerates $O(n^4)$ rectangles and scans at most $n^2$ entries each. A stored rectangle extremum then uses its four indices. For $m=r^2q$ boxes, the independent algorithm spends $O(m\log m)$ work grouping codes and at most $O(mn^2)$ work enumerating their actor indices. Finally, keeping only one alternative's interval arrays at a time gives the stated working storage. Summing the displayed counts over every executed rung, rather than only the last one, gives the complete refinement work.
+\end{proof}
+
+These are counts for the actual two-date procedure. They are not a reduction of the retained vector recursion's horizon growth, and table bytes are not substituted for process peak memory. The execution records both the full clock and peak resident memory. Development pilots informed the dyadic resolution before the source freeze; the computation is described as deterministic verification rather than a prospectively selected new economic experiment.
+
+\subsection{A classwide adoption decision on the original event}
+Let the signed optimizer-sublevel interval for $J^{\pi_j}-J^{\pi_k}$ be $[L,U]$ after applying \eqref{eq:class-pair82}. If deployment of class $k$ rather than class $j$ has an additional total charge $\tau$, the net advantage of $k$ belongs to $[L-\tau,U-\tau]$ for every allowed pair of readouts on the same original event. Thus $\tau<L$ supports $k$ uniformly and $\tau>U$ supports the opposite decision uniformly. The intermediate region remains unresolved. This statement prices construction, verification and installation only when their conversion into economic cost units is explicitly supplied. A measured second of verification is not itself such a price.
+
+The extension uses a deterministic outer set of possible acquired actions. It permits the qualification tolerance or the comparison to be selected after observing the original simultaneous cost event, provided the original attained controllers and event are not changed and the stated deterministic enclosures hold. There is no new probability expenditure over an uncountable set of readouts. Conversely, a newly fitted hidden-feature model, a changed terminal actor, altered transition law or new statistical estimand is not covered merely because its displayed objective resembles the one here.
+
+\subsection{Complete refinement catalogue}\label{app:catalogue82}
+The tables retain all four calibrated constructions, all three objective allowances and all four refinement rungs. ReLU and Bernstein are each evaluated at both resolutions, including the coarse ReLU construction whose exact-optimizer action certificate remains partly unresolved. The actionwise radii are compared with their binary uncertified-mass bounds. Every calibrated pair and both own-controller references are retained in the machine-readable records; no unresolved or adverse entry is removed.
+\input{tables/sublevels82}
+\input{tables/all-pairs82}
+\input{tables/own-gains82}
+\input{tables/work82}
