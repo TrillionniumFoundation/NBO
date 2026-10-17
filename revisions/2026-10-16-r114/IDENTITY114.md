@@ -1,0 +1,9 @@
+# NBO R114 author revision: immutable entry boundary
+
+This isolated author branch starts from the actually recoverable R110 manuscript commit 4ba2bbaa11b5fa59f83705b28b35bf82a63ca169, not the numerically largest branch. The R110 verification run 38899876276 completed successfully; its artifact 12053947106 has SHA-256 dff93fc7dbf82f7a36ffbfde0c9c74a7b8ebc1006e3fd72ba33927c065e430cb. Its 638792519-byte archive exceeds the connector's 536870912-byte single-artifact retrieval limit. The initial workflow performs lossless recovery, separate readable-source extraction and raw evidence partitioning, never new scientific execution or alteration of that archive.
+
+The latest persisted controlling advisory report identified so far is R97 at 9723c6cd2cc8b3e071422f3e522d4a843946db63. Its scope is R97 f802fe64d91d9f5c1c8f86123b0fbe114e622279, not R99 or R110, and it is not an Econometric Society editorial decision. Refreshed branch/root/review inventories will be checked before finalizing this identity.
+
+R98 and R100--R113 retain separate protocols, frozen sources, fit/validation/test barriers, failures and scientific custody. In particular R113 aceda95cb906431abd32fb0d4facb6dc290983af freezes executable code; its commit message is not evidence that the primary campaign finished. R114 recovery or experiments do not complete other rounds' protocols. No pre-registration is claimed merely for this identity note. Any new primary experiment requires its own prospective protocol and source freeze.
+
+All work remains an author revision of Neural Bellman Operators for the Econometrica numerical-methods direction. Existing author, review and evidence branches are read-only. Mathematical and computational improvement will be distinguished from retrieval, source restoration, paper building, CI, and unestablished neural-specific or calibrated economic claims.

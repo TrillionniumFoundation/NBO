@@ -1,0 +1,146 @@
+name: NBO R114 pinned source and evidence recovery
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r114-verified-bellman-revision-2026-10-16']
+    paths: ['.github/workflows/nbo-r114-source-recovery.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Recover immutable R110 evidence and refresh scientific inventory
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          mkdir -p recovered/source recovered/audit shards
+          cat > /tmp/recover.py <<'PY'
+          import os,json,urllib.request,pathlib,hashlib,zipfile,concurrent.futures,base64,time
+          root=pathlib.Path('recovered');audit=root/'audit';base='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          def request(path):
+              return urllib.request.Request(base+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'NBO-R114-pinned-recovery'})
+          def get(path):
+              for attempt in range(4):
+                  try:
+                      with urllib.request.urlopen(request(path),timeout=90) as f:return json.load(f)
+                  except Exception:
+                      if attempt==3:raise
+                      time.sleep(2**attempt)
+          def save(path,obj):
+              path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(obj,indent=2,sort_keys=True)+'\n')
+          refs=[]
+          for page in range(1,30):
+              rows=get('branches?per_page=100&page='+str(page));refs.extend(rows)
+              if len(rows)<100:break
+          save(audit/'current_branches.json',refs)
+          unique=sorted({r['commit']['sha'] for r in refs})
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+              roots=dict(zip(unique,pool.map(lambda s:get('git/trees/'+s),unique)))
+          save(audit/'root_trees.json',roots)
+          rs=sorted({e['sha'] for t in roots.values() for e in t.get('tree',[]) if e['type']=='tree' and ('review' in e['path'].lower() or 'referee' in e['path'].lower())})
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+              rt=dict(zip(rs,pool.map(lambda s:get('git/trees/'+s+'?recursive=1'),rs)))
+          save(audit/'review_trees.json',rt)
+          entries={e['sha']:e for t in rt.values() for e in t.get('tree',[]) if e['type']=='blob' and e['path'].endswith(('.md','.tex','.json','.py','.txt'))}
+          def read_blob(item):
+              sha,e=item;b=get('git/blobs/'+sha);d=base64.b64decode(b['content'])
+              assert hashlib.sha1(b'blob '+str(len(d)).encode()+b'\0'+d).hexdigest()==sha
+              p=audit/'review_blobs'/(sha+pathlib.Path(e['path']).suffix);p.parent.mkdir(exist_ok=True);p.write_bytes(d)
+              return {'path':e['path'],'git_blob':sha,'sha256':hashlib.sha256(d).hexdigest(),'bytes':len(d),'local':str(p.relative_to(root))}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:records=list(pool.map(read_blob,entries.items()))
+          save(audit/'review_blob_index.json',records)
+          for s in ('queued','in_progress','waiting'):
+              save(audit/('runs_'+s+'.json'),get('actions/runs?per_page=100&status='+s))
+          # Latest separately frozen episodes: fetch only their own revision trees, not a giant recursive repository tree.
+          episode=[]
+          for row in refs:
+              name=row['name']
+              import re
+              m=re.search(r'-r(9[89]|10[0-9]|11[0-3])(?:-|$)',name)
+              if not m or not name.startswith('revision/'):continue
+              sha=row['commit']['sha'];rnode=next((e for e in roots[sha]['tree'] if e['path']=='revisions' and e['type']=='tree'),None)
+              if not rnode:continue
+              children=get('git/trees/'+rnode['sha'])['tree']
+              own=[e for e in children if e['path'].endswith('-r'+m.group(1))]
+              for e in own:episode.append({'branch':name,'commit':sha,'path':'revisions/'+e['path'],'tree':e['sha']})
+          save(audit/'episode_roots.json',episode)
+          # Download the exact already-successful R110 run. No experiment is rerun.
+          artifact_id=12053947106;expected='dff93fc7dbf82f7a36ffbfde0c9c74a7b8ebc1006e3fd72ba33927c065e430cb'
+          p=pathlib.Path('/tmp/r110.zip');h=hashlib.sha256()
+          with urllib.request.urlopen(request('actions/artifacts/'+str(artifact_id)+'/zip'),timeout=180) as src,p.open('wb') as dest:
+              while True:
+                  d=src.read(4*1024*1024)
+                  if not d:break
+                  h.update(d);dest.write(d)
+          assert h.hexdigest()==expected
+          all_entries=[]
+          with zipfile.ZipFile(p) as z:
+              for e in z.infolist():
+                  all_entries.append({'name':e.filename,'bytes':e.file_size,'compressed_bytes':e.compress_size,'crc':e.CRC})
+                  if e.is_dir():continue
+                  rel=pathlib.PurePosixPath(e.filename)
+                  if rel.is_absolute() or '..' in rel.parts:raise ValueError('Unsafe archive')
+                  # Small sources/ledgers plus all PDFs; full evidence is retained losslessly in shards.
+                  suffix=rel.suffix.lower()
+                  keep=suffix in {'.tex','.bib','.bst','.cls','.cfg','.py','.sh','.yml','.yaml','.md','.txt','.pdf','.xz','.b64'} and e.file_size<12*1024*1024
+                  keep=keep or suffix=='.json' and e.file_size<512*1024
+                  if keep:
+                      q=root/'source'/rel;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(z.read(e))
+          save(audit/'r110_archive_entries.json',all_entries)
+          part_records=[]
+          with p.open('rb') as f:
+              i=0
+              while True:
+                  d=f.read(96*1024*1024)
+                  if not d:break
+                  q=pathlib.Path('shards')/('r110.part'+str(i));q.write_bytes(d)
+                  part_records.append({'part':q.name,'bytes':len(d),'sha256':hashlib.sha256(d).hexdigest()});i+=1
+          save(audit/'R110_PINNED_ARCHIVE.json',{'artifact':artifact_id,'run':38899876276,'head_sha':'4ba2bbaa11b5fa59f83705b28b35bf82a63ca169','sha256':expected,'parts':part_records,'scope':'Exact recovery and partition, not a new experiment or rereading of every historical file.'})
+          save(audit/'INVENTORY_STATUS.json',{'branches':len(refs),'unique_roots':len(roots),'review_blobs':len(records),'truncated_review_trees':[s for s,t in rt.items() if t.get('truncated')],'export_head':os.environ['GITHUB_SHA']})
+          print(json.dumps({'branches':len(refs),'review_blobs':len(records),'r110_archive_bytes':p.stat().st_size,'parts':len(part_records)}))
+          PY
+          python /tmp/recover.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r114-pinned-readable-source
+          path: recovered/
+          retention-days: 30
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r114-r110-raw-part0
+          path: shards/r110.part0
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r114-r110-raw-part1
+          path: shards/r110.part1
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r114-r110-raw-part2
+          path: shards/r110.part2
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r114-r110-raw-part3
+          path: shards/r110.part3
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r114-r110-raw-part4
+          path: shards/r110.part4
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r114-r110-raw-part5
+          path: shards/r110.part5
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r114-r110-raw-part6
+          path: shards/r110.part6
+          compression-level: 0
