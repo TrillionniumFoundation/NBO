@@ -1,0 +1,108 @@
+name: NBO R114 bounded recovery amendment
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r114-verified-bellman-revision-2026-10-16']
+    paths: ['.github/workflows/nbo-r114-recovery-amendment.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Restore pinned native source before lossless raw recovery
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          mkdir -p recovered/source recovered/audit shards
+          cat > /tmp/amend.py <<'PY'
+          import os,urllib.request,urllib.parse,base64,json,textwrap,pathlib,hashlib
+          base='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          req=urllib.request.Request(base+'contents/.github/workflows/nbo-r114-source-recovery.yml?ref=ef7bac21cf9ef07d0659b12da29bec0c5be159e3',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+          with urllib.request.urlopen(req) as f:obj=json.load(f)
+          y=base64.b64decode(obj['content']).decode()
+          script=textwrap.dedent(y.split("cat > /tmp/recover.py <<'PY'\n",1)[1].split('\n          PY\n',1)[0])
+          insertion='''
+          # Separate recoverable Git-source identity from the oversized raw artifact.
+          st=get('git/trees/5885983fdef89cdc11fe471753cccfa46160956f?recursive=1')
+          if st.get('truncated'):raise ValueError('Truncated pinned source tree')
+          save(audit/'R110_NATIVE_TREE.json',st)
+          allowed={'.tex','.bib','.bst','.cls','.cfg','.py','.sh','.yml','.yaml','.md','.txt','.pdf','.xz','.b64'}
+          chosen=[e for e in st['tree'] if e['type']=='blob' and ((pathlib.Path(e['path']).suffix.lower() in allowed and e.get('size',0)<12000000) or (e['path'].endswith('.json') and e.get('size',0)<524288))]
+          def native(e):
+              b=get('git/blobs/'+e['sha']);d=base64.b64decode(b['content'])
+              assert hashlib.sha1(b'blob '+str(len(d)).encode()+b'\\0'+d).hexdigest()==e['sha']
+              p=root/'nativeR110'/e['path'];p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(d)
+              return {'path':e['path'],'git_blob':e['sha'],'sha256':hashlib.sha256(d).hexdigest()}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:native_records=list(pool.map(native,chosen))
+          save(audit/'R110_NATIVE_MANIFEST.json',native_records)
+          class StripAuthorization(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,req,fp,code,msg,headers,newurl):
+                  target=urllib.parse.urlsplit(newurl)
+                  if target.scheme!='https':raise ValueError('Non-HTTPS artifact redirect')
+                  new=super().redirect_request(req,fp,code,msg,headers,newurl)
+                  if new is not None and target.netloc!=urllib.parse.urlsplit(req.full_url).netloc:
+                      new.remove_header('Authorization')
+                  return new
+          safe_opener=urllib.request.build_opener(StripAuthorization())
+          '''
+          script=script.replace('# Download the exact already-successful R110 run. No experiment is rerun.',textwrap.dedent(insertion)+'\n# Download the exact already-successful R110 run. No experiment is rerun.')
+          old="urllib.request.urlopen(request('actions/artifacts/'+str(artifact_id)+'/zip'),timeout=180)"
+          new="safe_opener.open(request('actions/artifacts/'+str(artifact_id)+'/zip?nonce='+str(time.time_ns())),timeout=180)"
+          if old not in script:raise ValueError('Pinned patch target missing')
+          script=script.replace(old,new)
+          pathlib.Path('/tmp/recover.py').write_text(script)
+          exec(compile(script,'/tmp/recover.py','exec'),globals())
+          PY
+          python /tmp/amend.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r114-pinned-readable-source-v2
+          path: recovered/
+          retention-days: 30
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r114-r110-raw-part0
+          path: shards/r110.part0
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r114-r110-raw-part1
+          path: shards/r110.part1
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r114-r110-raw-part2
+          path: shards/r110.part2
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r114-r110-raw-part3
+          path: shards/r110.part3
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r114-r110-raw-part4
+          path: shards/r110.part4
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r114-r110-raw-part5
+          path: shards/r110.part5
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r114-r110-raw-part6
+          path: shards/r110.part6
+          compression-level: 0
