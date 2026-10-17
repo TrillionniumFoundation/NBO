@@ -1,0 +1,93 @@
+name: NBO R113 bounded immutable source delivery
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r113-certified-policy-frontier-2026-10-16']
+    paths: ['.github/workflows/nbo-r113-bounded-source.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Split existing verified inventory without changing scientific bytes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          mkdir -p delivery
+          python - <<'PY'
+          import urllib.request,os,pathlib,hashlib,zipfile,json
+          root=pathlib.Path('delivery'); z=root/'original.zip'
+          req=urllib.request.Request('https://api.github.com/repos/TrillionniumFoundation/NBO/actions/artifacts/12082776958/zip',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'NBO-R113-bounded-recovery'})
+          with urllib.request.urlopen(req,timeout=180) as r, z.open('wb') as f:
+              while True:
+                  b=r.read(8*1024*1024)
+                  if not b:break
+                  f.write(b)
+          expected='7f73209022824dfe547a6a78a0b3e946a2cd9012cf72afa5ebda3baa21c5ae6b'
+          assert hashlib.file_digest(z.open('rb'),'sha256').hexdigest()==expected
+          records=[]
+          with zipfile.ZipFile(z) as a, zipfile.ZipFile(root/'active-source.zip','w',zipfile.ZIP_DEFLATED,compresslevel=9) as out:
+              for e in a.infolist():
+                  if e.is_dir():continue
+                  p=pathlib.PurePosixPath(e.filename)
+                  take=e.file_size<20*1024*1024
+                  records.append({'path':e.filename,'bytes':e.file_size,'compressed_bytes':e.compress_size,'included_in_active_source':take})
+                  if take:out.writestr(e.filename,a.read(e))
+          parts=[]
+          with z.open('rb') as f:
+              i=0
+              while True:
+                  b=f.read(100*1024*1024)
+                  if not b:break
+                  p=root/('part-%02d.bin'%i);p.write_bytes(b)
+                  parts.append({'path':p.name,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()});i+=1
+          (root/'MANIFEST.json').write_text(json.dumps({'artifact_id':12082776958,'original_sha256':expected,'members':records,'parts':parts,'scope':'Lossless source transport only; no new scientific results'},indent=2)+'\n')
+          print('members',len(records),'parts',len(parts),'active zip bytes',(root/'active-source.zip').stat().st_size)
+          print('large excluded members',[(e['path'],e['bytes']) for e in records if not e['included_in_active_source']])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r113-active-source
+          path: |
+            delivery/active-source.zip
+            delivery/MANIFEST.json
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r113-preserved-part-00
+          path: delivery/part-00.bin
+          compression-level: 0
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r113-preserved-part-01
+          path: delivery/part-01.bin
+          compression-level: 0
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r113-preserved-part-02
+          path: delivery/part-02.bin
+          compression-level: 0
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r113-preserved-part-03
+          path: delivery/part-03.bin
+          compression-level: 0
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r113-preserved-part-04
+          path: delivery/part-04.bin
+          compression-level: 0
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r113-preserved-part-05
+          path: delivery/part-05.bin
+          compression-level: 0
+          retention-days: 30
