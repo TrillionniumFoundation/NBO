@@ -1,0 +1,31 @@
+name: NBO R114 exact missing source support
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r114-verified-bellman-revision-2026-10-16']
+    paths: ['.github/workflows/nbo-r114-small-source.yml']
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Recover four immutable source fragments
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p source-support110
+          python - <<'PY'
+          import os,json,urllib.request,base64,pathlib,hashlib
+          blobs=['89b6152119ba0dd3ec2633135be490b9768ebfa4','b9913f3c02923a99e3871be2a4fcb04e1522d844','57a2ea8dd5ee9fdf18719a2155a7af339459a318','19fd1b29c23f8d06166aa526047a96d2b6a3068f']
+          for i,sha in enumerate(blobs):
+              req=urllib.request.Request('https://api.github.com/repos/TrillionniumFoundation/NBO/git/blobs/'+sha,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN']})
+              with urllib.request.urlopen(req) as f:b=json.load(f)
+              d=base64.b64decode(b['content']);assert hashlib.sha1(b'blob '+str(len(d)).encode()+b'\0'+d).hexdigest()==sha
+              pathlib.Path('source-support110',f'part-{i:02d}.bin').write_bytes(d)
+          print('Recovered four exact R110 source fragments; no experiment executed.')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r114-missing-source-support
+          path: source-support110/
+          if-no-files-found: error
