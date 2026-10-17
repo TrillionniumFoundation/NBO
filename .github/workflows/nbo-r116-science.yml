@@ -1,0 +1,55 @@
+name: NBO R116 frozen regular-law execution
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r116-integrated-risk-resolution-2026-10-17']
+    paths: ['.github/workflows/nbo-r116-science.yml']
+permissions:
+  contents: read
+jobs:
+  science:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Restore actual immutable source without the large historical checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p work
+          python3 - <<'PY'
+          import os,json,urllib.request,base64,hashlib,io,zipfile,pathlib
+          ids=['1063e46cf7b02ebe097f4fc53a1bb982947bacd1','fb13f0ccc250019928cb8d454316890e291d6336','d2cd2ab16d5e9152977e46b0837e846865efb1aa','8f9403bdabc7941b4a856b82ae6d4463d9c03a05']
+          text=[]
+          for sha in ids:
+              req=urllib.request.Request('https://api.github.com/repos/TrillionniumFoundation/NBO/git/blobs/'+sha,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+              obj=json.load(urllib.request.urlopen(req,timeout=60));b=base64.b64decode(obj['content'])
+              assert hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()==sha
+              text.append(b.decode().strip())
+          data=base64.b64decode(''.join(text),validate=True)
+          assert hashlib.sha256(data).hexdigest()=='2c686b3e3be6d6d50e3cdfbc877d26b89564f709b8f6f76dfa230514090c2930'
+          pathlib.Path('work/frozen_source116.zip').write_bytes(data)
+          with zipfile.ZipFile(io.BytesIO(data)) as z:
+              f=json.loads(z.read('SOURCE_FREEZE116.json'))
+              assert set(z.namelist())==set(f['files'])|{'SOURCE_FREEZE116.json'}
+              for name in z.namelist():
+                  p=pathlib.PurePosixPath(name);assert not p.is_absolute() and '..' not in p.parts
+                  b=z.read(name)
+                  if name in f['files']:assert hashlib.sha256(b).hexdigest()==f['files'][name]
+                  p=pathlib.Path('work/source')/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b)
+          PY
+      - name: Exact preflight and complete declared catalogue
+        env:
+          NBO_SOURCE116: ${{ github.sha }}
+          OMP_NUM_THREADS: '1'
+          OPENBLAS_NUM_THREADS: '1'
+          MKL_NUM_THREADS: '1'
+        run: |
+          set -o pipefail
+          python3 work/source/code116/test116.py 2>&1 | tee work/preflight116.log
+          python3 work/source/code116/campaign116.py --out work/primary116 2>&1 | tee work/campaign116.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r116-source-and-regular-law-evidence
+          path: work/
+          retention-days: 30
+          if-no-files-found: error
