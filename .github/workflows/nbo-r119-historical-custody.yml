@@ -32,9 +32,8 @@ jobs:
     env:
       AUDIT_DIR: revisions/2026-10-18-r119/provenance/historical
       GH_TOKEN: ${{ github.token }}
-      GIT_NO_LAZY_FETCH: "1"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 1
           filter: blob:none
@@ -53,6 +52,7 @@ jobs:
         env:
           AUDIT_SCOPE: ${{ inputs.scope || 'all_missing' }}
           AUDIT_SHARD: ${{ matrix.shard }}
+          GIT_NO_LAZY_FETCH: "1"
         run: |
           case "$AUDIT_SCOPE" in
             identity) manifest="$AUDIT_DIR/HISTORICAL_stream_identity_priority.jsonl" ;;
@@ -67,7 +67,7 @@ jobs:
             --shard-count 16 --shard-index "$AUDIT_SHARD"
       - name: Preserve completed and failed audit evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: historical-${{ inputs.scope || 'all_missing' }}-${{ matrix.shard }}-${{ github.sha }}
           path: audit-output
@@ -78,3 +78,6 @@ jobs:
 # programs, or run experiments. A red job can mean a retained parse/transport gap;
 # it must not be relabeled a successful scientific CI. Parent integration chooses
 # and records immutable action revisions before actual dispatch if required.
+# The no-lazy-fetch audit guard applies after the explicitly requested sparse
+# checkout. Applying it to checkout prevented any audit from starting in the
+# first run; that failed run and its diagnostic log remain preserved.
