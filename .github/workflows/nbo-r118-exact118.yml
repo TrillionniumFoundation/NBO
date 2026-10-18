@@ -1,0 +1,50 @@
+name: NBO R118 exact minimax decision recovery
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r118-decision-information-author-revision-2026-10-17']
+    paths: ['.github/workflows/nbo-r118-exact118.yml']
+permissions:
+  contents: read
+jobs:
+  exact:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Recover immutable exact experiment source and validate bytes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import pathlib,hashlib,base64,json,urllib.request,os
+          root=pathlib.Path('source');root.mkdir()
+          base='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          def get(path):
+              req=urllib.request.Request(base+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'NBO-R118-exact'})
+              with urllib.request.urlopen(req,timeout=120) as f:return json.load(f)
+          tree=get('git/trees/5a4596e8b33800597638192728b1a6a1e75dee35?recursive=1')
+          if tree.get('truncated'):raise RuntimeError('Incomplete tree')
+          entries={e['path']:e for e in tree['tree'] if e['type']=='blob'}
+          for name in ('code118/recovery118.py','code118/audit118.py','SOURCE_FREEZE118.json','PROTOCOL118.md','BOUNDARY118.md'):
+              sha=entries[name]['sha'];data=base64.b64decode(get('git/blobs/'+sha)['content'])
+              if hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()!=sha:raise RuntimeError('Git identity')
+              p=root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
+          manifest=json.loads((root/'SOURCE_FREEZE118.json').read_text())
+          for name,h in manifest['files'].items():
+              if hashlib.sha256((root/name).read_bytes()).hexdigest()!=h:raise RuntimeError('Frozen source mismatch')
+          PY
+      - name: Execute all 792 prespecified cells and independent exact audit
+        run: |
+          set -o pipefail
+          cd source
+          python code118/recovery118.py --output exact118 --freeze-commit "$GITHUB_SHA" | tee EXECUTION118.log
+          python code118/audit118.py --output exact118 | tee AUDIT118.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r118-exact-recovery
+          path: source/
+          if-no-files-found: error
+          retention-days: 30
