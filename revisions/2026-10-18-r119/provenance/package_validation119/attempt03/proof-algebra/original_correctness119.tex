@@ -1,0 +1,227 @@
+\section{Corrections to the original formulation and the retained research programme}
+\label{dev:originalcorrection119}
+
+This section records mathematical corrections to the original author source
+\texttt{bf049e302e9ed38303084e8da16b13717b052a70}, identified in the
+12 major comments of the report dated 15 September 2026.  The original files,
+counterexamples, and subsequent numerical records remain in the immutable
+development history.  Preservation of an original statement is not an
+endorsement of its validity.  In particular, the original composite-loss
+optimality proposition, residual-based viscosity-selection assertion, and
+unverified equilibrium claims are not premises of any current theorem.
+The current Bellman construction, actor comparison, and continuous-risk
+certificates are stated and proved separately in the main text and supplement.
+The following corrections are elementary diagnostics, not new contributions
+or reruns of the original economic experiments.
+
+\subsection{The original scalar loss and the current computational graph}
+\label{dev:compositeloss119}
+
+The original loss was
+\[
+ L(\pi,V)=-\mathbb E H^\pi[V]
+       +\omega\mathbb E(-V_t-H^\pi[V])^2.
+\]
+Joint minimization does not force the second term to vanish.  For the
+one-action, no-state problem with terminal value one at date one and
+aggregator $f(v)=-v$, the correct solution is $V^*(t)=e^{t-1}$.
+With uniform sampling and $\omega=1$, put
+$V_\varepsilon(t)=V^*(t)-\varepsilon(1-t)$.
+The terminal value is unchanged, whereas
+\[
+ -V_\varepsilon'+V_\varepsilon=-\varepsilon(2-t),\qquad
+ L(V_\varepsilon)-L(V^*)
+       =-\frac{\varepsilon}{2}+\frac{7\varepsilon^2}{3}.
+\]
+This difference is strictly negative for $0<\varepsilon<3/14$ and equals
+$-3/112$ at $\varepsilon=3/28$.  Thus the claimed local, and hence global,
+optimality assertion was false even with exact terminal data.  In the
+stationary scalar case the same issue is the identity
+\[
+ -H+\omega H^2
+   =\omega\left(H-\frac{1}{2\omega}\right)^2
+      -\frac{1}{4\omega}.
+\]
+Its minimizer is not the Bellman root.
+
+The current actor is proposed from a specified fitted continuation and
+accepted only using the original objective and the stated independent
+certificate.  The current critic fitting criterion has its own parameter
+block.  Neither computation is justified by the false joint-loss proposition.
+The supplement's computational-graph subsection following
+Proposition~\ref{prop:investmentfoundations119} gives the full chain rule for
+the criterion $\tfrac12\mathbb E r^2$, including generator and shared-parameter
+channels, and states exactly when a detached continuation changes that
+derivative.  A zero target or an automatic-differentiation implementation does
+not prove optimizer stability, two-timescale convergence, or a utility
+gradient under an arbitrary state-sampling law.
+
+\subsection{Boundary data and viscosity selection}
+\label{dev:viscosity119}
+
+Zero interior residual does not choose terminal or lateral data: with zero
+flow and dynamics, every constant has zero interior residual, while terminal
+payoff zero selects only the zero constant.  Proposition~\ref{prop:finitefoundations119}
+specifies the terminal function, admissibility, continuous Bellman class,
+measurability, and policy recursion actually used in the current finite-horizon
+model.  Proposition~\ref{prop:stoppedbsde119} specifies the separate Brownian
+boundary/terminal discrepancy under stopping.  An infinite-horizon claim
+additionally requires the stated function class and contraction or
+transversality hypotheses; it does not follow from a finite-horizon argument.
+
+Even exact boundary data and vanishing population squared residual do not
+give a general viscosity-selection theorem.  For the deterministic exit
+problem with speed in $[-1,1]$ and payoff minus elapsed time, the equation is
+$1-|V'|=0$ on $(-1,1)$ with zero boundary values.  Its value is
+$V^*(x)=|x|-1$.  The smooth functions
+\[
+ W_\varepsilon(x)=\sqrt{1+\varepsilon^2}
+                      -\sqrt{x^2+\varepsilon^2}
+\]
+have the same boundary values and satisfy
+\[
+ \mathbb E\{1-|W_\varepsilon'|\}^2
+ =2-2\sqrt{1+\varepsilon^2}+2\varepsilon
+       -\varepsilon\arctan(1/\varepsilon)\longrightarrow0.
+\]
+Nevertheless, their uniform limit is $W(x)=1-|x|$.  The test function
+$\varphi(x)=1$ touches $W$ from above at zero and gives
+$1-|\varphi'(0)|=1>0$, violating the viscosity subsolution inequality.
+The displayed integral follows by expanding the square on $[0,1]$ and
+integrating $x/\sqrt{x^2+\varepsilon^2}$ and
+$\varepsilon^2/(x^2+\varepsilon^2)$ separately.
+
+The current results therefore do not identify spectral bias or fixed-network
+training with vanishing viscosity.  Uniform action comparisons and coverage
+allowances are explicit inputs to the current certificates.  A theorem on
+approximating a smooth target and its derivatives does not approximate
+nonexistent classical derivatives at a kink, prove optimization of a fixed
+architecture, or provide a PDE comparison principle.
+
+\subsection{Analytical portfolio and recursive-utility diagnostics}
+\label{dev:mertonez119}
+
+Under the original unconstrained Merton parameters
+$(\mu,r,\gamma,\sigma,\rho)=(0.08,0.02,2,0.2,0.04)$, the formal stationary
+CRRA benchmark is
+\[
+ \pi^*=\frac{\mu-r}{\gamma\sigma^2}=\frac34,\qquad
+ m=\frac{\rho+(\gamma-1)
+       [r+(\mu-r)^2/(2\gamma\sigma^2)]}{\gamma}
+       =\frac{33}{800}.
+\]
+With $\mu=0.01$ the unconstrained allocation is $-1/8$ and its no-short-sale
+projection is zero at every positive wealth level.  These values replace the
+incorrect analytical numbers in the original table.  A finite horizon needs
+its own terminal/bequest specification and generally does not have this
+constant consumption ratio.  A control bound gives action-space optimality
+conditions; it does not by itself create a wealth threshold, a value-gradient
+jump, or an obstacle variational inequality.  The old constant-parameter
+example consequently does not validate a switching-boundary claim.
+
+For Epstein--Zin notation set $a=1-1/\psi$, $b=1-\gamma$, and $Y=bV>0$.
+The originally printed aggregator was
+\[
+ f_{\rm old}(c,V)=\frac{\rho b}{a}c^aY^{1-a/b}-\rho V,
+ \qquad (f_{\rm old})_c=\rho b c^{a-1}Y^{1-a/b}.
+\]
+It has negative consumption derivative when $b<0$, including the reported
+$\gamma=5$ regime.  Under the conventional difference-form normalization,
+the corrected expression is
+\[
+ f(c,V)=\frac{\rho}{a}
+       \{c^a(bV)^{1-a/b}-bV\},\qquad
+ f_c=\rho c^{a-1}(bV)^{1-a/b}>0
+\]
+for $c>0$ and $bV>0$.  The choice of normalization and its domain are part
+of the model.  With the original return parameters, $\gamma=5$,
+$\psi=3/2$, and $\rho=1/25$, formal stationary substitution gives
+\[
+ \pi=\frac3{10},\qquad
+ m=\psi\rho+(1-\psi)
+       \left[r+\frac{(\mu-r)^2}{2\gamma\sigma^2}\right]
+       =\frac{91}{2000}.
+\]
+These algebraic identities are not an infinite-horizon existence or
+verification theorem.  They do not establish integrability, admissibility,
+selection of a recursive-utility solution, or preservation of the fractional
+power domain by an arbitrary network.  The current bounded Lipschitz BSDE
+bridge does not assert those properties for the singular Epstein--Zin
+specification.  Current monetary-risk Bellman recursions and general nonlinear
+recursive utility retain their different hypotheses and objectives.
+
+\subsection{The expected stochastic-Hessian objective}
+\label{dev:traceobjective119}
+
+If $\widehat q$ is conditionally unbiased for the diffusion trace $q$, then
+\[
+ \mathbb E[(a-\widehat q/2)^2\mid a,q]
+       =(a-q/2)^2+\tfrac14\operatorname{Var}(\widehat q\mid a,q).
+\]
+The conditioning here fixes the network, state, and all non-probe
+quantities.  The variance usually depends on the network derivatives.
+For one standard Gaussian probe with $\widehat q=hZ^2$ and $a=1$, Gaussian
+second and fourth moments give $1-h+3h^2/4$, minimized at $h=2/3$, whereas
+the true square is minimized at $h=2$.  Two conditionally independent probe
+banks give the unbiased product
+$\mathbb E[(a-\widehat q_1/2)(a-\widehat q_2/2)]=(a-q/2)^2$.
+The individual product can be negative and its variance remains a numerical
+cost.  For covariance $\sigma\sigma^\top$, a symmetric matrix actually
+probed is $\sigma^\top D^2V\sigma$; for a nonsymmetric representation, the
+quadratic form uses its symmetric part.  Unbiasedness of an unweighted trace
+does not validate a diffusion-weighted implementation or a squared loss.
+No current theorem concludes feasibility failure from trace noise when the
+executed actor is hard-mapped into the feasible box.
+
+\subsection{Preference control, temporal selves, and strategic deviations}
+\label{dev:extensions119}
+
+For the original additive preference diffusion
+$U_t=u_0+\int_0^t\theta_s\,ds+\sigma W_t$, with $\sigma>0$ and
+$|\theta_s|\le M$, one has $U_t\le u_0+Mt+\sigma W_t$.
+Thus $\mathbb P(U_t<0)>0$ for every $t>0$ by the nonzero Gaussian lower
+tail.  Bounded controls do not make the declared positive state invariant.
+Moreover,
+\[
+ \partial_u\frac{c^{1-u}}{1-u}
+   =\frac{c^{1-u}\{1-(1-u)\log c\}}{(1-u)^2}>0
+       \quad(c>1,\ u>1).
+\]
+This calculation refutes the original sign argument; it does not determine
+the derivative of the endogenous value.  Subtracting a term that varies
+with a controlled preference state changes its rewards.  A boundary rule,
+cardinal normalization, consumption units, and an observation model are
+therefore indispensable to that research application.  Neither its FOC nor
+a policy plot proves a comparative-static sign or econometric identification.
+The original investment experiment in the main text does not replace the
+independent two-dimensional validation still needed for this preference
+model.
+
+The original temporal-self Hamiltonian $\beta u(c)+V_x(r x-c)$ has local
+FOC $\beta c^{-\gamma}=V_x$; for $\beta>0$, $\gamma>0$, and fixed $V_x>0$,
+its solution $c=(\beta/V_x)^{1/\gamma}$ decreases with a lower $\beta$.
+For comparison only, a specified one-step present-bias
+objective $u(c)+\beta\delta V_{t+1}(F(x,c))$ instead has derivative
+$u'(c)+\beta\delta V_{t+1}'(F)F_c$.  Neither algebra is a derivation of a
+continuous-time sophisticated equilibrium.  A deviation must include its
+effect on the state and continuation.  The original separate supplement's
+$\sup_c\{u(c)-u(c^*)\}$ with all dynamics frozen fails that requirement.
+The retained nonlinear-deviation result is explicitly conditional on the
+specified recursive game and deviation class; slow target-network updates
+alone do not establish subgame perfection.
+
+For the Cournot diagnostic $u_i=q_i(1-q_i-q_j)$, the unilateral FOC is
+$1-2q_i-q_j=0$ and the symmetric Nash choice is $q_i=1/3$.
+Joint profit maximization permits $q_i=1/4$, where the unilateral derivative
+is $1/4>0$.  Cross-player derivatives in a global scalar loss therefore
+cannot be called unilateral best responses.  Exact evaluation of a policy
+profile is also insufficient: exploitability requires a distinct best-response
+comparison.  Finite-action certificates retain their finite action set;
+continuous-game, equilibrium-existence, and large-market limits require
+their own approximation, deviation, and market-scaling arguments.
+
+Finally, the original plotting placeholders remain historical illustrations,
+not observations or executed comparison runs.  New source hashes, protocols,
+raw results, independent checks, and failures are identified by their own
+execution episode.  None of the calculations in this section regenerates the
+original portfolio, preference-control, temporal-self, or game experiment.

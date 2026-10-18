@@ -1,0 +1,246 @@
+## 2. What R10 successfully accomplishes
+
+The recommendation below should be read together with the following substantial positive findings.
+
+## 3. Blocking concerns
+
+### B1. The strongest guarantee is not a guarantee created by NBO training
+
+The new theorem is exact for the common schedule `m_0`. It then transfers that guarantee to **every** policy satisfying
+
+`|m_i(t,Y) - m_0(t)| <= epsilon`.
+
+The transfer bound does not depend on:
+
+- the trained actor weights;
+- the critic weights;
+- the actor objective;
+- the critic residual;
+- the sampled action gap;
+- the training data;
+- the number of updates; or
+- whether training improves the policy at all.
+
+Consequently, a zero-output actor at initialization, a random bounded actor, and the reported trained actor receive the same uniform policy bound. The theorem certifies the architecture, not the learned solution.
+
+This is not a flaw in the theorem. It is a mismatch between the strongest mathematical result and the paper's methodological identity. A numerical-method paper should show that its computation materially tightens the policy guarantee or solves a problem that the structural comparator does not already solve. Here the schedule has bound `G_d`, while the neural tube has the strictly looser bound `G_d + D_{d,epsilon}`.
+
+The authors should either:
+
+1. recast the contribution as a schedule-centred safe-policy construction, with the neural actor as an optional empirical perturbation; or
+2. derive a policy-specific post-training certificate that becomes tighter when the learned actor is better.
+
+At present, “trained NBO policy with a continuous-time guarantee” is formally true but does not identify what training contributed to the guarantee.
+
+### B2. The actor does not demonstrate a robust economic advantage over the schedule
+
+The schedule is the correct primary comparator because it is the source of the theorem. The reported actor-minus-schedule paired payoff differences are:
+
+| Dimension | Actor minus schedule |
+|---:|---:|
+| 10 | `+0.0012992444` |
+| 20 | `-0.0019539370` |
+| 50 | `-0.0006473220` |
+
+The actor therefore improves on the schedule only at dimension 10 and underperforms it at dimensions 20 and 50 in the reported finest Euler comparison.
+
+The independent calculation also shows that, at zero initial dispersion:
+
+| Dimension | Anchor bound | Tube bound | Tube / anchor |
+|---:|---:|---:|---:|
+| 10 | `0.0186812` | `0.0573234` | `3.07` |
+| 20 | `0.0254348` | `0.0671055` | `2.64` |
+| 50 | `0.0274416` | `0.0699324` | `2.55` |
+
+At dimension 10, the only dimension with a positive measured actor gain, that gain is about 3.4% of the additional tube allowance. In dimensions 20 and 50 the actor pays the looser theorem bound without a measured payoff gain over the schedule.
+
+The cost comparison points in the same direction:
+
+| Dimension | Actor / schedule total-cost ratio | Actor / schedule deployment ratio |
+|---:|---:|---:|
+| 10 | `47.8` | `32.1` |
+| 20 | `49.7` | `30.4` |
+| 50 | `49.5` | `34.1` |
+
+These ratios are not themselves a reason to reject a neural method; a more expensive policy can be valuable if it produces sufficiently better decisions. The present study does not show that tradeoff. In two of the three dimensions, the schedule has the tighter guarantee, lower measured cost, faster deployment, and higher reported paired payoff.
+
+For reconsideration, the paper needs a problem or parameter region in which state-dependent learning produces a material, reproducible, and preferably certified improvement over the schedule. The improvement should survive additional seeds and a controlled time-discretization study.
+
+### B3. The direct baselines do not isolate the source of the actor's apparent advantage
+
+The actor outperforms the direct-tube and direct-full policies in the paired Euler comparisons, especially in dimensions 20 and 50. However, the direct methods greedify a learned critic after exactly the same fixed number of critic updates. They are not tuned to matched policy accuracy, matched wall time, matched value error, or a common stopping criterion.
+
+The result is particularly revealing for direct-full. Its sampled action gap is essentially zero by construction, yet its realized paired payoff becomes dramatically worse as dimension rises. This means that exact maximization of the **learned critic's** Hamiltonian can amplify critic derivative error. The experiment is informative about instability, but it does not by itself establish that an actor is the superior numerical method. The actor is heavily regularized by the analytical tube; direct-full is not.
+
+A contribution-isolating comparison should include at least:
+
+- a tuned direct-full method with validation-based early stopping;
+- a tuned direct-tube method;
+- the schedule plus a low-dimensional or linear state-dependent correction;
+- direct policy optimization on the same simulator where feasible;
+- a strong classical or projection-based approximation exploiting the model structure; and
+- accuracy-versus-cost frontiers rather than one fixed-update point.
+
+The methods should be compared at a declared economic error target, not only after 600 updates. Otherwise the experiment mixes representation, regularization, critic quality, and optimization budget.
+
+### B4. The certificate cannot distinguish a successful actor from an unsuccessful actor inside the tube
+
+The structural bound is deliberately independent of sampled residuals. That avoids an unjustified extrapolation from a validation set. It also means that the theorem assigns the same bound to policies with very different economic quality.
+
+The post-training diagnostics use only 128 held-out states. They are correctly labelled diagnostics, but they do not tighten the theorem. As a result:
+
+- the certificate cannot rank the three actor seeds;
+- it cannot explain why the actor beats direct-tube while losing to the schedule in two dimensions;
+- it cannot detect a poor actor that remains feasible; and
+- it cannot quantify the economic value added by training.
+
+A publishable next step would be a genuinely policy-specific certificate. Possible routes include a verified tighter output range around the schedule, a decomposition that uses certified sign or monotonicity information from the actor, a rigorous occupation-weighted improvement bound supplemented by global safeguards, or a validated residual/action-gap calculation on a problem class where such bounds are tractable.
+
+The current uniform tube result is useful as a safety envelope, but it is not yet a certificate of neural solution quality.
+
+### B5. The statistical and numerical evidence for learned improvement remains too thin
+
+The protocol uses three fixed seeds and was pinned after local development. The main paired intervals average the three fitted actors within each Brownian path and then compute uncertainty across 512 paths. Therefore the intervals describe Monte Carlo variation conditional on those three trained objects. They do not measure algorithmic variability across training seeds.
+
+The authors disclose this limitation. It nevertheless matters because the main unresolved question is whether training reliably improves the schedule.
+
+In addition:
+
+- the paired comparisons retain unknown Euler bias;
+- there is no multiplicity-adjusted discovery claim;
+- training states lie in a bounded box, while the theorem covers all state means through the tube restriction;
+- actor behavior under substantial out-of-training-distribution dispersion is not evaluated as learned behavior, even though feasibility remains guaranteed; and
+- the protocol contains only one width, depth, learning-rate pair, update budget, and tube radius for the fitted comparison.
+
+A stronger study should report:
+
+1. materially more independent training seeds;
+2. seed-level paired payoff contrasts in the main paper;
+3. a convergence study for policy **differences**, not only individual Euler payoffs;
+4. sensitivity to actor radius, architecture, and update budget;
+5. out-of-training-domain state tests and clipping/saturation frequencies; and
+6. a held-out protocol fixed before the final comparison.
+
+### B6. The new theorem is substantially narrower than the paper's general numerical claims
+
+The continuous-time theorem relies on a special conjunction of assumptions:
+
+- logarithmic flow utility;
+- additive Brownian noise;
+- a bounded one-Lipschitz production nonlinearity;
+- a common analytical schedule;
+- a quadratic penalty in mean consumption;
+- a short finite horizon; and
+- an explicit dispersion penalty that admits synchronous comparison.
+
+This is a legitimate model-specific theorem. It is not a general result for recursive utility, endogenous preference formation, stopping, strategic interaction, or generic HJB actor–critic methods.
+
+The paper continues to span recursive utility, viscosity selection, endogenous preferences, temporal selves, dynamic games, stochastic Hessian objectives, interval action covers, nested-grid guards, and the capital theorem. The main article is 74 pages and the supplement 44 pages. Several inherited applications still have narrower scopes than their surrounding discussion—for example, the preference calculation remains nodal with unresolved continuous-state/time/stopping transfer, and the game results remain finite-game deviation calculations.
+
+The breadth now obscures the strongest contribution. A substantially better paper would focus on one of two paths:
+
+- **Capital-policy paper:** develop the curvature/spectral theorem, safe policy class, policy-specific tightening, and a serious economic application; or
+- **General numerical-method paper:** state a common class of problems, prove a method-level result, and demonstrate actor-specific gains across several nontrivial problems with strong baselines.
+
+The current manuscript tries to retain both paths and does not reach Econometrica depth on either.
+
+### B7. The economic application remains too stylized to carry the paper by itself
+
+The dense capital economy is useful as a controlled numerical benchmark. It is not yet connected to a substantive quantitative economic question, calibration, data moment, policy counterfactual, or decision that would make the 6–9% externally financed compensation bounds economically compelling.
+
+The authors correctly define the compensation experiment and avoid calling it self-financing. But a top economics journal needs either:
+
+- a method of broad and demonstrated numerical importance; or
+- an economic application whose substantive conclusions depend on the method.
+
+R10 does not yet deliver either at the required level. The theorem is interesting, but the learned actor does not alter an economic conclusion relative to the schedule.
+
+## 4. Major comments
+
+### M1. Reframe the title and abstract around the result actually established
+
+“Neural Bellman Operators” suggests a general method whose Bellman computation is central to the guarantee. The strongest R10 result instead certifies an analytical schedule and every bounded perturbation around it. The abstract should not merely say that a neural actor “inherits” a bound; it should state prominently that:
+
+- the guarantee holds before training;
+- the schedule has the tighter bound;
+- the actor's measured gain over the schedule is not robust across dimensions; and
+- the theorem is specific to the capital model.
+
+A narrower title would improve scientific precision.
+
+### M2. Separate safety, solution accuracy, and method superiority
+
+The paper currently has three different achievements:
+
+1. **Safety/performance envelope:** every policy in the tube is within a computable distance of the continuous optimum.
+2. **Neural approximation:** an actor and critic can be trained and deployed in dimensions up to 50.
+3. **Comparative performance:** the trained actor may differ from the schedule and direct policies in Euler simulations.
+
+These should be reported as separate claims throughout. The first does not establish the second's accuracy, and the third does not tighten the first.
+
+### M3. Report the schedule's economic conversion alongside the tube conversion
+
+The main table converts only the tube bound to an externally financed flow supplement. Since the schedule is the stronger benchmark, its compensation percentage should be printed in the same table. This would make the cost of allowing a generic neural perturbation economically transparent.
+
+### M4. Show the radius–performance–guarantee frontier
+
+The evidence includes radii 0, 0.05, and 0.10, but the main fitted comparison uses only 0.10. The natural design question is how much measured state-dependent gain is purchased by a larger radius and how quickly the certified bound deteriorates. This frontier is more informative than a single radius.
+
+### M5. Diagnose direct-full failure rather than present it mainly as a comparator row
+
+At dimensions 20 and 50, direct-full is much worse in the paired payoff despite exact greedy action selection relative to its critic. This is a central numerical phenomenon. The paper should analyze:
+
+- critic gradient bias and variance;
+- action saturation;
+- sensitivity to update count and learning rate;
+- whether validation residual or policy payoff identifies the bad critic; and
+- whether conservative/regularized improvement repairs the failure.
+
+Without this analysis, the large actor-versus-direct-full difference is not evidence of actor quality; it may primarily be evidence of unstable greedification.
+
+### M6. Strengthen positioning relative to approximate policy iteration
+
+The distinction between approximate evaluation, approximate improvement, and policy loss has a substantial literature. The paper should position its contribution against classical approximate policy iteration performance bounds, conservative policy improvement, Bellman-residual methods, and known pathologies of approximate greedification.
+
+The novel claim should be stated narrowly: a computable, model-specific continuous-time performance envelope based on economic curvature and a verified coupling norm, coupled to an implementable tube-constrained neural policy. General comparison, policy iteration, and error propagation principles should not be presented as novel.
+
+### M7. Clarify the role of the critic in the actor experiment
+
+The actor objective uses critic derivatives, but the continuous theorem ignores the critic. The paper should report whether actor performance correlates with:
+
+- critic residual RMS;
+- sampled full-action gap;
+- terminal error;
+- critic derivative stability; or
+- paired payoff.
+
+If no reliable relationship exists, that is an important numerical result and should shape the method claim.
+
+### M8. Expand state-distribution stress tests
+
+Training draws each log-capital coordinate from `[-1.5, 0.5]`. The deployed feedback is globally feasible because the actor output is guarded, but the learned state dependence outside this box is not validated. The supplement should include controlled stress distributions with shifted means, larger dispersion, and long tails, reporting actor saturation and actor-versus-schedule performance.
+
+### M9. Keep the conditional arithmetic claim precise
+
+The manuscript is appropriately cautious that the interval result is conditional on the documented binary64 arithmetic contract and is not a machine-formal proof. That wording should remain. In addition, the exact relationship among:
+
+- source coefficients interpreted as exact reals;
+- compiled floating-point operations;
+- the inherited interval kernel; and
+- the Python/NumPy runtime
+
+should be summarized in one place for readers who do not inspect the code.
+
+### M10. Reduce the main-paper length substantially
+
+The main paper should not carry every historical repair and every application at equal prominence. A focused main paper should contain:
+
+- the target economic problem;
+- the method;
+- the principal theorem;
+- the strongest empirical comparison;
+- the economic conclusion; and
+- a concise limitations section.
+
+Historical counterexamples, prior-revision diagnostics, extended application sketches, full provenance ledgers, and secondary algebraic laboratories belong in the supplement or repository.
+

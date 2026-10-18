@@ -1,0 +1,171 @@
+## 2. What R11 successfully resolves
+
+## 3. Blocking concerns
+
+### B1. The new certificate validates a policy, not the NBO numerical method
+
+The policy-specific theorem is an important verification result, but it is deliberately agnostic about how the candidate was obtained. It applies to NBO, direct policy optimization, an affine actor, a hand-designed correction, or any other admissible sampled controller for which the paired statistic is generated.
+
+That generality is mathematically attractive. It also means that the theorem does not establish the value of Bellman evaluation, the critic, or the NBO actor update.
+
+This distinction is decisive in the reported data:
+
+| Dimension | NBO mean gain | Direct-policy mean gain | Difference |
+|---:|---:|---:|---:|
+| 10 | 0.0019626 | 0.0018863 | 0.0000763 |
+| 20 | 0.0015822 | 0.0014980 | 0.0000843 |
+| 50 | 0.0017520 | 0.0016455 | 0.0001065 |
+
+Both methods meet the declared \(L_\phi\geq 0.0005\) target in all ten seeds and both are independently certified against the schedule. Direct policy uses no critic and is cheaper to train. The central theorem therefore supports the verification layer, not the claimed superiority or necessity of NBO.
+
+A publishable numerical-method paper must isolate what is gained by Bellman evaluation and costate regression. At present the strongest defensible statement is that NBO is one successful candidate generator among at least two successful nonlinear candidate generators.
+
+### B2. The paper does not certify the small NBO advantage over direct policy
+
+The final noise bank is shared across policies in a dimension, so the repository is well positioned to form a high-precision paired comparison between NBO and direct policy. Yet the reported theorem and tables certify each policy only relative to the schedule. They do not report a simultaneous lower bound for
+
+\[
+J(a^{\mathrm{NBO}})-J(a^{\mathrm{DPO}}).
+\]
+
+The difference between two separately positive schedule-relative lower endpoints is not a lower bound on the difference between the methods. Nor do the descriptive across-seed standard deviations supply inferential uncertainty for a new training run.
+
+This omission matters because the incremental method difference is small. NBO’s mean gain exceeds direct policy by only 4.0%, 5.6%, and 6.5% of the direct-policy gain, while its median recorded training time is higher by approximately 46.7%, 42.1%, and 36.5%. Its verification time is also higher by approximately 20.4%, 14.3%, and 6.3%. Deployment times are essentially identical.
+
+The paper should include a predeclared, family-adjusted, paired NBO-minus-direct-policy analysis at matched compute and accuracy. It should also report whether the difference persists across independent training replications, not merely whether each method beats the schedule.
+
+Without this comparison, the paper establishes that state-dependent nonlinear policies are useful in this example, not that NBO is the numerical reason.
+
+### B3. The certificate proves only a small tightening of a still-loose optimality bound
+
+The inherited schedule bound \(G_d\) is approximately 0.01875, 0.02553, and 0.02754. The least favorable primary NBO lower endpoints are approximately 0.001183, 0.000716, and 0.000868. Thus training reduces the certified regret upper bound by only about:
+
+- 6.3% of the anchor bound in dimension 10;
+- 2.8% in dimension 20; and
+- 3.2% in dimension 50.
+
+The final regret upper endpoints remain 0.01756, 0.02481, and 0.02667. These are not small relative to the certified gain. The numerical experiment therefore does not show that NBO has computed a near-optimal policy. It shows that the policy is slightly better than the schedule and inherits a broad global comparison through the schedule.
+
+This is a legitimate safe-improvement result, but it should not be presented as an accurate numerical solution of the underlying HJB problem. A stronger paper needs either:
+
+1. a substantially tighter lower or upper benchmark for the optimum;
+2. an independent high-accuracy reference in a smaller but nontrivial instance;
+3. a policy-specific bound that closes a meaningful fraction of \(G_d\); or
+4. an economic question for which the certified schedule improvement itself is substantively important.
+
+### B4. The primary result is local to one initial state and is not robust across the reported state stresses
+
+The primary theorem is correctly stated pointwise, and the main experiment uses \(y=0\). The stress table, however, shows that the positive certificate often disappears outside the training region.
+
+For seed 11:
+
+- with mean \(-2\), every reported dimension has a negative lower endpoint;
+- with mean \(+2\), the mean gain is negative in dimensions 10 and 20 and approximately zero in dimension 50;
+- with standard deviation 1, the lower endpoint is negative in dimensions 10 and 20 and only \(1.3\times10^{-5}\) in dimension 50;
+- with the mean \(-1\), standard deviation 1.5, and Student-\(t\) profiles, the lower endpoints are negative;
+- the internal trajectory is outside the training box essentially all the time in many of these tests.
+
+These results do not invalidate the pointwise theorem. They do show that the central economic conclusion is fragile with respect to the initial state. A top-journal computational application needs an economically motivated initial-state distribution or region, not one favorable point accompanied by mostly inconclusive stress certificates.
+
+The next study should predefine an economically relevant state population and either verify integrated performance over that population or establish a uniform result on a meaningful region. Negative and inconclusive stress outcomes should be central rather than supplementary.
+
+### B5. The innovation-observation assumption changes the economic implementation problem
+
+The new controller observes Brownian innovations at the grid dates and updates an internal state using those innovations. This assumption is what permits the same actions to cancel in the economic/internal-state comparison and avoids a global Lipschitz bound for the neural actor.
+
+Mathematically, this produces an admissible policy in the enlarged filtration used by the model. Economically and computationally, however, it is not the standard state-feedback implementation suggested by much of the paper. In many applications, Brownian shocks are latent and must be inferred from noisy or discrete observations of the state. Even with continuously observed state and known coefficients, recovering innovations requires a specific observation and measurement convention.
+
+The manuscript labels the assumption, but it does not justify it for the capital application or compare it with a state-observed implementation. The claimed numerical contribution therefore depends on an information structure that may be materially stronger than the economic problem of interest.
+
+A future paper should state an observation model and either:
+
+- implement a state-only sampled feedback rule with its own transfer account;
+- show how the innovations are recovered from admissible observations; or
+- recast the application explicitly as shock-observed control and explain its economic relevance.
+
+### B6. The manuscript remains too broad and the application too stylized for the contribution established
+
+R11 reorganizes the material, but the paper remains titled “Neural Bellman Operators,” spans recursive utility, endogenous preferences, viscosity selection, temporal selves, dynamic games, stochastic traces, interval action covers, and the capital study, and is accompanied by a 105-page supplement. The new theorem applies only to the additive-noise capital model and the specified sampled controller.
+
+At the same time, the capital economy is not calibrated to data, does not answer a substantive policy or quantitative-economic question, and yields small certified gains. The least favorable NBO lower endpoints correspond to externally financed flow-equivalent changes of about 0.121%, 0.073%, and 0.089%. These are valid numerical quantities, but the paper does not explain why differences of this size in this stylized economy change an economic conclusion.
+
+Econometrica can publish a broadly useful numerical method or a narrower method that unlocks an important economic result. R11 currently delivers neither at the required depth:
+
+- the verification theorem is narrow and method-agnostic;
+- NBO’s advantage over direct optimization is not certified;
+- the application is stylized and pointwise; and
+- the manuscript continues to carry a much broader research program than the central result supports.
+
+The appropriate remedy is a genuinely focused new paper, not another layer of revision around the current cumulative manuscript.
+
+## 4. Major comments
+
+### M1. Rename “Mean gain” as the mean paired numerical statistic
+
+The table’s “Mean gain” is the sample mean of \(X_{\phi,h}\), before subtracting the full transfer, clipping, quadrature, and arithmetic allowance. The rigorous continuous-time statement is the lower endpoint \(L_\phi\), not the raw sample mean.
+
+For the representative dimension-10 seed-11 NBO policy, the recorded mean is approximately 0.001961, while the empirical Bernstein margin is approximately 0.000366 and the aggregate deterministic bias allowance is approximately 0.000409. The label “Mean gain” risks suggesting a direct estimate of the continuous-time gain. “Mean paired statistic” or “pre-adjustment paired estimate” would be more accurate.
+
+### M2. Report direct paired method comparisons
+
+Because common shocks are already reused, the paper should report pathwise NBO-minus-direct-policy and NBO-minus-affine differences, with the transfer terms appropriate to those differences and with family allocation fixed in advance. This is the most relevant numerical comparison and will often have much lower variance than comparing two separate schedule-relative intervals.
+
+### M3. Match methods by economic accuracy and total work
+
+The primary design equalizes simulator-state visits but not optimizer steps or total work. NBO performs five critic and five actor steps per batch; direct policy performs one direct gradient step. Longer direct-policy runs are reported, but the main comparison is still organized around a common iteration count and a post hoc cost table.
+
+A method paper should present Pareto frontiers in total CPU/GPU time, simulation calls, peak memory, and certified economic error. The seed-11 checkpoint table uses fewer final paths and therefore has negative lower endpoints for every row; it is useful diagnostically but does not yet provide a certified cost–accuracy frontier.
+
+### M4. Clarify the role of the critic through ablation
+
+The descriptive correlation between the costate-target discrepancy and payoff is weak in dimensions 10 and 50 and strong only in dimension 20. The current evidence does not establish that the critic loss is a useful stopping or model-selection statistic.
+
+Useful ablations would include:
+
+- actor training with exact or higher-accuracy rollout costates where feasible;
+- the same actor update using Monte Carlo policy gradients without a critic;
+- varying the value-versus-costate weight in the critic loss;
+- one, five, and more critic/actor updates per batch;
+- removing the value-level term;
+- an oracle small-dimensional reference for critic derivatives; and
+- reporting whether critic diagnostics predict the independently certified policy gain.
+
+### M5. Treat training-seed variation as a design object, not only a descriptive table
+
+Ten seeds are a major improvement. They are nevertheless ten fixed seeds after exploratory development, and the final evidence supplies no population model for optimizer randomness. The exceptionally small across-seed standard deviations are encouraging but do not alone establish robustness to broader initialization, minibatch, architecture, or hyperparameter variation.
+
+A future contribution-isolating study should prespecify a seed population, report method-level uncertainty across independent fits, and separate hyperparameter selection from final method comparison.
+
+### M6. Run one clean end-to-end workflow from the final source snapshot
+
+The nine initial-state stress evaluations failed before simulation because an integer-valued JSON mean produced an integer NumPy array. The authors transparently converted the numerically identical initial-state values to floating point, reran only those nine evaluations, and report no policy refit or seed replacement. This repair is benign in substance.
+
+For archival clarity, however, a final paper should also provide one clean workflow that starts from the exact published source commit and regenerates all primary, stress, audit, and compilation artifacts without a recovery layer or source-manifest exceptions. The current split among numerical-source, source, evidence, referee, and delivery commits is carefully documented but unnecessarily difficult for an outside reader to audit.
+
+### M7. Retrain the radius frontier
+
+The radius 0.05 and 0.15 rows rescale a frozen correction rather than training policies for those radii. This is useful for studying the verified envelope, but it does not answer how the learning algorithm trades policy flexibility against trainability and certification. The radius frontier should include fresh fits at every radius with matched tuning and cost.
+
+### M8. Put the state-stress failures in the main paper
+
+The primary table presents uniformly positive results, while most large state shifts and dispersions have negative lower endpoints. Those results are not secondary robustness details. They define the domain in which the learned state dependence is useful. At least one compact stress table and a clear statement of the failure region belong in the main article.
+
+### M9. Update the repository’s public-facing root README
+
+At the pinned R11 evidence commit, the root `README.md` still describes the September 28 revision, 29 experiments, and eight tests. It does not identify R11, the source/evidence commits, the 90 primary policies, the policy-specific theorem, or the current reproduction commands. The detailed R11 README exists under the revision directory, but the repository landing page is stale and can mislead readers about the authoritative version.
+
+### M10. Narrow the title, abstract, and literature claim
+
+The abstract is more careful than before, but the title and retained application program still imply a general neural Bellman methodology. The most defensible new contribution is narrower: policy-specific statistical verification for a shock-observed sampled controller in one dense capital economy, with NBO as one candidate-generation method.
+
+The paper should be positioned explicitly against:
+
+- simulation-based policy evaluation and direct policy optimization;
+- conservative and safe policy improvement;
+- approximate policy iteration with error propagation;
+- probabilistic numerical certificates;
+- a posteriori control-performance bounds; and
+- sample-average optimization under common random numbers.
+
+The novel object should be stated precisely: the model-specific continuous-time transfer and finite-family post-training certificate, not the general principle of alternating evaluation and improvement.
+
