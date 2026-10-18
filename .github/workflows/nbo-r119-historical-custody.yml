@@ -1,0 +1,80 @@
+name: R119 historical custody stream
+
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r119-active-tail-author-revision-2026-10-18
+    paths:
+      - .github/workflows/nbo-r119-historical-custody.yml
+      - revisions/2026-10-18-r119/provenance/historical/HISTORICAL_stream_audit.py
+      - revisions/2026-10-18-r119/provenance/historical/HISTORICAL_stream_all_missing.jsonl.gz
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: Immutable missing-object scope (no historical experiments)
+        required: true
+        type: choice
+        default: missing_json
+        options: [identity, missing_json, all_missing]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    env:
+      AUDIT_DIR: revisions/2026-10-18-r119/provenance/historical
+      GH_TOKEN: ${{ github.token }}
+      GIT_NO_LAZY_FETCH: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: revisions/2026-10-18-r119/provenance/historical
+          persist-credentials: false
+      - name: Install the pinned streaming parser
+        run: |
+          python -m pip install --disable-pip-version-check -r "$AUDIT_DIR/HISTORICAL_stream_requirements.txt"
+          mkdir -p audit-output
+          python -m pip freeze > audit-output/parser-environment.txt
+          gzip -dk "$AUDIT_DIR/HISTORICAL_stream_all_missing.jsonl.gz"
+          gzip -dk "$AUDIT_DIR/HISTORICAL_stream_missing_json.jsonl.gz"
+          git rev-parse HEAD > audit-output/checkout-sha.txt
+          sha256sum "$AUDIT_DIR/HISTORICAL_stream_audit.py" > audit-output/auditor-sha256.txt
+      - name: Stream immutable blobs in this shard
+        env:
+          AUDIT_SCOPE: ${{ inputs.scope || 'all_missing' }}
+          AUDIT_SHARD: ${{ matrix.shard }}
+        run: |
+          case "$AUDIT_SCOPE" in
+            identity) manifest="$AUDIT_DIR/HISTORICAL_stream_identity_priority.jsonl" ;;
+            missing_json) manifest="$AUDIT_DIR/HISTORICAL_stream_missing_json.jsonl" ;;
+            all_missing) manifest="$AUDIT_DIR/HISTORICAL_stream_all_missing.jsonl" ;;
+            *) exit 64 ;;
+          esac
+          python "$AUDIT_DIR/HISTORICAL_stream_audit.py" run \
+            --manifest "$manifest" \
+            --output audit-output/read-audit \
+            --transport raw_commit \
+            --shard-count 16 --shard-index "$AUDIT_SHARD"
+      - name: Preserve completed and failed audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-${{ inputs.scope || 'all_missing' }}-${{ matrix.shard }}-${{ github.sha }}
+          path: audit-output
+          if-no-files-found: error
+          retention-days: 90
+
+# This template does not commit, push, alter historical refs, import historical
+# programs, or run experiments. A red job can mean a retained parse/transport gap;
+# it must not be relabeled a successful scientific CI. Parent integration chooses
+# and records immutable action revisions before actual dispatch if required.
