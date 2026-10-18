@@ -1,0 +1,71 @@
+name: NBO R119 immutable R110 custody recovery
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r119-active-tail-author-revision-2026-10-18
+    paths:
+      - .github/workflows/nbo-r119-custody-recover.yml
+      - revisions/2026-10-18-r119/code119/recover_r110_artifact119.py
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: revisions/2026-10-18-r119/code119
+          persist-credentials: false
+      - name: Verify and repack immutable original artifact bytes
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python revisions/2026-10-18-r119/code119/recover_r110_artifact119.py --output r110-custody119
+      - name: Preserve custody manifests including failed attempts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r119-r110-custody-manifests
+          path: r110-custody119/manifests/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Preserve verified R110 transport part 0
+        if: ${{ success() && hashFiles('r110-custody119/parts/part-000/PART.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r119-r110-custody-part-000
+          path: r110-custody119/parts/part-000/
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 90
+      - name: Preserve verified R110 transport part 1
+        if: ${{ success() && hashFiles('r110-custody119/parts/part-001/PART.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r119-r110-custody-part-001
+          path: r110-custody119/parts/part-001/
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 90
+      - name: Preserve verified R110 transport part 2
+        if: ${{ success() && hashFiles('r110-custody119/parts/part-002/PART.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r119-r110-custody-part-002
+          path: r110-custody119/parts/part-002/
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 90
+      - name: Preserve verified R110 transport part 3
+        if: ${{ success() && hashFiles('r110-custody119/parts/part-003/PART.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbo-r119-r110-custody-part-003
+          path: r110-custody119/parts/part-003/
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 90
