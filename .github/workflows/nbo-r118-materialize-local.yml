@@ -1,0 +1,37 @@
+name: NBO R118 materialize local active revision
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r118-decision-information-author-revision-2026-10-17
+    paths:
+      - revisions/2026-10-17-r118/R118_ACTIVE_SOURCE_DELTA.tar.gz
+      - .github/workflows/nbo-r118-materialize-local.yml
+permissions:
+  contents: write
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: revision/econometrica-nbo-r118-decision-information-author-revision-2026-10-17
+          fetch-depth: 1
+      - name: Verify and materialize local R118 active delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd revisions/2026-10-17-r118
+          echo 'afb3a5aaa63bc30ab9ba998b150ad7d7d03e18a86a8b1a105497579251fbc7d4  R118_ACTIVE_SOURCE_DELTA.tar.gz' | sha256sum -c -
+          tar -xzf R118_ACTIVE_SOURCE_DELTA.tar.gz
+          rm R118_ACTIVE_SOURCE_DELTA.tar.gz
+          cd ../..
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add revisions/2026-10-17-r118
+          if git diff --cached --quiet; then
+            echo 'No materialized changes.'
+            exit 0
+          fi
+          git commit -m 'R118: materialize latest local author revision, results summaries, and publication evidence'
+          git push origin HEAD:revision/econometrica-nbo-r118-decision-information-author-revision-2026-10-17
