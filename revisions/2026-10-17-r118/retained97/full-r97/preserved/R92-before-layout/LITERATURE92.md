@@ -1,0 +1,9 @@
+# Literature and author-style check, 13 October 2026
+
+The Econometrica author-support maintainer states that econsocart.cls and econsocart.cfg must not be changed, and provides ordinary article and bibliography templates: https://vtex-soft.github.io/texsupport.econometricsociety-ecta/ . R92 retains the repository's existing unmodified class files, theorem numbering, name-year citations, ordinary article/supplement/appendix structure, and complete proofs. It claims neither journal endorsement nor editorial acceptance.
+
+Risk-averse dynamic programming and Markov risk duality are prior work, not a new priority claim: Andrzej Ruszczynski, Risk-Averse Dynamic Programming for Markov Decision Processes, Mathematical Programming 125(2), 235--261 (2010), DOI 10.1007/s10107-010-0393-3. Author-deposited record: https://optimization-online.org/2009/12/2497/ .
+
+The treatment of AVaR atoms and its threshold representation retains Rockafellar and Uryasev (2002), Conditional value-at-risk for general loss distributions, Journal of Banking & Finance 26(7), 1443--1471, DOI 10.1016/S0378-4266(02)00271-6. Publisher record: https://www.sciencedirect.com/science/article/pii/S0378426602002716 . The existing canonical bibliography entry is retained rather than duplicated.
+
+The new claims concern centering those original preference evaluations at the actual NBO continuation, original-optimum state-dependent certificate orientation, exact penalized risk occupations, strict support-certified risk-piece exclusion, and their paid-precision use. Entropic duality, weak duality, and finite dynamic programming are proved or attributed as underlying principles; no novelty claim is made for them individually.

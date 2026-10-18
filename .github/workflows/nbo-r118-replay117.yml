@@ -1,0 +1,112 @@
+name: NBO R118 unchanged R117 scientific reproduction
+on:
+  push:
+    branches: ['revision/econometrica-nbo-r118-decision-information-author-revision-2026-10-17']
+    paths: ['.github/workflows/nbo-r118-replay117.yml']
+permissions:
+  contents: read
+jobs:
+  reproduce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Restore immutable native source through verified Git blobs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import os,json,urllib.request,base64,hashlib,pathlib,zipfile,io,concurrent.futures,time
+          root=pathlib.Path('source');root.mkdir()
+          api='https://api.github.com/repos/TrillionniumFoundation/NBO/'
+          def get(path):
+              req=urllib.request.Request(api+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','User-Agent':'NBO-R118-immutable-replay'})
+              for i in range(4):
+                  try:
+                      with urllib.request.urlopen(req,timeout=120) as f:return json.load(f)
+                  except Exception:
+                      if i==3:raise
+                      time.sleep(2**i)
+          tree=get('git/trees/121c46bf702ca15e076537c99fb1828bbce4c201?recursive=1')
+          if tree.get('truncated'):raise RuntimeError('Incomplete source tree')
+          entries={e['path']:e for e in tree['tree'] if e['type']=='blob'}
+          def fetch(name):
+              sha=entries[name]['sha'];data=base64.b64decode(get('git/blobs/'+sha)['content'])
+              if hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()!=sha:raise RuntimeError('Git blob identity')
+              p=root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
+              return data
+          pieces=[fetch('frozen_source117/part'+str(i)+'.b64').strip() for i in range(3)]
+          data=base64.b64decode(b''.join(pieces),validate=True)
+          if hashlib.sha256(data).hexdigest()!='fefe2817fc88d7ed843fed837f8e19bc741ee727f4cc0a9c81af4b26efafa92d':raise RuntimeError('Archive identity')
+          with zipfile.ZipFile(io.BytesIO(data)) as z:
+              expected={'SOURCE_FREEZE117.json','code117/audit117.py','code117/campaign117.py','code117/exact117.py','code117/precision117.py','code117/test117.py'}
+              if set(z.namelist())!=expected:raise RuntimeError('Unexpected source paths')
+              for name in expected:
+                  p=root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(z.read(name))
+          m=json.loads((root/'SOURCE_FREEZE117.json').read_text())
+          todo=[name for name in m['files'] if not (root/name).exists()]+['PROTOCOL117.md','materialize117.py','SOURCE_TRANSPORT117.json','BOUNDARY117.md']
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:list(pool.map(fetch,todo))
+          for name,h in m['files'].items():
+              if hashlib.sha256((root/name).read_bytes()).hexdigest()!=h:raise RuntimeError('Frozen scientific source mismatch '+name)
+          receipt={'orchestration_commit':os.environ['GITHUB_SHA'],'source_tree':'121c46bf702ca15e076537c99fb1828bbce4c201','executable_freeze':'a21e33471047b966dd375d0b9aceab6b9492e4fb','frozen_files':len(m['files']),'protocol_commit':m['protocol_commit'],'scope':'Unchanged R117 source; new R118-custody reproduction, not replacement observations.'}
+          (root/'RESTORATION118.json').write_text(json.dumps(receipt,indent=2)+'\n')
+          audit=root/'inventory118';audit.mkdir()
+          branches=[]
+          for page in range(1,20):
+              rows=get('branches?per_page=100&page='+str(page));branches+=rows
+              if len(rows)<100:break
+          else:raise RuntimeError('Branch pagination incomplete')
+          (audit/'branches.json').write_text(json.dumps(branches,indent=2)+'\n')
+          heads=sorted({b['commit']['sha'] for b in branches})
+          with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+              roots=dict(zip(heads,pool.map(lambda s:get('git/trees/'+s),heads)))
+          (audit/'branch_root_trees.json').write_text(json.dumps(roots,indent=2)+'\n')
+          reviews=sorted({e['sha'] for t in roots.values() for e in t.get('tree',[]) if e['type']=='tree' and any(w in e['path'].lower() for w in ('review','referee'))})
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+              rt=dict(zip(reviews,pool.map(lambda s:get('git/trees/'+s+'?recursive=1'),reviews)))
+          if any(t.get('truncated') for t in rt.values()):raise RuntimeError('Review tree truncated')
+          (audit/'review_trees.json').write_text(json.dumps(rt,indent=2)+'\n')
+          files={e['sha']:e for t in rt.values() for e in t['tree'] if e['type']=='blob' and e['path'].endswith(('.md','.tex','.json','.py','.txt'))}
+          (audit/'reviews').mkdir()
+          def review(item):
+              sha,e=item;data=base64.b64decode(get('git/blobs/'+sha)['content'])
+              if hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()!=sha:raise RuntimeError('Review identity')
+              path='reviews/'+sha+pathlib.Path(e['path']).suffix;(audit/path).write_bytes(data)
+              return {'path':e['path'],'blob':sha,'local':path,'sha256':hashlib.sha256(data).hexdigest()}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:ri=list(pool.map(review,files.items()))
+          (audit/'review_index.json').write_text(json.dumps(ri,indent=2)+'\n')
+          (audit/'SCOPE.json').write_text(json.dumps({'branches':len(branches),'unique_heads':len(heads),'root_review_trees':len(rt),'review_blobs':len(ri),'scope':'Every current branch root and root review subtree; not a claim of complete historical scientific replay.'},indent=2)+'\n')
+          PY
+      - name: Install declared numerical versions
+        run: python -m pip install numpy==2.3.5 scipy==1.17.0
+      - name: Execute complete original protocol and separate exact auditors
+        env:
+          OPENBLAS_NUM_THREADS: '1'
+          OMP_NUM_THREADS: '1'
+          MKL_NUM_THREADS: '1'
+          NUMEXPR_NUM_THREADS: '1'
+          NBO_SOURCE117: 'a21e33471047b966dd375d0b9aceab6b9492e4fb'
+          NBO_PROTOCOL108: '29180a4ce4a6db7298e7458ecdfff3da08abb08f'
+        run: |
+          set -o pipefail
+          cd source
+          python materialize117.py | tee SOURCE_CHECK.log
+          python code117/test117.py > PREFLIGHT.log 2>&1
+          python code117/campaign117.py all --output "$PWD/replay117" 2>&1 | tee SCIENCE.log
+          python code117/audit117.py --output "$PWD/replay117" 2>&1 | tee AUDIT.log
+          python - <<'PY'
+          import json,pathlib,os,hashlib
+          r=pathlib.Path('.');a=json.loads((r/'replay117/AUDIT117.json').read_text())
+          if a['status']!='passed' or a['decision_rows']!=11776:raise RuntimeError('Incomplete scientific replay')
+          result={'status':'passed','orchestration_commit':os.environ['GITHUB_SHA'],'run_id':os.environ['GITHUB_RUN_ID'],'source_freeze':'a21e33471047b966dd375d0b9aceab6b9492e4fb','protocol':'e65a0180896406610922e48f65bcf7f55ada366f','audit_sha256':hashlib.sha256((r/'replay117/AUDIT117.json').read_bytes()).hexdigest(),'audit_checks':a['rational_record_checks'],'decisions':a['decision_rows'],'scope':'Actual independent-host unchanged R117 reproduction; no PDF build, new population sample or neural-exclusive claim.'}
+          (r/'CI_REPLAY118.json').write_text(json.dumps(result,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nbo-r118-unchanged-r117-reproduction
+          path: source/
+          if-no-files-found: error
+          retention-days: 30
