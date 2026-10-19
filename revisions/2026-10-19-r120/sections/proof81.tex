@@ -1,0 +1,68 @@
+\section{Dual verification and policy-class transfer}\label{app:dual81}
+This appendix proves the numerical certificate used in Theorem~\ref{thm:stability81} and states the condition needed to extend its coupling argument beyond two dates. The implemented two-date calculation remains the one in the article. No unexecuted longer-horizon optimization problem is counted as part of that experiment.
+
+\subsection{A lower bound independent of solver success}
+Use the notation of \eqref{eq:switch-dual81}. The switch problem can be written as
+\begin{align*}
+ \inf_{\theta,u,l,L}\quad&u-l+2\rho G+\alpha L,\\
+ \text{subject to}\quad&y_i^+-\phi_i^\top\theta\le u,\quad
+                  l\le y_i^--\phi_i^\top\theta,\\
+ &s_j^\top\theta\le L,\quad-s_j^\top\theta\le L,\quad L\ge0,\\
+ &c_{Cb}+d_{Cb}^\top\theta\le0,\quad |\theta_k|\le B_k,
+ \qquad \alpha=2\rho.
+\end{align*}
+The minimum over $(u,l,L)$ at any feasible $\theta$ equals $F(\theta)$. For any feasible point, probability vectors $p,q$ give
+\[
+ u-l\ge p^\top y^+-q^\top y^-+
+                         \sum_i(q_i-p_i)\phi_i^\top\theta.
+\]
+For nonnegative $\xi_j^+,\xi_j^-$ with total mass at most $\alpha$,
+\[
+ \alpha L\ge\sum_j(\xi_j^+-\xi_j^-)s_j^\top\theta.
+\]
+The unused mass is nonnegative and $L\ge0$. Moreover, $\nu(c_{Cb}+d_{Cb}^\top\theta)\le0$ for $\nu\ge0$. Adding this nonpositive expression to the right side of the preceding lower bound cannot invalidate it. Finally,
+\[
+ \inf_{|\theta_k|\le B_k}z^\top\theta=-\sum_kB_k|z_k|.
+\]
+Combining these inequalities proves \eqref{eq:switch-dual81}. It proves weak duality for every rationally feasible tuple, including tuples obtained from an unsuccessful numerical optimizer. Strong duality or an attained numerical optimum is unnecessary for the action-stability conclusion. The lower bound may be uninformative, but it cannot assert a successful certificate without the strict comparison in \eqref{eq:stable-cells81}.
+
+The independent verifier reconstructs the derivative rows directly. It computes each expected polynomial feature by integrating its expanded monomials through
+\[
+ \mathbb E Y^p=\frac{v^{p+1}-u^{p+1}}{(p+1)(v-u)},
+                  \qquad Y\sim\operatorname{Unif}[u,v],
+\]
+and each hinge by the integral of its positive-part antiderivative. This differs from the construction's even-moment expansion. Immediate state costs cancel in an action contrast, leaving $b^2-a^2+4(b^4-a^4)$ and the discounted expected-feature difference. Every coefficient, primitive and multiplier in this replay is rational. The verifier neither imports the construction's LP routines nor calls its feature-expectation or dual-bound functions.
+
+\subsection{First-disagreement extension}
+Let two finite-horizon policies have a common terminal cost and common transition primitives. Suppose they choose the same action outside measurable sets $E_t$ at each date. Assume a common-innovation realization of the actual kernels is available, so trajectories agree while states and actions agree. Let the tail cash cost from date $t$ lie in $[m_t,M_t]$ under either policy, uniformly over feasible paths, and write $H_t=M_t-m_t$. Put $b_0=1$ and $b_t=\prod_{j<t}\beta_j$.
+
+\begin{proposition}[First-disagreement cost bound]\label{prop:first-disagreement81}
+If $\widehat\pi$ is the reference policy and $D_t$ is the event that the coupled policies first choose different actions at date $t$, then
+\begin{equation}\label{eq:first-disagreement81}
+ |J^\pi-J^{\widehat\pi}|
+ \le\sum_{t=0}^{T-1}b_tH_t\Pr(D_t)
+ \le\sum_{t=0}^{T-1}b_tH_t
+                 \Pr_{\widehat\pi}(X_t\in E_t).
+\end{equation}
+The first events are disjoint. Any independent bound on the entire cash-cost difference may be intersected with this bound. To apply it to an optimization class, the action agreement and bad sets must hold uniformly for every policy in that class.
+\end{proposition}
+
+\begin{proof}
+On $D_t$, the histories, states and costs before $t$ coincide. The absolute difference of the remaining discounted costs is at most $b_tH_t$. On the event of no disagreement the costs coincide throughout. Summing over the disjoint first-disagreement events and taking expectations proves the first inequality. Up to the first disagreement, the common state is the state of the reference policy driven by the same innovations. A first disagreement at date $t$ requires this state to lie in $E_t$, proving the second inequality.
+\end{proof}
+
+This proposition is a cost-transfer identity, not a substitute for constructing longer-horizon stable sublevels. In particular, changing a terminal readout changes labels upstream. Independently small optimization gaps at different fitted label problems do not automatically establish the uniform action-agreement premise. In the executed two-date experiment the last-date actor depends only on the common terminal payoff; Theorem~\ref{thm:stability81} therefore needs the first-date switch problems alone.
+
+\subsection{Confidence and economic interpretation}
+The original cost event concerns a finite list of frozen attained policies. On that event all deterministic stability enlargements are valid simultaneously, including for a coefficient vector selected after seeing the records but still belonging to a certified fixed-label sublevel. The probability statement does not change because the optimizer class is uncountable. A new unqualified model or newly fitted label problem is not covered by that argument.
+
+A failed action-stability certificate is a numerical statement about the available lower bound, not a witness of policy variation. Conversely, policy invariance of an exact optimization class does not assert that an arbitrary practical optimizer reaches that class. The deposited feasible iterate and dual gap describe what the construction attained; the switch lower bounds describe what every member of a stated sublevel must do. These are distinct quantifiers, and neither is inferred from a collection of fitting seeds.
+
+For the two calibrated $n=16$ controllers let $[l,u]$ be the positive interval for ReLU cost minus Bernstein cost. Let $\kappa$ be the additional per-deployment charge for Bernstein, after all actual installation and computation charges have been converted into the same normalized cost units. The corresponding net difference is $[l-\kappa,u-\kappa]$. Bernstein is strictly less costly for every $\kappa<l$; ReLU is strictly less costly for every $\kappa>u$; neither strict ordering is certified in the intermediate region. This is an exact conditional price region, not a monetary calibration. It remains valid for the fully action-stable optimizer classes, and it does not use construction times with different service boundaries as interchangeable monetary prices.
+
+\section{Complete factorial and precision records}\label{app:factorial81}
+The following tables report both estimators, all marginal costs, paired contrasts and predeclared interactions. A paired-width target is not a marginal-cost target. The two estimators share the same underlying rows and target the same expected costs; no independent sample size is gained by computing both. The interval width is decomposed into the two endpoint sampling-variance allowances, the bounded-support term and the mean numerical enclosure width. Arithmetic, continuous-bin width, and any acquisition branching enter the latter through actual endpoint propagation. The implementation does not claim a uniquely identifiable additive attribution of that combined numerical width to each intermediate operation.
+
+\input{tables/precision81}
+\input{tables/work81}
+\input{tables/all-factorial81}

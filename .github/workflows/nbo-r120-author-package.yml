@@ -1,0 +1,73 @@
+name: R120 author package validation
+
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r120-certified-policy-improvement-2026-10-19
+    paths:
+      - .github/workflows/nbo-r120-author-package.yml
+      - revisions/2026-10-19-r120/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      MPLCONFIGDIR: /tmp/nbo-matplotlib120
+    steps:
+      - name: Check out R120 source and immutable ancestor metadata
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: |
+            revisions/2026-10-19-r120
+            .github/workflows
+          persist-credentials: false
+      - name: Set up the declared Python version
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.12.14"
+      - name: Install pinned dependencies and TeX
+        working-directory: revisions/2026-10-19-r120
+        run: |
+          python -m pip install --disable-pip-version-check -r requirements120.txt
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
+      - name: Audit full saved evidence and replay only statistics and reporting
+        working-directory: revisions/2026-10-19-r120
+        env:
+          GIT_NO_LAZY_FETCH: "1"
+          GIT_OPTIONAL_LOCKS: "0"
+        run: |
+          python verification120/audit_evidence120.py \
+            --manifest EVIDENCE_MANIFEST120.json \
+            --output ci120/evidence-audit \
+            --replay-statistics --replay-reporting \
+            --require-current-commit --require-final-author
+      - name: Build all four native author documents
+        working-directory: revisions/2026-10-19-r120
+        run: python build120.py --receipt-dir ci120/build-receipts
+      - name: Preserve actual audit replay build and failure receipts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nbo-r120-author-package-${{ github.sha }}
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            revisions/2026-10-19-r120/ci120/evidence-audit/*.json
+            revisions/2026-10-19-r120/ci120/evidence-audit/*.jsonl
+            revisions/2026-10-19-r120/ci120/evidence-audit/*.log
+            revisions/2026-10-19-r120/ci120/evidence-audit/statistics-replay/**
+            revisions/2026-10-19-r120/ci120/evidence-audit/reporting-replay/**
+            revisions/2026-10-19-r120/ci120/build-receipts/**
+            revisions/2026-10-19-r120/build/*.pdf
+            revisions/2026-10-19-r120/build/*.log

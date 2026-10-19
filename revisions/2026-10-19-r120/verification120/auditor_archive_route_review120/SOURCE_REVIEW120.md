@@ -1,0 +1,9 @@
+# R120 archive-route auditor correction: independent source review
+
+No material blocker was found in the bounded source review of `verification120/audit_evidence120.py`, SHA256 `4944868e91dae940b646868d502eaafcc044eca7eadff0fb837639daf5536303`. The correction retains the existing direct-tree check and introduces a separate exact archive-member metadata route for the original R119 publication `82618f037540233dda7d1ba8bfd3ddfdc88afbf9`.
+
+The complete expected source-binding object must first equal the unchanged original author-map entry, whose lossless payload is bound to its original Git blob. The archive route then requires the member's byte length and SHA256 to match a canonical path in the copied, Git-bound original inventories. Archive container identities, ordered part declarations and the ten part Git blobs remain checked. A direct-tree SHA1 mismatch still fails; it cannot pass through the archive fallback.
+
+The existing metadata-only execution receipt reports 103 direct sources and 29 archived sources, together covering 132 distinct inherited source identities across 1,049 retained routes. That execution belongs to the report-lineage agent; this reviewer inspected the code and metadata and did not execute the auditor. The copied inventory file bytes were independently hashed, and the preserved attempt01 auditor source was checked against its original evidence-manifest hash.
+
+The distinction in the new scope text is correct: this is Git-bound member byte-length/SHA256 custody, not a fresh decompression, historical experiment, raw-member SHA1 recomputation or standalone Git-tree verification. The actual failed attempt01 remains retained; a corrected full-audit result requires its own execution receipt. No historical map, scientific input or author source was modified during this review.

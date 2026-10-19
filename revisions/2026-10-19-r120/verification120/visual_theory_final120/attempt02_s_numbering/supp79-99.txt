@@ -1,0 +1,1418 @@
+                           NEURAL BELLMAN OPERATORS: SUPPLEMENT                               79
+
+1                    19.3. Exact atom handling and finite policy comparisons                        1
+
+2                                                                                                   2
+       For completeness, the equal-mass risk in the proposition can be computed without
+3                                                                                                   3
+     floating cutoffs. Sort w(1) ≥ · · · ≥ w(n) , put r = n(1 − α) > 0, k = ⌊r ⌋, and θ = r − k.
+4                                                                                                   4
+     Then
+5                                                                                                   5
+                                                k
+6
+                                               ∑ w(i) + θw(k+1)                                     6
+                                    [n]
+7                                  ρ α ( w ) = i =1               ,                          (20)   7
+                                                       r
+8                                                                                                   8
+
+9    where the final term is omitted if θ = 0, including k = n. Indeed, assign masses               9
+
+10   λi ∈ [0, 1] with ∑i λi = r. The threshold inequality in the proof gives r −1 ∑i λi wi ≤        10
+      [n]
+11   ρα (w). The assignment of unit mass to the k largest values and mass θ to the next             11
+
+12   value attains the threshold expression at the cutoff value. This proves the formula,           12
+
+13   including ties and split atoms. At α = 0 it reduces to the ordinary mean; α = 1 is             13
+
+14   outside this definition. At the two frozen risks and the frozen M = 64, both atom              14
+
+15   counts are integral. The implementation nevertheless uses exact rational masses                15
+
+16   and preserves the repeated endpoints.                                                          16
+
+17     Suppose a fixed catalogue contains n0 original states and each complete policy r             17
+
+18   has a valid interval [ L jr , Ujr ] at state j. Summing its pointwise inequalities gives the   18
+
+19   deterministic mean bound                                                                       19
+
+20                                                                                                  20
+                                 1           1          1
+21                                 ∑
+                                 n0 j
+                                      L jr ≤   ∑
+                                             n0 j
+                                                  Jjr ≤
+                                                        n0 ∑
+                                                             Ujr .
+                                                                                                    21
+                                                           j
+22                                                                                                  22
+
+23   For two policies r, s, use the interval [ L jr − Ujs , Ujr − L js ] for their difference at    23
+
+24   state j. If they have the same exact action, the same original state and risk, and             24
+
+25   the identical future controller, the two original defining objectives are equal, and           25
+
+26   that state’s difference is exactly zero. Replacing its subtraction interval by [0, 0]          26
+
+27   is then an identity, not an independence assumption. Summing these statewise                   27
+
+28   difference intervals proves the reported mean-contrast interval. A strictly negative           28
+
+29   upper endpoint certifies a lower cost for the left policy; a strictly positive lower           29
+
+30   endpoint certifies a higher cost. An interval containing zero remains unresolved,              30
+
+31   except that [0, 0] certifies equality. No statistical or population inference follows          31
+
+32   from these deterministic sums.                                                                 32
+     80
+
+1      In D, exact stored binary64 identities are converted to their precise rational values. 1
+2    The input binding checks the common state across every action and service and             2
+
+3    the unchanged future-controller identity. The frozen catalogue has 144 states per         3
+
+4    risk, 983 distinct state/action/risk keys, and 13,824 primary policy records. The         4
+
+5    prescribed output includes all 96 arm/service/risk means, all 56 unordered arm            5
+
+6    contrasts with the fixed compiled-service labels, and all 240 within-arm service- 6
+7    pair identity cells. These are declared coverage requirements, not assertions that        7
+
+8    execution succeeded. No favorable sign is a pass condition.                               8
+
+9                                                                                              9
+
+10                19.4. What interval compatibility does and does not establish                10
+
+11     Let I be an independently justified interval for an original policy value and P0 a      11
+
+12   recorded service or fine-reference interval. If they are disjoint, both cannot enclose    12
+
+13   the same value: at least one enclosure argument, arithmetic step, input identity, or      13
+
+14   model premise requires investigation. The case must be retained. If they intersect,       14
+
+15   their intersection alone does not establish correctness of P0 ; for example, I = [0, 2]   15
+
+16   and P0 = [1, 3] overlap although a true value 1/2 lies outside P0 . The stronger          16
+
+17   inclusion I ⊆ P0 would transfer coverage from I to P0 , conditional on validity of        17
+
+18   I. The reverse inclusion does not. D records overlap and both inclusion directions        18
+
+19   separately and uses overlap only as a compatibility diagnostic. It does not thereby       19
+
+20   verify every endpoint of the old 1,024-cell reference, which shares the production        20
+
+21   terminal compiler.                                                                        21
+
+22     The lower bound LQ in (17) concerns the specified action. It does not by itself pro- 22
+23   vide a valid lower bound on infa Q x ( a) and therefore creates no new global regret      23
+
+24   or action-distance certificate. The procedure leaves all original A/B/C policies, ob- 24
+25   servations, timing records, negative results, and qualification proofs unchanged. Its     25
+
+26   full actual work is additional author-side validation cost. The subsequent execution      26
+
+27   receipt, rather than this mathematical proposition, determines whether every fixed        27
+
+28   case was actually completed and passed.                                                   28
+
+29                                                                                             29
+
+30
+          20. ORIGINAL-POLICY ACTION COMPARISONS AND THEIR INFORMATION COST                    30
+
+31     This section proves the R120 comparison construction under the original invest- 31
+32   ment primitives. The completed-incumbent safeguard, three projected support               32
+                           NEURAL BELLMAN OPERATORS: SUPPLEMENT                          81
+
+1    proposals, and original all-action witnesses retain their R108–R110 ownership. 1
+2    The common-risk identity retains its R111/R119 ownership. The new ingredients            2
+
+3    proved here are an original AVaR comparison modulus, the associated mixed in- 3
+4    tegration interface and its restricted information bound, and quantitative control       4
+
+5    of common-tail mismatch. The statistical transfer and strong-convexity safeguards        5
+
+6    use classical arguments and are proved to make their assumptions explicit. No            6
+
+7    statement supplies a neural representation separation.                                   7
+
+8                                                                                             8
+
+9                         20.1. Proof of the original comparison modulus                      9
+
+10                                                                                            10
+          P ROOF OF T HEOREM 9:     Throughout this proof d = 2. Let b = (1/2, 1/4)⊤ and
+11                                                                                            11
+     s = (1, −1)⊤ . For a terminal state y, normalize its feasible action by a = A(y)v,
+12                                                                                            12
+     where v ∈ [0, 1] is held fixed when differentiating in y. Put
+13                                                                                            13
+
+14               m(y, v) = F (y, A(y)v, 0),    k (y, v) = 5{m1 (y, v) − m2 (y, v)}.           14
+
+15                                                                                            15
+
+16   The original domain argument in Proposition S.3 puts m, and every m + sz used            16
+
+17   here, in the state cube. The zero-sum shock leaves the aggregate squared hinge           17
+
+18   unchanged. Direct expansion of the original terminal cost therefore gives                18
+
+19                                                                                            19
+                                  g(m + sz) = g(m) + kz + 5z2 .
+20                                                                                            20
+
+21                                                                                            21
+     By the exact original tail formula in Theorem A.1, the normalized last-date objective
+22                                                                                            22
+     is
+23                                                                                            23
+                  e (y, v) = S(y) + h( A(y)v) + β{ g(m(y, v)) + Rα (k(y, v))}.
+                  Q
+24                                                                                            24
+
+25   The function Rα is continuously differentiable and                                       25
+
+26                                                                                          26
+                                   ′            αk
+27                                Rα (k) = clip     , −αR, αR .                               27
+                                                10t
+28                                                                                            28
+
+29   Its derivative has Lipschitz constant α/(10t), including the two clipping junctions. 29
+30      We establish a uniform upper state-curvature bound for Qe (·, v). For d = 2, the tar- 30
+31   get, cyclic, and squared-hinge terms in S have Hessian operator norms bounded by         31
+
+32   2, 1, and 8, respectively. Thus ∇2 S ⪯ 11I wherever the second derivative is defined. 32
+     82
+
+1    The same decomposition for g gives 0 ⪯ ∇2 g ⪯ 13I. Its gradient coordinates satisfy      1
+
+2                                                                                             2
+
+3
+                |∂ j g(y)| ≤ 4|y j − 5/8| + 12 |y j − y j+1 | + 4(1/2 − y1 − y2 )+ ≤ 5.       3
+
+4                                                                                             4
+     The state Jacobian of m is nonnegative on the cube. Its row sums are at most 3/4,
+5                                                                                             5
+     and its column sums at most 47/64. Indeed the unnormalized transition has both
+6                                                                                             6
+     sums at most 11/16; the term bv∇ A⊤ adds at most 1/16 to a row and 3/64 to a
+7                                                                                             7
+     column. Hence
+8                                               q                                             8
+
+9                                ∥ Dy m ∥ 2 ≤       (3/4)(47/64) ≤ 3/4.                       9
+
+10                                                                                            10
+     The only second state derivatives of m j are the mixed derivatives −1/16 of
+11                                                                                            11
+     −y1 y2 /16; the normalized capacity term is affine. In a state direction w,
+12                                                                                            12
+                           2
+                                                          10          5
+                          ∑ ∂ j g(m) Dy2 m j [w, w] ≤ 8 |w1 w2 | ≤ 8 ∥w∥22.
+13                                                                                            13
+
+14                        j =1                                                                14
+
+15                                                                                            15
+     The chain rule consequently gives the uniform upper bound
+16                                                                                            16
+
+17
+                                          n                    o          127                 17
+                    Dy2 ( g ◦ m)[w, w] ≤ 13(3/4)2 + 5/8 ∥w∥22 =               ∥w∥22 .
+18
+                                                                           16                 18
+
+19   Also h′′ ( a) = 2 + 48a2 ≤ 5 on [0, 1/4] and ∥∇ A∥22 = 1/128. The stage upper bound      19
+
+20   is therefore 11 + 5/128 = 1413/128.                                                      20
+
+21     For the risk-motion term, the bilinear transition terms cancel in the difference of    21
+
+22   the two coordinates:                                                                     22
+
+23                                             35             5                               23
+                                  k (y, v) =      (y1 − y2 ) + A(y)v.
+24                                             16             4                               24
+
+25   This is affine in y for fixed v, and                                                     25
+
+26                                                                                            26
+
+27
+                            ∇y k = (35/16 + 5v/64, −35/16 + 5v/64)⊤ ,                         27
+                                                                   19625
+28
+                        ∥∇y k∥22 = 2(35/16)2 + 2(5v/64)2 ≤               .                    28
+
+29
+                                                                    2048                      29
+
+30   It follows that the upper Hessian contribution of Rα (k (y, v)) is at most               30
+
+31   19625α/(20480t). Combining these estimates gives Dy2 Q
+                                                          e [w, w] ≤ Mα ∥w∥2 . Squared
+                                                                                          2   31
+
+32   hinges and the tail formula have matching first derivatives at their junctions. Their    32
+                            NEURAL BELLMAN OPERATORS: SUPPLEMENT                            83
+
+1    restrictions to a line have absolutely continuous first derivatives, so integrating this    1
+
+2    almost-everywhere second-derivative bound along a segment proves that                       2
+
+3                                                                                                3
+
+4                                          e (y, v) − 1 Mα ∥y∥22
+                                     y 7−→ Q                                                     4
+                                                      2
+5                                                                                                5
+
+6    is concave on the cube, uniformly over v ∈ [0, 1].                                          6
+
+7      An infimum of concave functions is concave: its value at a convex combination is          7
+
+8    at least the same combination of the two infima. Since the normalized feasible inter- 8
+9    val is fixed, this proves semiconcavity of V1 (y) − Mα ∥y∥22 /2. The retained original      9
+
+10   joint curvature and the affine capacity graph give convexity and a unique contin- 10
+11   uous minimizing v(y). For clarity, continuous differentiability does not require            11
+
+12   differentiability of that minimizer. Evaluate a value increment at the old minimizer        12
+
+13   for one inequality and at the new minimizer for the opposite inequality. Uniform            13
+
+14   first-order expansion of the C1 objective on the compact normalized interval and            14
+
+15   continuity of v(y) give ∇V1 (y) = ∂y Q
+                                          e (y, v(y)) in the interior. This formula extends      15
+
+16   continuously to the boundary, and incorporates the capacity term already displayed          16
+
+17   in (8).                                                                                     17
+
+18     Convexity together with Mα -semiconcavity now implies the claimed gradient                18
+
+19   modulus. One explicit justification is to mollify V1 on any smaller interior cube. Con- 19
+20   volution preserves convexity and semiconcavity, so the smooth Hessian has every             20
+
+21   eigenvalue between 0 and Mα . Integrating the Hessian along a segment bounds the            21
+
+22   difference of the mollified gradients by Mα times its length. The gradients converge        22
+
+23   locally uniformly because V1 is C1 . Pass to the limit and then use continuity at the       23
+
+24   boundary.                                                                                   24
+
+25     Finally the two successor points at a fixed innovation differ by b(b − a). Differen- 25
+26   tiation in the innovation gives                                                             26
+
+27                                                                                               27
+                 d
+28                 { f (z) − f a (z)} ≤ ∥s∥2 ∥∇V1 ( F ( x, b, z)) − ∇V1 ( F ( x, a, z))∥2        28
+                 dz b
+29                                                                                               29
+
+30                                     ≤ Mα ∥ s ∥ 2 ∥ b ∥ 2 | b − a |                            30
+                                         √
+31                                         10                     4                              31
+                                       =      Mα | b − a | ≤ Mα | b − a | .
+32                                        4                       5                              32
+     84
+
+1    All points and joining segments are in the invariant convex cube. Integration in z                       1
+
+2    proves (41).                                                                                    Q.E.D.   2
+
+3                                                                                                             3
+
+4                     20.2. Valid paired integration and the policy contrast                                  4
+
+5                                                                                                             5
+          P ROOF OF T HEOREM 10:            Write D = f b − f a . A Lipschitz function of constant
+6                                                                                                             6
+     Eab satisfies on a cell with midpoint zi and length hi
+7                                                                                                             7
+                     Z                                         Z
+8                                                                                                             8
+                              D (z) dz − hi D (zi ) ≤ Eab               |z − zi | dz = Eab h2i /4.
+9                        Bi                                        Bi                                         9
+
+10                                                                                                            10
+     Summing and dividing by B = 2Rt proves the second interval in (43), including
+11                                                                                                            11
+     arbitrary valid midpoint value errors. Separately, convexity gives for each f a
+12                                                                                                            12
+                                                              h
+                                             Z
+13                             hi f a ( zi ) ≤    f a (z) dz ≤ i { f a (li ) + f a (ri )}.                    13
+                                               Bi              2
+14                                                                                                            14
+
+15   Valid lower midpoint and upper endpoint values thus give L a ≤ EP qu f a ≤ Ua , and                      15
+
+16   likewise for b. Subtracting these two valid intervals proves the first interval. Both                    16
+
+17   contain the same integral, so their exact intersection is nonempty and valid. Empty                      17
+
+18   outward intersections signal a failed numerical construction, not a license to choose                    18
+
+19   a favorable endpoint. Zero-length tails contribute zero measure and are omitted.                         19
+
+20     For completeness, each exact convex midpoint–secant width is bounded by                                20
+
+21   KRt/n2 under hi ≤ B/n. On a cell its unnormalized gap is h2i /4 times the difference                     21
+
+22   of the right and left half-cell secant slopes. These differences are nonnegative; or- 22
+23   dering all cells, including across the omitted center, bounds their sum by 2K. Thus                      23
+
+24   the normalized width is at most Kh2max /(2B) ≤ KRt/n2 . Two such widths sum to                           24
+
+25   2KRt/n2 . The paired Lipschitz interval has width                                                        25
+
+26                                                                                                            26
+                                     Eab
+                                     2B ∑
+27                                         h2i ≤ Eab hmax /2 ≤ Eab Rt/n.                                      27
+                                         i
+28                                                                                                            28
+
+29   Intersection proves (45). The midpoint–secant inequality is applied only to each                         29
+
+30   convex continuation, never to D.                                                                         30
+
+31     For the original continuations, Theorem 9 also gives a Lipschitz constant 2Mα for                      31
+
+32   f a′ : the innovation direction has squared norm two. The two Taylor upper bounds                        32
+                           NEURAL BELLMAN OPERATORS: SUPPLEMENT                              85
+
+1    at the endpoints of a cell therefore imply                                                    1
+
+2                                                                                                  2
+                                 f a ( li ) + f a (r i )                2Mα h2i
+3                                                        − f a ( zi ) ≤         .                  3
+                                            2                             8
+4                                                                                                  4
+     The opposite linear terms cancel. Multiply by hi /B and sum over the cells. The
+5                                                                                                  5
+     midpoint–secant width for one function is at most Mα h2max /4, and the difference of
+6                                                                                                  6
+     the two separately enclosed integrals has width at most Mα h2max /2 ≤ 2Mα R2 t2 /n2 .
+7                                                                                                  7
+     Intersecting this analytic bound with the previous ones proves (46). The numer-
+8                                                                                                  8
+     ical algorithm already computes these same midpoint and endpoint values; this
+9                                                                                                  9
+     consequence changes neither its inputs nor its prescribed decisions.
+10                                                                                                 10
+       For the same feasible original density, define k a = ρα ( f a ) − EP qu f a ≥ 0 and simi-
+11                                                                                                 11
+     larly k b . Direct cancellation yields
+12                                                                                                 12
+
+13                             ρα ( f b ) − ρα ( f a ) = EP qu D + k b − k a .                     13
+
+14                                                                                                 14
+
+15   Consequently the optimal-future root contrast lies in h(b) − h( a) + β[d− − κ a , d+ + 15
+16   κb ]. By (39), the difference of the two actual future allowances lies in [−δ, δ], not        16
+
+17   [−2δ, 2δ]. Adding this interval proves (44). This inference uses the same imple- 17
+18   mented future policy at both actions and makes no convexity assertion about its               18
+
+19   value. When the two realized actions agree, their complete-policy values and their            19
+
+20   continuation functions agree exactly. Their difference is zero before any interval            20
+
+21   widening or new acquisition.                                                       Q.E.D.     21
+
+22                                                                                                 22
+       Explicit node-precision allowance. Suppose every acquired scalar value interval has
+23                                                                                                 23
+     width at most ξ and the sums are computed exactly. The paired midpoint interval
+24                                                                                                 24
+     gains width at most 2ξ from its node intervals. The separate convex difference gains
+25                                                                                                 25
+     width at most 4ξ. Thus a valid bound replacing (45) is
+26                                                                                                 26
+                                                         
+27                                   2KRt       ERt                                                27
+                               min        + 4ξ,      + 2ξ .                                (21)
+28
+                                      n2         n
+                                                                                                   28
+
+29   To prove this, write each midpoint lower error and each endpoint upper error sepa- 29
+30   rately. Their nonnegative normalized weights sum to one, so each such weighted                30
+
+31   error is at most ξ. For the paired midpoint difference the sum of the two interval            31
+
+32   widths is at most 2ξ. The remaining terms are the exact quadrature gaps just proved. 32
+     86
+
+1    Outward accumulation adds its separately bounded arithmetic enlargement. In                    1
+
+2    an implementation, the directly retained interval endpoints remain authoritative;              2
+
+3    neither ξ nor the future-policy allowance is silently sent to zero.                            3
+
+4                                                                                                   4
+
+5                    20.3. A matching bound for the fixed-tail information interface                5
+
+6         P ROPOSITION S.8—Paid paired point information: Fix R, K > 0, t = 1 − α > 0,              6
+
+7    α ∈ [0, 1), and E ≥ 0. The unknown pair consists of convex K-Lipschitz functions on            7
+
+8    [− R, R] whose difference is E-Lipschitz. A known feasible two-tail density and these class    8
+
+9    restrictions are supplied. The information oracle returns an exact value of one chosen         9
+
+10   function at one chosen point. A reported interval must contain the fixed-density integral of   10
+
+11   the difference for every pair consistent with its transcript.                                  11
+
+12     For every integer n ≥ 1, there is a nonadaptive quadrature algorithm using at most           12
+
+13   4n + 8 scalar values whose width is at most min{2KRt/n2 , ERt/n}. Conversely, for the          13
+
+14   known one-sided density q = t−1 1[− R+2Rα,R] , every deterministic adaptive algorithm using    14
+
+15   at most N scalar values has an input requiring width at least (47). For N ≥ 32 the upper       15
+
+16   width can in particular be bounded by                                                          16
+
+17                                                                                                  17
+                                    min{128KRt/N 2 , 8ERt/N }.
+18                                                                                                  18
+
+19                                                                                                  19
+     These are interval-width bounds, not point-estimation error bounds.
+20                                                                                                  20
+
+21
+          P ROOF :   For the upper bound, divide a nonempty tail of length b j into                 21
+
+22
+     ⌈nb j /(2Rt)⌉ equal cells. The two tail lengths sum to 2Rt, so at most n + 1 nonempty          22
+
+23
+     cells suffice. Each function requires at most 2n + 4 midpoint and distinct endpoint            23
+
+24
+     values. Paying for both functions gives 4n + 8; Theorem 10 proves its width. At                24
+
+25
+     α = 0 this is just integration over the whole interval and requires no tail location. If       25
+
+26
+     N ≥ 32, take n = ⌊( N − 8)/4⌋ ≥ N/8. The displayed upper bound follows.                        26
+
+27
+       For the lower bound put q0 = − R + 2Rα and B = R − q0 = 2Rt. Run the proposed                27
+
+28
+     algorithm on the pair ( f 0 , f 0 ), where                                                     28
+
+29                                                   K                                              29
+                                         f 0 (z) =      (z − q0 )2+ .
+30                                                   2B                                             30
+
+31   It is convex, nondecreasing, and K-Lipschitz. Partition its right tail into 2( N + 1)          31
+
+32   equal cells of length h = B/{2( N + 1)}. At most N cells contain a queried location            32
+                           NEURAL BELLMAN OPERATORS: SUPPLEMENT                          87
+
+1    in their interior, irrespective of which function label was queried. Choose N + 1 cells   1
+
+2    containing no such point. On each selected cell replace f 0 by the convex combination     2
+
+3                                                                                              3
+               f 1 = (1 − λ) f 0 + λ (chord of f 0 ),   λ = min{1, 4E( N + 1)/K },
+4                                                                                              4
+
+5    and put f 1 = f 0 elsewhere. Every queried value remains unchanged, including             5
+
+6    queries at selected cell endpoints. Induction on the adaptive transcript therefore        6
+
+7    gives the same queries and answers on ( f 0 , f 1 ).                                      7
+
+8      The chord slope is between the two endpoint derivatives of f 0 . At entry to a          8
+
+9    selected cell the derivative of f 1 jumps upwards by λKh/(2B); at its exit it jumps       9
+
+10   upwards by the same amount. Interior derivatives are nondecreasing, and all slopes        10
+
+11   lie in [0, K ]. Adjacent selected cells have the same ordering. Hence f 1 is convex and   11
+
+12   K-Lipschitz. On a selected cell                                                           12
+
+13                                                                                             13
+                        |( f 1 − f 0 )′ | ≤ λKh/(2B) = λK/{4( N + 1)} ≤ E.
+14                                                                                             14
+
+15   The difference is continuous and zero at every selected endpoint and elsewhere,           15
+
+16   so it is globally E-Lipschitz. The construction thus preserves every information          16
+
+17   restriction.                                                                              17
+
+18     The integral of the chord excess of a quadratic with second derivative K/B on           18
+
+19   a cell of length h is Kh3 /(12B). Summing N + 1 selected cells and dividing by B          19
+
+20   gives                                                                                     20
+
+21                                                                                             21
+                                              λKB
+                        EP q( f 1 − f 0 ) ≥
+22
+                                          96( N + 1)2                                          22
+
+23                                                                                           23
+                                                     KRt        ERt
+                                        = min               ,             .
+24
+                                                 48( N + 1)2 12( N + 1)                        24
+
+25                                                                                             25
+     The first pair has contrast zero. A sound interval for their common transcript
+26                                                                                             26
+     must contain both contrasts and hence has at least this width. Both functions are
+27                                                                                             27
+     nondecreasing, so the known right tail is also exactly maximizing for both AVaRs.
+28                                                                                             28
+     This supplies a subclass with no localization slack; it does not eliminate localization
+29                                                                                             29
+     costs from the upper algorithm on a general pair.                               Q.E.D.
+30                                                                                             30
+
+31     The proof uses the standard indistinguishable-input approach to numerical infor- 31
+32   mation (Novak, 2015). Its upper bound is conditional on a known fixed tail, and           32
+     88
+
+1    its lower bound allows arbitrary convex functions with the stated moduli. It does                1
+
+2    not claim that the original finite-parameter investment primitives realize this entire           2
+
+3    adversarial class. Formula access, derivative access, additional separate smoothness             3
+
+4    restrictions, a shared exact symbolic representation, and free terminal solves are               4
+
+5    different information conventions. Providing one of them changes the comparison                  5
+
+6    for every method, including splines, polynomials, hinges, and neural networks. In                6
+
+7    particular (46) uses an additional proved property of the original continuation. No              7
+
+8    matching lower bound for that full original-primitives information class is inferred             8
+
+9    from the nonsmooth construction above.                                                           9
+
+10                                                                                                    10
+
+11                              20.4. Transferring the defect of a common tail                        11
+
+12                                                                                                    12
+          T HEOREM S.9—Action-scaled transfer between constrained tail witnesses: Let
+13                                                                                                    13
+     0 < α < 1, L = 2Rα, B = 2Rt, and I = [− R, R − L]. Suppose f a , f b are mz -strongly
+14                                                                                                    14
+     convex on the innovation interval, with mz > 0, and their difference is E-Lipschitz. Define
+15            R u+ L                                                                                  15
+     Hj (u) = u      f j (z) dz and k j (qu ) = { Hj (u) − min I Hj }/B. For any feasible u and any
+16                                                                                                    16
+     verified κb ≥ k b (qu ),
+17                                                                                                    17
+                                                                                 2
+                                                        √
+                                                                    r
+                                                                          α
+18                                    k a (qu ) ≤           κb + E                    .               18
+                                                                         2mz t
+19                                                                                                    19
+
+20   The statement includes an endpoint optimizer or a one-sided tail. For the original investment    20
+
+21   pair, mz = 181/64 and E = Eab are valid. At α = 0 the only relevant density is the full          21
+
+22   original law and both deficits are zero.                                                         22
+
+23                                                                                                    23
+          P ROOF : The original tail representation, or its direct proof in Theorem 7, gives
+24                                                                                                    24
+     the stated expression for the risk deficit. Strong convexity implies that Ha and Hb
+25                                                                                                    25
+     are λ-strongly convex on I, where λ = mz L. Indeed Hj′ (u) = f j (u + L) − f j (u), and
+26                                                                                                    26
+     its increment between two cuts is at least mz L times their distance. Let ub minimize
+27                                                                                                    27
+     Hb on I. The constrained first-order inequality, followed by strong convexity, gives
+28                                                                                                    28
+
+29
+                                 Hb (v) ≥ Hb (ub ) + 12 λ|v − ub |2              ( v ∈ I ).           29
+
+30                                                                                                    30
+
+31   There is no assumption that Hb′ (ub ) = 0 at a boundary. Write G = Hb − Ha . Since               31
+
+32   G ′ (v) = ( f b − f a )(v + L) − ( f b − f a )(v), G has Lipschitz constant EL.                  32
+                          NEURAL BELLMAN OPERATORS: SUPPLEMENT                              89
+
+1       Put e = Hb (u) − Hb (ub ) = Bk b (qu ) ≤ Bκb . The preceding inequality gives |u −        1
+           √
+2    ub | ≤ 2e/λ. For any v ∈ I, the triangle inequality now yields                               2
+
+3                                                                                                 3
+                 Ha (u) − Ha (v) ≤ e − 12 λ|v − ub |2 + EL|v − u|
+4                                                                                                 4
+                                           √
+5                                ≤ e + EL 2e/λ − 12 λ|v − ub |2 + EL|v − ub |                     5
+
+6                                         √       E2 L2                                           6
+                                  ≤ e + EL 2e/λ +       .
+7                                                  2λ                                             7
+
+8    The last step maximizes a scalar quadratic over a larger nonnegative-distance                8
+
+9    domain, so it is valid at either boundary. Take the supremum in v, divide by B, and          9
+                                                             p
+     use L/B = α/t. The result is k a (qu ) ≤ { k b (qu ) + E α/(2mz t)}2 . Monotonicity in
+                                               p
+10                                                                                                10
+
+11   k b proves the asserted bound.                                                      Q.E.D.   11
+
+12                                                                                                12
+
+13
+       Outward square roots in the transferred bound. The implementation intersects the           13
+
+14
+     directly acquired incumbent deficit with an outward version of the transfer bound. 14
+15
+     For an exact nonnegative rational z = p/q with q > 0, let m be the integer square            15
+
+16
+     root of ⌊280 p/q⌋, and increase m by one if m2 q < 280 p. The resulting m/240 is at          16
+          √                                                     √
+17
+     least z: before a possible increment, m is the floor of 240 z, and the exact square          17
+
+18
+     comparison detects whether that floor was exact. A binary64 conversion is moved              18
+
+19
+     upwards when its exact rational value is smaller than the dyadic bound, and its              19
+
+20
+     squared exact rational value is checked against z. Applying this procedure to upper          20
+
+21
+     endpoints, followed by outward additions, products, and squaring, gives a valid              21
+
+22
+     transferred deficit. Taking the smaller of two valid upper bounds remains valid. 22
+23
+     Both direct endpoint payloads and all integer operations are still paid. Because this        23
+
+24
+     is an incumbent-deficit bound, its tightening directly affects the lower contrast and        24
+
+25
+     the certified-refusal predicate; it does not itself tighten the candidate-deficit term in    25
+
+26
+     the upper acceptance endpoint.                                                               26
+
+27                                                                                                27
+
+28
+             20.5. Uniform safeguards, finite refinement, and an honest stopping floor            28
+
+29     P ROOF OF P ROPOSITION 11:       At any accepted step the previous theorem gives           29
+
+30   Jx (b) − Jx ( a) ≤ D < 0, and hence the original cost decreases by at least − D > 0. The     30
+
+31   replacement is explicitly feasible and qualified. A refused trial changes no action          31
+
+32   or future policy. Induct over the finite sequence, and telescope the original cost           32
+     90
+
+1    differences. This gives the lower gain account in (48). The initial completed policy               1
+
+2    satisfies Jx ( ainitial ) − V0 ( x ) ≤ τ, while every final feasible policy has cost at least      2
+
+3    V0 ( x ). Subtraction gives the upper bound τ.                                                     3
+
+4      This proof is statewise and representation independent. Finite Borel proposal,                   4
+
+5    arithmetic, ordering with fixed tie rules, and acceptance maps compose into a                      5
+
+6    Borel returned-action rule, provided the completed incumbent service is defined                    6
+
+7    statewise. The original finite-horizon policy theorem then defines its policy value. 7
+8    Exhaustion of a new comparison returns the already completed incumbent. A failed                   8
+
+9    scientific execution does not license omitting that requested state from the sample                9
+
+10   or presenting an incomplete service as a completed policy.                              Q.E.D.     10
+
+11                                                                                                      11
+          P ROPOSITION S.10—Finite precision above the full comparison margin: Fix two
+12                                                                                                      12
+     distinct feasible actions and one acquired feasible cut. Let gQ = Q x ( a) − Q x (b) and suppose
+13                                                                                                      13
+     κb is a valid, fixed upper bound on its candidate deficit. Put
+14                                                                                                      14
+
+                                                                √
+                                     r
+15                                       α                                                              15
+                             γ = Eab         ,     Fq = κb + ( κb + γ)2 .
+16                                     2mz t                                                            16
+
+17   Assume refinement at positive integer resolutions n produces fixed-density contrast intervals      17
+
+18   of width                                                                                           18
+
+19                                                                                                      19
+                                   2                                        2 2
+20        wn ≤ ηnum + min{ A2 /n , A1 /n},        A2 = min{2KRt, 2Mα R t },         A1 = Eab Rt,        20
+
+21                                                                                                      21
+     where ηnum ≥ 0 includes the stated terminal-node and accumulation errors. Suppose
+22                                                                                                      22
+
+23                                ϵ = ( gQ − δ)/β − Fq − ηnum > 0.                                      23
+
+24                                                                                                      24
+
+25
+     Then the upper contrast gate is strictly negative whenever                                         25
+
+26                                                                                                      26
+                                                  p
+                                       n > min{       A2 /ϵ, A1 /ϵ}.                            (22)
+27                                                                                                      27
+
+28   Acceptance also requires the separate original candidate qualification; if it is established by    28
+
+29   a resolution nqual and remains valid at the considered round, the two conditions together          29
+
+30   suffice.                                                                                           30
+
+31     If the actual work of each doubling round is at most cn + c0 , with c, c0 ≥ 0 and a positive     31
+
+32   integer starting resolution n0 , the total through a final round n J is at most c(2n J − n0 ) + 32
+                            NEURAL BELLMAN OPERATORS: SUPPLEMENT                             91
+
+1    c0 ( J + 1) ≤ 2cn J + c0 ( J + 1), apart from separately paid setup. A first doubling round   1
+
+2    meeting an integer target n∗ ≥ n0 satisfies n J < 2n∗ and J ≤ ⌈log2 (n∗ /n0 )⌉. This cost     2
+
+3    statement is conditional on the declared work model. Actual terminal solves, proposals,       3
+
+4    refused rounds, recording, and qualification costs are not replaced by a point-query count.   4
+
+5                                                                                                  5
+
+6
+       P ROOF : Let d = EP qu ( f b − f a ) and denote the true deficits by k a , k b . If d+ is   6
+
+7
+     the reported upper integral bound, 0 ≤ d+ − d ≤ wn . The complete-policy upper                7
+
+8
+     contrast used by the gate is U = h(b) − h( a) + β(d+ + κb ) + δ. The exact common- 8
+9
+     risk identity gives                                                                           9
+
+10                                                                                                 10
+                           U = − gQ + δ + β{(d+ − d) + (κb − k b ) + k a }
+11                                                                                                 11
+
+12
+                             ≤ − gQ + δ + β{wn + Fq },                                             12
+
+13                                                                                                 13
+     where Theorem S.9 bounds k a and k b ≥ 0 was retained in the first line and dropped
+14                                                                                                 14
+     only for the upper estimate. Under the stated positive margin, (22) makes the right
+15                                                                                                 15
+     side strictly negative. No inference about candidate qualification follows from that
+16                                                                                                 16
+     sign alone; its separate verified predicates are part of the assertion.
+17                                                                                                 17
+       For n j = 2 j n0 , ∑ jJ=0 n j = 2n J − n0 < 2n J . Sum the per-round work bound. Mini-
+18                                                                                                 18
+     mality of the first doubling round meeting n∗ gives the two displayed bounds on
+19                                                                                                 19
+     n J and J. For the finite executed ladder 2, 4, 8, 16, 32, 64, this guarantee applies only
+20                                                                                                 20
+     if a qualifying round also lies within that declared cap.                           Q.E.D.
+21                                                                                                 21
+
+22
+       The fixed-cut theorem does not assume that increasing the cell count also im- 22
+23                                                                                                 23
+     proves its tail localization. If the cut and its deficit remain fixed, their allowances
+24                                                                                                 24
+     remain in Fq . The actual implementation retains both direct original deficits and
+25
+     intersects the incumbent bound with the transferred one. A failed sufficient mar- 25
+26                                                                                                 26
+     gin can therefore be conservative; it is not proof that a particular candidate is
+27                                                                                                 27
+     economically inferior.
+28                                                                                                 28
+
+29     P ROPOSITION S.11—Sharp residual uncertainty of the unchanged-future inter- 29
+30   face: Suppose the only information about the actual-policy correction at two distinct         30
+
+31   actions is 0 ≤ ηx ≤ δ in (39), and their two Q x values are known exactly. The interval       31
+
+32   Q x (b) − Q x ( a) + [−δ, δ] is then sharp over the compatible corrections. Thus gQ > δ is    32
+     92
+
+1    necessary and sufficient for this information alone to certify strict improvement uniformly.     1
+
+2    Further refinement of the V1 integration alone cannot remove that floor.                         2
+
+3                                                                                                     3
+
+4                                                                                                     4
+          P ROOF : The difference ηx (b) − ηx ( a) is in [−δ, δ]. The upper endpoint is attained
+5                                                                                                     5
+     in the interface by setting ηx ( a) = 0, ηx (b) = δ; reversing those values attains the
+6                                                                                                     6
+     lower endpoint. If continuity were additionally required without any quantitative
+7                                                                                                     7
+     modulus, the two prescribed values could still be joined by a continuous bounded
+8                                                                                                     8
+     interpolation between these distinct actions. Consequently a strict negative upper
+9                                                                                                     9
+     contrast is equivalent to gQ > δ. The claim is about compatibility with the declared
+10                                                                                                    10
+     information: it does not assert that both extremal corrections are generated by
+11                                                                                                    11
+     the actual fixed terminal policy. That policy’s further verified structure would be
+12                                                                                                    12
+     additional information.
+13                                                                                                    13
+       For exactly the same action, both values of ηx are the same and cancellation is
+14                                                                                                    14
+     exact; the two-endpoint construction does not apply. If only the magnitude of the
+15                                                                                                    15
+     actual gain g J is specified, then gQ ≥ g J − δ. The corresponding sufficient worst-
+16                                                                                                    16
+     case condition for the exact-Q gate is g J > 2δ, rather than g J > δ. This distinction
+17                                                                                                    17
+     prevents a known-continuation gain and an actual-policy gain from being assigned
+18                                                                                                    18
+     the same resolution claim.                                                            Q.E.D.
+19                                                                                                    19
+
+20                                                                                                    20
+
+21                21. EXACT PRIMITIVE VALIDATION OF ORIGINAL-OPTIMUM REGRET                           21
+
+22                                                                                                    22
+       The R119 independent catalogue enclosure bounded Q x ( a) and Jx ( a) at fixed
+23                                                                                                    23
+     actions. The following additional construction also provides an independent lower
+24                                                                                                    24
+     bound on infa Q x ( a). It uses the retained original curvature proposition and explicit
+25                                                                                                    25
+     primitive gradients; it is a validation strengthening, not a new claim that a scalar
+26                                                                                                    26
+     fixed-action lower value already bounded the all-action optimum.
+27                                                                                                    27
+
+28                                                                                                    28
+
+29        P ROPOSITION S.12—An independent rational all-action witness: Fix the original              29
+
+30   d = 2 model and a rational original state and root action. At a terminal anchor y, choose        30
+
+31   any feasible rational v and any feasible original tail density q. Let W be the exact terminal    31
+
+32   objective under this fixed density, and let ( py , pv ) be its state and action gradients. For   32
+                             NEURAL BELLMAN OPERATORS: SUPPLEMENT                                      93
+
+1    arbitrary rational λ, ν ≥ 0, define                                                                     1
+
+2                                                                                                            2
+
+3                     e = pv + λ − ν,            c = W + λ{v − A(y)} − νv − e2 /4,                           3
+
+4                                 λ                                                                          4
+                      r = py −       1.                                                               (23)
+5                                 8d                                                                         5
+
+6
+     Then V1 (y′ ) ≥ c + r ⊤ (y′ − y) for every original state y′ . At a boundary one may choose             6
+
+7                                                                                                            7
+     λ = 1{v= A(y)} (− pv )+ and ν = 1{v=0} ( pv )+ ; no exact stationarity is required.
+8                                                                                                            8
+       Partition the root innovation interval into n equal cells, with midpoints zi and successors
+9                                                                                                            9
+     yi = F ( x, a, zi ). Acquire such supports (ci , ri ), and choose rational masses qi ∈ [0, 1/(nt)]
+10                                                                                                           10
+     summing to one. Put
+11                                                                                                           11
+
+12                   W0 = S( x ) + h( a) + β ∑ qi ci ,                                                       12
+                                                     i
+13                                                                                                           13
+
+14                     p0 = h ( a ) + β ∑
+                              ′
+                                              qi ri⊤ b,     a∗ = proj[0,A( x)] ( a − p0 /2),                 14
+                                          i
+15                                                                                                           15
+
+16
+                      B0 = W0 + p0 ( a∗ − a) + ( a∗ − a)2 .                                           (24)   16
+
+17                                                                                                           17
+     Then B0 ≤ V0 ( x ). Together with any separately valid original complete-policy upper bound
+18                                                                                                           18
+     U J ( a), this proves
+19                                                                                                           19
+
+20
+                 0 ≤ Jx ( a) − V0 ( x ) ≤ U J ( a) − B0 ,       | a − a0∗ ( x )|2 ≤ U J ( a) − B0 .          20
+
+21                                                                                                           21
+
+22   The maximum of finitely many such lower bounds acquired at the same original state is                   22
+
+23   also valid. No support or optimum bound is transferred across distinct states without an                23
+
+24   additional justified state comparison.                                                                  24
+
+25                                                                                                           25
+
+26     P ROOF : For a fixed feasible original density, the joint terminal state-action ob- 26
+27   jective Wq has the lower curvature m x ∥dy∥22 + 2 dv2 , where m x = (4 − 5β/4)/d > 0. 27
+28   This follows directly from ∇2 S ⪰ (4/d) I, h′′ ≥ 2, ∇2 g ⪰ 0, and |∂ j g| ≤ 10/d: the                   28
+
+29   only potentially negative transition-chain term is − ∑ j ∂ j g( F ) dy j dy j+1 /8, bounded             29
+
+30   below by −5∥dy∥22 /(4d). The other chain Hessian is positive semidefinite even                          30
+
+31   in a joint state-action direction. Integration under the fixed nonnegative density                      31
+
+32   preserves this bound. Matching first derivatives extend it across squared-hinge                         32
+     94
+
+1    junctions. Dropping the positive state-curvature term gives                                               1
+
+2                                                                                                              2
+
+3              Q1 (y′ , v′ ) ≥ Wq (y′ , v′ ) ≥ W + p⊤   ′            ′         ′    2
+                                                    y (y − y) + pv (v − v) + (v − v) .                         3
+
+4                                                                                                              4
+     Replace pv by e − λ + ν. For a feasible v′ ∈ [0, A(y′ )], −λv′ + νv′ ≥ −λA(y′ ). The
+5                                                                                                              5
+     affine capacity and the inequality e(v′ − v) + (v′ − v)2 ≥ −e2 /4 therefore give
+6                                                                                                              6
+     Q1 (y′ , v′ ) ≥ c + r ⊤ (y′ − y). Taking the infimum over the original feasible v′ proves
+7                                                                                                              7
+     (23). In particular the intercept must be this valid global-support intercept; a larger
+8                                                                                                              8
+     scalar lower bound obtained by clipping a quadratic at only the anchor state cannot
+9                                                                                                              9
+     be attached to r without a further proof.
+10                                                                                                             10
+       Here are explicit gradients suitable for an independent rational implementation.
+11                                                                                                             11
+     Put m = F (y, v, 0). The original terminal polynomial in the innovation is g(m) +
+12                                                                                                             12
+     kz + 5z2 , whose coefficients can be reconstructed by evaluating the primitives at
+13                                                                                                             13
+     − R, 0, R. For its exact clipped quadratic tail with left cut u, let
+14                                                                                                             14
+
+15                                                                                                             15
+          L = 2Rα,     B = 2Rt,     µ1 = − L(2u + L)/(2B),                Gj = ∂ j g(m) + (10/d)s j µ1 .
+16                                                                                                             16
+
+17   The squared hinge is constant along the zero-sum shock, and direct differentiation                        17
+
+18   of the remaining quadratics gives ∂ j g(m + sz) = ∂ j g(m) + (10/d)s j z. Thus Gj is the                  18
+
+19   exact fixed-density mean of that derivative. With cyclic indices,                                         19
+
+20                                                                                                             20
+
+21                    pv = 2v + 16v3 + β ∑ b j Gj ,                                                            21
+                                              j
+22                                                                                                             22
+                                                  1 1 − y j +1                      1 y j −1
+                                                                                           
+23                                                                                                             23
+                     py,j = ∂ j S(y) + β Gj         +                + G j −1         −             .   (25)
+                                                  2    16                           8   16
+24                                                                                                             24
+
+25   These formulas differentiate the fixed density, not its optimizing cut. The density                       25
+
+26   supplied by the independent quadratic threshold construction is exactly feasible                          26
+
+27   and maximizing at the anchor, but feasibility alone suffices for the global support                       27
+
+28   proof. All quantities are rational at the stated inputs.                                                  28
+
+29     For the root, the masses qi define a piecewise constant feasible AVaR density with                      29
+
+30   value nqi on cell i. For another feasible root action w and any z in cell i,                              30
+
+31                                                                                                             31
+
+32                                F ( x, w, z) − yi = b(w − a) + s(z − zi ).                                   32
+                              NEURAL BELLMAN OPERATORS: SUPPLEMENT                                      95
+
+1    Integrating its affine support over the symmetric cell removes the last term exactly. 1
+2    The same fixed feasible density consequently yields                                                      2
+
+3                                                                                                             3
+       Q x (w) ≥ S( x ) + h(w) + β ∑ qi {ci + ri⊤ b(w − a)} ≥ W0 + p0 (w − a) + (w − a)2 .
+4                                                                                                             4
+                                        i
+5                                                                                                             5
+     Its quadratic minimum over the full original capacity interval is (24). Taking the
+6                                                                                                             6
+     infimum of Q x proves the optimum lower bound. For equal cells with integral nt,
+7                                                                                                             7
+     selecting the largest nt values of ci with fixed ties and assigning mass 1/(nt) to
+8                                                                                                             8
+     them is feasible and maximizes this finite linear witness. This sorting changes the
+9                                                                                                             9
+     chosen original density, not the original continuous innovation law.
+10                                                                                                            10
+       Every implemented feasible policy costs at least V0 , so Jx ( a) ≤ U J ( a) gives the
+11                                                                                                            11
+     regret inequality. The original Q x is strongly convex in its action with modulus
+12                                                                                                            12
+     two. Its constrained minimizer obeys the boundary variational inequality. Hence
+13                                                                                                            13
+     Q x ( a) − V0 ( x ) ≥ | a − a0∗ ( x )|2 . Use Q x ( a) ≤ Jx ( a) ≤ U J ( a) and B0 ≤ V0 ( x ) to prove
+14                                                                                                            14
+     the action-distance bound. A maximum of valid lower bounds on the same scalar
+15                                                                                                            15
+     optimum remains a valid lower bound. This completes the proof.                                Q.E.D.
+16                                                                                                            16
+
+17     The independent fixed-action upper value is still constructed by the original                          17
+
+18   midpoint/duplicated-endpoint convex-order argument in Proposition S.7, with βε 1                         18
+
+19   added once for the actual future policy. The new all-action witness does not assert                      19
+
+20   containment of a fine production interval inside an arbitrarily selected coarse one,                     20
+
+21   nor equality of any fine endpoint to the truth. It supplies its own exact, reproducible                  21
+
+22   bounds on the original optimum, regret, and action error.                                                22
+
+23                                                                                                            23
+      22. POPULATION GAIN WITH FROZEN DECISIONS AND FINITE NUMERICAL INTERVALS
+24                                                                                                            24
+
+25     P ROOF OF P ROPOSITION 12:             Let F contain the frozen actors, fitting data, pro- 25
+26   posal and refinement protocol, representation choices, initial-state sampling law,                       26
+
+27   and statewise execution rule. Condition on F . For each of the 48 fixed groups,                          27
+
+28   require that its completed incumbent and final action be measurable functions of its                     28
+
+29   own initial state, with the uniformly safe guarantee in Proposition 11. In particular                    29
+
+30   they are not fitted, selected, or changed after observing the validation states. Apply                   30
+
+31   each complete service to a single original state; batching innovations within that                       31
+
+32   state does not violate this condition. Batch logic that lets another sampled state’s                     32
+     96
+
+1    failed certificate alter the current state’s action would require a different probability   1
+
+2    argument.                                                                                   2
+
+3      For the declared finite dyadic law one may take                                           3
+
+4                                                                                                4
+                                                      40       2   40
+5                                  X40 = {0, 1, . . . , 2 − 1} /2 .                              5
+
+6                                                                                                6
+
+7    Independent uniform coordinate draws from this set make X1 , . . . , X64 iid under the      7
+
+8    finite uniform population. A fixed sequence of 640 independently uniform bytes              8
+
+9    can encode these 128 coordinates in blocks of five bytes. Their later retention is          9
+
+10   reproducibility evidence. Independence and uniformity of the generating entropy,            10
+
+11   and its independence of F , remain the statistical assumption. The conclusion is            11
+
+12   for this declared law, not automatically for a continuous uniform population or an          12
+
+13   empirical economic state distribution.                                                      13
+
+14     Write Gj ( x ) for the actual complete-policy gain over the corresponding completed       14
+
+15   incumbent. The uniform safeguard gives 0 ≤ Gj ≤ τ before the sample is drawn. Let           15
+
+16   ℓ ji ≤ Gj ( Xi ) ≤ u ji be the saved valid gain bounds, intersected with [0, τ ]. For exam- 16
+17   ple, accepted-step lower gains can be summed outwardly, and the two separately              17
+
+18   valid complete-policy value intervals can provide another gain interval to intersect. 18
+19   Numerical interval widths are retained, not replaced by midpoints. Exact equal- 19
+20   policy identities give Gj = 0 without independent interval subtraction. A missing           20
+
+21   independent numerical validation can conservatively use [0, τ ] and must not be             21
+
+22   dropped. The numerical enclosure procedure may depend on already observed                   22
+
+23   validation information, provided its intervals remain valid and it does not change          23
+
+24   the frozen returned policy rule.                                                            24
+
+25     For a fixed group and threshold define the latent events Bi = 1{Gj (Xi )≥θk } and their   25
+
+26   probability p jk . These are iid Bernoulli variables conditional on F . The observable      26
+
+27   certified count satisfies                                                                   27
+
+28                                                                                               28
+
+29                               Kcert = ∑ 1{ℓ ji ≥θk } ≤ ∑ Bi =: Ktrue                          29
+                                          i                i
+30                                                                                               30
+
+31   pointwise. The certified count itself need not be binomial if the numerical validation      31
+
+32   is incomplete or adaptive. Its domination by the latent binomial count is sufficient. 32
+                             NEURAL BELLMAN OPERATORS: SUPPLEMENT                           97
+
+1    The parameters may be dependent across groups; no cross-group independence is                1
+
+2    required.                                                                                    2
+
+3      Here is the exact inversion used in the statement. For an observed count k ∈               3
+
+4    {1, . . . , n}, n = 64, define                                                               4
+
+5                                                                                                 5
+                                                  n    
+                                                       n r
+6                                      Tk ( p) = ∑        p (1 − p ) n −r .                       6
+                                                 r =k
+                                                       r
+7                                                                                                 7
+
+8                                                                                                 8
+     It is continuous and strictly increasing on (0, 1), with endpoint values zero and
+9                                                                              −1 k −1            9
+     one. Differentiating the finite sum and telescoping proves Tk′ ( p) = n(nk− 1) p  (1 −
+10                                                                                                10
+     p)n−k > 0. There is therefore a unique solution of Tk ( p) = 1/7680 in (0, 1); call
+11                                                                                                11
+     it p∗ (k). For k = 0 set p∗ (0) = 0. The map k 7→ p∗ (k ) is nondecreasing because
+12                                                                                                12
+     Tk+1 ( p) ≤ Tk ( p). For the true parameter p, the event p∗ (K ) > p is either empty or of
+13                                                                                                13
+     the form K ≥ k0 , where Tk0 ( p) < 1/7680. Its probability is therefore at most 1/7680.
+14                                                                                                14
+       An exactly rational implementation need not evaluate a beta quantile. Start with
+15                                                                                                15
+     the bracket [0, 1] and bisect it 48 times, evaluating the finite binomial polynomial as
+16                                                                                                16
+     an exact rational. Move its lower endpoint to the midpoint only when Tk there is
+17                                                                                                17
+     at most 1/7680. The returned lower endpoint p− satisfies p− ≤ p∗ (k) and p∗ (k ) −
+18                                                                                                18
+     p− ≤ 2−48 . Thus it retains the same conservative coverage when applied to Ktrue .
+19                                                                                                19
+     Monotonicity of p∗ (k ) and Kcert ≤ Ktrue imply p− (Kcert ) ≤ p∗ (Ktrue ). Consequently
+20                                                                                                20
+     the same coverage holds for the actually reported certified count, including any
+21                                                                                                21
+     conservative missing-validation intervals. There are 48 · 4 = 192 prespecified event
+22                                                                                                22
+     bounds; their union failure probability is at most 192/7680 = 1/40.
+23                                                                                                23
+       On the simultaneous coverage event, p−
+                                            jk ≤ p jk . Because the thresholds are in-
+24                                                                                                24
+     creasing and θ0 = 0, the following pointwise inequality holds:
+25                                                                                                25
+
+26                                    4                                                           26
+
+27                                    ∑ (θk − θk−1 )1{Gj (x)≥θk } ≤ Gj (x).                       27
+                                  k =1
+28                                                                                                28
+
+29   If the largest passed threshold is θs , the left side is exactly θs ; otherwise it is zero. 29
+30   Taking expectations proves (50). Each individual lower bound θk p−
+                                                                      jk is also valid. 30
+31   The staircase statement uses all fixed thresholds under the same simultaneous                31
+
+32   coverage event.                                                                              32
+     98
+
+1      For the mean interval, a short proof of the needed bounded-variable inequality is               1
+
+2    useful. If W ∈ [0, τ ], the logarithmic moment generating function ψ(λ) = log EeλW                2
+
+3    has ψ′′ (λ) = Varλ (W ) ≤ τ 2 /4 under its exponentially tilted law. This variance                3
+
+4    bound follows from Eλ (W − τ/2)2 ≤ τ 2 /4 and the minimizing property of the                      4
+
+5    mean. Integrating twice from zero gives                                                           5
+
+6                                                                                                      6
+                                            λ(W −EW )        λ2 τ 2 /8
+                                       Ee               ≤e               .
+7                                                                                                      7
+
+8                                                                                                      8
+     Independence, exponential Markov inequality, and minimization over λ yield for
+9                                                                                                      9
+     either tail
+10                                                                                                     10
+                                                                                 −2nr2 /τ 2
+                        P W − EW exceeds r in that tail ≤ e
+                                                                             
+11                                                                                            .        11
+
+12
+     Since ℓ j ≤ G j ≤ u j , the lower failure EGj < ℓ j − r and upper failure EGj > u j + r are       12
+
+13                                                                                                     13
+     contained in the corresponding two deviation events for the unobserved true gain
+14                                                                                                     14
+     average. Thus no numerical value error has been ignored.
+15                                                                                                     15
+       For the prespecified rational radius r = 33τ/128,
+16                                                                                                     16
+                                        2      2
+17                                  2nr /τ = 1089/128 =: x.                                            17
+
+18                                                                                                     18
+     The strict inequality e x > 3840 can itself be checked without a floating logarithm
+19                                                                                                     19
+     or exponential. Write Sm (z) = ∑m    k
+                                     k=0 z /k!. Since x > 17/2, positivity of coefficients
+20                                                                                                     20
+     gives
+21                                                                                                     21
+
+22                                                                                                     22
+              S20 ( x ) ≥ S12 (17/2) ≥ S11 (8)(1 + 1/2) > 2644(3/2) = 3966 > 3840.
+23                                                                                                     23
+
+24   The middle inequality follows by expanding (8 + 1/2)k : every term of                             24
+
+25   S11 (8)S1 (1/2) occurs with nonnegative coefficient in S12 (8 + 1/2). For the                     25
+
+26   last lower bound, integer lower bounds for the successive terms of S11 (8) are                    26
+
+27   1, 8, 32, 85, 170, 273, 364, 416, 416, 369, 295, 215; their sum is 2644, and several              27
+
+28   inequalities are strict. Since e x ≥ S   20 ( x ), each one-sided mean failure is strictly less   28
+
+29   than 1/3840. The 48 two-sided mean intervals therefore fail with total probability                29
+
+30   less than 96/3840 = 1/40.                                                                         30
+
+31     A final union bound over the event and mean families gives failure probability                  31
+
+32   at most 1/20. Intersecting valid bounds with the known population range [0, τ ]                   32
+                               NEURAL BELLMAN OPERATORS: SUPPLEMENT                                       99
+
+1    proves (51) and the simultaneous 0.95 assertion. No independence between the                               1
+
+2    two inference families is used. These are ordinary probability bounds (Clopper                             2
+
+3    and Pearson, 1934, Hoeffding, 1963), applied after the original-objective safeguard                        3
+
+4    makes their gain range and events mathematically valid.                                         Q.E.D.     4
+
+5                                                                                                               5
+
+6                                                   REFERENCES                                                  6
+
+7                                                                                                               7
+     B OYD , S TEPHEN AND L IEVEN VANDENBERGHE (2004): Convex Optimization, Cambridge University Press.
+8     [73]                                                                                                      8
+
+9    C LOPPER , C. J. AND E. S. P EARSON (1934): “The Use of Confidence or Fiducial Limits Illustrated in the   9
+
+10    Case of the Binomial,” Biometrika, 26 (4), 404–413. [99]                                                  10
+     E L K AROUI , N ICOLE , S HIGE P ENG , AND M ARIE -C LAIRE Q UENEZ (1997): “Backward Stochastic Differ-
+11                                                                                                              11
+      ential Equations in Finance,” Mathematical Finance, 7 (1), 1–71. [40, 53]
+12                                                                                                              12
+     H OEFFDING , WASSILY (1963): “Probability Inequalities for Sums of Bounded Random Variables,” Journal
+13    of the American Statistical Association, 58 (301), 13–30. [21, 99]                                        13
+
+14   M AURER , A NDREAS AND M ASSIMILIANO P ONTIL (2009): “Empirical Bernstein Bounds and Sample                14
+
+15    Variance Penalization,” in Proceedings of the 22nd Annual Conference on Learning Theory, arXiv:0907.3740. 15
+      [7, 16]
+16                                                                                                              16
+     N OVAK , E RICH (2015): “Some Results on the Complexity of Numerical Integration,” ArXiv:1409.6714,
+17                                                                                                              17
+      version 2, 18 November 2015. [87]
+18   PARDOUX , E TIENNE AND S HIGE P ENG (1990): “Adapted Solution of a Backward Stochastic Differential        18
+
+19    Equation,” Systems & Control Letters, 14 (1), 55–61. [40, 53]                                             19
+
+20   R OCKAFELLAR , R. T YRRELL AND S TANISLAV U RYASEV (2002): “Conditional Value-at-Risk for General          20
+      Loss Distributions,” Journal of Banking and Finance, 26 (7), 1443–1471. [69, 73]
+21                                                                                                              21
+     R USZCZY ŃSKI , A NDRZEJ (2010): “Risk-Averse Dynamic Programming for Markov Decision Processes,”
+22                                                                                                              22
+      Mathematical Programming, 125 (2), 235–261. [43]
+23   ——— (2014): “Erratum to: Risk-Averse Dynamic Programming for Markov Decision Processes,” Mathe- 23
+24    matical Programming, 145, 601–604. [43]                                                                   24
+
+25                                                                                                              25
+
+26                                                                                                              26
+
+27                                                                                                              27
+
+28                                                                                                              28
+
+29                                                                                                              29
+
+30                                                                                                              30
+
+31                                                                                                              31
+
+32                                                                                                              32
+

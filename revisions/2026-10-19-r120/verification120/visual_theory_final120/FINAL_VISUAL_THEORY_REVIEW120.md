@@ -1,0 +1,11 @@
+# Final R120 supplement: source-bound visual review
+
+**Passed within the stated visual scope.** The final supplement is 539,661 bytes with SHA256 `4163cb0a07781179655ade0011ddb82190c4728c24cc5f6c37808cdff51f6b4f`. Its actual strict build receipt is `build_receipts120/20261019T091308.243215Z/BUILD_RECEIPT120.json` (SHA256 `c03b26078a90f74670c887355212e05751b66347221aa5cda5718c9405c87ead`): `compiled_clean`, no issues or placeholders, and all 19 commands exit zero.
+
+The final PDF was individually inspected on pages **1, 81, 84, 88, 89, 91–96**, using 100 dpi grayscale renders. This follows the preserved prior-PDF inspection of page 1 and every page 79–99. The active main/proof files and frozen mathematical snapshots retain exactly the same bytes as in that earlier review. The follow-up does not claim that all final pages were individually re-rendered.
+
+The main/supplement numbering ambiguity is resolved. Main statements remain Theorems 9 and 10 and Propositions 11 and 12. Supplement statements visibly use S.9, S.11 and S.12; generated auxiliary labels also confirm S.8 for the information result and S.10 for finite resolution. The first page explains the convention. Equation (23) remains together on page 93, and the statement/proof transitions and mathematical displays on pages 92–95 are readable. No clipping, text collision or unresolved visible references were found on the inspected final pages.
+
+The visible argument retains its scientific scope: the information lower bound concerns the stated fixed-density oracle class; the current controller contributes its unchanged future-policy uncertainty floor; the all-action lower bound uses the proper Lagrange support anchor; and population inference is conditional on frozen decisions and the declared finite state law. The review adds no claim of a neural-specific advantage, full-model information lower bound, empirical population welfare gain, or CI success.
+
+Both integrated scientific wording review receipts were copied byte-for-byte into native `verification120/`. No scientific execution, build, test, or author-source modification was performed in this review. The JSON records all final render identities, mathematical source hashes, observed reference labels, the strict build receipt and the earlier visual-review identity.
