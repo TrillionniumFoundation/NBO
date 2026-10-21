@@ -1,0 +1,11 @@
+# Primary-source positioning of R122 support-to-action theorem
+
+Verified primary sources (2026-10-20 client date):
+
+1. Olivier Devolder, François Glineur, Yurii Nesterov (2014), *First-order methods of smooth convex optimization with inexact oracle*, Mathematical Programming 146(1–2), 37–75, DOI 10.1007/s10107-013-0677-5. Author manuscript: https://optimization-online.org/wp-content/uploads/2010/12/2865.pdf . Institutional record https://research.dial.uclouvain.be/entities/publication/319139c2-fb6f-49a8-913f-4eaa66d10005 . Definition 1 and Section 2.2 formulate an approximate affine lower oracle with an upper quadratic/error bound and discuss epsilon-subgradients. This is the correct classical context. R122's saved support plus separate original upper value implies an epsilon-subgradient after subtracting the mu-quadratic; the square-root error conversion is a smoothness calculation, not a neural discovery. The specific bounded-domain interval and original-risk payload/qualification construction are what the draft supplies.
+
+2. Adrien B. Taylor, Julien M. Hendrickx, François Glineur (2017), *Smooth strongly convex interpolation and exact worst-case performance of first-order methods*, Mathematical Programming 161, 307–345, DOI 10.1007/s10107-016-1009-3. Authors' accepted manuscript https://arxiv.org/pdf/1502.05666 . Necessary/sufficient interpolation conditions and matching functions are a primary precedent for sharp information bounds. Our elementary one-point quadratic witnesses do not compete with that general interpolation theory.
+
+No exhaustive priority claim is established by these searches. Do not call the support-to-derivative square-root formula, projected smooth descent, or inexact first-order optimization generally new. Restrict the positive claim to an explicit capacity-aware sharp information interface and original continuous-risk implementation which can reuse paid support information to change and qualify an economic policy under the unchanged criterion.
+
+Web reference IDs in this agent: turn1view0 (DGN full manuscript), turn1view1 (THG full manuscript), turn0search0 (DGN journal metadata). Root must open these URLs independently before citing their web reference IDs in final chat. Bibliography keys provided in references122_theory.bib.
