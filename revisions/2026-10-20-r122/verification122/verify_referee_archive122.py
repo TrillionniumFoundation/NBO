@@ -3,7 +3,9 @@
 The verifier reassembles parts into a temporary ZIP, checks exact member
 census, safe ordinary-file metadata and every streamed member hash, then
 checks the native-file manifest, including the I122 publication receipt and
-all three declared independent-repair Git blobs.  --repository optionally verifies every
+all three independently pinned published independent-repair Git blobs.
+The observed I122 tree and source identities are fixed in this reader.
+--repository optionally verifies every
 archived member against the current ordinary native file, including the
 manifest.  It never extracts into the repository or imports a scientific
 module.  --receipt, when supplied, is a new exclusive output file.
@@ -23,6 +25,30 @@ SOURCE_F = "2f483615c8bc0037e43ec01a16cce05c724f8c60"
 STATE_D = "a3323b6f557315ea91b536637419ef6fd7984b61"
 ADAPTER = "af73f9bca8f2249da1601208a1921f50ea8fd074"
 INDEPENDENT = "1f19410305c707716135defd91d6644d70657d84"
+# Independently observed immutable I122 publication identities. The offline
+# reader pins these bytes; it does not fetch Git objects or infer membership
+# solely from a self-consistent archive attestation.
+INDEPENDENT_TREE = '6f92dd077a1b27986d22c264603ddb1cf4f07667'
+INDEPENDENT_SOURCE_ROWS = [
+    {
+        "bytes": 6894,
+        "git_blob": "23f295b45b26798c3ed99da5355232682a13ea67",
+        "path": "revisions/2026-10-20-r122/provenance122/INDEPENDENT_SCHEMA_AMENDMENT122.md",
+        "sha256": "2e21674081a07c03a797b43b8f765c9acffa8ff40f5528854f00817cecc14518"
+    },
+    {
+        "bytes": 9203,
+        "git_blob": "5f9c41216025c97cc94bef4ca5a5de2288c94002",
+        "path": "revisions/2026-10-20-r122/verification122/independent_schema_adapter122.py",
+        "sha256": "9d2fcf4dd41cb1eab45afec5f4e737164b0992bac459105dd06563abc95aa92c"
+    },
+    {
+        "bytes": 9147,
+        "git_blob": "b1f32dc2fc690ae67b3e57c2a12486e191616a68",
+        "path": "revisions/2026-10-20-r122/verification122/test_independent_schema_adapter122.py",
+        "sha256": "6c6c293f5432eaa8d87b1b8d01ae6f392c90fe92e8a6c33a6d18733b3955c67a"
+    }
+]
 INDEPENDENT_PUBLICATION = "revisions/2026-10-20-r122/provenance122/INDEPENDENT_SCHEMA_PUBLICATION122.json"
 INDEPENDENT_SOURCE_PATHS = (
     "revisions/2026-10-20-r122/provenance122/INDEPENDENT_SCHEMA_AMENDMENT122.md",
@@ -113,15 +139,16 @@ def independent_publication_binding(value, members, zipped):
           and publication.get("independent_adapter_commit") == INDEPENDENT
           and publication.get("independent_adapter_tree") == value.get("independent_adapter_tree"),
           "Archived I122 publication receipt differs from manifest/transport identity")
-    tree = value.get("independent_adapter_tree")
-    check(isinstance(tree, str) and len(tree) == 40
-          and all(c in "0123456789abcdef" for c in tree), "Invalid I122 tree identity")
+    check(value.get("independent_adapter_tree") == INDEPENDENT_TREE,
+          "I122 tree differs from the independently observed publication")
     source_rows = value.get("independent_adapter_source_files")
     check(isinstance(source_rows, list) and len(source_rows) == len(INDEPENDENT_SOURCE_PATHS)
           and {r.get("path") for r in source_rows} == set(INDEPENDENT_SOURCE_PATHS),
           "Exact three-source I122 repair binding required")
     check(sorted(publication.get("source_files", []), key=lambda r: r["path"])
           == source_rows, "I122 receipt/source records differ or are unsorted")
+    check(source_rows == INDEPENDENT_SOURCE_ROWS,
+          "I122 source rows differ from the independently observed publication")
     for row in source_rows:
         check(set(row) == {"path", "bytes", "sha256", "git_blob"},
               "Unexpected I122 source binding schema")
@@ -247,6 +274,8 @@ def main():
         "source_commit_F": SOURCE_F, "state_commit_D": STATE_D,
         "reporting_adapter_commit": ADAPTER, "independent_initial_state_units": 32,
         "independent_adapter_commit": INDEPENDENT,
+        "independent_adapter_tree": INDEPENDENT_TREE,
+        "independent_adapter_published_source_identities_pinned": True,
         "independent_adapter_publication_sha256": transport["independent_adapter_publication"]["sha256"],
         "independent_adapter_sources_checked": len(INDEPENDENT_SOURCE_PATHS),
         "transport_sha256": hashlib.sha256(raw).hexdigest(),

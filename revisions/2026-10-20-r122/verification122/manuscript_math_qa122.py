@@ -155,6 +155,12 @@ MANUAL_CHAINS = [
         "limits": "Sharpness is restricted to exact support slope and the exact untruncated information class. The implemented finite dyadic radii and global gradient cap need not be sharp. The inner dyadic capacity is used for actual menu construction. Precision-rate guarantees require the stated oracle assumptions and do not remove the curvature/future-policy width floor. Priced stopping is only the compulsory-cost single-decision dominance region.",
     },
     {
+        "name": "Post-freeze matching gain bounds at the exact paid-support information interface",
+        "sources": ["new122/information_minimax122.tex", "new122/support_to_action_main122.tex", "new122/support_to_action_proofs122.tex"],
+        "finding": "Checked that every exact derivative in the untruncated interior interval has a common constant-L witness satisfying the complete global support. A single endpoint witness attains the randomized expected contrast, with variance term, without exchanging a supremum and an expectation. The arbitrary future-error interface adds delta times the probability of a nonzero displacement; conditioning on replacement proves the matching deterministic/ randomized bound, including exact incumbent retention and zero-gain edge cases.",
+        "limits": "This explicitly post-F analytic deduction changes no frozen procedure or numerical outcomes. It concerns only the specified scalar exact-p information class and feasible actions with no extra queries; it is not minimax optimality of the implemented finite-radius/capped/menu service, a realized investment-model lower bound, neural exclusivity, an acquisition/query complexity bound, or a cost/adoption conclusion. Complete-policy qualification and objective-width tests remain separate.",
+    },
+    {
         "name": "Joint conditional inference for the frozen original policies",
         "sources": ["new122/inference122.tex", "code122/stats122.py", "new122/numerical122.tex"],
         "finding": "Checked the independent dyadic state law, common original-policy support, paired numerical enclosures, exact same-method identity rule, self-contained bounded-mean proof, rational exponential witness and one-sided binomial inversion. The 116 safe means, 232 threshold events and 348 signed comparisons use the same 32 initial states and the 0.01/0.01/0.03 union-bound allocation.",

@@ -76,7 +76,11 @@ def main():
     save()
     try:
         primary = 'results122/primary-attempt02'
-        independent = 'results122/independent-attempt02'
+        publication = json.loads((ROOT / 'PUBLICATION_INPUTS122.json').read_text())
+        independent = publication['independent_directory']
+        independent_path = (ROOT / independent).resolve()
+        if not independent_path.is_relative_to(ROOT / 'results122'):
+            raise ValueError('Published independent stage must be inside results122')
         original_stats = ROOT / 'results122/statistics-attempt01'
         original_report = ROOT / 'results122/report-attempt02'
         stats = output / 'statistics-replay01'

@@ -1,0 +1,78 @@
+name: NBO R122 author package
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r122-action-information-2026-10-20
+    paths:
+      - revisions/2026-10-20-r122/CI_TRIGGER122.json
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-20-r122/
+            /.github/workflows/nbo-r122-author-package.yml
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Install declared build and numerical-reader dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
+          python -m pip install numpy==2.3.5 scipy==1.17.0 matplotlib==3.10.8
+      - name: Materialize exact frozen source closure and immutable ancestry
+        run: |
+          git fetch --filter=tree:0 --depth=40 origin "$GITHUB_SHA"
+          git fetch --filter=tree:0 --depth=16 origin a3323b6f557315ea91b536637419ef6fd7984b61
+          git fetch --filter=tree:0 --depth=1 origin 796c5f2badf68b051ac6c144884c0e61b87faf5e
+          git fetch --filter=tree:0 --depth=1 origin 56cff43b088c7d6b1cee352d27fc9de8573c46ed
+          git fetch --filter=tree:0 --depth=1 origin af73f9bca8f2249da1601208a1921f50ea8fd074
+          git fetch --filter=tree:0 --depth=1 origin 1f19410305c707716135defd91d6644d70657d84
+          python - <<'PYCODE'
+          import hashlib, json, subprocess
+          from pathlib import Path
+          root=Path.cwd()
+          revision=root/'revisions/2026-10-20-r122'
+          manifest=json.loads((revision/'SOURCE_FREEZE122.json').read_text())
+          for relative,expected in sorted(manifest['scientific_files'].items()):
+              data=subprocess.check_output(['git','show','2f483615c8bc0037e43ec01a16cce05c724f8c60:'+relative])
+              if hashlib.sha256(data).hexdigest()!=expected:
+                  raise ValueError('Frozen Git source differs: '+relative)
+              path=root/relative
+              if path.exists():
+                  if path.read_bytes()!=data:raise ValueError('Existing frozen source differs: '+relative)
+              else:
+                  path.parent.mkdir(parents=True,exist_ok=True)
+                  path.write_bytes(data)
+          PYCODE
+      - name: Verify delivered science, replay fixed reports, and compile four documents
+        working-directory: revisions/2026-10-20-r122
+        run: python verification122/ci_verify122.py
+      - name: Preserve actual CI receipts and compiled PDFs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nbo-r122-actual-author-verification
+          if-no-files-found: error
+          retention-days: 90
+          path: |
+            revisions/2026-10-20-r122/ci122/
+            revisions/2026-10-20-r122/build/ECTA.pdf
+            revisions/2026-10-20-r122/build/supp.pdf
+            revisions/2026-10-20-r122/build/appendix.pdf
+            revisions/2026-10-20-r122/build/RESPONSE_TO_REFEREE.pdf
