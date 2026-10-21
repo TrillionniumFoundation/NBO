@@ -1,0 +1,640 @@
+\section{Original-policy action comparisons and their information cost}
+\label{supp:improvement120}
+
+This section proves the R120 comparison construction under the original
+investment primitives.  The completed-incumbent safeguard, three projected
+support proposals, and original all-action witnesses retain their
+R108--R110 ownership.  The common-risk identity retains its R111/R119
+ownership.  The new ingredients proved here are an original AVaR
+comparison modulus, the associated mixed integration interface and its
+restricted information bound, and quantitative control of common-tail
+mismatch.  The statistical transfer and strong-convexity safeguards use
+classical arguments and are proved to make their assumptions explicit.
+No statement supplies a neural representation separation.
+
+\subsection{Valid paired integration and the policy contrast}
+\begin{proof}[Proof of Theorem~\ref{thm:paired120}]
+Write $D=f_b-f_a$.  A Lipschitz function of constant $E_{ab}$
+satisfies on a cell with midpoint $z_i$ and length $h_i$
+\[
+ \left|\int_{B_i}D(z)\,dz-h_iD(z_i)\right|
+ \le E_{ab}\int_{B_i}|z-z_i|\,dz
+ =E_{ab}h_i^2/4.
+\]
+Summing and dividing by $B=2Rt$ proves the second interval in
+\eqref{eq:pairintersection120}, including arbitrary valid midpoint
+value errors.  Separately, convexity gives for each $f_a$
+\[
+ h_if_a(z_i)\le\int_{B_i}f_a(z)\,dz
+       \le\frac{h_i}{2}\{f_a(l_i)+f_a(r_i)\}.
+\]
+Valid lower midpoint and upper endpoint values thus give
+$L_a\le\mathbb E_Pq_uf_a\le U_a$, and likewise for $b$.
+Subtracting these two valid intervals proves the first interval.
+Both contain the same integral, so their exact intersection is
+nonempty and valid.  Empty outward intersections signal a failed
+numerical construction, not a license to choose a favorable endpoint.
+Zero-length tails contribute zero measure and are omitted.
+
+For completeness, each exact convex midpoint--secant width is
+bounded by $KRt/n^2$ under $h_i\le B/n$.  On a cell its unnormalized
+gap is $h_i^2/4$ times the difference of the right and left
+half-cell secant slopes.  These differences are nonnegative; ordering
+all cells, including across the omitted center, bounds their sum by
+$2K$.  Thus the normalized width is at most
+$Kh_{\max}^2/(2B)\le KRt/n^2$.
+Two such widths sum to $2KRt/n^2$.
+The paired Lipschitz interval has width
+\[
+ \frac{E_{ab}}{2B}\sum_i h_i^2
+ \le E_{ab}h_{\max}/2\le E_{ab}Rt/n.
+\]
+Intersection proves \eqref{eq:mixedwidth120}.
+The midpoint--secant inequality is applied only to each convex
+continuation, never to $D$.
+
+For the original continuations, Theorem~\ref{thm:modulus120}
+also gives a Lipschitz constant $2M_\alpha$ for $f_a'$:
+the innovation direction has squared norm two.
+The two Taylor upper bounds at the endpoints of a cell
+therefore imply
+\[
+ \frac{f_a(l_i)+f_a(r_i)}2-f_a(z_i)
+ \le \frac{2M_\alpha h_i^2}{8}.
+\]
+The opposite linear terms cancel.  Multiply by $h_i/B$
+and sum over the cells.  The midpoint--secant width for
+one function is at most $M_\alpha h_{\max}^2/4$,
+and the difference of the two separately enclosed
+integrals has width at most
+$M_\alpha h_{\max}^2/2\le2M_\alpha R^2t^2/n^2$.
+Intersecting this analytic bound with the previous
+ones proves \eqref{eq:smoothpairwidth120}.
+The numerical algorithm already computes these same
+midpoint and endpoint values; this consequence changes
+neither its inputs nor its prescribed decisions.
+
+For the same feasible original density, define
+$k_a=\rho_\alpha(f_a)-\mathbb E_Pq_uf_a\ge0$ and similarly $k_b$.
+Direct cancellation yields
+\[
+ \rho_\alpha(f_b)-\rho_\alpha(f_a)
+     =\mathbb E_Pq_uD+k_b-k_a.
+\]
+Consequently the optimal-future root contrast lies in
+$h(b)-h(a)+\beta[d_--\kappa_a,d_++\kappa_b]$.
+By \eqref{eq:future120}, the difference of the two actual future
+allowances lies in $[-\delta,\delta]$, not $[-2\delta,2\delta]$.
+Adding this interval proves \eqref{eq:policycontrast120}.
+This inference uses the same implemented future policy at both
+actions and makes no convexity assertion about its value.
+When the two realized actions agree, their complete-policy values
+and their continuation functions agree exactly.  Their difference
+is zero before any interval widening or new acquisition.
+\end{proof}
+
+\paragraph{Explicit node-precision allowance.}
+Suppose every acquired scalar value interval has width at most
+$\xi$ and the sums are computed exactly.  The paired midpoint
+interval gains width at most $2\xi$ from its node intervals.
+The separate convex difference gains width at most $4\xi$.
+Thus a valid bound replacing \eqref{eq:mixedwidth120} is
+\begin{equation}\label{eq:inexactpairwidth120}
+ \min\left\{\frac{2KRt}{n^2}+4\xi,
+                      \frac{ERt}{n}+2\xi\right\}.
+\end{equation}
+To prove this, write each midpoint lower error and each endpoint
+upper error separately.  Their nonnegative normalized weights sum
+to one, so each such weighted error is at most $\xi$.
+For the paired midpoint difference the sum of the two interval
+widths is at most $2\xi$.  The remaining terms are the exact
+quadrature gaps just proved.  Outward accumulation adds its
+separately bounded arithmetic enlargement.  In an implementation,
+the directly retained interval endpoints remain authoritative;
+neither $\xi$ nor the future-policy allowance is silently sent to zero.
+
+\subsection{A matching bound for the fixed-tail information interface}
+\begin{proposition}[Paid paired point information]
+\label{prop:pairinformation120}
+Fix $R,K>0$, $t=1-\alpha>0$, $\alpha\in[0,1)$, and $E\ge0$.
+The unknown pair consists of convex $K$-Lipschitz functions on
+$[-R,R]$ whose difference is $E$-Lipschitz.  A known feasible
+two-tail density and these class restrictions are supplied.
+The information oracle returns an exact value of one chosen
+function at one chosen point.  A reported interval must contain
+the fixed-density integral of the difference for every pair
+consistent with its transcript.
+
+For every integer $n\ge1$, there is a nonadaptive quadrature
+algorithm using at most $4n+8$ scalar values whose width is at most
+$\min\{2KRt/n^2,ERt/n\}$.
+Conversely, for the known one-sided density
+$q=t^{-1}\boldsymbol1_{[-R+2R\alpha,R]}$, every deterministic
+adaptive algorithm using at most $N$ scalar values has an input
+requiring width at least \eqref{eq:pairlower120}.
+For $N\ge32$ the upper width can in particular be bounded by
+\[
+ \min\{128KRt/N^2,\ 8ERt/N\}.
+\]
+These are interval-width bounds, not point-estimation error bounds.
+\end{proposition}
+
+\begin{proof}
+For the upper bound, divide a nonempty tail of length $b_j$ into
+$\lceil nb_j/(2Rt)\rceil$ equal cells.  The two tail lengths sum
+to $2Rt$, so at most $n+1$ nonempty cells suffice.  Each function
+requires at most $2n+4$ midpoint and distinct endpoint values.
+Paying for both functions gives $4n+8$; Theorem~\ref{thm:paired120}
+proves its width.  At $\alpha=0$ this is just integration over the
+whole interval and requires no tail location.  If $N\ge32$, take
+$n=\lfloor(N-8)/4\rfloor\ge N/8$.  The displayed upper bound
+follows.
+
+For the lower bound put $q_0=-R+2R\alpha$ and $B=R-q_0=2Rt$.
+Run the proposed algorithm on the pair $(f_0,f_0)$, where
+\[
+ f_0(z)=\frac{K}{2B}(z-q_0)_+^2.
+\]
+It is convex, nondecreasing, and $K$-Lipschitz.  Partition its
+right tail into $2(N+1)$ equal cells of length
+$h=B/\{2(N+1)\}$.  At most $N$ cells contain a queried location
+in their interior, irrespective of which function label was
+queried.  Choose $N+1$ cells containing no such point.  On each
+selected cell replace $f_0$ by the convex combination
+\[
+ f_1=(1-\lambda)f_0+\lambda\,(\text{chord of }f_0),
+ \qquad
+ \lambda=\min\{1,4E(N+1)/K\},
+\]
+and put $f_1=f_0$ elsewhere.
+Every queried value remains unchanged, including queries at
+selected cell endpoints.  Induction on the adaptive transcript
+therefore gives the same queries and answers on $(f_0,f_1)$.
+
+The chord slope is between the two endpoint derivatives of
+$f_0$.  At entry to a selected cell the derivative of $f_1$
+jumps upwards by $\lambda Kh/(2B)$; at its exit it jumps
+upwards by the same amount.  Interior derivatives are
+nondecreasing, and all slopes lie in $[0,K]$.  Adjacent selected
+cells have the same ordering.  Hence $f_1$ is convex and
+$K$-Lipschitz.  On a selected cell
+\[
+ |(f_1-f_0)'|\le\lambda Kh/(2B)
+             =\lambda K/\{4(N+1)\}\le E.
+\]
+The difference is continuous and zero at every selected
+endpoint and elsewhere, so it is globally $E$-Lipschitz.
+The construction thus preserves every information restriction.
+
+The integral of the chord excess of a quadratic with second
+derivative $K/B$ on a cell of length $h$ is $Kh^3/(12B)$.
+Summing $N+1$ selected cells and dividing by $B$ gives
+\begin{align*}
+ \mathbb E_Pq(f_1-f_0)
+ &\ge\frac{\lambda KB}{96(N+1)^2}\\
+ &=\min\left\{\frac{KRt}{48(N+1)^2},
+                       \frac{ERt}{12(N+1)}\right\}.
+\end{align*}
+The first pair has contrast zero.  A sound interval for their
+common transcript must contain both contrasts and hence has
+at least this width.  Both functions are nondecreasing, so
+the known right tail is also exactly maximizing for both
+AVaRs.  This supplies a subclass with no localization slack;
+it does not eliminate localization costs from the upper
+algorithm on a general pair.
+\end{proof}
+
+The proof uses the standard indistinguishable-input approach to
+numerical information \citep{Novak2015Integration97}.  Its upper
+bound is conditional on a known fixed tail, and its lower bound
+allows arbitrary convex functions with the stated moduli.  It
+does not claim that the original finite-parameter investment
+primitives realize this entire adversarial class.  Formula access,
+derivative access, additional separate smoothness restrictions,
+a shared exact symbolic representation, and free terminal
+solves are different information conventions.
+Providing one of them changes the comparison for every method,
+including splines, polynomials, hinges, and neural networks.
+In particular \eqref{eq:smoothpairwidth120} uses an additional
+proved property of the original continuation.  No matching
+lower bound for that full original-primitives information
+class is inferred from the nonsmooth construction above.
+
+\subsection{Transferring the defect of a common tail}
+\begin{theorem}[Action-scaled transfer between constrained tail witnesses]
+\label{thm:tailtransfer120}
+Let $0<\alpha<1$, $L=2R\alpha$, $B=2Rt$, and
+$I=[-R,R-L]$.  Suppose $f_a,f_b$ are $m_z$-strongly convex on
+the innovation interval, with $m_z>0$, and their difference is
+$E$-Lipschitz.  Define
+$H_j(u)=\int_u^{u+L}f_j(z)\,dz$ and
+$k_j(q_u)=\{H_j(u)-\min_IH_j\}/B$.
+For any feasible $u$ and any verified $\kappa_b\ge k_b(q_u)$,
+\[
+ k_a(q_u)\le
+ \left\{\sqrt{\kappa_b}
+                  +E\sqrt{\frac{\alpha}{2m_zt}}\right\}^{2}.
+\]
+The statement includes an endpoint optimizer or a one-sided tail.
+For the original investment pair, $m_z=181/64$ and
+$E=E_{ab}$ are valid.  At $\alpha=0$ the only relevant
+density is the full original law and both deficits are zero.
+\end{theorem}
+
+\begin{proof}
+The original tail representation, or its direct proof in
+Theorem~\ref{thm:tailinformation119}, gives the stated expression
+for the risk deficit.  Strong convexity implies that $H_a$
+and $H_b$ are $\lambda$-strongly convex on $I$, where
+$\lambda=m_zL$.  Indeed
+$H_j'(u)=f_j(u+L)-f_j(u)$, and its increment between two
+cuts is at least $m_zL$ times their distance.
+Let $u_b$ minimize $H_b$ on $I$.  The constrained first-order
+inequality, followed by strong convexity, gives
+\[
+ H_b(v)\ge H_b(u_b)+\tfrac12\lambda|v-u_b|^2
+ \quad(v\in I).
+\]
+There is no assumption that $H_b'(u_b)=0$ at a boundary.
+Write $G=H_b-H_a$.  Since
+$G'(v)=(f_b-f_a)(v+L)-(f_b-f_a)(v)$,
+$G$ has Lipschitz constant $EL$.
+
+Put $e=H_b(u)-H_b(u_b)=Bk_b(q_u)\le B\kappa_b$.
+The preceding inequality gives
+$|u-u_b|\le\sqrt{2e/\lambda}$.
+For any $v\in I$, the triangle inequality now yields
+\begin{align*}
+ H_a(u)-H_a(v)
+ &\le e-\tfrac12\lambda|v-u_b|^2+EL|v-u|\\
+ &\le e+EL\sqrt{2e/\lambda}
+           -\tfrac12\lambda|v-u_b|^2+EL|v-u_b|\\
+ &\le e+EL\sqrt{2e/\lambda}+\frac{E^2L^2}{2\lambda}.
+\end{align*}
+The last step maximizes a scalar quadratic over a larger
+nonnegative-distance domain, so it is valid at either boundary.
+Take the supremum in $v$, divide by $B$, and use
+$L/B=\alpha/t$.  The result is
+$k_a(q_u)\le\{\sqrt{k_b(q_u)}
+          +E\sqrt{\alpha/(2m_zt)}\}^2$.
+Monotonicity in $k_b$ proves the asserted bound.
+\end{proof}
+
+\paragraph{Outward square roots in the transferred bound.}
+The implementation intersects the directly acquired incumbent
+deficit with an outward version of the transfer bound.
+For an exact nonnegative rational $z=p/q$ with $q>0$,
+let $m$ be the integer square root of
+$\lfloor 2^{80}p/q\rfloor$, and increase $m$ by one if
+$m^2q<2^{80}p$.  The resulting $m/2^{40}$ is at least
+$\sqrt z$: before a possible increment, $m$ is the
+floor of $2^{40}\sqrt z$, and the exact square comparison
+detects whether that floor was exact.  A binary64 conversion
+is moved upwards when its exact rational value is smaller
+than the dyadic bound, and its squared exact rational value
+is checked against $z$.  Applying this procedure to upper
+endpoints, followed by outward additions, products, and
+squaring, gives a valid transferred deficit.
+Taking the smaller of two valid upper bounds remains valid.
+Both direct endpoint payloads and all integer operations are
+still paid.  Because this is an incumbent-deficit bound,
+its tightening directly affects the lower contrast and
+the certified-refusal predicate; it does not itself tighten
+the candidate-deficit term in the upper acceptance endpoint.
+
+\subsection{Uniform safeguards, finite refinement, and an honest stopping floor}
+\begin{proof}[Proof of Proposition~\ref{prop:safe120}]
+At any accepted step the previous theorem gives
+$J_x(b)-J_x(a)\le\overline D<0$, and hence the original
+cost decreases by at least $-\overline D>0$.
+The replacement is explicitly feasible and qualified.
+A refused trial changes no action or future policy.
+Induct over the finite sequence, and telescope the original
+cost differences.  This gives the lower gain account in
+\eqref{eq:gainaccount120}.  The initial completed policy satisfies
+$J_x(a_{\mathrm{initial}})-V_0(x)\le\tau$, while every final
+feasible policy has cost at least $V_0(x)$.  Subtraction gives
+the upper bound $\tau$.
+
+This proof is statewise and representation independent.
+Finite Borel proposal, arithmetic, ordering with fixed tie rules,
+and acceptance maps compose into a Borel returned-action rule,
+provided the completed incumbent service is defined statewise.
+The original finite-horizon policy theorem then defines its
+policy value.  Exhaustion of a new comparison returns the
+already completed incumbent.  A failed scientific execution
+does not license omitting that requested state from the sample
+or presenting an incomplete service as a completed policy.
+\end{proof}
+
+\begin{proposition}[Finite precision above the full comparison margin]
+\label{prop:resolution120}
+Fix two distinct feasible actions and one acquired feasible cut.
+Let $g_Q=Q_x(a)-Q_x(b)$ and suppose $\kappa_b$ is a valid,
+fixed upper bound on its candidate deficit.  Put
+\[
+ \gamma=E_{ab}\sqrt{\frac{\alpha}{2m_zt}},\qquad
+ F_q=\kappa_b+(\sqrt{\kappa_b}+\gamma)^2.
+\]
+Assume refinement at positive integer resolutions $n$ produces
+fixed-density contrast intervals of width
+\[
+ w_n\le \eta_{\mathrm{num}}+\min\{A_2/n^2,A_1/n\},
+ \quad A_2=\min\{2KRt,2M_\alpha R^2t^2\},
+ \quad A_1=E_{ab}Rt,
+\]
+where $\eta_{\mathrm{num}}\ge0$ includes the stated terminal-node
+and accumulation errors.  Suppose
+\[
+ \epsilon=(g_Q-\delta)/\beta-F_q-\eta_{\mathrm{num}}>0.
+\]
+Then the upper contrast gate is strictly negative whenever
+\begin{equation}\label{eq:resolution120}
+ n>\min\{\sqrt{A_2/\epsilon},\,A_1/\epsilon\}.
+\end{equation}
+Acceptance also requires the separate original candidate
+qualification; if it is established by a resolution $n_{\rm qual}$
+and remains valid at the considered round, the two conditions
+together suffice.
+
+If the actual work of each doubling round is at most $c n+c_0$,
+with $c,c_0\ge0$ and a positive integer starting resolution
+$n_0$, the total through a final round $n_J$ is at most
+$c(2n_J-n_0)+c_0(J+1)\le2c n_J+c_0(J+1)$,
+apart from separately paid setup.
+A first doubling round meeting an integer target $n_*\ge n_0$
+satisfies $n_J<2n_*$ and
+$J\le\lceil\log_2(n_*/n_0)\rceil$.
+This cost statement is conditional on the declared work model.
+Actual terminal solves, proposals, refused rounds, recording,
+and qualification costs are not replaced by a point-query count.
+\end{proposition}
+
+\begin{proof}
+Let $d=\mathbb E_Pq_u(f_b-f_a)$ and denote the true deficits
+by $k_a,k_b$.  If $d_+$ is the reported upper integral bound,
+$0\le d_+-d\le w_n$.
+The complete-policy upper contrast used by the gate is
+$U=h(b)-h(a)+\beta(d_++\kappa_b)+\delta$.
+The exact common-risk identity gives
+\begin{align*}
+ U
+ &=-g_Q+\delta
+       +\beta\{(d_+-d)+(\kappa_b-k_b)+k_a\}\\
+ &\le-g_Q+\delta+\beta\{w_n+F_q\},
+\end{align*}
+where Theorem~\ref{thm:tailtransfer120} bounds $k_a$ and
+$k_b\ge0$ was retained in the first line and dropped only
+for the upper estimate.  Under the stated positive margin,
+\eqref{eq:resolution120} makes the right side strictly
+negative.  No inference about candidate qualification follows
+from that sign alone; its separate verified predicates are
+part of the assertion.
+
+For $n_j=2^jn_0$,
+$\sum_{j=0}^J n_j=2n_J-n_0<2n_J$.
+Sum the per-round work bound.  Minimality of the first
+doubling round meeting $n_*$ gives the two displayed bounds
+on $n_J$ and $J$.  For the finite executed ladder
+$2,4,8,16,32,64$, this guarantee applies only if a qualifying
+round also lies within that declared cap.
+\end{proof}
+
+The fixed-cut theorem does not assume that increasing the cell count
+also improves its tail localization.  If the cut and its deficit
+remain fixed, their allowances remain in $F_q$.  The actual
+implementation retains both direct original deficits and
+intersects the incumbent bound with the transferred one.
+A failed
+sufficient margin can therefore be conservative; it is not proof
+that a particular candidate is economically inferior.
+
+\begin{proposition}[Sharp residual uncertainty of the unchanged-future interface]
+\label{prop:futurefloor120}
+Suppose the only information about the actual-policy correction at
+two distinct actions is $0\le\eta_x\le\delta$ in
+\eqref{eq:future120}, and their two $Q_x$ values are known
+exactly.  The interval
+$Q_x(b)-Q_x(a)+[-\delta,\delta]$ is then sharp over the
+compatible corrections.  Thus $g_Q>\delta$ is necessary
+and sufficient for this information alone to certify strict
+improvement uniformly.  Further refinement of the $V_1$
+integration alone cannot remove that floor.
+\end{proposition}
+
+\begin{proof}
+The difference $\eta_x(b)-\eta_x(a)$ is in
+$[-\delta,\delta]$.
+The upper endpoint is attained in the interface by setting
+$\eta_x(a)=0$, $\eta_x(b)=\delta$; reversing those values
+attains the lower endpoint.  If continuity were additionally
+required without any quantitative modulus, the two prescribed
+values could still be joined by a continuous bounded
+interpolation between these distinct actions.
+Consequently a strict negative upper contrast is equivalent
+to $g_Q>\delta$.  The claim is about compatibility with the
+declared information: it does not assert that both extremal
+corrections are generated by the actual fixed terminal policy.
+That policy's further verified structure would be additional
+information.
+
+For exactly the same action, both values of $\eta_x$ are the
+same and cancellation is exact; the two-endpoint construction
+does not apply.  If only the magnitude of the actual gain
+$g_J$ is specified, then $g_Q\ge g_J-\delta$.
+The corresponding sufficient worst-case condition for the
+exact-$Q$ gate is $g_J>2\delta$, rather than $g_J>\delta$.
+This distinction prevents a known-continuation gain and an
+actual-policy gain from being assigned the same resolution
+claim.
+\end{proof}
+
+\section{Population gain with frozen decisions and finite numerical intervals}
+\label{supp:population120}
+\begin{proof}[Proof of Proposition~\ref{prop:population120}]
+Let $\mathcal F$ contain the frozen actors, fitting data,
+proposal and refinement protocol, representation choices,
+initial-state sampling law, and statewise execution rule.
+Condition on $\mathcal F$.
+For each of the $48$ fixed groups, require that its completed
+incumbent and final action be measurable functions of its
+own initial state, with the uniformly safe guarantee in
+Proposition~\ref{prop:safe120}.
+In particular they are not fitted, selected, or changed
+after observing the validation states.  Apply each complete
+service to a single original state; batching innovations
+within that state does not violate this condition.
+Batch logic that lets another sampled state's failed
+certificate alter the current state's action would
+require a different probability argument.
+
+For the declared finite dyadic law one may take
+\[
+ \mathcal X_{40}
+ =\{0,1,\ldots,2^{40}-1\}^2/2^{40}.
+\]
+Independent uniform coordinate draws from this set make
+$X_1,\ldots,X_{64}$ iid under the finite uniform population.
+A fixed sequence of $640$ independently uniform bytes
+can encode these $128$ coordinates in blocks of five bytes.
+Their later retention is reproducibility evidence.
+Independence and uniformity of the generating entropy, and
+its independence of $\mathcal F$, remain the statistical
+assumption.  The conclusion is for this declared law, not
+automatically for a continuous uniform population or an
+empirical economic state distribution.
+
+Write $G_j(x)$ for the actual complete-policy gain over
+the corresponding completed incumbent.
+The uniform safeguard gives $0\le G_j\le\tau$ before
+the sample is drawn.  Let
+$\ell_{ji}\le G_j(X_i)\le u_{ji}$
+be the saved valid gain bounds, intersected with
+$[0,\tau]$.  For example, accepted-step lower gains can
+be summed outwardly, and the two separately valid
+complete-policy value intervals can provide another gain
+interval to intersect.  Numerical interval widths are
+retained, not replaced by midpoints.  Exact equal-policy
+identities give $G_j=0$ without independent interval
+subtraction.  A missing independent numerical validation
+can conservatively use $[0,\tau]$ and must not be dropped.
+The numerical enclosure procedure may depend on already
+observed validation information, provided its intervals
+remain valid and it does not change the frozen returned
+policy rule.
+
+For a fixed group and threshold define the latent events
+$B_i=\boldsymbol1_{\{G_j(X_i)\ge\theta_k\}}$ and their
+probability $p_{jk}$.
+These are iid Bernoulli variables conditional on
+$\mathcal F$.
+The observable certified count satisfies
+\[
+ K_{\mathrm{cert}}
+ =\sum_i\boldsymbol1_{\{\ell_{ji}\ge\theta_k\}}
+ \le\sum_iB_i=:K_{\mathrm{true}}
+\]
+pointwise.  The certified count itself need not be
+binomial if the numerical validation is incomplete
+or adaptive.  Its domination by the latent binomial
+count is sufficient.  The parameters may be dependent
+across groups; no cross-group independence is required.
+
+Here is the exact inversion used in the statement.
+For an observed count $k\in\{1,\ldots,n\}$, $n=64$, define
+\[
+ T_k(p)=\sum_{r=k}^n {n\choose r}p^r(1-p)^{n-r}.
+\]
+It is continuous and strictly increasing on $(0,1)$, with
+endpoint values zero and one.  Differentiating the finite
+sum and telescoping proves
+$T_k'(p)=n{n-1\choose k-1}p^{k-1}(1-p)^{n-k}>0$.
+There is therefore a unique solution of
+$T_k(p)=1/7680$ in $(0,1)$; call it $p_*(k)$.
+For $k=0$ set $p_*(0)=0$.
+The map $k\mapsto p_*(k)$ is nondecreasing because
+$T_{k+1}(p)\le T_k(p)$.
+For the true parameter $p$, the event
+$p_*(K)>p$ is either empty or of the form $K\ge k_0$,
+where $T_{k_0}(p)<1/7680$.
+Its probability is therefore at most $1/7680$.
+
+An exactly rational implementation need not evaluate a
+beta quantile.  Start with the bracket $[0,1]$ and
+bisect it $48$ times, evaluating the finite binomial
+polynomial as an exact rational.  Move its lower endpoint
+to the midpoint only when $T_k$ there is at most $1/7680$.
+The returned lower endpoint $p^-$ satisfies
+$p^-\le p_*(k)$ and $p_*(k)-p^-\le2^{-48}$.
+Thus it retains the same conservative coverage when
+applied to $K_{\mathrm{true}}$.
+Monotonicity of $p_*(k)$ and
+$K_{\mathrm{cert}}\le K_{\mathrm{true}}$ imply
+$p^-(K_{\mathrm{cert}})\le p_*(K_{\mathrm{true}})$.
+Consequently the same coverage holds for the actually
+reported certified count, including any conservative
+missing-validation intervals.
+There are $48\cdot4=192$ prespecified event bounds;
+their union failure probability is at most
+$192/7680=1/40$.
+
+On the simultaneous coverage event, $p^-_{jk}\le p_{jk}$.
+Because the thresholds are increasing and $\theta_0=0$,
+the following pointwise inequality holds:
+\[
+ \sum_{k=1}^4(\theta_k-\theta_{k-1})
+          \boldsymbol1_{\{G_j(x)\ge\theta_k\}}
+ \le G_j(x).
+\]
+If the largest passed threshold is $\theta_s$, the
+left side is exactly $\theta_s$; otherwise it is zero.
+Taking expectations proves \eqref{eq:staircase120}.
+Each individual lower bound $\theta_kp^-_{jk}$
+is also valid.  The staircase statement uses all fixed
+thresholds under the same simultaneous coverage event.
+
+For the mean interval, a short proof of the needed
+bounded-variable inequality is useful.  If $W\in[0,\tau]$,
+the logarithmic moment generating function
+$\psi(\lambda)=\log\mathbb E e^{\lambda W}$ has
+$\psi''(\lambda)=\operatorname{Var}_\lambda(W)
+\le\tau^2/4$ under its exponentially tilted law.
+This variance bound follows from
+$\mathbb E_\lambda(W-\tau/2)^2\le\tau^2/4$ and
+the minimizing property of the mean.
+Integrating twice from zero gives
+\[
+ \mathbb E e^{\lambda(W-\mathbb EW)}
+ \le e^{\lambda^2\tau^2/8}.
+\]
+Independence, exponential Markov inequality, and minimization
+over $\lambda$ yield for either tail
+\[
+ P\left(\left|\overline W-\mathbb EW\right|
+       \text{ exceeds }r\text{ in that tail}\right)
+ \le e^{-2nr^2/\tau^2}.
+\]
+Since $\overline\ell_j\le\overline G_j\le\overline u_j$,
+the lower failure
+$\mathbb EG_j<\overline\ell_j-r$ and upper failure
+$\mathbb EG_j>\overline u_j+r$ are contained in the
+corresponding two deviation events for the unobserved
+true gain average.  Thus no numerical value error has
+been ignored.
+
+For the prespecified rational radius $r=33\tau/128$,
+\[
+ 2nr^2/\tau^2=1089/128=:x.
+\]
+The strict inequality $e^x>3840$ can itself be checked
+without a floating logarithm or exponential.
+Write $S_m(z)=\sum_{k=0}^m z^k/k!$.
+Since $x>17/2$, positivity of coefficients gives
+\[
+ S_{20}(x)\ge S_{12}(17/2)
+       \ge S_{11}(8)(1+1/2)>2644(3/2)=3966>3840.
+\]
+The middle inequality follows by expanding
+$(8+1/2)^k$: every term of
+$S_{11}(8)S_1(1/2)$ occurs with nonnegative coefficient
+in $S_{12}(8+1/2)$.
+For the last lower bound, integer lower bounds for the
+successive terms of $S_{11}(8)$ are
+$1,8,32,85,170,273,364,416,416,369,295,215$;
+their sum is $2644$, and several inequalities are strict.
+Since $e^x\ge S_{20}(x)$, each one-sided mean failure
+is strictly less than $1/3840$.
+The $48$ two-sided mean intervals therefore fail with
+total probability less than $96/3840=1/40$.
+
+A final union bound over the event and mean families
+gives failure probability at most $1/20$.
+Intersecting valid bounds with the known population
+range $[0,\tau]$ proves \eqref{eq:meangain120} and the
+simultaneous $0.95$ assertion.
+No independence between the two inference families is
+used.  These are ordinary probability bounds
+\citep{clopperpearson1934,hoeffding1963}, applied after
+the original-objective safeguard makes their gain
+range and events mathematically valid.
+\end{proof}

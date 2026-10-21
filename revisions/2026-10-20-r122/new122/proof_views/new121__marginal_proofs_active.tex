@@ -1,0 +1,1365 @@
+\section{Original-risk marginal acquisition, training and policy control}
+\label{supp:marginal121}
+
+This section proves the statements in Section~\ref{sec:marginal121}.
+The economic assumptions are the exact primitives in
+\eqref{eq:investment95}--\eqref{eq:cost95}, with \(d=2\),
+\(\beta=15/16\), \(R=1/32\), and a separately fixed
+\(\alpha\in\{1/2,3/4\}\).
+The original strong convexity, domain invariance and constrained value
+gradient are proved in Proposition~\ref{prop:investmentfoundations119};
+the original \(V_1\) gradient modulus \(M_\alpha\) is proved in
+Theorem~\ref{thm:modulus120}.
+Neither property is an assumption about a fitted critic.
+The null-space identity, finite-difference arguments, box dual bound
+and constrained strong-convexity inequalities use elementary or
+classical arguments; their proofs are included to specify exactly
+which training and policy claims they support.
+
+\subsection{Constrained motion of the original adverse tail}
+
+Let
+\begin{gather*}
+ \boldsymbol b=(1/2,1/4)^\top,\qquad
+ \boldsymbol s=(1,-1)^\top,\\
+ B=2R(1-\alpha),\qquad L=2R\alpha,\qquad
+ I=[-R,R-L].
+\end{gather*}
+For \(u=(x,v)\in\Omega\), put
+\[
+ m(u)=F(x,A(x)v,0),\qquad
+ f_u(z)=V_1(m(u)+\boldsymbol s z),\qquad
+ H_u^{\rm cen}(c)=\int_c^{c+L}f_u(z)\,dz .
+\]
+The letter \(H_u^{\rm cen}\) denotes the central-window integral
+only; \(H_\alpha(x,v)\) continues to denote the action marginal.
+The original invariant domain places every successor, and the
+segments used below, in the convex state cube.
+The inherited lower curvature of \(V_1\) is \(181/128\).
+Consequently \(f_u\) is \(m_z=181/64\)-strongly convex in \(z\).
+It is continuously differentiable, and
+\[
+ (H_u^{\rm cen})'(c)=f_u(c+L)-f_u(c)
+\]
+is strongly monotone with modulus \(m_zL>0\).
+Thus \(H_u^{\rm cen}\) has a unique minimizer \(c(u)\in I\).
+
+\begin{lemma}[An envelope and a constrained cut modulus]
+\label{lem:cutmarginal121}
+For every \(u\),
+\begin{equation}\label{eq:tailmarginal121}
+ \rho_\alpha(f_u)=\frac1B
+       \left\{\int_{-R}^{c(u)}f_u(z)\,dz+
+                         \int_{c(u)+L}^{R}f_u(z)\,dz\right\}.
+\end{equation}
+If two such functions satisfy
+\(\operatorname{Lip}_z(f_u-f_{\widetilde u})\leq E\), their
+minimizing cuts satisfy
+\[
+ |c(u)-c(\widetilde u)|\leq E/m_z.
+\]
+Both assertions include an endpoint minimizing cut and a tail of
+zero length.
+\end{lemma}
+
+\begin{proof}
+For any \(c\in I\), the indicator of the two tails divided by
+\(t=1-\alpha\) is a feasible density relative to the original
+uniform law.  Its objective is the total integral of \(f_u\)
+minus \(H_u^{\rm cen}(c)\), divided by \(B\).
+If the minimizing cut is interior, its two endpoint values agree.
+Convexity then places all values inside the central interval below
+those on its complement.  If the cut equals \(-R\), its right
+derivative is nonnegative, so \(f_u(-R+L)\geq f_u(-R)\).
+Convexity makes \(f_u\) nondecreasing to the right of \(-R+L\),
+and every value in the central interval is at most
+\(f_u(-R+L)\).  Thus the right tail is again a set of the largest
+values.  The other endpoint is symmetric.
+The tail density therefore maximizes the risk envelope.
+One can verify maximality directly: if \(q_*\) has cap \(1/t\)
+on these tails and zero on the center, choose a threshold \(\zeta\)
+separating their values.  For any other feasible \(q\),
+\[
+ \mathbb E(q-q_*)f_u
+   =\mathbb E(q-q_*)(f_u-\zeta)\leq0,
+\]
+using equal total mass and the signs on the two sets.
+Strong convexity makes every level set contain at most two
+points, which have zero uniform-law mass, so no atom or
+fractional threshold mass changes this argument.
+
+Write \(c=c(u)\), \(\widetilde c=c(\widetilde u)\).
+Their constrained optimality inequalities are
+\[
+ (H_u^{\rm cen})'(c)(\widetilde c-c)\geq0,\qquad
+ (H_{\widetilde u}^{\rm cen})'(\widetilde c)
+                                      (c-\widetilde c)\geq0.
+\]
+Strong monotonicity of \((H_u^{\rm cen})'\), combined with these
+two inequalities, gives
+\begin{align*}
+ m_zL|c-\widetilde c|^2
+ &\leq
+ \bigl\{(H_u^{\rm cen})'(\widetilde c)
+       -(H_{\widetilde u}^{\rm cen})'(\widetilde c)\bigr\}
+                                      (\widetilde c-c)\\
+ &\leq LE\,|\widetilde c-c|.
+\end{align*}
+The last bound follows from the Lipschitz constant of the
+difference across an interval of length \(L\).  Divide when the
+cuts differ; the coincident-cut case already satisfies the
+claim.  The variational inequalities are valid at the
+endpoints, so no equation \((H_u^{\rm cen})'(c)=0\) is imposed
+there.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:rootmarginal121}]
+The original \(V_1\) is continuously differentiable with
+\(M_\alpha\)-Lipschitz gradient on the cube, including its
+continuous boundary extension.  Since the normalized feasible
+set for \(c\) is compact and the minimizer unique, \(c(u)\) is
+continuous.  This also follows quantitatively from
+Lemma~\ref{lem:cutmarginal121} and the estimates below.
+The objective under any fixed feasible cut is continuously
+differentiable in its parameters, uniformly over this compact
+cut set.  Comparing a value increment at the old and at the
+new maximizing cut and using uniform first-order expansion
+therefore gives the envelope derivative with the cut held
+fixed:
+\begin{equation}\label{eq:actualmarginal121}
+ H_\alpha(u)=\frac{\beta}{B}
+       \left\{\int_{-R}^{c(u)}m_u^a(z)\,dz
+                +\int_{c(u)+L}^{R}m_u^a(z)\,dz\right\},
+ \qquad
+ m_u^a(z)=\boldsymbol b^\top
+                   \nabla V_1(m(u)+\boldsymbol s z).
+\end{equation}
+The derivative of the normalized transition in \(v\) is
+\(A(x)\boldsymbol b\); this factor cancels on dividing the
+envelope derivative by \(A(x)\).
+The argument does not differentiate \(c(u)\), an optimizing
+last-date action, or the rounded deployed controller.
+Continuity of the integrands and of the cuts proves the
+continuous marginal extension at all boundaries.
+
+First fix \(x\) and use the original action coordinate \(a\).
+The original gradient bound gives
+\begin{align*}
+ |m_a^a(z)-m_b^a(z)|
+       &\leq M_\alpha\|\boldsymbol b\|_2^2|a-b|
+         =\frac{5M_\alpha}{16}|a-b|,\\
+ \operatorname{Lip}_z m_a^a
+       &\leq M_\alpha\|\boldsymbol b\|_2
+                          \|\boldsymbol s\|_2
+         =\frac{\sqrt{10}}4M_\alpha\leq C_\alpha,\\
+ \operatorname{Lip}_z(f_a-f_b)
+       &\leq C_\alpha|a-b|.
+\end{align*}
+Hence the cuts differ by at most
+\(C_\alpha|a-b|/m_z\).
+For a fixed integrand \(m_a^a\), changing a tail cut from
+\(c\) to \(c'\) changes its normalized tail integral by at most
+\[
+ \frac1B\left|\int_{c'}^c
+            \{m_a^a(z)-m_a^a(z+L)\}\,dz\right|
+ \leq C_\alpha\frac{\alpha}{t}|c-c'|.
+\]
+Changing both the integrand and the cut in
+\eqref{eq:actualmarginal121} therefore proves
+\[
+ |\partial_a R_\alpha(x,a/A(x))
+       -\partial_a R_\alpha(x,b/A(x))|
+ \leq\beta D_\alpha|a-b|.
+\]
+Here \(\partial_a\) means differentiation of the displayed
+composition as a function of the original action.
+Since \(h''(a)=2+48a^2\) lies between 2 and 5 on the original
+action interval, the claimed Lipschitz constant of \(Q_x'\)
+is \(L_\alpha=5+\beta D_\alpha\).
+Convexity of \(V_1\), the affine action transition and the
+monotone convex risk envelope make the continuation term
+convex in \(a\).  The stage cost gives \(2\)-strong convexity.
+Multiplying action increments by \(A(x)\) proves the
+normalized curvature statement.
+
+It remains to bound variation with both state and normalized
+action.  The original calculation in
+Theorem~\ref{thm:modulus120} gives, for fixed \(v\),
+\(\|D_xm\|_2\leq3/4\).
+Also \(D_vm=A(x)\boldsymbol b\), so
+\(\|D_vm\|_2\leq\sqrt5/16\).
+For the full three-dimensional parameter,
+\[
+ \|D_um\|_2\leq
+       \sqrt{(3/4)^2+(\sqrt5/16)^2}
+       =\frac{\sqrt{149}}{16}\leq\frac{49}{64}.
+\]
+The last inequality follows on squaring from
+\(2384\leq2401\).  Integrating this Jacobian on a segment
+in the convex parameter cube gives the same global
+Lipschitz constant for \(m\).
+Since \(\|\boldsymbol b\|_2=\sqrt5/4\leq9/16\),
+\[
+ |m_u^a(z)-m_{\widetilde u}^a(z)|
+ \leq\frac{441M_\alpha}{1024}\|u-\widetilde u\|_2.
+\]
+The innovation derivative of \(f_u-f_{\widetilde u}\) is
+bounded by
+\[
+ M_\alpha\|\boldsymbol s\|_2
+             \|m(u)-m(\widetilde u)\|_2
+ \leq\frac{147M_\alpha}{128}\|u-\widetilde u\|_2,
+\]
+using \(\sqrt2\leq3/2\).
+Lemma~\ref{lem:cutmarginal121} bounds the change of cut by
+this quantity divided by \(m_z\).  Applying the fixed-integrand
+tail bound above and \(C_\alpha=4M_\alpha/5\) proves
+\[
+ |H_\alpha(u)-H_\alpha(\widetilde u)|
+ \leq\beta\left\{\frac{441M_\alpha}{1024}
+       +\frac{147M_\alpha^2\alpha}{160m_zt}\right\}
+                 \|u-\widetilde u\|_2.
+\]
+All denominators are positive for the declared risk levels.
+The ordinary-expectation case \(\alpha=0\) can omit the cut
+argument, but no \(\alpha=1\) normalized-tail statement is
+asserted here.
+\end{proof}
+
+\subsection{What the finite-risk oracle has to enclose}
+
+The label theorem assumes an enclosure of the original
+optimal-future objective \(Q_x(a)\).  A deployed terminal
+policy value is a different oracle unless its error is
+explicitly removed or enclosed.  For clarity, a sufficient
+original-law construction is the following.  Partition
+\([-R,R]\) into cells \(B_i=[z_i^-,z_i^+]\), with lengths
+\(h_i\), midpoint \(z_i\), and probability \(p_i=h_i/(2R)\).
+Suppose actual paid last-date calculations supply
+\[
+ l_i\leq V_1(F(x,a,z_i)),\qquad
+ V_1(F(x,a,z_i^\pm))\leq u_i^\pm.
+\]
+Let \(Z_-\) be the discrete law taking values \(l_i\)
+with masses \(p_i\), and let \(Z_+\) take values
+\(u_i^-,u_i^+\), each with mass \(p_i/2\).
+Then
+\begin{equation}\label{eq:labelrisk121}
+ S(x)+h(a)+\beta\rho_\alpha(Z_-)
+ \ \leq Q_x(a)\leq\
+ S(x)+h(a)+\beta\rho_\alpha(Z_+).
+\end{equation}
+Here the discrete laws are computational bounds for the original
+continuous law, not substituted economic risk distributions.
+
+\begin{proof}
+For each real threshold \(\zeta\), the function
+\((V_1(F(x,a,z))-\zeta)_+\) is convex in \(z\).
+Its midpoint value minorizes its cell average and its endpoint
+secant majorizes that average.  Monotonicity in the enclosed
+node values consequently gives
+\[
+ \mathbb E(Z_--\zeta)_+
+ \leq\mathbb E(V_1(F(x,a,Z))-\zeta)_+
+ \leq\mathbb E(Z_+-\zeta)_+ .
+\]
+For completeness, for a bounded random variable \(W\),
+\[
+ \rho_\alpha(W)=
+ \inf_{\zeta\in\mathbb R}
+       \{\zeta+t^{-1}\mathbb E(W-\zeta)_+\}.
+\]
+To verify this identity, any feasible risk density satisfies
+\(\mathbb E qW\leq\zeta+t^{-1}\mathbb E(W-\zeta)_+\).
+Choose an \(\alpha\)-quantile as the threshold, put density
+\(1/t\) above it and zero below it, and, if needed, assign
+the remaining feasible mass on its atom.  This attains the
+bound.  Boundedness ensures a quantile exists.
+Apply the identity to the three hinge expectations while
+retaining the same threshold in their pointwise inequalities,
+then take infima.  Addition of the exact stage term proves
+\eqref{eq:labelrisk121}.  No differentiability of a finite
+quadrature, sort operation or last-date compiler is used.
+\end{proof}
+
+Every approximate last-date optimization, endpoint value,
+finite-risk calculation and arithmetic operation must be
+enclosed in \eqref{eq:labelrisk121}.  A valid analytic terminal
+compiler can supply these intervals; its supporting state
+slope is not thereby an exact derivative of \(V_1\).
+The current finite-label construction needs only its valid
+optimal-value intervals.
+
+\subsection{Derivative probes, boundaries and their precision cost}
+
+\begin{proof}[Proof of Proposition~\ref{prop:marginalprobe121}]
+Fix \(x\), write \(q=Q_x\), \(g=q'(a)\), and
+\(L_q=L_\alpha\).
+For \(0\leq s\leq d\), strong convexity and derivative
+Lipschitzness imply
+\[
+ 2s\leq q'(a+s)-g\leq L_qs.
+\]
+Integrating on the forward interval gives
+\[
+ g+d\leq \frac{q(a+d)-q(a)}d
+                         \leq g+L_qd/2.
+\]
+Thus the first interval in \eqref{eq:secantlabels121}
+contains \(g\), including at the lower action boundary.
+On the backward interval,
+\(-L_qs\leq q'(a-s)-g\leq-2s\), which gives the second
+interval, including at the upper boundary.
+If both probes are feasible, then
+\[
+ -(L_q-2)s
+ \leq q'(a+s)+q'(a-s)-2g
+ \leq(L_q-2)s.
+\]
+Integrate from 0 to \(d\) and divide by \(2d\) to prove
+the central radius \((L_q-2)d/4\).
+The outward value differences contain the exact secants, so
+the conclusions survive any declared valid oracle error.
+Their intersection contains \(g\); subtraction of the known
+stage derivative leaves the original continuation marginal.
+If a floating implementation subtracts \(h'(a)\), it must
+use a valid outward enclosure or its exactly represented
+rational value.  The same requirement applies to dividing a
+normalized derivative by the positive capacity.
+\end{proof}
+
+These inequalities quantify the precision allocation even
+before an experiment.  If each value interval has width at
+most \(2e\), the central derivative interval has half-width
+at most
+\[
+ e/d+(L_\alpha-2)d/4.
+\]
+A smaller probe magnifies the paid value uncertainty.
+With \(L_\alpha>2\), the unconstrained balancing choice for
+this upper bound is \(d=2\sqrt{e/(L_\alpha-2)}\);
+feasibility and a prospectively fixed probe rule still have
+to be respected.  This formula does not prescribe changing
+the current experiment's probe after seeing its labels.
+
+\begin{proposition}[A limit of the specified three-probe interface]
+\label{prop:probelimit121}
+Fix an interior point with feasible symmetric step \(d>0\),
+and a scalar class with derivative curvature between
+\(\mu>0\) and \(L_q\geq\mu\).
+An algorithm supplied only values at the three locations
+\(-d,0,d\), relative to that point, cannot in general return
+a derivative interval of width less than
+\((L_q-\mu)d/6\), even with exact values.
+If each of the three supplied value intervals has width
+\(2e\), there are compatible functions whose derivatives
+differ by \(2e/d\).
+The central-interval radius
+\(e/d+(L_q-\mu)d/4\) therefore has the correct order for
+this particular information interface.
+\end{proposition}
+
+\begin{proof}
+Put \(\kappa=(L_q+\mu)/2\) and, on \([-d,d]\), define
+\[
+ p(s)=\frac{s(s^2-d^2)}{d^2},\qquad
+ q_\pm(s)=\frac{\kappa s^2}{2}
+              \ \pm\frac{(L_q-\mu)d}{12}p(s).
+\]
+Their three values agree, because \(p(-d)=p(0)=p(d)=0\).
+Also \(p'(0)=-1\), so their derivatives at zero differ
+by \((L_q-\mu)d/6\).
+Since \(p''(s)=6s/d^2\), both second derivatives lie in
+\([\mu,L_q]\).  Extending \(p\) linearly outside each
+endpoint with its endpoint derivative makes \(p\)
+continuously differentiable; the second derivative then
+vanishes outside.  The same curvature bounds hold on any
+larger feasible interval.  Any valid output interval for the
+common three exact observations must contain both
+derivatives.
+
+For the uncertainty assertion use
+\[
+ \widetilde q_\pm(s)=\frac{\kappa s^2}{2}\pm(e/d)s.
+\]
+At either endpoint their two values differ by \(2e\);
+at zero they agree.  The common value intervals with midpoint
+\(\kappa s^2/2\) and radius \(e\) contain both functions at
+all three queried sites.  Their derivatives at zero differ
+by \(2e/d\), and both curvatures are \(\kappa\).
+The displayed upper radius follows by the secant proof with
+\(\mu\) in place of 2.
+\end{proof}
+
+This is a local, three-observation oracle statement.  Other
+paid values, gradients, global shape restrictions or access
+to an original primitive formula can provide more information.
+It is not a lower bound for all algorithms in the fixed
+investment model, for the complete acquisition bundle, or
+for a neural representation class.
+
+\subsection{Finite-box training and exact optimization evidence}
+
+Let each row index \(i\) include a site and one feasible
+one-sided derivative branch.  The bounds
+\(\ell_i\leq H_\alpha(\xi_i)\leq u_i\) are replicated at
+that site's branches.  At an endpoint, only the inward
+branch is meaningful.
+The finite-dimensional feasible set is the same declared
+box \(\Theta\) for the value-loss and marginal-loss fits
+within a family and budget.
+
+\begin{proof}[Proof of Proposition~\ref{prop:boxtraining121}]
+For a scalar predicted derivative \(z\),
+\[
+ \max_{h\in[\ell_i,u_i]}|z-h|
+      =\max\{z-\ell_i,u_i-z\}.
+\]
+Thus \(T(\theta)\) is exactly the robust maximum node error.
+It is continuous as a finite maximum of affine functions.
+The coefficient box is nonempty and compact, so its minimum
+is attained.  In particular, \eqref{eq:robustlp121} is a
+linear program in \((\theta,T)\), even when the represented
+critic is not convex in its action.
+
+For any feasible \(\theta\), each of the affine errors is
+at most \(T(\theta)\).  Multiply the positive and negative
+rows by \(y_i^+,y_i^-\), respectively, and add.  The
+normalization of their combined mass gives
+\[
+ T(\theta)\geq
+     -\sum_i\ell_i y_i^++\sum_i u_i y_i^-
+                  +r^\top\theta.
+\]
+The minimum of the last linear term over the coordinate box
+is the sum of the smaller endpoint products.  This proves
+\(B_y\leq T_*\).
+Each robust row error is nonnegative, so also \(0\leq T_*\).
+Evaluating the finite maximum at the exactly checked stored
+\(\widehat\theta\) gives \(T_*\leq P\) and the stated gap.
+No assertion about a floating solver's dual feasibility has
+entered the argument.
+\end{proof}
+
+All quantities in this certificate can be checked using
+rational arithmetic for the declared features at the
+dyadic acquisition sites.  A stored binary coefficient is
+converted to the rational number represented by its bytes,
+not to an intended decimal value.  Nonnegative approximate
+dual weights may be rounded to rationals and renormalized;
+the resulting weights, rather than their unrounded
+counterparts, must satisfy the conditions of the proposition.
+If all proposed weights are zero, another specified
+nonnegative normalized choice gives a valid, potentially
+weak bound.  A coefficient outside its box is not made
+feasible by reporting the solver's constraint tolerance.
+
+The certificate also enables an exact comparison of the
+actual two learned readouts.  Evaluate
+\(P_{\rm V}=T(\widehat\theta_{\rm V})\) and
+\(P_{\rm M}=T(\widehat\theta_{\rm M})\) with the same rows
+and labels.  If their checked values satisfy
+\(P_{\rm M}<P_{\rm V}\), the marginal fit has strictly
+reduced this particular robust node error.
+Its certified distance from the best coefficient vector in
+the box is at most \(P_{\rm M}-\max\{0,B_y\}\).
+Neither inequality by itself orders off-design regret,
+rejection probability or complete computational work.
+The value-loss control is an actual bounded least-squares
+fit.  The following certificate is evaluated on both stored
+readouts, with the same exact design and midpoint targets.
+It quantifies the value-loss optimization gap without
+assuming that a floating solver attained the global minimum.
+
+\begin{proposition}[An exact certificate for the value-loss control]
+\label{prop:valueloss121}
+Let the finite value design rows be \(\Phi_i\), let the
+stored midpoint targets be \(y_i\), and set
+\[
+ F(\theta)=\sum_i(\Phi_i\theta-y_i)^2,
+ \qquad F_* = \min_{\theta\in\Theta} F(\theta).
+\]
+For an exactly checked \(\widehat\theta\in\Theta\), define
+\begin{align*}
+ g&=2\sum_i\Phi_i^\top(\Phi_i\widehat\theta-y_i),\\
+ L_F&=\max\left\{0,F(\widehat\theta)-g\cdot\widehat\theta
+       +\sum_j\min\{\underline\theta_jg_j,
+                              \overline\theta_jg_j\}\right\}.
+\end{align*}
+Then
+\[
+ L_F\leq F_*\leq F(\widehat\theta),\qquad
+ 0\leq F(\widehat\theta)-F_*\leq F(\widehat\theta)-L_F.
+\]
+These are finite-design optimization bounds.  They do not
+remove the error in the numerical value labels or imply
+uniform approximation or policy optimality.
+\end{proposition}
+
+\begin{proof}
+Continuity of \(F\) and compactness of the nonempty box
+give existence of its minimum.  Expanding each square,
+for every \(\theta\in\Theta\) one obtains
+\[
+ F(\theta)=F(\widehat\theta)+g\cdot(\theta-\widehat\theta)
+                 +\sum_i\{\Phi_i(\theta-\widehat\theta)\}^2.
+\]
+Drop the nonnegative last sum and minimize the linear
+term separately over each box coordinate.  This gives
+the expression inside the maximum in \(L_F\).
+The additional lower bound zero follows from the sum
+of squares.  Feasibility of \(\widehat\theta\) gives the
+upper bound.  Subtraction proves the gap bound.
+All identities hold for the actual rational numbers
+represented by the checked design, targets and coefficients;
+no differentiability of the Bellman oracle or fitted-feature
+knot is involved in differentiating this coefficient loss.
+\end{proof}
+
+\subsection{Constructive ranges for all declared feature families}
+\label{supp:featureranges121}
+
+The stored level is the fitted or interpolated \(Q_x(0)\).
+Accordingly the continuation anchor itself is that level
+minus the known \(S(x)\); the production full action
+critic adds \(h(A(x)v)\) to the stored level and to
+the learned continuation difference.
+This is the full-value identity used by the recursive
+anchor theorem, not an assumption that the stored
+anchor is exact off the acquisition grid.
+
+For any fixed state, anchoring \(\phi(x,v)\) by
+\(\phi(x,0)\) leaves its action derivative unchanged.
+The denominator \(A(x)=(2+x_1+x_2)/16\) is affine and
+at least \(1/8\).
+On a rational box \(C\subset\Omega\), its range
+\([A_-,A_+]\) is computed at state endpoints.
+If \(D_v\phi\in[p_-,p_+]\), take the minimum and maximum
+of the four rational products
+\[
+ p_-/A_-,\quad p_-/A_+,\quad p_+/A_-,\quad p_+/A_+
+\]
+to enclose \(D_v\phi/A(x)\).
+This does not require independence of numerator and
+denominator.  It is an outward rectangle bound.
+Unions of boxes or polynomial pieces use the extrema of
+their already valid bounds.
+
+\paragraph{Quadratic and polynomial features.}
+The anchored degree-two pool is
+\(v,x_1v,x_2v,v^2\).
+Its first three coefficients are signed.  The quadratic
+family restricts the last coefficient to \([0,128]\);
+the polynomial family permits \([-128,128]\).
+The degree-three pool contains exactly
+\[
+ x_1^p x_2^q v^r,\qquad
+ r\geq1,\quad p,q\geq0,\quad p+q+r\leq3.
+\]
+It has ten elements.  Each action derivative numerator is
+\(r x_1^p x_2^qv^{r-1}\).
+All coordinates lie in \([0,1]\), so endpoint powers and
+products give exact range bounds for each nonnegative
+monomial before division by \(A\).
+The coefficients, not the basis monomials, can have either
+sign; signed interval summation accounts for that fact.
+
+\paragraph{ReLU and exactly matched hinges.}
+In addition to \(v,x_1v,x_2v\), the pool has 36 features
+\[
+\begin{aligned}
+ &\left(\frac{w_1(x_1-1/2)+w_2(x_2-1/2)+v-q}{4}\right)_+\\
+ &\hspace{1em}-
+ \left(\frac{w_1(x_1-1/2)+w_2(x_2-1/2)-q}{4}\right)_+ ,
+\end{aligned}
+\]
+where \(w_1,w_2\in\{-1,0,1\}\) and
+\(q\in\{1/8,3/8,5/8,7/8\}\).
+For the first affine argument \(z\), the derivative
+numerator is 0 when \(z<0\) and \(1/4\) when \(z>0\).
+It has these two one-sided values at \(z=0\).
+Compute the minimum and maximum of the affine \(z\) on
+the box: a strictly negative box needs only 0, a strictly
+positive box only \(1/4\), and a crossing or touching box
+retains both whenever the corresponding side is present.
+Using \([0,1/4]\) at every such boundary is conservative
+and valid.  The 36 coefficients are nonnegative; the
+three base coefficients remain signed.
+A conventional coordinate-loop hinge with these same
+arrays has identical mathematical derivatives and values.
+A different arithmetic encoding can incur different
+rounding or runtime, which must be recorded separately.
+
+\paragraph{Clamped tensor cubic splines.}
+The coarse univariate knot vector is clamped at 0 and 1
+with no interior knots; the fine vector additionally has
+one simple interior knot at \(1/2\).
+There are respectively four and five cubic basis
+functions per coordinate.  The tensor pool omits the
+first action basis, leaving \(4\cdot4\cdot3=48\) and
+\(5\cdot5\cdot4=100\) coefficients.
+The omitted basis is the only one nonzero at \(v=0\);
+thus these features already vanish at the anchor.
+The standard degree-\(k\) basis is built by the finite
+recursion
+\[
+ B_{i,k}(s)=
+ \frac{s-t_i}{t_{i+k}-t_i}B_{i,k-1}(s)
+ +\frac{t_{i+k+1}-s}{t_{i+k+1}-t_{i+1}}B_{i+1,k-1}(s),
+\]
+with a zero term for a zero denominator and the
+half-open indicator bases at degree zero.
+The continuous endpoint limits define clamped values.
+On each knot interval this is a polynomial with rational
+coefficients, and differentiating that polynomial gives
+the required action derivative, including endpoint
+limits.  Tensor products preserve this finite
+piecewise-polynomial form.
+
+\paragraph{Tensor linear hats.}
+Use the declared five- or nine-point state mesh in each
+state coordinate and the five-point action mesh.
+The tensor hats that use the first action hat are omitted,
+leaving \(5\cdot5\cdot4=100\) or
+\(9\cdot9\cdot4=324\) coefficients.
+Within a mesh box the state hats are nonnegative affine
+functions and the action-hat derivative is its constant
+one-sided slope, zero, or the opposite slope.
+Their products give numerator bounds.
+At an action knot both incident slopes are retained.
+Crossing a state knot does not justify dropping an
+incident polynomial piece.
+
+For completeness, polynomial ranges in the spline or
+tensor pieces can be constructed without a sampled
+derivative test.  On a closed coordinate interval map
+the variable to \([0,1]\) and write a degree-\(n\)
+polynomial in its Bernstein basis
+\[
+ P(s)=\sum_{k=0}^n b_k{n\choose k}s^k(1-s)^{n-k}.
+\]
+The coefficients are obtained by finite rational basis
+conversion.  The basis functions are nonnegative and
+sum to one, so \(P(s)\) lies between the smallest and
+largest \(b_k\).  Tensor products have the same
+nonnegative partition-of-unity property and bound
+multivariate polynomial pieces by their smallest and
+largest tensor coefficients.  Intersecting a cell with
+the finitely many knot boxes, or merely enclosing each
+intersection in a knot box, gives valid ranges.
+Affine hinge cuts can also be used to subdivide cells;
+retaining both sides avoids that extra subdivision
+cost.  Every option has an explicit finite construction,
+and its actual arithmetic work belongs in acquisition
+and certificate costs if executed.
+
+These rules provide bounds for all original states,
+including feature-knot states, and all feasible
+one-sided action limits.  They do not assume that a
+ReLU or tensor-grid derivative has a global Lipschitz
+constant.
+
+\subsection{Finite-cover and path-integral certificates}
+
+\begin{proof}[Proof of Theorem~\ref{thm:quotientlearning121}]
+Fix a nonempty cell \(C\).  For every \(u\in C\),
+Theorem~\ref{thm:rootmarginal121} and the label at any
+retained node \(\xi_i\) imply
+\[
+ \ell_i-\Lambda_\alpha r_i(C)
+   \leq H_\alpha(u)\leq
+       u_i+\Lambda_\alpha r_i(C).
+\]
+Taking the maximum of lower endpoints and the
+minimum of upper endpoints yields the target range.
+The independent feature range and interval linear
+combination contain the fitted action marginal.
+The difference of two real numbers in these two
+intervals is bounded in absolute value by the two
+opposite endpoint differences.  This proves the
+cell error bound \(\epsilon(C)\).
+Limits from every incident feature piece are included
+by construction, and the target marginal is
+continuous, so the same bound holds for the required
+one-sided action derivatives.
+
+For clarity, a version that links this certificate
+directly to the training loss is also available.
+Choose a reference derivative row \(A_i\) at a label
+node, and define
+\[
+ \Delta_{ij}(C)\geq
+   \sup_{u\in C}
+      |A(x)^{-1}D_v\phi_j(u)-A_{ij}|,
+ \qquad
+ T_i(\theta)=\max\{A_i\theta-\ell_i,u_i-A_i\theta\}.
+\]
+The feature intervals just described give such a
+\(\Delta_{ij}\) by two endpoint differences.
+The triangle inequality proves
+\begin{equation}\label{eq:nodetocell121}
+ \sup_{u\in C}|\widehat H_\theta(u)-H_\alpha(u)|
+ \leq T_i(\theta)+\Lambda_\alpha r_i(C)
+                 +\sum_j|\theta_j|\Delta_{ij}(C).
+\end{equation}
+Take the smaller of all such bounds and
+\eqref{eq:finitecover121} if desired.
+Even an exactly minimized \(T_i\) leaves the target
+coverage and feature-variation terms.
+This explicitly identifies the additional information
+required to move from fit nodes to a service state.
+
+For fixed \(x\), the fitted continuation is continuous
+and piecewise polynomial in \(v\); hence it is
+absolutely continuous.  The true continuation is
+continuously differentiable.
+For all \(v\) except the finitely many feature knots,
+\[
+ \left|\partial_v
+    \{\widehat R_\theta(x,v)-R_\alpha(x,v)\}\right|
+             \leq A(x)\epsilon_x(v).
+\]
+The choice of cell may be made by a fixed ordering
+of the finite cells, or by taking the smallest valid
+bound.  It is measurable for the piecewise-algebraic
+covers used here.
+Integrating this inequality between \(a/A(x)\) and
+\(b/A(x)\) gives
+\eqref{eq:quotientcontrast121}.
+The exact stage cost and the state-only anchor
+cancel from the error increment.
+
+Equation~\eqref{eq:future121} gives
+\(-\delta\leq\eta_x(b)-\eta_x(a)\leq\delta\).
+Adding that difference proves the implemented-policy
+contrast.  For every feasible \(b\),
+\[
+ Q_x(a)-Q_x(b)
+ \leq\widehat q_x(a)-\widehat q_x(b)+\mathcal D_x(a,b).
+\]
+Take the supremum in \(b\) and add
+\(0\leq\eta_x(a)\leq\delta\) to obtain the original
+optimum bound.  The supremum is nonnegative because
+the term at \(b=a\) is zero.
+Replacing it by a larger certified upper value
+preserves the bound.  None of these steps uses
+convexity of the fitted critic.
+\end{proof}
+
+The scalar all-action calculation in
+\eqref{eq:learnedallaction121} is constructive.
+For a rectangular or polyhedral finite cover and a
+fixed represented state, split the feasible action
+interval at the cover crossings and the finitely
+many feature knots.  A piecewise constant
+\(\epsilon_x\) makes \(\mathcal D_x(a,b)\) piecewise
+affine in \(b\).  The fitted action objective,
+including \(h\), is a polynomial of degree at most
+four on each piece for every declared family.
+The required supremum is attained at a piece
+endpoint or at a zero of its derivative polynomial.
+For rational coefficients, signs and isolating
+intervals can be checked by polynomial remainder
+sequences and rational interval refinement; outward
+evaluation of all these intervals gives a certified
+upper bound.  An alternative is interval subdivision
+with valid polynomial range bounds.  Approximate
+floating roots without an enclosing calculation
+are not, by themselves, this certificate.
+
+The associated action seminorm can be written as
+\[
+ \|e\|_{\rm act}
+ =\sup_{x\in[0,1]^2}
+      \operatorname*{ess\,sup}_{0<v<1}
+               |A(x)^{-1}\partial_ve(x,v)|.
+\]
+The supremum over states is literal; replacing it
+by an essential supremum over state space could
+lose a particular queried state.
+For the present absolutely continuous action
+sections, this seminorm is zero exactly when
+\(e(x,v)=b(x)\) is independent of \(v\) at each
+state.  Indeed a zero derivative integrates to
+a constant, and an action constant has zero
+derivative.  This is the inherited action-null
+quotient identity.  The new finite-cover
+construction bounds an approximate, learned
+member of that quotient under the original
+integrated AVaR objective.
+
+\subsection{Constrained actor error and the deployed future}
+
+\begin{proof}[Proof of Proposition~\ref{prop:marginalpolicy121}]
+For every feasible displacement \(d\), original
+strong convexity gives
+\[
+ Q_x(a+d)\geq Q_x(a)+Q_x'(a)d+d^2.
+\]
+Taking the infimum over the original feasible
+interval proves
+\(Q_x(a)-V_0(x)\leq\mathcal K_x(a;Q_x'(a))\).
+The map \(\mathcal K_x(a;g)\) is a supremum
+of affine functions of \(g\), and hence convex.
+Its maximum over a closed scalar interval is at
+an endpoint, which proves the bound \(K_x(a)\).
+Completion of the square gives the projected
+minimizer in the statement.
+At the lower boundary \(d\geq0\); if the full
+derivative interval is nonnegative, \(gd+d^2\)
+is minimized at zero.  At the upper boundary
+the signs reverse.  This proves both exact
+boundary claims.
+
+Let \(a_0^*\) be the unique original optimizer.
+Its constrained first-order condition gives
+\(Q_x'(a_0^*)(a-a_0^*)\geq0\).
+Strong convexity at this point implies
+\[
+ |a-a_0^*|^2\leq Q_x(a)-V_0(x)\leq K_x(a).
+\]
+Adding the single nonnegative allowance in
+\eqref{eq:future121} proves the statement
+for the implemented controller.
+
+Here is a precise interpretation of the final
+stationarity assertion.  At an interior smooth
+action let \(\widehat g\) be the derivative of
+the fitted action objective.  At an interior
+kink it may be any supplied convex combination
+of the two one-sided derivatives.
+At either endpoint use the inward derivative.
+Every such \(\widehat g\) differs from the
+continuous true derivative by at most
+\(\epsilon\), provided the required one-sided
+errors have that bound.
+Let
+\[
+ N_{[0,A(x)]}(a)
+   =\{n:n(b-a)\leq0\ \hbox{for every feasible }b\}.
+\]
+A checked constrained stationarity residual
+means that a supplied \(n\) in this cone
+satisfies \(|\widehat g+n|\leq r\).
+Use the interval
+\([\widehat g-\epsilon,\widehat g+\epsilon]\),
+or its intersection with any other valid
+derivative interval.
+For any \(g\) in this interval and any
+feasible \(d\),
+\[
+ gd+d^2
+  =\{g-\widehat g+\widehat g+n\}d+d^2-nd
+  \geq-(\epsilon+r)|d|+d^2.
+\]
+The last expression is at least
+\(-(\epsilon+r)^2/4\).
+This proves \(K_x(a)\leq(\epsilon+r)^2/4\)
+for the interval supplied by this error
+bound.  It also explains why an unrelated
+wider derivative interval need not attain
+the same numerical bound.
+\end{proof}
+
+A global exact minimizer of the continuous
+piecewise-polynomial fitted objective supplies
+zero constrained residual: at an interior
+minimum its left derivative is nonpositive
+and its right derivative nonnegative; at an
+endpoint the inward derivative has the
+appropriate sign.  The same sign fact applies
+to a checked local minimum.
+An implemented polynomial-root enumeration
+may have rounding error and should report its
+actual residual or invoke the retained
+original all-action certificate.
+No theorem here identifies a floating root
+with an exact stationary action.
+
+For a different useful form, suppose an
+implemented actor is known only to have
+fitted objective suboptimality at most
+\(\zeta\geq0\), and the original-action
+marginal error is uniformly at most
+\(\epsilon\) along all feasible actions at
+this state.  Write
+\(\Delta=Q_x(a)-V_0(x)\).
+The path inequality and the strong-convexity
+distance bound give
+\[
+ \Delta\leq \zeta+\epsilon|a-a_0^*|
+                 \leq\zeta+\epsilon\sqrt{\Delta}.
+\]
+Solving this scalar inequality yields
+\begin{equation}\label{eq:approxactor121}
+ \Delta\leq
+  \left\{\frac{\epsilon+
+                     \sqrt{\epsilon^2+4\zeta}}2\right\}^{\!2}.
+\end{equation}
+The once-only allowance \(\delta\) gives the
+implemented-policy bound.
+This objective-gap form is weaker than the
+checked-stationarity bound when \(\zeta=0\),
+but remains valid without a fitted derivative
+optimality certificate.
+
+\subsection{Complete-value anchors in a finite recursive composition}
+
+The current-state seminorm must not be used to discard a
+state-dependent value when that value becomes a future
+continuation.  This issue can be checked within the
+original investment primitives, without another
+experimental model.  For a fixed \(\gamma\in\mathbb R\),
+put \(W_1(y)=V_1(y)+\gamma(y_1+y_2)\).
+Since \(s_1+s_2=0\),
+\[
+ W_1(F(x,a,Z))
+ =V_1(F(x,a,Z))
+       +\gamma\{F_1(x,a,0)+F_2(x,a,0)\}.
+\]
+The second summand is constant in the innovation.
+Cash invariance of the same original risk map proves
+\[
+ Q_x^{W_1}(a)-Q_x(a)
+   =\beta\gamma\{F_1(x,a,0)+F_2(x,a,0)\}.
+\]
+The sum of the two action coefficients is \(3/4\).
+Its derivative contribution is therefore
+\(3\beta\gamma/4\).
+An additive state-only level in a last-date action
+critic leaves that last-date minimizer unchanged,
+but exporting this level as a continuation changes
+the root marginal as displayed.
+
+\begin{theorem}[Anchor, quotient and policy errors in the same recursion]
+\label{thm:recursiveanchor121}
+Consider a finite horizon \(t=0,\ldots,T\) with
+the same bounded primitives, original feasible
+actions and original transition at every comparison.
+Assume the Bellman and policy recursions are
+well-defined, for example under the compact,
+continuous, measurable-selector conditions of
+Proposition~\ref{prop:finitefoundations119}.
+For \(t<T\), let
+\[
+ Q_t^W(x,a)=c_t(x,a)+
+       \beta_t\rho_{t,x,a}\{W(F_t(x,a,\cdot))\},
+ \qquad V_t(x)=\inf_a Q_t^{V_{t+1}}(x,a),
+\]
+where \(0\leq\beta_t<\infty\) and each original
+risk map is monotone and cash invariant.
+All continuations under consideration are bounded
+and belong to a class on which these recursions
+are justified.
+
+At each date choose an original feasible reference
+action \(a_t^0(x)\) and write an acquired action
+critic as
+\(\widehat Q_t(x,a)=\widehat A_t(x)+\widehat D_t(x,a)\),
+with \(\widehat D_t(x,a_t^0(x))=0\).
+For its supplied continuation \(W_{t+1}\), suppose
+\begin{align*}
+ a_t^-(x)&\leq
+   \widehat A_t(x)-Q_t^{W_{t+1}}(x,a_t^0(x))
+                                          \leq a_t^+(x),\\
+ b_t^-(x,a)&\leq
+   \widehat D_t(x,a)
+    -\{Q_t^{W_{t+1}}(x,a)-Q_t^{W_{t+1}}(x,a_t^0(x))\}
+                                          \leq b_t^+(x,a).
+\end{align*}
+Let finite uniform bounds \(d_t^-,d_t^+\)
+enclose the sums of these two errors over all
+original feasible pairs.
+Suppose the exported value satisfies
+\[
+ |W_t(x)-\inf_a\widehat Q_t(x,a)|\leq\zeta_t
+\]
+uniformly, where \(\zeta_t\geq0\) is checked.
+Given \(E_T^-\leq W_T-V_T\leq E_T^+\),
+define \(E_t^\pm\) by \eqref{eq:anchorrecursion121}.
+Then \(E_t^-\leq W_t-V_t\leq E_t^+\) at every
+date and state.
+
+Let the implemented actor satisfy the local
+original-action bound
+\[
+ Q_t^{W_{t+1}}(x,\pi_t(x))
+       -\inf_aQ_t^{W_{t+1}}(x,a)\leq g_t
+\]
+uniformly, and let its continuation policy error
+be bounded by \(0\leq J_{t+1}^\pi-V_{t+1}\leq P_{t+1}\).
+Then
+\begin{equation}\label{eq:recursivepolicy121}
+ 0\leq J_t^\pi-V_t
+ \leq g_t+\beta_t(E_{t+1}^+-E_{t+1}^-)
+                         +\beta_tP_{t+1}.
+\end{equation}
+Starting from the original terminal payoff,
+\(P_T=0\), these bounds compose for the full
+finite-horizon policy.
+\end{theorem}
+
+\begin{proof}
+Monotonicity and cash invariance give, for every
+state and feasible action,
+\[
+ \beta_tE_{t+1}^-
+ \leq Q_t^{W_{t+1}}-Q_t^{V_{t+1}}
+ \leq\beta_tE_{t+1}^+.
+\]
+This uses uniform scalar bounds on the entire
+relevant continuation, not the removal of a
+state-dependent term from an expectation.
+The anchor and contrast inequalities add to
+\[
+ d_t^-\leq
+        \widehat Q_t-Q_t^{W_{t+1}}\leq d_t^+.
+\]
+Combining these two inequalities, taking the
+infimum over the identical original feasible
+set, and including the two signs of
+\(\zeta_t\) proves the value recurrence.
+Backward induction from \(T\) gives its
+claim at all dates.
+
+For the actor, the upper comparison at
+\(\pi_t(x)\) and the lower comparison at
+the infimum give
+\begin{align*}
+ Q_t^{V_{t+1}}(x,\pi_t(x))
+                  -\inf_aQ_t^{V_{t+1}}(x,a)
+ &\leq
+ Q_t^{W_{t+1}}(x,\pi_t(x))
+                  -\inf_aQ_t^{W_{t+1}}(x,a)\\
+ &\quad+\beta_t(E_{t+1}^+-E_{t+1}^-).
+\end{align*}
+The actual policy recursion at the same
+action replaces \(V_{t+1}\) by
+\(J_{t+1}^\pi\).  Monotonicity and cash
+invariance bound that increment between
+0 and \(\beta_tP_{t+1}\).
+This proves the upper inequality in
+\eqref{eq:recursivepolicy121}.
+The lower inequality follows by induction:
+the terminal policy uses the original
+payoff; a feasible action cannot beat the
+Bellman infimum; and the monotone
+recursive risk cannot lower a
+nonnegative future policy error.
+The same proof applies if a nonnegative
+terminal policy error has separately
+been specified and bounded.
+\end{proof}
+
+The local quantities \(g_t\) can be supplied
+by the path-integral or constrained
+marginal certificate when its target is
+the indicated \(Q_t^{W_{t+1}}\).
+They cannot be transferred to a different
+future continuation without the displayed
+span term or a sharper justified comparison.
+If \(E_{t+1}^-=E_{t+1}^+\), the
+continuation error is a single global
+constant, and its monetary action effect
+does cancel.  A state-dependent anchor
+typically has a nonzero span and does not
+meet that condition.
+
+For a noncash-invariant recursive utility,
+state a different assumption explicitly.
+Suppose the same original one-step
+aggregation map, including its stage
+arguments, is monotone and satisfies
+\[
+ |Q_t^W(x,a)-Q_t^{\widetilde W}(x,a)|
+       \leq L_t\|W-\widetilde W\|_\infty
+\]
+uniformly on the relevant bounded class,
+with a supplied finite \(L_t\).
+Let \(d_t=\max\{|d_t^-|,|d_t^+|\}\).
+Then the same addition and infimum
+argument gives
+\[
+ \|W_t-V_t\|_\infty
+      \leq d_t+\zeta_t+
+                       L_t\|W_{t+1}-V_{t+1}\|_\infty.
+\]
+Comparing the actor and the infimum pays
+two continuation errors, so
+\[
+ 0\leq J_t^\pi-V_t
+ \leq g_t+2L_t\|W_{t+1}-V_{t+1}\|_\infty
+                          +L_tP_{t+1}.
+\]
+To verify these formulas, apply the
+assumed absolute Lipschitz inequality
+once at every action for the value
+comparison, once at the actor and once
+at the infimum for its local regret,
+and once to the actual policy
+continuation.  Monotonicity supplies the
+nonnegative-policy-error induction.
+No cash-translation identity is used.
+An NDU or recursive-utility specification
+with singular domains or unbounded
+continuation derivative must establish
+this assumption on an invariant domain
+before using the result.
+
+In the present two-date study, the
+acquisition target is the original
+\(V_1=T_1g\), evaluated by paid
+primitive calculations.  Thus its
+mathematical continuation approximation
+in the root comparison is zero, while
+the actual last-date policy error is
+at most \(\varepsilon_1=2^{-20}\).
+Equation~\eqref{eq:recursivepolicy121}
+reduces to the root local action gap
+plus \(\beta\varepsilon_1\).
+Numerical uncertainty in evaluating
+\(T_1g\) is already included in the
+finite label and policy intervals;
+it is not permission to treat that
+operator evaluation as a free oracle.
+
+\subsection{A total original-policy service and its uniform range}
+\label{supp:totalservice121}
+
+The following argument verifies the constants of the retained
+exact finite-cover fallback \texttt{rational96.py}.
+It does not require a favorable first proposal or convergence
+of a floating polynomial-root solver.
+The declared service retains a recoverable numerical failure
+in the proposal or certification stages and then invokes this
+fallback at the same state.  Source-identity, domain,
+corrupt-model and infrastructure failures remain failed
+executions; they cannot be removed from or replaced within
+the evaluation sample.
+
+\begin{proposition}[Finite all-state qualification and primitive range]
+\label{prop:totalservice121}
+At every represented original state \(x\in[0,1]^2\)
+and either declared risk level, the exact fallback with
+1025 equally spaced feasible actions, 256 innovation
+cells and exact last-date value gap at most \(2^{-30}\)
+returns a feasible action whose original complete-policy
+regret is at most \(\tau=1/256\).
+Its policy-cost interval has width at most \(1/8192\).
+Every exact last-date bisection needs at most 31
+iterations, within its stated cap of 80.
+These are finite arithmetic guarantees; all their
+actual cost is charged when entered.
+
+The original primitive ranges satisfy
+\begin{equation}\label{eq:primitiverange121}
+ 0\leq S\leq49/32,\qquad
+ 0\leq g\leq37/16,\qquad
+ 0\leq h\leq5/64,
+\end{equation}
+and hence
+\[
+ 0\leq V_1\leq967/256,\qquad
+ 0\leq V_0\leq K:=21097/4096.
+\]
+Any two total qualified services on this same
+initial-state domain have an original-policy
+cost contrast in \([-\tau,\tau]\).
+\end{proposition}
+
+\begin{proof}
+For \(d=2\), the target part of \(S\) is at most
+\(2(5/8)^2=25/32\), its cyclic term at most
+\(1/4\), and its squared hinge at most \(1/2\).
+The extra target term in \(g\) is at most
+\(25/32\).  The action interval lies in
+\([0,1/4]\), so \(h(a)\leq1/16+1/64=5/64\).
+These prove \eqref{eq:primitiverange121}.
+Monotonicity and constant preservation of the
+original AVaR give
+\[
+ V_1\leq49/32+5/64+(15/16)(37/16)=967/256,
+\]
+and a second application gives
+\[
+ V_0\leq49/32+5/64+(15/16)(967/256)
+                                      =21097/4096.
+\]
+Nonnegativity follows from the same property
+and the nonnegative primitives.
+
+We next verify the finite terminal solve.
+For a fixed terminal-decision state \(y\),
+the original one-date objective has derivative
+bounded in absolute value by
+\[
+ |Q_1'(y,a)|\leq3/4+\beta(5)(3/4)
+                        =273/64<7,
+\]
+because each coordinate of \(\nabla g\) has
+absolute value at most 5 and
+\(b_1+b_2=3/4\).
+The derivative is Lipschitz with constant less
+than 10.  To see the latter directly, put
+\(m=F(y,a,0)\), \(k=5(m_1-m_2)\).
+The exact original risk representation is
+\[
+ Q_1(y,a)=S(y)+h(a)+
+             \beta\{g(m)+\mathcal R_\alpha(k)\}.
+\]
+Here \(\nabla^2g\preceq13I\) almost everywhere,
+\(m_a=\boldsymbol b\),
+\(k_a=5/4\), and
+\(\mathcal R_\alpha'\) is
+\(\alpha/(10t)\)-Lipschitz.
+Consequently a derivative Lipschitz constant is
+\[
+ 5+\beta\{65/16+5\alpha/(32t)\}<10
+\]
+for both declared risks.  The first derivatives
+match at the squared-hinge and tail-clipping
+junctions, so this almost-everywhere bound
+integrates to the global one.
+
+The exact bisection starts with \([0,A(y)]\)
+and evaluates its midpoint \(a_k\) after
+\(k\) halvings.  The constrained optimum
+remains in the bracket: a negative derivative
+discards the left half and a nonnegative
+derivative the right half.
+Its bracket length is \(A(y)2^{-k}\).
+At each step the strong-convexity lower
+support has gap
+\[
+ \Gamma_k=-\min_{d\in[-a_k,A(y)-a_k]}
+                    \{Q_1'(y,a_k)d+d^2\}.
+\]
+If the optimum is interior, its derivative
+is zero, so
+\[
+ |Q_1'(y,a_k)|\leq
+           10A(y)2^{-k-1},\qquad
+ \Gamma_k\leq\frac{25}{64}4^{-k}.
+\]
+This is below \(2^{-30}\) already at \(k=15\).
+If the optimum is the lower boundary,
+strong convexity implies \(Q_1'(y,a_k)\geq2a_k\);
+the support minimizer is then the lower
+boundary and
+\(\Gamma_k\leq7a_k\leq7\,2^{-k-3}\).
+The upper-boundary argument is symmetric.
+This is below \(2^{-30}\) at \(k=30\).
+Thus at most 31 midpoint evaluations suffice,
+including endpoints with zero limiting
+derivative.  The exact clipped-quadratic risk,
+its derivative and every arithmetic
+denominator in this calculation are finite
+for the declared rational inputs.
+
+For the root, the inherited state derivative
+bound \(|\partial_jV_1|\leq15/2\) gives
+\[
+ |Q_x'(a)|
+ \leq3/4+\beta(15/2)(3/4)
+                         =771/128<7.
+\]
+Let \(m=1024\) and use actions
+\(a_j=A(x)j/m\), \(j=0,\ldots,m\).
+Every feasible action is within
+\(A(x)/(2m)\leq1/(8m)\) of this grid.
+If \([L_j,U_j]\) is the complete-policy
+interval at \(a_j\), its lower endpoint
+also minorizes \(Q_x(a_j)\).
+The retained convex-order width bound,
+with \(K_z=15\), \(R=1/32\), \(t\geq1/4\),
+terminal point error \(e=2^{-30}\), and
+terminal-policy allowance \(\varepsilon_1=2^{-20}\),
+gives
+\begin{align}
+ U_j-L_j&\leq W,\nonumber\\
+ W&=\beta\left\{\frac{15}{8\cdot256^2}
+                      +2e+\varepsilon_1\right\}
+   =\frac{238095}{2^{33}}<2^{-15}.
+ \label{eq:fallbackwidth121}
+\end{align}
+The convex-order inequality acts on the
+original \(V_1\).  Adding
+\(\beta\varepsilon_1\) to the upper endpoint
+controls the actual future policy without
+assuming that policy's value is convex.
+
+The action-cover lower optimum
+\[
+ B_0=\min_j L_j-\frac7{8m}
+\]
+is valid.  Indeed each arbitrary feasible
+action is within the stated distance of a
+grid point, and its \(Q_x\) value is at
+least that grid value minus \(7/(8m)\).
+Choose \(j_*\) with the smallest \(U_j\),
+with the prescribed deterministic tie rule.
+Since
+\(\min_jU_j-\min_jL_j\leq\max_j(U_j-L_j)\),
+\[
+ U_{j_*}-B_0\leq W+\frac7{8m}.
+\]
+The exact service rounds \(a_{j_*}\)
+down to 40 binary places.  The action
+remains feasible and its displacement is
+less than \(2^{-40}\).
+The original \(Q_x\) value changes by
+less than \(7\,2^{-40}\).
+Apply this perturbation to the lower
+and upper endpoints while retaining
+the single future allowance already
+in \(U_{j_*}\).
+This step uses Lipschitzness of \(Q_x\),
+not of the possibly discontinuous
+deployed policy value.
+The exact returned width and gap are
+therefore at most
+\[
+ W+14\,2^{-40},\qquad
+ W+\frac7{8192}+7\,2^{-40},
+\]
+respectively.
+
+The final floating conversion in the
+retained service rounds each rational
+endpoint outward by an adjacent binary64
+number.  Every such endpoint has
+absolute value below 8, by the
+primitive range just proved and the
+displayed allowances.
+A nearest binary64 conversion followed
+by one outward adjacent value has
+absolute error less than \(2^{-48}\)
+on this range.
+The two endpoint conversions and the
+outward final subtraction enlarge a
+gap or width by less than \(2^{-46}\).
+Direct rational inequalities now give
+\begin{align*}
+ W+14\,2^{-40}+2^{-46}&<2^{-14}<1/8192,\\
+ W+7/8192+7\,2^{-40}+2^{-46}&<2^{-10}<1/256.
+\end{align*}
+Thus the strict margins survive the
+declared conversion.
+All 1025 actions use finitely many
+primitive evaluations: 513 terminal
+contexts per action, each with the
+finite bisection bound above.
+The earlier numerical stages have
+finite caps and can terminate in this
+fallback, so they cannot remove a
+valid state from the mathematical
+service's domain.
+
+Finally each qualified service has
+\(0\leq J_x-V_0(x)\leq\tau\).
+Subtracting two such inequalities
+with the same original optimum
+gives \([-\tau,\tau]\) for their
+contrast at every state.
+\end{proof}
+

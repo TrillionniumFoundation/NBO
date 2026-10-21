@@ -155,6 +155,7 @@ def main():
     blue, orange, gray = "#185c8d", "#bc5a15", "#9ca6ae"
     colors = ("#175b8a", "#b05a17", "#477d48")
     pdf = output / "complete_intervention_catalogue122.pdf"
+    layouts = []
     with PdfPages(pdf, metadata={"Title": "NBO R122 complete intervention catalogue",
             "Author": "Qian QI", "CreationDate": None, "ModDate": None}) as pages:
         for index in range(2):
@@ -206,9 +207,9 @@ def main():
                            label="Mean certified gain lower bound")]
                 fig.legend(handles=handles, loc="lower left", bbox_to_anchor=(.02, .077), ncol=3,
                            frameon=False, fontsize=7.4)
-                axes[2].legend(handles=[Line2D([0], [0], marker=("o", "s", "^")[j],
+                fig.legend(handles=[Line2D([0], [0], marker=("o", "s", "^")[j],
                     color=colors[j], linewidth=0, label=f"Clock {j}") for j in range(3)],
-                    loc="lower left", bbox_to_anchor=(0, -.18), frameon=False, ncol=3, fontsize=7)
+                    loc="upper right", bbox_to_anchor=(.98, .915), frameon=False, ncol=3, fontsize=7)
                 fig.text(.03, .056,
                     "Gain is against the same actor's completed control; [k/32] is the changed-action count. "
                     "All gain columns use 32 independent initial states.", fontsize=7.2)
@@ -218,11 +219,16 @@ def main():
                 fig.text(.03, .020,
                     "Intervals and timing differences are separate displays. They do not constitute a "
                     "price-adjusted population adoption test or a neural-specific advantage claim.", fontsize=7.2)
+                fig.canvas.draw()
+                layouts.append({"index": index, "service": service,
+                    "xlimits": [list(a.get_xlim()) for a in axes],
+                    "xticks": [list(a.get_xticks()) for a in axes]})
                 pages.savefig(fig)
                 fig.savefig(output / f"catalogue_risk{index}_{service}122.png", dpi=140)
                 plt.close(fig)
 
     (output / "PLOTTED_COMPLETE_DATA122.json").write_text(json.dumps(plotted, indent=2) + "\n")
+    (output / "PANELS_LAYOUT122.json").write_text(json.dumps(layouts, indent=2) + "\n")
     receipt = {"kind": "complete saved-evidence publication figures",
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "source_freeze_commit": F_COMMIT, "source_report": str(source),
