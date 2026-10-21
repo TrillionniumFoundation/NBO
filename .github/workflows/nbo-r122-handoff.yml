@@ -1,0 +1,70 @@
+name: R122 preserve pending R121 native evidence
+
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r122-action-information-2026-10-20
+    paths:
+      - revisions/2026-10-20-r121/transport121/bundles/final-handoff122/REQUEST121.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nbo-r122-handoff
+  cancel-in-progress: false
+
+jobs:
+  assemble:
+    if: github.ref == 'refs/heads/revision/econometrica-nbo-r122-action-information-2026-10-20'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Check out exact transport commit and native ancestor metadata
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: |
+            revisions/2026-10-20-r121
+            .github/workflows
+          persist-credentials: true
+      - name: Verify chunks and exact native files before materialization
+        shell: bash
+        env:
+          TRANSPORT_COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          python3 revisions/2026-10-20-r121/verification121/assemble_transport121.py \
+            --repository "$GITHUB_WORKSPACE" \
+            --transport-commit "$TRANSPORT_COMMIT" \
+            --request auto \
+            --stage-list "$RUNNER_TEMP/nbo-r122-handoff-stage-paths.bin" \
+            2>&1 | tee "$RUNNER_TEMP/nbo-r122-handoff-assembly.log"
+      - name: Commit only verified native files and assembly receipt
+        env:
+          TRANSPORT_COMMIT: ${{ github.sha }}
+          TARGET_BRANCH: revision/econometrica-nbo-r122-action-information-2026-10-20
+        run: |
+          test "$(git rev-parse HEAD)" = "$TRANSPORT_COMMIT"
+          git --literal-pathspecs add --pathspec-from-file="$RUNNER_TEMP/nbo-r122-handoff-stage-paths.bin" --pathspec-file-nul
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Preserve exact pending R121 author handoff on R122; no scientific execution [skip ci]'
+          test "$(git rev-parse HEAD^)" = "$TRANSPORT_COMMIT"
+          remote_head=$(git ls-remote --exit-code origin "refs/heads/$TARGET_BRANCH" | cut -f1)
+          test "$remote_head" = "$TRANSPORT_COMMIT"
+          git push origin "HEAD:refs/heads/$TARGET_BRANCH"
+      - name: Retain actual assembly and failure evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nbo-r121-byte-assembly-${{ github.sha }}
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            revisions/2026-10-20-r121/transport121/bundles/final-handoff122/REQUEST121.json
+            revisions/2026-10-20-r121/transport121/bundles/*/ASSEMBLY121.json
+            ${{ runner.temp }}/nbo-r122-handoff-assembly.log
+            ${{ runner.temp }}/nbo-r122-handoff-stage-paths.bin
