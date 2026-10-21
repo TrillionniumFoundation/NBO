@@ -1,0 +1,54 @@
+name: NBO R122 fixed experiment runtime recovery
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r122-action-information-2026-10-20
+    paths:
+      - revisions/2026-10-20-r122/RUNTIME_RECOVERY_TRIGGER122.json
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r122-runtime-recovery
+  cancel-in-progress: false
+jobs:
+  recover:
+    if: github.repository == 'TrillionniumFoundation/NBO' && github.ref == 'refs/heads/revision/econometrica-nbo-r122-action-information-2026-10-20'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 40
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-20-r122/
+            /.github/workflows/nbo-r122-runtime-recovery.yml
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Install the fixed numerical-reader dependencies
+        run: python -m pip install numpy==2.3.5 scipy==1.17.0 matplotlib==3.10.8
+      - name: Recover and durably preserve the unchanged independent experiment
+        working-directory: revisions/2026-10-20-r122
+        run: python verification122/recover_after_runtime_reset122.py --source-commit "$GITHUB_SHA"
+      - name: Retain actual recovery outputs and failed attempts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nbo-r122-runtime-recovery-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 90
+          if-no-files-found: error
+          compression-level: 0
+          path: |
+            revisions/2026-10-20-r122/provenance122/runtime-recovery-*/
+            revisions/2026-10-20-r122/results122/runtime-recovery-*/
+            revisions/2026-10-20-r122/results122/launch-runtime-recovery-*/
+            revisions/2026-10-20-r122/transport122/bundles/runtime-recovery-*/
+            revisions/2026-10-20-r122/transport122/REGISTRY122.json
