@@ -6,7 +6,7 @@ This isolated branch continues the original Neural Bellman Operators research pr
 
 A completed original Bellman certificate contains more action information than its scalar regret bound alone. R122 converts its quadratic minorant and value enclosure into a sharp constrained derivative interval, then uses that interval to choose an original-policy improvement that preserves feasibility, regret and objective-width qualification. The implemented candidate menu purchases no new original-risk query at candidate actions. Its adaptive variant may buy the fixed finer supports at the unchanged incumbent. The same mechanism is supplied to every representation and the original-model online solver.
 
-The information bound, robust step, future-policy allowance, rounded-action accounting, precision floor and restricted priced-stopping condition have complete proofs. They are not claimed as neural-exclusive smooth optimization. The retained own-future construction, original action error account, continuous-risk information results, recursive utility and stochastic-control foundations preserve their respective assumptions.
+The information bound, robust step, future-policy allowance, rounded-action accounting, precision floor and restricted priced-stopping condition have complete proofs. A further analytic theorem characterizes the exact deterministic and randomized minimax gain under the same paid scalar information: with robust quadratic improvement potential Γ and future-policy allowance δ, the value is max(0,Γ−δ). This is an abstract fixed-information result; it does not assert that the investment model attains every abstract adversary, that the finite implemented candidate menu is minimax, or that this geometry belongs exclusively to neural networks. They are not claimed as neural-exclusive smooth optimization. The retained own-future construction, original action error account, continuous-risk information results, recursive utility and stochastic-control foundations preserve their respective assumptions.
 
 ## Exact scientific boundaries
 
@@ -21,6 +21,7 @@ The information bound, robust step, future-policy allowance, rounded-action acco
 | Reporting adapter AF122 | `af73f9bca8f2249da1601208a1921f50ea8fd074` | Disclosed label/reporting repair; original diagnostics retained |
 | Completed primary checkpoint | `afa49e3a3a0d5fb8661eebb866e2093a696625b4` | All5,568 primary and8,352 timed decisions, all3 actual timing processes |
 | Independent schema adapter I122 | `1f19410305c707716135defd91d6644d70657d84` | Strict shallow numerical alias for unchanged frozen audit; actual initial failure preserved |
+| Deterministic independent continuation R122 | `0fe0f2bbf76529201a1890db0fc2a94b0be44418` | Prospective published cache-witness audit, bounded unchanged-primitive continuation and cache-only canonical finalization; separate from F |
 
 The 56 actors remain their actual M121 files at `796c5f2badf68b051ac6c144884c0e61b87faf5e`; no R122 refitting or tuning occurred. The 32 new states are the only independent population units. Risk levels, methods, candidate fractions and timing repetitions do not add observations. R98, R115, R120 and R121 retain their own experiments, constraints and incomplete/complete statuses.
 
@@ -32,7 +33,7 @@ Economic results are independently reconstructed from the original rational prim
 
 Full standalone comparisons charge the actual historical acquisition and fitting allocation plus complete fresh service work, including refusals and all paid refinement starts. Their criterion is `N*J + p*C(N)`, with `C(N)=A+H+L+(N/n)*(T-L)`, for the fixed volumes32,256,4096,65536. Timed scenarios use the matching first16-state economics. Hypothetical reuse is not an observed high-volume throughput experiment. All traditional competitors, all clocks, empty regions and the restrictive interrupted-clock sensitivity are retained.
 
-The interrupted first primary run has no terminal parent receipt. Its saved completed nonoverlapping cohort work provides only a lower bound. The exact full-study research time is consequently unknown; saved job clocks and their scopes are reported without inventing the missing duration or double-counting children.
+The interrupted first primary run has no terminal parent receipt. Its saved completed nonoverlapping cohort work provides only a lower bound. The second independent attempt also stopped without a terminal process receipt, after716 complete initial policies and no accepted-claim checks. Its raw witnesses and completed-policy clocks remain preserved. The separately published continuation protocol validates that exact ordered prefix, continues the unchanged primitive in bounded segments, and requires a cache-only canonical witness reconstruction before inference. A segment, including one that reaches all claims, is not itself the canonical complete evidence. The exact full-study research time is consequently unknown; saved job clocks and their scopes are reported without inventing the missing duration or double-counting children.
 
 ## Author documents and reproduction
 

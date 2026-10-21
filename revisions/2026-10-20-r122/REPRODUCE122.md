@@ -14,7 +14,7 @@ Use a previously unused output path. The materializer rejects missing, changed, 
 
 ## 2. Immutable experiment boundaries
 
-F=`2f483615c8bc0037e43ec01a16cce05c724f8c60`; D=`a3323b6f557315ea91b536637419ef6fd7984b61`; inherited M=`796c5f2badf68b051ac6c144884c0e61b87faf5e`; report adapter AF=`af73f9bca8f2249da1601208a1921f50ea8fd074`; independent adapter I=`1f19410305c707716135defd91d6644d70657d84`.
+F=`2f483615c8bc0037e43ec01a16cce05c724f8c60`; D=`a3323b6f557315ea91b536637419ef6fd7984b61`; inherited M=`796c5f2badf68b051ac6c144884c0e61b87faf5e`; report adapter AF=`af73f9bca8f2249da1601208a1921f50ea8fd074`; independent adapter I=`1f19410305c707716135defd91d6644d70657d84`; deterministic continuation R=`0fe0f2bbf76529201a1890db0fc2a94b0be44418`. The4 continuation source hashes and actual publication/tree readback are in `provenance122/RESUME_INDEPENDENT_PUBLICATION122.json` and `RESUME_PUBLICATION_READBACK122.json`.
 
 The states and primary campaign already exist. Reproduction must not overwrite them, redraw a favorable sample or promote repeated states to extra observations. `PROTOCOL122.md`, `REPORTING_SPEC122.md` and `RESTART_PROTOCOL122.json` are immutable. The main run is `primary-attempt02`; its3 timing children are part of its outer clock. The interrupted `primary-attempt01` retains9,808 old rows whose declared16 decision fields match the complete run exactly. Missing original parent time remains unknown.
 
@@ -34,6 +34,32 @@ This command is the actual execution identity, not an instruction to overwrite d
 
 The validator encloses optimal-future `q` and adds the separately proved original future-policy allowance once. It does not claim an independent replay of every rounded terminal-controller action. Its work is paid validation work, distinct from the unchanged earlier service clocks.
 
+### Interrupted attempt02 and the published deterministic continuation
+
+Attempt02 lost its process after716 of865 initial distinct policies, before accepted-claim refinement. Its complete exit code and parent monotonic clock are unknown. The original21 native files,10 sealed witness parts and1 unsealed part remain unchanged. Its completed evaluation clocks give the exact lower bound92977404913995/68719476736 seconds; UTC observation bounds do not replace that missing parent clock.
+
+The continuation was published at R before its first original-record mathematical audit or fresh economic call. It does not change F, I, D, M, states, policies, meshes, ordering, tolerances, inference families or service clocks. All commands below describe their separate roles; inspect each delivered actual launcher for the final executed arguments. Never rerun into an existing evidence directory.
+
+The first audit verifies the full saved716-policy prefix directly from exact original economic formulas, every complete terminal mesh and the original32-step bisection-cell sign conditions. It performs no new policy optimization:
+
+```sh
+python code122/launch122.py --receipt results122/launch-independent-cache-attempt01 -- \
+  python verification122/resume_independent122.py --mode cache \
+  --resume-commit 0fe0f2bbf76529201a1890db0fc2a94b0be44418 \
+  --repair-commit 1f19410305c707716135defd91d6644d70657d84 \
+  --source-commit 2f483615c8bc0037e43ec01a16cce05c724f8c60 \
+  --primary results122/primary-attempt02 --segment results122/independent-attempt02 \
+  --output results122/independent-cache-attempt01
+```
+
+A `--mode segment` invocation supplies `--cache` for the latest validated cache and a new output/launcher directory. It replays only that exact request prefix and calls the unchanged original primitive for the next requests. The controller checks its300-second cumulative fresh-primitive threshold only before the next uncached request, after a complete evaluation has been retained. Exit75 is a declared nonterminal checkpoint; the unchanged frozen exception artifacts remain preserved. It is neither a scientific success nor an economic failure. An unexpected exception remains a failure.
+
+Each segment is followed by `--mode cache --cache PREVIOUS_CACHE --segment COMPLETED_SEGMENT --output NEW_CACHE`, which retains the previous prefix exactly and independently validates only the complete new suffix. No segment is passed to statistics. After a segment finishes every frozen claim naturally, the final validated cache supplies `--mode finalize --cache FINAL_CACHE --output results122/independent-complete-attempt01`. This finalizer must make zero new economic optimization calls. It replays every validated native mesh through the original trace writer once and requires exact equality of all6 deterministic complete outputs with the naturally completed last segment.
+
+`RESUME_SEGMENT122.json` controls the interpretation of historical reuse versus fresh calls. The frozen finalizer's aggregate evaluation count represents distinct original evaluations in the combined evidence; it is not a count of fresh computations in the cache-only process. The additive `verify_independent_resume122.py` checks the entire cache/segment/source/launcher/witness chain without weakening the original `verify_package122.py`. Run it through the frozen launcher and require its terminal `VERIFICATION_RESUME122.json` before statistics. A source-code review or planned checkpoint does not satisfy this gate.
+
+All cache audits, segment outers and the finalizer outer are separate actual research costs. Replayed historical per-evaluation `seconds` are provenance, never charged again as fresh process time. The original reporting summary's `actual_new_scientific_stage_seconds_excluding_current_report` sees only its supplied canonical finalizer outer; it is not the complete independent-audit cost. Read it together with the composite verification and complete research-cost ledger.
+
 ## 4. Frozen statistics and disclosed report repair
 
 The actual original pipeline follows independent success with:
@@ -41,7 +67,7 @@ The actual original pipeline follows independent success with:
 ```sh
 python code122/launch122.py --receipt results122/launch-statistics-attempt01 -- \
   python code122/stats122.py --source-commit 2f483615c8bc0037e43ec01a16cce05c724f8c60 \
-  --primary results122/primary-attempt02 --independent results122/independent-attempt02 \
+  --primary results122/primary-attempt02 --independent results122/independent-complete-attempt01 \
   --output results122/statistics-attempt01
 ```
 
@@ -52,7 +78,7 @@ python code122/launch122.py --receipt results122/launch-report-attempt02 -- \
   python verification122/report_protocol_adapter122.py \
   --repair-commit af73f9bca8f2249da1601208a1921f50ea8fd074 \
   --source-commit 2f483615c8bc0037e43ec01a16cce05c724f8c60 \
-  --primary results122/primary-attempt02 --independent results122/independent-attempt02 \
+  --primary results122/primary-attempt02 --independent results122/independent-complete-attempt01 \
   --stats results122/statistics-attempt01 --output results122/report-attempt02
 ```
 
@@ -71,5 +97,7 @@ The source-bound `interrupted_clock_sensitivity122.py` reads only the genuinely 
 `research_cost_ledger122.py` inventories actual nonoverlapping external job clocks, separately scoped partial administrative/publication clocks, interrupted completed-work lower bounds and unavailable work. A prior ledger total is never counted again; only a new reader's own duration may be added. The full research exact total remains null because the interrupted parent clock is absent.
 
 `python build122.py` compiles all4 documents with4 serial cross-reference passes and BibTeX, hashes the actual TeX recorder input closure, and fails on unresolved references/citations, duplicate labels, overfull boxes or pending-result markers. Diagnostic or failed builds are preserved and do not become final success. Source/PDF hashes bind the final clean build.
+
+The final `PUBLICATION_INPUTS122.json` binds the canonical independent directory, immutable R publication, additive composite verification command, evidence transport registry, actual local build, cost ledger, clock sensitivity, source/PDF hashes and referee package. The actual GitHub job checks the delivered PDF bytes before generating its own fresh PDFs, preserving both identities.
 
 `verify_package122.py --through package` additionally requires the actual clean build receipt, final cost ledger, restrictive clock-sensitivity directory, source/PDF manifest and optionally the complete transport and referee-package manifests. It independently rechecks exact algebra, raw independent economics, joint-inference arithmetic, all cost-price constraints, failed-attempt custody and actual PDF bytes. CI and package status must be read from actual terminal receipts tied to their tested source commit; later metadata commits are not falsely called separately tested.

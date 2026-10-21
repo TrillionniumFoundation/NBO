@@ -121,7 +121,13 @@ def main():
         for row in source_rows:
             if set(row) != {'path', 'bytes', 'sha256', 'git_blob'}:
                 raise ValueError('Resume source rows require path/bytes/SHA256/Git blob')
-            native = check(commit, row['path'], row['sha256'])
+            declared = Path(row['path'])
+            if declared.is_absolute():
+                raise ValueError('Resume source paths must be repository- or R122-relative')
+            logical = row['path'] if row['path'].startswith(PREFIX) else PREFIX + row['path']
+            if not (REPO / logical).resolve().is_relative_to(ROOT):
+                raise ValueError('Resume source path escapes R122')
+            native = check(commit, logical, row['sha256'])
             blob = hashlib.sha1(b'blob ' + str(len(native)).encode() + b'\0' + native).hexdigest()
             if len(native) != row['bytes'] or blob != row['git_blob']:
                 raise ValueError('Resume published source byte/blob identity differs')
