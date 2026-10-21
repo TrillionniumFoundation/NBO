@@ -1,0 +1,507 @@
+#!/usr/bin/env python3
+"""Build a compact source/TeX/AST census. Never import or execute the indexed programs.
+
+This is a syntactic custody tool, not a proof checker, TeX interpreter, execution
+replay, or inference about scientific validity. Output directories are exclusive.
+"""
+from __future__ import annotations
+import argparse
+import ast
+import collections
+import datetime as dt
+import gzip
+import hashlib
+import json
+import os
+from pathlib import Path, PurePosixPath
+import re
+import subprocess
+import sys
+import time
+import traceback
+
+BASELINE = "f06f220aea525088e82228e8e9be4947fb81b1ca"
+BASE_PREFIX = "revisions/2026-10-19-r120/"
+R119 = "82618f037540233dda7d1ba8bfd3ddfdc88afbf9"
+R119_PREFIX = "revisions/2026-10-18-r119/"
+DOCS = {"ECTA.tex": "current_main", "supp.tex": "current_supplement",
+        "appendix.tex": "development_companion", "RESPONSE_TO_REFEREE.tex": "current_response"}
+STANDARD_STATEMENTS = {"theorem", "proposition", "lemma", "corollary", "claim",
+                       "assumption", "definition", "remark", "example", "result",
+                       "thm", "prop", "lem", "cor"}
+REF = re.compile(r"\\(?:[Cc]ref|[Cc]refrange|eqref|ref|autoref|nameref|pageref)\*?\s*\{([^{}]*)\}")
+LABEL = re.compile(r"\\label\s*\{([^{}]*)\}")
+BEGIN_END = re.compile(r"\\(begin|end)\s*\{([^{}]+)\}")
+HEADING = re.compile(r"\\(section|subsection|subsubsection|paragraph|subparagraph)\*?\s*")
+NEW_THEOREM = re.compile(r"\\newtheorem\*?\s*\{([^{}]+)\}")
+INCLUDE = re.compile(r"\\(input|include|subfile)\s*(?:\{([^{}]+)\}|([^\s%{}]+))")
+LITERALS = re.compile(r"\\begin\{(verbatim\*?|Verbatim|lstlisting|minted|filecontents\*?)\}.*?\\end\{\1\}", re.S)
+
+def now():
+    return dt.datetime.now(dt.timezone.utc).isoformat()
+
+def identity(data):
+    return {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest(),
+            "git_blob_sha1": hashlib.sha1(b"blob "+str(len(data)).encode()+b"\0"+data).hexdigest()}
+
+def canonical(obj):
+    return (json.dumps(obj, ensure_ascii=False, sort_keys=True, separators=(",", ":"))+"\n").encode()
+
+def write_new(path, data):
+    with path.open("xb") as f:
+        f.write(data)
+
+def line_at(text, pos):
+    return text.count("\n", 0, pos)+1
+
+def mask(text):
+    # Preserve offsets and newlines while excluding literal code and TeX comments.
+    def spaces(m):
+        return "".join("\n" if c == "\n" else " " for c in m.group())
+    text = LITERALS.sub(spaces, text)
+    text = re.sub(r"\\verb\*?([^\w\s]).*?\1", spaces, text)
+    chars = list(text)
+    i = 0
+    while i < len(chars):
+        if chars[i] == "%":
+            k = i-1
+            while k >= 0 and chars[k] == "\\":
+                k -= 1
+            if (i-k-1) % 2 == 0:
+                while i < len(chars) and chars[i] != "\n":
+                    chars[i] = " "
+                    i += 1
+        i += 1
+    return "".join(chars)
+
+def group(text, pos, opening="{", closing="}"):
+    if pos >= len(text) or text[pos] != opening:
+        return None
+    depth, start = 1, pos+1
+    pos += 1
+    while pos < len(text):
+        if text[pos] == "\\":
+            pos += 2
+            continue
+        if text[pos] == opening:
+            depth += 1
+        elif text[pos] == closing:
+            depth -= 1
+            if not depth:
+                return text[start:pos], pos+1
+        pos += 1
+    return None
+
+def references(text):
+    return sorted({v.strip() for m in REF.finditer(text) for v in m.group(1).split(",") if v.strip()})
+
+def episode_hints(path):
+    # These are filename hints, not evidence that a result was proved in a release.
+    parts = PurePosixPath(path).parts
+    hints = {int(m.group(1)) for p in parts for m in re.finditer(r"(?:new|code|frozen|r)(\d{1,3})(?!\d)", p)}
+    m = re.search(r"(\d{1,3})(?:[-_][A-Za-z0-9_-]+)?$", PurePosixPath(path).stem)
+    if m:
+        hints.add(int(m.group(1)))
+    return sorted(x for x in hints if 1 <= x <= 121)
+
+def git(repo, argv):
+    env = dict(os.environ, GIT_NO_LAZY_FETCH="1", GIT_OPTIONAL_LOCKS="0")
+    p = subprocess.run(["git", "-C", str(repo), *argv], capture_output=True, check=True, env=env)
+    return p.stdout
+
+def tree(repo, commit, prefix):
+    raw = git(repo, ["ls-tree", "-r", "-z", commit, "--", prefix])
+    entries = {}
+    for rec in raw.split(b"\0"):
+        if not rec:
+            continue
+        head, path = rec.split(b"\t", 1)
+        mode, kind, blob = head.decode().split()
+        entries[path.decode()] = {"mode": mode, "kind": kind, "git_blob_sha1": blob}
+    return entries, {"commit": commit, "prefix": prefix, "stream": identity(raw),
+                     "entries": len(entries), "root_tree": git(repo, ["rev-parse", commit+"^{tree}"]).decode().strip()}
+
+def parse_tex(path, text, masked, statement_names):
+    heads = []
+    for m in HEADING.finditer(masked):
+        pos = m.end()
+        if pos < len(masked) and masked[pos] == "[":
+            short = group(masked, pos, "[", "]")
+            if short:
+                pos = short[1]
+                while pos < len(masked) and masked[pos].isspace():
+                    pos += 1
+        content = group(masked, pos)
+        if content:
+            title, end = content
+            heads.append({"kind": m.group(1), "title_latex": text[pos+1:end-1],
+                          "line": line_at(text, m.start()), "offset": m.start(),
+                          "header_end_offset": end, "explicit_references": references(title)})
+    labels = [{"label": m.group(1), "line": line_at(text, m.start()), "offset": m.start()}
+              for m in LABEL.finditer(masked)]
+    statement_names = set(statement_names) | {x+"*" for x in statement_names}
+    recognized = statement_names | {"proof", "proof*"}
+    stack, envs, problems = [], [], []
+    for m in BEGIN_END.finditer(masked):
+        name = m.group(2)
+        if name not in recognized:
+            continue
+        if m.group(1) == "begin":
+            title, end = None, m.end()
+            pos = end
+            while pos < len(masked) and masked[pos].isspace():
+                pos += 1
+            if pos < len(masked) and masked[pos] == "[":
+                q = group(masked, pos, "[", "]")
+                if q:
+                    title, end = text[pos+1:q[1]-1], q[1]
+            stack.append((name, m.start(), end, title))
+        elif not stack or stack[-1][0] != name:
+            problems.append({"kind": "unmatched_environment_end", "environment": name,
+                             "line": line_at(text, m.start())})
+        else:
+            name, start, header_end, title = stack.pop()
+            body = masked[header_end:m.start()]
+            raw = text[start:m.end()].encode()
+            prev = [h for h in heads if h["offset"] <= start]
+            enclosing = prev[-1] if prev else None
+            envs.append({"environment": name, "kind": "proof" if name.rstrip("*") == "proof" else "statement",
+                         "optional_title_latex": title, "start_line": line_at(text, start),
+                         "end_line": line_at(text, m.end()), "start_offset": start, "end_offset": m.end(),
+                         "source_segment": identity(raw), "labels": [x["label"] for x in labels if start <= x["offset"] < m.end()],
+                         "explicit_references_in_header": references(title or ""),
+                         "explicit_references_in_body": references(body),
+                         "nearest_preceding_heading": {k: v for k, v in enclosing.items() if k not in ("offset", "header_end_offset")} if enclosing else None})
+    for name, start, _, _ in stack:
+        problems.append({"kind": "unclosed_environment", "environment": name, "line": line_at(text, start)})
+    envs.sort(key=lambda x: x["start_offset"])
+    statements = [e for e in envs if e["kind"] == "statement"]
+    for e in envs:
+        if e["kind"] != "proof":
+            continue
+        prev = [s for s in statements if s["end_offset"] <= e["start_offset"]]
+        candidate = prev[-1] if prev else None
+        e["nearest_preceding_statement_candidate"] = ({"environment": candidate["environment"],
+                "start_line": candidate["start_line"], "labels": candidate["labels"]} if candidate else None)
+        e["association_scope"] = "Explicit references are links. A preceding statement or heading is a structural candidate, not verified proof correspondence."
+    proof_sections = []
+    for i, h in enumerate(heads):
+        if "proof" not in re.sub(r"\\[a-zA-Z]+", "", h["title_latex"]).lower():
+            continue
+        end = heads[i+1]["offset"] if i+1 < len(heads) else len(text)
+        proof_sections.append({"heading": {k: v for k, v in h.items() if k not in ("offset", "header_end_offset")},
+                               "start_line": h["line"], "end_line": line_at(text, end),
+                               "source_segment": identity(text[h["offset"]:end].encode()),
+                               "explicit_references": references(masked[h["offset"]:end]),
+                               "scope": "This contiguous heading-to-next-heading segment is indexed even when no proof environment is used."})
+    inputs = []
+    for m in INCLUDE.finditer(masked):
+        inputs.append({"command": m.group(1), "literal_argument": (m.group(2) or m.group(3)).strip(),
+                       "line": line_at(text, m.start())})
+    result = {"labels": [{k: v for k, v in x.items() if k != "offset"} for x in labels],
+              "explicit_reference_labels": references(masked), "input_edges": inputs,
+              "headings": [{k: v for k, v in x.items() if k not in ("offset", "header_end_offset")} for x in heads],
+              "statement_and_proof_environments": [{k: v for k, v in x.items() if k not in ("start_offset", "end_offset")} for x in envs],
+              "proof_heading_segments": proof_sections, "structural_parse_observations": problems}
+    return result
+
+def parse_python(text):
+    try:
+        parsed = ast.parse(text)
+    except SyntaxError as e:
+        return {"status": "retained_syntax_error", "error": {"message": str(e), "line": e.lineno,
+                "offset": e.offset}, "execution_performed": False}
+    rows, imports = [], []
+    class Visitor(ast.NodeVisitor):
+        def __init__(self):
+            self.scope = []
+        def visit_ClassDef(self, node):
+            self.record(node, "class")
+        def visit_FunctionDef(self, node):
+            self.record(node, "function")
+        def visit_AsyncFunctionDef(self, node):
+            self.record(node, "async_function")
+        def record(self, node, kind):
+            source = ast.get_source_segment(text, node) or ""
+            rows.append({"qualified_name": ".".join(self.scope+[node.name]), "kind": kind,
+                         "start_line": node.lineno, "end_line": node.end_lineno,
+                         "source_segment": identity(source.encode()),
+                         "decorators": [ast.unparse(x) for x in node.decorator_list]})
+            self.scope.append(node.name)
+            self.generic_visit(node)
+            self.scope.pop()
+        def visit_Import(self, node):
+            imports.append({"line": node.lineno, "kind": "import",
+                            "names": [{"name": x.name, "asname": x.asname} for x in node.names]})
+        def visit_ImportFrom(self, node):
+            imports.append({"line": node.lineno, "kind": "from", "module": node.module,
+                            "level": node.level, "names": [{"name": x.name, "asname": x.asname} for x in node.names]})
+    Visitor().visit(parsed)
+    return {"status": "AST_parsed_without_import_or_execution", "definitions": rows, "imports": imports,
+            "execution_performed": False}
+
+def execute(args):
+    started, tic = now(), time.perf_counter()
+    repo, rev, out = args.repo.resolve(), args.revision.resolve(), args.output.resolve()
+    rev.relative_to(repo)
+    out.mkdir(parents=True, exist_ok=False)
+    script = Path(__file__).resolve()
+    start = {"schema": "NBO_R121_STRUCTURAL_REGISTRY_START_V1", "started_utc": started,
+             "argv": sys.argv, "generator_source": identity(script.read_bytes()),
+             "scope": "Read-only source, AST and TeX structural census; no numerical program import/execution or historical proof revalidation."}
+    write_new(out/"START121.json", canonical(start))
+    tracked = {}
+    def read(p):
+        p = p.resolve()
+        data = p.read_bytes()
+        rec = identity(data)
+        if p in tracked and tracked[p] != rec:
+            raise RuntimeError("Input changed during registry: "+str(p))
+        tracked[p] = rec
+        return data
+    try:
+        base_tree, base_meta = tree(repo, BASELINE, BASE_PREFIX)
+        old_tree, old_meta = tree(repo, R119, R119_PREFIX)
+        scaffold_path = rev/"provenance121/SCAFFOLD_RETENTION121.json"
+        scaffold = json.loads(read(scaffold_path))
+        assert scaffold["original_commit"] == BASELINE
+        old_wrapper_index = json.loads(read(rev/"provenance121/wrappers120/INDEX121.json"))
+        assert old_wrapper_index["source_commit"] == BASELINE
+        wrappers = {x["path"]: x for x in old_wrapper_index["files"]}
+        preserved_index_path = rev/"provenance121/lineage121/archival_route_code121/INDEX121.json"
+        preserved = json.loads(read(preserved_index_path))
+        assert preserved["original_commit"] == R119
+        old_copies = {x["preserved_path"]: x for x in preserved["files"]}
+        report_index = json.loads(read(rev/"provenance121/reports121/REPORT_SOURCE_INDEX121.json"))
+        map_path = "provenance121/reports121/inherited_maps/HISTORICAL_ROUTE_BINDINGS120.json.gz"
+        map_index = next(x for x in report_index["inherited_maps"] if x["path"] == map_path)
+        map_raw = read(rev/map_path)
+        assert identity(map_raw) == map_index["transport"]
+        map_decoded = gzip.decompress(map_raw)
+        assert identity(map_decoded) == map_index["original"]
+        assert base_tree[map_index["original_path"]]["git_blob_sha1"] == map_index["original"]["git_blob_sha1"]
+        routes = json.loads(map_decoded)
+        assert len(routes["rows"]) == 1049
+        route_sources = {}
+        for row in routes["rows"]:
+            for binding in row["r119_current_source_bindings"]:
+                key = binding["path"]
+                if key in route_sources:
+                    first = route_sources[key]["original_binding"]
+                    assert all(first[k] == binding[k] for k in ("path", "bytes", "sha256", "git_blob_sha1"))
+                else:
+                    route_sources[key] = {"original_binding": binding, "author_route_keys": [],
+                                          "original_binding_variants": []}
+                route_sources[key]["author_route_keys"].append(row["key"])
+                variants = route_sources[key]["original_binding_variants"]
+                variant = next((v for v in variants if v["exact_binding"] == binding), None)
+                if variant is None:
+                    variant = {"exact_binding": binding, "author_route_keys": []}
+                    variants.append(variant)
+                variant["author_route_keys"].append(row["key"])
+        files = sorted([p for p in rev.rglob("*") if p.is_file() and p.suffix in (".tex", ".py")
+                        and not p.is_relative_to(out)], key=lambda p: p.relative_to(rev).as_posix())
+        texts, masks = {}, {}
+        for p in files:
+            rel = p.relative_to(rev).as_posix()
+            texts[rel] = read(p).decode("utf-8")
+            if p.suffix == ".tex":
+                masks[rel] = mask(texts[rel])
+        statement_names = STANDARD_STATEMENTS | {m.group(1) for text in masks.values() for m in NEW_THEOREM.finditer(text)}
+        result = {}
+        for p in files:
+            rel = p.relative_to(rev).as_posix()
+            actual = tracked[p.resolve()]
+            logical = rel
+            original = None
+            if rel in wrappers:
+                w = wrappers[rel]
+                expected = base_tree[w["source"]]
+                assert expected["git_blob_sha1"] == w["git_blob"] == actual["git_blob_sha1"]
+                assert actual["sha256"] == w["sha256"]
+                original = {"commit": BASELINE, "path": w["source"], "tree_entry": expected,
+                            "same_bytes": True, "role": "exact archived R120 wrapper"}
+            elif rel in old_copies:
+                w = old_copies[rel]
+                expected = old_tree[w["original_path"]]
+                assert expected["git_blob_sha1"] == actual["git_blob_sha1"]
+                assert actual == w["actual_identity"]
+                logical = w["original_route_binding"]["path"]
+                original = {"commit": R119, "path": w["original_path"], "tree_entry": expected,
+                            "same_bytes": True, "role": "exact archived R119 route source"}
+            elif BASE_PREFIX+rel in base_tree:
+                expected = base_tree[BASE_PREFIX+rel]
+                original = {"commit": BASELINE, "path": BASE_PREFIX+rel, "tree_entry": expected,
+                            "same_bytes": expected["git_blob_sha1"] == actual["git_blob_sha1"],
+                            "role": "published R120 counterpart"}
+            if rel == "new119/original_correctness119.tex":
+                note = "Explicit retained corrigendum: original composite loss, viscosity selection, Epstein–Zin/Merton, trace objective and unsupported extensions. Read its stated scope; archival claims are not reinstated."
+            elif rel == "new110/core-main.tex":
+                note = "Original core source retained; active R121 core_main121.tex clarifies paid primitive continuation without editing this copy."
+            else:
+                note = None
+            result[rel] = {"path": rel, "logical_historical_path": logical, "identity": actual,
+                           "lines": texts[rel].count("\n") + (not texts[rel].endswith("\n")),
+                           "published_counterpart": original, "filename_episode_hints_not_source_identity": episode_hints(logical),
+                           "truth_or_scientific_closure_assigned": False, "corrective_scope_note": note,
+                           "syntax": parse_tex(rel, texts[rel], masks[rel], statement_names) if p.suffix == ".tex" else parse_python(texts[rel])}
+        # Literal inclusion resolution follows the actual repository-root build convention.
+        for rel, rec in result.items():
+            for edge in rec["syntax"].get("input_edges", []):
+                arg = edge["literal_argument"]
+                candidate = arg if PurePosixPath(arg).suffix else arg+".tex"
+                if "\\" in arg or "#" in arg or PurePosixPath(arg).is_absolute():
+                    edge.update(resolved_path=None, status="nonliteral_or_absolute_not_expanded")
+                elif candidate in result:
+                    edge.update(resolved_path=candidate, status="repository_root_literal")
+                else:
+                    relative = (PurePosixPath(rel).parent/candidate).as_posix()
+                    edge.update(resolved_path=relative if relative in result else None,
+                                status="containing_directory_literal_fallback" if relative in result else "unresolved_literal")
+        closures = {}
+        for doc, role in DOCS.items():
+            assert doc in result
+            seen, todo = set(), [doc]
+            while todo:
+                p = todo.pop()
+                if p in seen:
+                    continue
+                seen.add(p)
+                todo.extend(x["resolved_path"] for x in result[p]["syntax"].get("input_edges", []) if x["resolved_path"])
+            closures[doc] = {"role": role, "files": sorted(seen), "count": len(seen)}
+        for rel, rec in result.items():
+            rec["current_wrapper_roles"] = [v["role"] for v in closures.values() if rel in v["files"]]
+            if rec["current_wrapper_roles"]:
+                rec["placement_status"] = "referenced_by_current_wrapper"
+            elif rel in wrappers:
+                rec["placement_status"] = "exact_archived_wrapper_not_current_compilation_root"
+            else:
+                rec["placement_status"] = "retained_source_not_in_current_literal_wrapper_closure"
+        labels = collections.defaultdict(list)
+        for rel, rec in result.items():
+            for x in rec["syntax"].get("labels", []):
+                labels[x["label"]].append({"path": rel, "line": x["line"],
+                                          "roles": rec["current_wrapper_roles"]})
+        for rel, rec in result.items():
+            if not rel.endswith(".tex"):
+                continue
+            rec["syntax"]["reference_targets"] = {label: labels.get(label, []) for label in rec["syntax"]["explicit_reference_labels"]}
+        copy_by_original = {x["original_route_binding"]["path"]: x["preserved_path"] for x in preserved["files"]}
+        route_counts = collections.Counter()
+        for path, rec in route_sources.items():
+            binding = rec["original_binding"]
+            full = R119_PREFIX+path
+            entry = old_tree.get(full)
+            if entry:
+                assert entry["kind"] == "blob" and entry["git_blob_sha1"] == binding["git_blob_sha1"]
+                rec["original_custody"] = {"commit": R119, "path": full, "tree_entry": entry,
+                                           "status": "exact_original_direct_tree_blob_identity"}
+                route_counts["direct_tree_sources"] += 1
+            else:
+                assert path.startswith("results119/")
+                rec["original_custody"] = {"commit": R119, "path": full,
+                    "status": "retained_archive_member_binding_in_exact_published_author_map",
+                    "scope": "Original map bytes and source object preserved. The 29 raw result members were not reread or re-executed in this structural census; retain R120 archive-custody audit and original immutable evidence."}
+                route_counts["archive_member_sources"] += 1
+            counterpart = path if path in result else copy_by_original.get(path)
+            if counterpart:
+                rec["current_source_counterpart"] = {"path": counterpart, "identity": result[counterpart]["identity"],
+                    "same_bytes_as_original": result[counterpart]["identity"] == {k: binding[k] for k in ("bytes","sha256","git_blob_sha1")},
+                    "wrapper_roles": result[counterpart]["current_wrapper_roles"]}
+                if path.endswith(".tex"):
+                    route_counts["tex_sources_fully_structurally_scanned"] += 1
+                if path.endswith(".py"):
+                    route_counts["python_sources_fully_AST_scanned"] += 1
+            else:
+                rec["current_source_counterpart"] = None
+                route_counts["noncode_sources_retained_by_immutable_history"] += 1
+            rec["author_route_keys"] = sorted(set(rec["author_route_keys"]))
+            rec["fresh_semantic_revalidation_or_execution_claimed"] = False
+        assert route_counts["direct_tree_sources"] == 103 and route_counts["archive_member_sources"] == 29
+        assert route_counts["tex_sources_fully_structurally_scanned"] == 69
+        assert route_counts["python_sources_fully_AST_scanned"] == 13
+        counters = collections.Counter()
+        for rel, rec in result.items():
+            counters["tex_files" if rel.endswith(".tex") else "python_files"] += 1
+            counters["source_bytes"] += rec["identity"]["bytes"]
+            counters["labels"] += len(rec["syntax"].get("labels", []))
+            counters["input_edges"] += len(rec["syntax"].get("input_edges", []))
+            counters["proof_heading_segments"] += len(rec["syntax"].get("proof_heading_segments", []))
+            for env in rec["syntax"].get("statement_and_proof_environments", []):
+                counters["proof_environments" if env["kind"] == "proof" else "statement_environments"] += 1
+            counters["python_definition_records"] += len(rec["syntax"].get("definitions", []))
+            counters["python_syntax_error_files"] += rec["syntax"].get("status") == "retained_syntax_error"
+            counters["unresolved_literal_input_edges"] += sum(x["status"] == "unresolved_literal" for x in rec["syntax"].get("input_edges", []))
+        # The full inventory is compacted losslessly; reports retain exact source text elsewhere.
+        payload = {"schema": "NBO_R121_THEOREM_PROOF_CODE_STRUCTURAL_REGISTRY_V1",
+            "observed_started_utc": started, "baseline_commit": BASELINE, "historical_route_commit": R119,
+            "scope": {"all_retained_tex_and_python_read_as_bytes": True, "all_historical_route_tex_and_python_indexed": True,
+                      "full_semantic_report_reading_receipt": "provenance121/lineage121/REPORT_READING_COVERAGE121.json",
+                      "fresh_proof_by_proof_revalidation": False, "indexed_science_imported_or_executed": False,
+                      "metadata_or_wrapper_reachability_implies_correctness": False,
+                      "regex_parser_is_a_TeX_interpreter": False,
+                      "comments_and_literal_code_masked": True,
+                      "nearest_preceding_statement_is_only_a_candidate": True,
+                      "current_sources_are_observed_unfrozen_snapshot": True},
+            "git_tree_inputs": [base_meta,old_meta], "counts": dict(counters), "historical_route_counts": dict(route_counts),
+            "current_wrapper_closures": closures, "statement_environment_names": sorted(statement_names),
+            "files": result, "label_index": dict(labels), "historical_route_sources": route_sources}
+        for p, expected in tracked.items():
+            if identity(p.read_bytes()) != expected:
+                raise RuntimeError("Source changed before final readback: "+str(p))
+        encoded = canonical(payload)
+        compact = gzip.compress(encoded, mtime=0)
+        write_new(out/"THEOREM_PROOF_CODE_REGISTRY121.json.gz", compact)
+        counts = dict(counters)
+        families = collections.Counter(PurePosixPath(p).parts[0] for p in result)
+        md = ["# R121 retained theorem, proof and code index", "",
+              "This is a complete byte and structural scan of the currently retained TeX and Python sources, with immutable R120/R119 custody links. It is not a fresh mathematical revalidation or scientific replay.", "",
+              "## Actual scope", "",
+              f"- {counts['tex_files']} TeX files; {counts['python_files']} Python files; {counts['source_bytes']:,} source bytes.",
+              f"- {counts['statement_environments']} statement environments, {counts['proof_environments']} proof environments, {counts['proof_heading_segments']} proof-heading segments, and {counts['labels']} literal labels.",
+              f"- {counts['python_definition_records']} Python definition records; {counts['python_syntax_error_files']} retained syntax-error files. Indexed programs were never imported or executed.",
+              "- All 69 historical route-bound TeX files and all 13 historical route-bound Python files are indexed.",
+              "- All 132 original source objects are retained: 103 exact direct-tree identities and 29 result archive-member bindings. This census does not reread the 29 raw result members.",
+              "- Current wrapper reachability records placement. The explicit correctness corrigendum and superseded original core source retain their individual notes; no truth status is inferred from filenames or inclusion.",
+              "- Repeated labels in archived copies, unresolved literal references and nearest-heading associations are structural observations, not TeX build or theorem-validation verdicts.", "",
+              "## Wrapper inclusion closure", "", "| Root | Literal source files | Role |", "|---|---:|---|"]
+        md += [f"| {doc} | {v['count']} | {v['role']} |" for doc,v in closures.items()]
+        md += ["", "## Directory families", "", "| Family | Files |", "|---|---:|"]
+        md += [f"| {k} | {v} |" for k,v in sorted(families.items())]
+        md += ["", "## Reproduction", "",
+               "Run the supplied source with a Git metadata checkout containing the immutable baseline trees and the current native revision. The output directory must not exist:", "",
+               "    python provenance121/lineage121/build_theorem_code_registry121.py --repo REPO --revision REVISION --output NEW_DIRECTORY", "",
+               "Only Python standard-library reading, AST parsing and read-only Git metadata commands are used. Lazy object fetch and optional Git locks are disabled. The exact current source bytes are rechecked before successful completion. Different later author sources produce a new dated snapshot rather than rewriting this one.", ""]
+        write_new(out/"README121.md", "\n".join(md).encode())
+        outputs = {}
+        for name in ("THEOREM_PROOF_CODE_REGISTRY121.json.gz", "README121.md", "START121.json"):
+            outputs[name] = identity((out/name).read_bytes())
+        receipt = {"schema": "NBO_R121_STRUCTURAL_REGISTRY_EXECUTION_V1", "status": "passed",
+            "started_utc": started, "finished_utc": now(), "elapsed_seconds": time.perf_counter()-tic,
+            "counts": counts, "historical_route_counts": dict(route_counts),
+            "input_files": [{"path": str(p.relative_to(rev)) if p.is_relative_to(rev) else str(p), **v}
+                            for p,v in sorted(tracked.items(),key=lambda x:str(x[0]))],
+            "outputs": outputs, "registry_exact_uncompressed": identity(encoded),
+            "source_science_runs": 0, "fresh_mathematical_proof_validation_claimed": False}
+        write_new(out/"EXECUTION121.json", canonical(receipt))
+        print(json.dumps({"status":"passed", "output":str(out), "counts":counts,
+                          "historical_route_counts":dict(route_counts),
+                          "receipt_identity":identity((out/"EXECUTION121.json").read_bytes())}))
+    except BaseException as exc:
+        failure = {"schema":"NBO_R121_STRUCTURAL_REGISTRY_FAILURE_V1","status":"failed",
+                   "started_utc":started,"failed_utc":now(),"exception_type":type(exc).__name__,
+                   "message":str(exc),"traceback":traceback.format_exc(),
+                   "scope":"Metadata source census failed; no indexed scientific program was imported or executed."}
+        write_new(out/"FAILED121.json",canonical(failure))
+        raise
+
+def main():
+    p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--repo",type=Path,required=True)
+    p.add_argument("--revision",type=Path,required=True)
+    p.add_argument("--output",type=Path,required=True)
+    execute(p.parse_args())
+
+if __name__=="__main__":
+    main()
+

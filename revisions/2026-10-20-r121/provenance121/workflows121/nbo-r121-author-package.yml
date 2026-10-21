@@ -1,0 +1,61 @@
+name: R121 final author source validation
+
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r121-action-marginal-learning-2026-10-20
+    paths:
+      - revisions/2026-10-20-r121/SOURCE_READY121.json
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/revision/econometrica-nbo-r121-action-marginal-learning-2026-10-20'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      MPLCONFIGDIR: /tmp/nbo-matplotlib121
+    steps:
+      - name: Check out actual final author S and immutable ancestor metadata
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: |
+            revisions/2026-10-20-r121
+            .github/workflows
+          persist-credentials: false
+      - name: Set up the declared Python version
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.12.14"
+      - name: Install pinned dependencies and TeX
+        working-directory: revisions/2026-10-20-r121
+        run: |
+          python -m pip install --disable-pip-version-check -r requirements121.txt
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
+      - name: Verify all saved evidence and replay statistics, reporting and four PDFs
+        working-directory: revisions/2026-10-20-r121
+        env:
+          GIT_NO_LAZY_FETCH: "1"
+          GIT_OPTIONAL_LOCKS: "0"
+        run: python verification121/ci121.py --output ci121/source
+      - name: Preserve actual gates, replays, strict builds and failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nbo-r121-author-package-${{ github.sha }}-attempt${{ github.run_attempt }}
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            revisions/2026-10-20-r121/ci121/source/**
+            revisions/2026-10-20-r121/build/*.pdf
+            revisions/2026-10-20-r121/build/*.log

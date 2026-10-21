@@ -1,0 +1,250 @@
+% Full mathematical argument for the separately frozen Phase B algorithm.
+% This source was prepared without scientific execution or typesetting.
+\section{Qualification and work of the bounded preliminary service}
+\label{supp:budgetedtail119}
+
+\subsection{Objects, information, and algorithm}
+Fix a state $x$, its original feasible action interval $[0,A(x)]$, a
+realized proposal $a\in[0,A(x)]$, and
+$\alpha\in\{1/2,3/4\}$.  Write
+\[
+\begin{gathered}
+ R=1/32,\qquad t=1-\alpha,\qquad L=2R\alpha,\qquad I=[-R,R-L],\\
+ f_a(z)=V_1(F(x,a,z)).
+\end{gathered}
+\]
+The primitive transition is affine in the innovation and the action.
+The already established original bounds give convexity of $f_a$,
+its strong-convexity modulus $m_z=181/64$, and
+$V_1\le J_1\le V_1+\varepsilon_1$ for the implemented terminal
+controller, with $\varepsilon_1=2^{-20}$.  Its complete-policy cost is
+\[
+ J(a)=S(x)+h(a)+\beta\operatorname{AVaR}_\alpha(J_1\circ F_a),
+\]
+whereas $Q(a)$ uses $V_1$ in this expression, and
+$V_0(x)=\inf_{0\le v\le A(x)}Q(v)$.
+
+Two information types are distinguished.  A floating terminal value
+is used only to propose a cut.  An outward terminal payload encloses
+the original $V_1$ value; when used at a quadrature midpoint it also
+supplies a valid global affine minorant, with every uncertain slope
+component retained.  These are the same original payloads used by the
+common terminal compiler.  Counting a payload does not assign unit
+cost to its internal original-risk evaluation, optimization, interval
+arithmetic, or supporting-witness construction.
+
+The floating proposal compares $f_a(u+L)-f_a(u)$ at the two endpoints
+of $I$.  A proposed endpoint exit suppresses further floating search
+for that row.  Otherwise six interval-halving updates are performed,
+after which the midpoint of the final proposed bracket is rounded and
+clipped to the feasible $2^{-32}$ grid.  The signs need not be correct:
+only feasibility of the final cut $u$ is used below.  The production
+domain checks enforce this feasibility and the declared risk levels.
+
+At this $u$, two outward payloads give an interval $[d_-,d_+]$
+containing $f_a(u+L)-f_a(u)$.  The computed outward upper bound is
+\begin{equation}\label{eq:budgetedkappa119}
+ \widehat\kappa\ge
+ \frac{1}{2Rt}\max_{d\in\{d_-,d_+\}}
+ \left[-\min_{v\in I}
+       \left\{d(v-u)+\frac{m_zL}{2}(v-u)^2\right\}\right].
+\end{equation}
+The same state, action, risk level, cut, and defect are cached for the
+two attempted resolutions.  Reusing the cache for another state,
+action, or objective is disallowed.
+
+Let the lengths of the left and right tails be
+$b_1=u+R$ and $b_2=R-u-L$.  For $m=2$ and then, if needed, $m=4$,
+partition each tail with $b_j>0$ into $m$ equal cells.  Each cell of
+that tail has weight $b_j/(m\,2Rt)$.  A cell uses one midpoint
+payload and its two endpoint upper values; endpoints shared by
+neighboring cells within the same attempted resolution are acquired
+once.  No values are requested solely for a zero-length tail.  At
+each resolution form the original-policy and original-optimum bounds
+of Theorem~\ref{thm:investmenttail119}; accept only if the outward
+regret allowance is at most $1/256$ and the outward policy width is
+at most $1/8192$.  If neither attempt qualifies, continue with the
+frozen 128-bin service from the already acquired proposal.  Its
+original conventional repair, further resolutions, and rational
+fallback are included.
+
+\subsection{Proof of Proposition~\ref{prop:budgetedtail119}}
+\begin{proof}
+We establish feasibility, validity of each possible acceptance, and
+the full preliminary query count separately.
+
+\paragraph{Exact zero-mass omission.}
+The tail lengths are nonnegative and satisfy
+\[
+ b_1+b_2=(u+R)+(R-u-L)=2R-L=2Rt>0.
+\]
+Consequently the number $p$ of positive-length tails is either one
+or two, and the retained weights sum to one.  The density relative
+to the original uniform law is still $t^{-1}$ on these tails and
+zero on the omitted central interval.  Removing a zero-length tail
+removes a set of zero original probability; it changes none of the
+exact integrals, risk witnesses, or action supports.  This is not an
+approximation by a small-mass cutoff.
+
+In the implemented domain $u$ is a feasible multiple of $2^{-32}$,
+$R=2^{-5}$, and $L$ and $2Rt$ are dyadic.  With dyadic $m\le4096$,
+the tail endpoints, midpoints, and weights used here have exact
+binary representations with fewer than 53 significant bits.  To see
+this directly, write $u=k2^{-32}$ and $m=2^q$, with $q\le12$.
+The nonnegative tail lengths have integer numerators at most $2^{27}$
+on that grid.  Multiplying them by a grid fraction $j2^{-q}$ gives
+numerators at most $2^{39}$ on the $2^{-(32+q)}$ grid.  Adding a
+tail endpoint and then taking a midpoint needs at most 41 significant
+binary digits.  Dividing a tail length by $m\,2Rt$ only shifts its
+binary exponent, because $2Rt$ is either $2^{-5}$ or $2^{-6}$.
+All these values remain in the normal binary64 exponent range.  Thus
+the production predicate that a weight is positive is precisely a
+positive-length predicate.  The three groups of rows with only a
+left tail, only a right tail, or both tails partition the admissible
+batch.  Within each group, the retained endpoint columns belong to
+the same successive cells as the retained midpoint and weight
+columns.  Grouping therefore leaves the preceding exact weighted
+objects unchanged.  Floating summation orders can alter outward
+interval widths, but must still enclose those objects; bitwise
+equality of separately implemented certificates is not assumed.
+
+\paragraph{The proposed cut remains certified by the original continuation.}
+Let $H_a(v)=\int_v^{v+L}f_a(z)\,dz$.  The original curvature bound
+implies that $H_a$ is $m_zL$-strongly convex.  For the true
+$d=f_a(u+L)-f_a(u)$ and every feasible $v$,
+\[
+ H_a(v)\ge H_a(u)+d(v-u)+\frac{m_zL}{2}(v-u)^2.
+\]
+Taking the infimum over the entire original interval $I$ bounds
+$H_a(u)-\min_IH_a$.  The negative of the quadratic minimum in
+\eqref{eq:budgetedkappa119} is convex as a function of $d$.
+Its value at any $d\in[d_-,d_+]$ is therefore no larger than the
+larger endpoint value.  An outward lower bound on the constrained
+quadratic minimum, followed by the indicated upper operations,
+preserves the inequality.  Finally,
+\[
+ \operatorname{AVaR}_\alpha(f_a)-R_u(f_a)
+       =\frac{H_a(u)-\min_I H_a}{2Rt}
+       \le\widehat\kappa.
+\]
+This derivation uses no floating sign and no assertion that the cut
+optimizes the original risk.  It applies to either endpoint, an
+incorrect floating endpoint exit, and any imperfect interior cut.
+
+\paragraph{Original policy and all-action validity.}
+For a positive-length cell $B_i=[l_i,r_i]$ with midpoint $z_i$,
+write $y_i=F(x,a,z_i)$ and let its valid global affine witness be
+\[
+ V_1(y)\ge\ell_i+p_i^{\mathsf T}(y-y_i).
+\]
+Integrating over the cell cancels the innovation term proportional
+to $z-z_i$.  If $w_i=(r_i-l_i)/(2Rt)$, this proves
+$r_-:=\sum_iw_i\ell_i\le R_u(f_a)$.  Convexity of $f_a$ and
+the outward endpoint upper values prove
+$R_u(f_a)\le r_+:=\sum_iw_i(u_i^-+u_i^+)/2$.
+The cut-defect result and the unchanged terminal controller then give
+\[
+ S(x)+h(a)+\beta r_-
+ \le J(a)
+ \le S(x)+h(a)+\beta\{r_++\widehat\kappa+\varepsilon_1\}.
+\]
+The last term follows from monotonicity and cash invariance applied
+to $V_1\le J_1\le V_1+\varepsilon_1$.  No convexity of the
+implemented $J_1$ is needed.
+
+For any other original feasible action $v$, use the same fixed
+density and the same global supports.  The action-exposure vector
+$b$ satisfies $F(x,v,z)=F(x,a,z)+b(v-a)$.  Integration and
+$h''\ge2$ yield
+\[
+\begin{gathered}
+ Q(v)\ge W+s(v-a)+(v-a)^2,\qquad W=S(x)+h(a)+\beta r_-,\\
+ s=h'(a)+\beta\sum_iw_i b^{\mathsf T}p_i.
+\end{gathered}
+\]
+Taking the infimum over $[0,A(x)]$ gives a lower bound on
+$V_0(x)$.  If $s$ is interval-valued, the constrained minimum is
+concave in $s$, so the smaller minimum at its two enclosing
+endpoints remains a valid lower bound.  This is the original
+all-action construction, with every arithmetic endpoint directed
+outward.  The policy upper bound minus this optimum lower bound
+therefore encloses complete-policy regret, and the two policy
+endpoints enclose policy cost.  The qualification test at either
+attempt preserves precisely the two stated original targets.
+No monotonicity of successive reported widths is required.
+
+If both tests fail, the preliminary certificates do not overwrite
+the actor proposal, the economic primitives, the deployed future
+policy, or the frozen fallback.  The continuation branch first
+constructs its 128-bin original certificate and then runs the
+unchanged repair and refinement sequence.  Its own outward
+qualification is required before return.  A finite prelude of
+terminating oracle calls therefore preserves the termination and
+qualification guarantee of the underlying complete service.  A
+computation that fails an enclosure or qualification check must
+retain its failure evidence and must not return a successful
+scientific decision record.
+
+\paragraph{All preliminary values are counted.}
+The two floating endpoint differences request four terminal values
+per proposed action, including any repeated locations.  Only rows
+without a proposed endpoint exit receive further queries.  Six
+such updates request two values each, so their total is at most
+$4+6\cdot2=16$; a proposed endpoint exit uses four.
+
+The outward defect requests exactly two values once for that
+state/action/risk identity.  A resolution with $m$ cells in each
+of $p$ nonempty tails uses $pm$ midpoint payloads and $p(m+1)$
+endpoint payloads, hence $p(2m+1)$.  The calculation allows repeated
+locations across resolutions, between a midpoint and an earlier
+endpoint, and between the defect and quadrature.  All such repeated
+calls remain charged.  A first-resolution acceptance thus uses at
+most $2+5p$ outward payloads.  If the second resolution is attempted,
+the complete preliminary total is
+\[
+ 2+p\{(2\cdot2+1)+(2\cdot4+1)\}
+      =2+14p\le30.
+\]
+The cache is why the two defect values are not reacquired at the
+second resolution.  Grouping rows according to their positive tails
+changes the number of vector calls, not these scalar-payload counts.
+An earlier failed call cannot enlarge the prescribed subsequent
+schedule; it terminates with a failed record instead of licensing
+an unrecorded retry.
+
+Every call made by the frozen continuation is additional to this
+preliminary count.  If its realized continuation transcript has
+$N_F^{\rm outward}$ outward and $N_F^{\rm floating}$ floating
+terminal payloads, the corresponding combined counts on a branch
+that invokes it are bounded by
+$30+N_F^{\rm outward}$ and $16+N_F^{\rm floating}$.
+Actor acquisition and all non-payload operations are outside these
+two counts and remain in the complete-work ledger.  This proves
+the proposition without assuming a wall-clock cost per payload or
+an economic ordering of the returned actions.
+\end{proof}
+
+\subsection{Ablation and prospective scope}
+The masked-tail ablation uses the same proposal, cache, exact
+zero-mass omission, original bounds, and fallback, while attempting
+all $m\in\{2,4,8,16,32,64\}$.  The preceding proof applies to each
+individual acceptance.  Its full preliminary outward bound is
+\[
+ 2+p\sum_{m\in\{2,4,8,16,32,64\}}(2m+1)
+      =2+258p\le518,
+\]
+with the same floating bound of 16.  Its additional attempted
+resolutions are not free, even if the later fallback is identical.
+
+These two schedules were chosen after the separately preserved
+Phase A results and are therefore declared as Phase B algorithm
+development.  The five-service comparison reacquires the common
+training information and executes its conventional controls and
+original-policy reference enclosures afresh under its own source
+freeze.  Neither the mathematical validity of early acceptance nor
+the information cap establishes lower elapsed time, lower policy
+regret, a calibrated adoption decision, or neural specificity.
+Those claims require the corresponding current records.  In
+particular, early acceptance may keep an actor proposal that another
+service repairs; its complete original-policy cost must be evaluated
+as that returned policy, with the unchanged future controller.

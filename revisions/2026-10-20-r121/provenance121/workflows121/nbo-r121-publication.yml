@@ -1,0 +1,93 @@
+name: R121 verified package delivery
+
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r121-action-marginal-learning-2026-10-20
+    paths:
+      - revisions/2026-10-20-r121/delivery121/PACKAGE_REQUEST121.json
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: nbo-r121-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/revision/econometrica-nbo-r121-action-marginal-learning-2026-10-20'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      GIT_OPTIONAL_LOCKS: "0"
+      GIT_TERMINAL_PROMPT: "0"
+    steps:
+      - name: Check out exact Q and immutable S/P ancestry
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: |
+            revisions/2026-10-20-r121
+            .github/workflows
+          persist-credentials: true
+      - name: Set up declared Python for standard-library delivery helpers
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.12.14"
+      - name: Check S CI and Q request, pack complete P, verify, and describe exact ranges
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          python revisions/2026-10-20-r121/verification121/remote_publish121.py prepare \
+            --repository "$GITHUB_WORKSPACE" \
+            --request-commit "$GITHUB_SHA" \
+            --work-dir "$RUNNER_TEMP/nbo-r121-publication" \
+            2>&1 | tee "$RUNNER_TEMP/nbo-r121-publication-prepare.log"
+      - name: Preserve complete verified ZIP and preparation evidence before any Git publication
+        id: package_upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nbo-r121-referee-ready-${{ github.sha }}-attempt${{ github.run_attempt }}
+          compression-level: 0
+          retention-days: 90
+          if-no-files-found: error
+          path: ${{ runner.temp }}/nbo-r121-publication/**
+      - name: Verify actual uploaded artifact, stage exact parts, and push additive V
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTUAL_PACKAGE_ARTIFACT_ID: ${{ steps.package_upload.outputs.artifact-id }}
+          ACTUAL_PACKAGE_ARTIFACT_DIGEST: ${{ steps.package_upload.outputs.artifact-digest }}
+          ACTUAL_PACKAGE_ARTIFACT_URL: ${{ steps.package_upload.outputs.artifact-url }}
+        run: |
+          set -euo pipefail
+          python revisions/2026-10-20-r121/verification121/remote_publish121.py finalize \
+            --repository "$GITHUB_WORKSPACE" \
+            --request-commit "$GITHUB_SHA" \
+            --work-dir "$RUNNER_TEMP/nbo-r121-publication" \
+            --artifact-id "$ACTUAL_PACKAGE_ARTIFACT_ID" \
+            --artifact-digest "$ACTUAL_PACKAGE_ARTIFACT_DIGEST" \
+            --artifact-url "$ACTUAL_PACKAGE_ARTIFACT_URL" \
+            2>&1 | tee "$RUNNER_TEMP/nbo-r121-publication-finalize.log"
+      - name: Preserve actual finalization, commit, push, readback and all failure logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nbo-r121-publication-diagnostics-${{ github.sha }}-attempt${{ github.run_attempt }}
+          compression-level: 0
+          retention-days: 90
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/nbo-r121-publication/*.json
+            ${{ runner.temp }}/nbo-r121-publication/logs/**
+            ${{ runner.temp }}/nbo-r121-publication/pack/*.json
+            ${{ runner.temp }}/nbo-r121-publication/verify/*.json
+            ${{ runner.temp }}/nbo-r121-publication/describe/*.json
+            ${{ runner.temp }}/nbo-r121-publication-prepare.log
+            ${{ runner.temp }}/nbo-r121-publication-finalize.log
+            revisions/2026-10-20-r121/delivery121/PACKAGE_REQUEST121.json
