@@ -1,0 +1,257 @@
+% R120 author addition: original-objective action comparisons.
+% The R108/R110 candidates and the R111/R119 common-risk identity are retained.
+\section{Action comparisons that can change the investment decision}
+\label{sec:improvement120}
+An accurate continuation approximation contributes economically when it
+helps choose a better feasible action at an acceptable complete cost.
+The retained R119 service experiments kept the implemented actions fixed.
+We now construct an action comparison whose acquisition error decreases
+with the distance between the actions, and use it to safeguard actual
+policy changes.  The original nested AVaR criterion, information available
+to the economic agent, capacity constraint, and future controller remain
+those in Section~\ref{sec:continuous95}.
+
+At a fixed state write
+\[
+ f_a(z)=V_1(F(x,a,z)),\qquad
+ Q_x(a)=S(x)+h(a)+\beta\rho_\alpha(f_a).
+\]
+The actual complete-policy cost is $J_x(a)$, with the same implemented
+last-date policy for every current action.  Its retained uniform guarantee is
+\begin{equation}\label{eq:future120}
+ J_x(a)=Q_x(a)+\eta_x(a),\qquad
+ 0\le\eta_x(a)\le\delta,\qquad
+ \delta=\beta\varepsilon_1,\quad \varepsilon_1=2^{-20}.
+\end{equation}
+The function $\eta_x$ is not assumed convex or differentiable.
+
+\subsection{A comparison modulus from the original technology}
+The following constant concerns the original optimal continuation, not a
+fitted critic or an empirical gradient bound.  This addition is restricted
+to the original two-dimensional application.
+
+\begin{theorem}[Original action comparison modulus]
+\label{thm:modulus120}
+For $d=2$, $\beta=15/16$, $R=1/32$, and
+$\alpha\in\{1/2,3/4\}$, put $t=1-\alpha$ and
+\begin{equation}\label{eq:modulus120}
+ M_\alpha=\frac{1413}{128}
+       +\beta\left\{\frac{127}{16}
+                 +\frac{19625\alpha}{20480t}\right\}.
+\end{equation}
+The original $V_1$ has an $M_\alpha$-Lipschitz gradient on the state
+cube, with the continuous boundary extension.  Consequently, for every
+original state and every two feasible actions,
+\begin{equation}\label{eq:mixedmodulus120}
+ \operatorname{Lip}_z(f_b-f_a)
+ \le E_{ab}:=\frac45M_\alpha|b-a|.
+\end{equation}
+Both conclusions include switches of the constrained terminal optimizer
+and of its active risk region.
+\end{theorem}
+
+The proof normalizes terminal investment as $A(y)v$, $v\in[0,1]$,
+and bounds the state semiconcavity of that fixed-domain objective.
+It therefore does not differentiate a rounded actor or ignore the
+capacity multiplier.  The earlier expected-cost smoothness result in
+Section~\ref{sec:accuracy62} is retained with its original criterion;
+the extra term in \eqref{eq:modulus120} pays for the movement of the
+original AVaR tail.
+
+Fix one feasible original-law tail density
+$q_u=t^{-1}\boldsymbol1_{[-R,u]\cup[u+2R\alpha,R]}$.
+Partition its nonempty tails into cells of lengths $h_i$, midpoints
+$z_i$, and weights $w_i=h_i/B$, where $B=2Rt$.
+For each of the two actions, acquire valid point-value intervals at
+these midpoints and endpoints.  Let $L_a,L_b$ be their weighted
+midpoint lower sums and $U_a,U_b$ their weighted endpoint-secant
+upper sums.  Let $[M_-,M_+]$ enclose
+$\sum_iw_i\{f_b(z_i)-f_a(z_i)\}$ using the paired midpoint intervals.
+All of these acquisitions, including both action payloads, are paid.
+
+\begin{theorem}[A paid action-aligned original-policy certificate]
+\label{thm:paired120}
+Define
+\begin{align}
+ e_{ab}&=\frac{E_{ab}}{4B}\sum_i h_i^2,\label{eq:pairradius120}\\
+ [d_-,d_+]&=[L_b-U_a,\ U_b-L_a]\,
+                  \cap[M_--e_{ab},\ M_++e_{ab}].
+ \label{eq:pairintersection120}
+\end{align}
+This intersection contains $\mathbb E_P[q_u(f_b-f_a)]$.
+If the two original tail deficits satisfy
+$0\le k_a(q_u)\le\kappa_a$ and
+$0\le k_b(q_u)\le\kappa_b$, the actual policy contrast satisfies
+\begin{equation}\label{eq:policycontrast120}
+ J_x(b)-J_x(a)\in h(b)-h(a)
+       +\beta[d_--\kappa_a-\varepsilon_1,
+                     d_++\kappa_b+\varepsilon_1].
+\end{equation}
+Every numerical operation must enclose the displayed exact quantities
+outwardly.  In particular, the separately acquired node errors and
+the tail defects are retained.
+
+With exact point values, $K$-Lipschitz convex $f_a,f_b$, an
+integer $n\ge1$, and $h_i\le2Rt/n$, the fixed-density interval
+has width at most
+\begin{equation}\label{eq:mixedwidth120}
+ \min\left\{\frac{2KRt}{n^2},
+                   \frac{E_{ab}Rt}{n}\right\}.
+\end{equation}
+For the original investment continuations one may take $K=15$;
+their additional smoothness sharpens the same computed interval to
+\begin{equation}\label{eq:smoothpairwidth120}
+ \min\left\{
+   \frac{\min\{2KRt,\ 2M_\alpha R^2t^2\}}{n^2},
+   \frac{E_{ab}Rt}{n}\right\}.
+\end{equation}
+The exactly identical realized action has contrast zero and requires
+no new density or point values.
+\end{theorem}
+
+The second interval in \eqref{eq:pairintersection120} uses a Lipschitz
+bound for a difference; it never treats that difference as convex.
+The common-density risk identity was frozen in R111 and proved in
+Theorem~\ref{thm:coupled119}.  The present construction supplies its
+missing action-scaled integration bound and an executable refinement
+gate.  Neither the identity nor generic safe policy iteration is claimed
+as a new neural property.
+
+\paragraph{What the information bound does and does not establish.}
+For a fixed known feasible tail density, let the information consist of
+exact point values of either function, $K$, an upper bound $E$ on the
+Lipschitz constant of their difference, and the original uniform law.
+One scalar value of one function counts as one query; obtaining both
+values at a common point costs two.  With this convention there is an
+algorithm using at most $4n+8$ values and having the width in
+\eqref{eq:mixedwidth120}.  Conversely, for every deterministic adaptive
+algorithm using at most $N$ such values, a known one-sided tail and a
+consistent pair force interval width at least
+\begin{equation}\label{eq:pairlower120}
+ \min\left\{\frac{KRt}{48(N+1)^2},
+                    \frac{ERt}{12(N+1)}\right\}.
+\end{equation}
+Thus the worst-case order for this fixed-tail interface is
+$\min\{KRtN^{-2},ERtN^{-1}\}$, for $N\ge32$.
+Supplement Proposition~\ref{prop:pairinformation120} gives the complete
+quantifiers and proof.  Localization, original risk deficits, node
+precision, and descendant Bellman solves are additional information
+costs.  The lower bound is not an oracle lower bound for an agent already
+given the algebraic formula or every additional smoothness restriction
+of the investment model.
+
+\subsection{Safe refinement, stopping, and the future-policy floor}
+Start from a completed original-policy incumbent.  A proposed replacement
+is accepted only when the upper endpoint of
+\eqref{eq:policycontrast120} is strictly negative and its own policy
+interval passes the unchanged regret target $\tau=1/256$ and width
+target $1/8192$.  At the same state an original-optimum lower bound
+may be reused across actions; an action's policy interval may not.
+Refuse a candidate when its lower contrast endpoint is nonnegative,
+or retain the incumbent when the prespecified work limit is exhausted.
+Every refused trial remains in the complete cost.
+
+\begin{proposition}[Uniformly safe completed-policy replacement]
+\label{prop:safe120}
+For every original state where the stated outward premises hold,
+any finite sequence of these replacements preserves feasibility,
+qualification, and weak improvement over its completed incumbent.
+If accepted contrast intervals are $[\underline D_j,\overline D_j]$,
+then the final original-policy gain satisfies
+\begin{equation}\label{eq:gainaccount120}
+ 0\le\sum_j(-\overline D_j)
+       \le J_x(a_{\mathrm{initial}})-J_x(a_{\mathrm{final}})
+       \le\tau .
+\end{equation}
+A finite, measurable, statewise completed service satisfying these
+premises therefore defines a uniformly safe policy rule.
+\end{proposition}
+
+The proposed support directions and fractions $1,1/2,1/4$ are
+retained from R108--R110.  The new comparison ladder changes which
+paid evidence can authorize their realized action changes.  A direct
+original-continuation optimizer receives the same comparison mechanism.
+The quadratic, polynomial, spline, grid, hinge, neural, and online
+representations receive the same original formulas and certificate
+access.  The current experiment does not change the critic fitting
+objective or establish action-aware training convergence.
+
+There is an explicit limit to refinement based only on
+\eqref{eq:future120}.  Even an exact $Q_x(b)-Q_x(a)$ leaves the
+sharp interface
+\[
+ J_x(b)-J_x(a)\in
+ [Q_x(b)-Q_x(a)-\delta,\ Q_x(b)-Q_x(a)+\delta]
+ \quad(a\ne b).
+\]
+It does not uniformly authorize strict improvement when
+$Q_x(a)-Q_x(b)\le\delta$.  This is a restriction of the stated
+continuation-error information, not an assertion that the actual
+controller attains every endpoint or that more informative policy
+evaluation cannot help.
+
+Action alignment also controls risk-witness mismatch.  If
+$m_z=181/64$, Theorem~\ref{thm:tailtransfer120} proves
+\begin{equation}\label{eq:tailtransfer120}
+ k_a(q_u)\le
+ \left\{\sqrt{\kappa_b}
+       +E_{ab}\sqrt{\frac{\alpha}{2m_zt}}\right\}^{\!2}.
+\end{equation}
+At an exactly optimal candidate tail, the mismatch is quadratic in
+$|b-a|$.  The implemented gate pays for and retains both direct
+deficits, and intersects the incumbent deficit with this transferred
+upper bound.  This can tighten the lower contrast and refusal rule;
+the upper acceptance endpoint still uses the candidate deficit.
+No saved endpoint acquisition or upper-gate gain is attributed to
+that intersection.
+Supplement Proposition~\ref{prop:resolution120} states the resulting
+finite stopping guarantee, including the tail, node, future, and
+qualification margins.  A capped unresolved comparison is recorded
+as unresolved; it is not a certificate of optimality.
+
+\subsection{From a safe decision rule to population economic gain}
+A catalogue of successful gates is not by itself a population statement.
+Conditional on frozen actors and a fixed statewise service, let
+$X_1,\ldots,X_{64}$ be independent draws from the declared finite
+uniform initial-state law.  Each complete service is applied separately
+to each state, so its action and gain do not depend on the other sampled
+states.  States may be shared across representations and risk levels.
+Let $G_j(x)$ be the gain over the corresponding completed incumbent,
+and let $[\ell_{ji},u_{ji}]$ be saved, valid gain intervals contained
+in $[0,\tau]$.
+
+\begin{proposition}[Simultaneous transfer of certified economic gains]
+\label{prop:population120}
+Consider the fixed $48$ gain groups and thresholds
+$(\theta_1,\theta_2,\theta_3,\theta_4)
+=(2^{-20},2^{-18},2^{-16},2^{-14})$.
+For each group and threshold count only
+$\boldsymbol1_{\{\ell_{ji}\ge\theta_k\}}$.
+Invert its binomial upper-tail probability at error $1/7680$,
+using an exact rational lower bracket endpoint, to obtain
+$p^-_{jk}$.  Put $r=33\tau/128$ and
+$\theta_0=0$.  With conditional probability at least $0.95$,
+simultaneously for all groups,
+\begin{align}
+ \mathbb E G_j
+ &\ge \sum_{k=1}^4(\theta_k-\theta_{k-1})p^-_{jk},
+ \label{eq:staircase120}\\
+ \max\{0,\overline\ell_j-r\}
+ &\le\mathbb E G_j
+ \le\min\{\tau,\overline u_j+r\}.
+ \label{eq:meangain120}
+\end{align}
+Neither independence across groups nor disjoint samples across risk
+levels are required.
+\end{proposition}
+
+The binomial inversion and bounded-mean concentration are classical
+\citep{clopperpearson1934,hoeffding1963}; the proof verifies their
+application to a uniformly safe original-policy gain, with all numerical
+interval uncertainty and the prespecified multiplicity account retained.
+The stored entropy bytes make the finite dyadic sample reproducible.
+Their independence and uniformity are the sampling assumption, not a
+mathematical conclusion established by a generator log.
+Positive gain alone does not establish adoption: acquisition, fitting,
+all attempted comparisons, inference, qualification, validation, and
+repeated decision service must be charged against that economic gain.

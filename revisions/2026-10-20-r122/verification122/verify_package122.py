@@ -150,6 +150,17 @@ class Verification:
   self.check(r['raw_proposal_kept']==r['baseline_first_proposal_action'],'Original raw proposal not retained')
   if r['raw_proposal_kept'] is None:self.check(bool(r.get('proposal_numerical_failure')),'Missing raw proposal without failure')
   else:self.check(0<=Q(r['raw_proposal_kept'])<=cap,'Raw action outside original constraints')
+ def algebra_adapter(self,original):
+  publication=self.read(ROOT/'provenance122/INDEPENDENT_SCHEMA_PUBLICATION122.json');commit=publication['commit']
+  self.check(publication['status']=='executed' and len(commit)==40 and all(c in '0123456789abcdef' for c in commit),'Independent schema repair has no actual publication identity')
+  source=self.bind(ROOT/'verification122/independent_schema_adapter122.py');amendment=self.bind(ROOT/'provenance122/INDEPENDENT_SCHEMA_AMENDMENT122.md')
+  for p in (source,amendment,ROOT/'verification122/test_independent_schema_adapter122.py',self.a.original_independent/'FAILURE122.json'):
+   self.bind(p);self.check(git_bytes(commit,p.relative_to(REPO))==p.read_bytes(),'Independent repair source/failure differs from pre-execution publication')
+  spec=importlib.util.spec_from_file_location('r122_published_independent_schema',source);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+  self.check(module.SOURCE_F==self.a.source_commit and module.FROZEN_AUDITOR_SHA256==sha(ROOT/'code122/algebra_audit122.py') and module.FROZEN_DRIVER_SHA256==sha(ROOT/'code122/independent122.py'),'Independent repair changed frozen audit/economic driver identity')
+  self.check(module.ORIGINAL_FAILURE_SHA256==sha(self.a.original_independent/'FAILURE122.json'),'Original independent failure changed')
+  self.independent_adapter_commit=commit;self.algebra_schema_checks={}
+  return module.make_audit(original,self.algebra_schema_checks)
  def primary(self):
   a=self.a;p=a.primary;receipt=self.stage('primary',p)
   binding=self.read(p/'STATES_USED122.json');self.check(binding==dict(source_commit=a.source_commit,state_commit=a.state_commit,actor_commit=M,state_directory=str(a.states.relative_to(REPO))),'Original primary state binding differs')
@@ -157,9 +168,10 @@ class Verification:
   self.check(set(data)==expected(N),'Exactly5,568 primary records required')
   source=ROOT/'code122/algebra_audit122.py';self.check(sha(source)==self.manifest['scientific_files'][str(source.relative_to(REPO))],'Algebra auditor differs from F')
   spec=importlib.util.spec_from_file_location('r122_frozen_record_algebra',source);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+  audit=self.algebra_adapter(module.audit)
   algebra=collections.Counter()
   for r in raw:
-   self.check_row(r);algebra.update(module.audit(r))
+   self.check_row(r);algebra.update(audit(r))
    k=ident(r);control=data[k[:-1]+('control',)]
    self.check(r['baseline_action']==control['action'] and r['baseline_lower']==control['complete_policy_lower'] and r['baseline_upper']==control['complete_policy_upper'],'Intervention received a different original baseline')
   tim=self.read(p/'TIMINGS122.json');self.check(len(tim['processes'])==3 and {r['repeat'] for r in tim['processes']}=={0,1,2},'All3 original clocks required')
@@ -183,6 +195,9 @@ class Verification:
     self.timing[scenario]=timed;all_timing+=len(timed)
   self.check(all_timing==8352 and receipt['primary_rows']==5568 and receipt['timed_rows']==8352,'Execution receipt census differs')
   self.primary_data=data;self.binding=binding;self.algebra=dict(algebra);self.cohorts=cohorts;self.timings=tim
+  for name in ('native_rows_checked','training_labels_checked','finite_regret_bounds_checked','shallow_numeric_alias_views','unchanged_native_training_labels'):
+   self.check(self.algebra_schema_checks[name]==5568,'Complete algebra schema binding census differs')
+  self.check(self.algebra_schema_checks['accepted_numeric_candidate_equalities']==sum(r['accepted_improvement'] for r in raw),'Accepted numerical alias equality census differs')
   self.counts.update(primary_rows=5568,timed_rows=8352,primary_algebra=algebra,accepted_actions=sum(r['accepted_improvement'] for r in raw),paid_refinement_attempts=sum(r['paid_refinement_attempt_count'] for r in raw))
   if a.interrupted_primary:self.interruption()
   self.completed.append('primary')
@@ -223,6 +238,21 @@ class Verification:
   self.counts.update(interrupted_rows_compared=count,interrupted_primary_rows=5568,interrupted_complete_timing0_rows=2784,interrupted_partial_timing1_rows=1456,interrupted_nonoverlapping_completed_cohort_seconds_lower=cost,interrupted_parent_full_clock_unknown=True)
  def independent(self):
   a=self.a;p=a.independent;receipt=self.stage('independent',p)
+  repair=self.read(p/'INDEPENDENT_SCHEMA_ADAPTER122.json')
+  self.check(repair['status']=='executed' and repair['source_commit_F']==a.source_commit and repair['independent_adapter_commit']==self.independent_adapter_commit,'Adapted independent execution identity differs')
+  self.check(repair['adapter_path']==str((ROOT/'verification122/independent_schema_adapter122.py').relative_to(REPO)) and repair['adapter_sha256']==sha(ROOT/'verification122/independent_schema_adapter122.py'),'Independent schema adapter source changed after use')
+  self.check(repair['frozen_auditor_sha256']==sha(ROOT/'code122/algebra_audit122.py') and repair['frozen_driver_sha256']==sha(ROOT/'code122/independent122.py') and repair['amendment_sha256']==sha(ROOT/'provenance122/INDEPENDENT_SCHEMA_AMENDMENT122.md'),'Independent effective composition identity differs')
+  self.check(repair['primary_sha256']==sha(a.primary/'records122.jsonl') and repair['checks']==self.algebra_schema_checks,'Adapted independent algebra/primary census differs from full read-only replay')
+  self.check(repair['temporary_field_mapping']=={'loss':'certified_regret_upper'} and repair['native_training_loss_field']=='loss','Undeclared independent schema mapping')
+  self.check(all(repair[k] is False for k in ('original_frozen_files_changed','saved_primary_records_changed','frozen_algebra_counter_semantics_changed','independent_mesh_or_action_or_state_selection_changed','original_failed_attempt_success_asserted')),'Independent correction modified scientific rules or failed status')
+  self.check(all(repair[k]==0 for k in ('new_population_states','new_training','adapter_economic_calls')) and repair['elapsed_nested_in_outer_launcher_not_additive'] is True,'Independent adapter scope or shared clock mislabeled')
+  failed=a.original_independent;failure=self.read(failed/'FAILURE122.json');outer=self.read(failed/'OUTER_EXECUTION122.json');start=self.read(failed/'START122.json');verified=self.read(failed/'VERIFIED_SOURCE122.json')
+  self.check(sha(failed/'FAILURE122.json')==repair['original_failure_sha256'] and failure['status']=='failed' and outer['status']=='failed' and outer['exit_code']!=0 and not (failed/'EXECUTION122.json').exists(),'Original independent attempt falsely marked successful')
+  self.check('Independent R122 algebra: returned qualified candidate loss' in failure['traceback'],'Original independent failure not the disclosed schema collision')
+  self.check(verified['source_commit']==a.source_commit and verified['manifest_sha256']==sha(ROOT/'SOURCE_FREEZE122.json'),'Original failed independent F differs')
+  command=start['argv'];self.check(Path(command[0]).name=='independent122.py' and command[command.index('--source-commit')+1]==a.source_commit and Path(command[command.index('--primary')+1]).name==a.primary.name,'Original independent failure used another driver/source/primary')
+  self.check(Q(outer['outer_seconds'])>=Q(failure['seconds'])>=0,'Failed independent cost omitted or impossible')
+  self.check(all(not (failed/name).exists() for name in ('INPUTS122.json','POLICY_EVALUATIONS122.jsonl','terminal_witnesses122')),'Claim of zero original economics in failed preliminary algebra attempt is unsupported')
   inputs=self.read(p/'INPUTS122.json');self.check(inputs['primary_sha256']==sha(a.primary/'records122.jsonl') and inputs['primary_state_binding']==self.binding,'Independent result binds a different primary')
   algebra=self.read(p/'ALGEBRA_AUDIT122.json');self.check(algebra['counts']==self.algebra and algebra['primary_sha256']==inputs['primary_sha256'] and algebra['primary_state_binding']==self.binding,'Independent saved algebra audit differs from actual full replay')
   self.check(algebra['verifier_sha256']==sha(ROOT/'code122/algebra_audit122.py') and algebra['original_economic_queries']==0 and algebra['production_service_imported'] is False,'Algebra audit scope differs')
@@ -397,8 +427,94 @@ class Verification:
   total=sum(Q(self.receipts[s]['outer']['outer_seconds']) for s in ('states','primary','independent','stats'))
   self.check(Q(summary['actual_new_scientific_stage_seconds_excluding_current_report'])==total,'Actual stage cost double counted or omitted')
   self.report_summary=summary
+  if a.clock_sensitivity:self.clock_sensitivity()
   if a.cost_ledger:self.cost_ledger()
   self.completed.append('report')
+ def clock_sensitivity(self):
+  a=self.a;p=a.clock_sensitivity;receipt=self.read(p/'EXECUTION_SENSITIVITY122.json');summary=self.read(p/'SUMMARY_INTERRUPTED_CLOCK_SENSITIVITY122.json')
+  reader=self.bind(ROOT/'verification122/interrupted_clock_sensitivity122.py')
+  self.check(receipt['status']=='executed' and receipt['exit_code']==0 and not (p/'FAILURE_SENSITIVITY122.json').exists(),'Saved interrupted-clock sensitivity did not complete')
+  self.check(receipt['reader_sha256']==summary['reader_sha256']==sha(reader),'Sensitivity reader changed after execution')
+  for obj in (receipt,summary):
+   self.check(obj['source_commit_F']==a.source_commit and obj['state_commit_D']==a.state_commit and obj['reporting_adapter_commit']==REPORTING_REPAIR,'Sensitivity source/state/reporting identity differs')
+  self.check(summary['restart_protocol_commit']==RESTART and summary['status']=='computed_from_saved_evidence','Sensitivity restart/saved-evidence scope differs')
+  self.check(all(summary[k]==0 for k in ('new_population_observations','new_training','new_economic_evaluations','new_service_timing_processes')),'Sensitivity introduced an undeclared experiment')
+  self.check(summary['original_independent_population_units']==32 and summary['fixed_economic_subset_units']==16 and summary['unknown_interrupted_parent_outer_seconds'] is None,'Sensitivity population or unavailable parent-clock scope differs')
+  self.check(all(summary[k] is False for k in ('partial_old_clock1_used_as_complete_scenario','unknown_interrupted_parent_clock_inferred','clock_selection_or_retiming')) and summary['current_three_clock_outputs_unchanged'] is True and summary['every_four_clock_domain_subset_of_current_three_verified'] is True,'Sensitivity enlarged or substituted an old clock')
+  outer=self.read(p/'OUTER_EXECUTION122.json');self.check(outer['status']=='executed' and outer['exit_code']==0 and Q(outer['outer_seconds'])>=Q(receipt['seconds'])>=0,'Sensitivity outer clock does not enclose the actual reader')
+  marker='revisions/2026-10-20-r122/';child=outer['child_output'];relocated=ROOT/child.split(marker,1)[1] if marker in child else Path(child)
+  self.check(relocated.resolve()==p,'Sensitivity outer receipt identifies a different child output')
+  inputs=self.read(p/'INPUTS_INTERRUPTED_CLOCK_SENSITIVITY122.json')
+  for r in inputs['files']:
+   q=self.bind(REPO/r['path']);self.check(q.stat().st_size==r['bytes'] and sha(q)==r['sha256'],'Sensitivity saved input changed')
+  manifest=self.read(p/'OUTPUT_MANIFEST_SENSITIVITY122.json')
+  for r in manifest['files']:
+   q=self.bind(p/r['path']);self.check(q.is_relative_to(p) and q.stat().st_size==r['bytes'] and sha(q)==r['sha256'],'Sensitivity saved output changed')
+  old=a.interrupted_primary;launch=self.read(old/'timing/launcher00.json');inner=self.read(old/'timing/attempt00/EXECUTION122.json')
+  self.check(launch['exit_code']==0 and launch['repeat']==0 and inner['status']=='executed' and inner['exit_code']==0,'Additional old scenario was not a completed original clock')
+  elapsed=Q(launch['outer_seconds']);cohorts=self.unique(self.rows(old/'timing/attempt00/cohorts122.jsonl'),cell,'sensitivity old cohort')
+  self.check(set(cohorts)==cells() and all(z['n']==16 and z['repeat']==0 for z in cohorts.values()),'Sensitivity requires all174 old first16 cohorts')
+  subtotal=sum((Q(z['complete_cohort_seconds']) for z in cohorts.values()),Q(0));residual=elapsed-subtotal
+  self.check(residual>=0 and elapsed>=Q(inner['seconds'])>=0,'Old complete-clock residual is negative')
+  history=self.unique(self.rows(R121/'results121/report-attempt01/tables121/fit_and_acquisition121.jsonl'),lambda r:tuple(r[f] for f in FIELDS[:-1]),'sensitivity historical allocation')
+  clock_cells=self.unique(self.rows(p/'OLD_COMPLETE_CLOCK_CELLS122.jsonl'),cell,'sensitivity old clock cell')
+  volumes=self.unique(self.rows(p/'OLD_COMPLETE_CLOCK_VOLUMES122.jsonl'),lambda r:(r['volume'],cell(r)),'sensitivity old volume')
+  self.check(set(clock_cells)==cells() and set(volumes)=={(n,k) for n in VOLUMES for k in cells()},'All174 old costs and696 volumes required')
+  scenario='interrupted_attempt01_complete_timing00'
+  for k,z in cohorts.items():
+   A=Q(0) if k[2]=='online' else Q(history[k[:4]]['complete_allocated_acquisition_seconds']);T=Q(z['complete_cohort_seconds']);L=Q(z['cold_load_seconds']);c=clock_cells[k]
+   self.check(c['scenario']==scenario and c['n']==16 and Q(c['acquisition_seconds'])==A and Q(c['complete_cohort_seconds'])==T and Q(c['cold_load_seconds'])==L and Q(c['shared_process_residual_seconds'])==residual and Q(c['complete_old_outer_seconds'])==elapsed,'Saved additional clock does not use its actual complete standalone costs')
+   for n in VOLUMES:
+    r=volumes[n,k];total=A+residual+L+Q(n,16)*(T-L)
+    self.check(Q(r['total_allocated_seconds'])==total and Q(r['seconds_per_decision'])==total/n and r['scenario']==scenario and r['economic_state_units']==16 and r['original_population_units']==32 and r['unexecuted_reuse_scenario'] is True,'Old-clock cost extrapolation changed the frozen formula')
+  def empty():return dict(empty=True,lower=None,lower_closed=False,upper=None,upper_closed=False)
+  def whole():return dict(empty=False,lower=Q(0),lower_closed=True,upper=None,upper_closed=False)
+  def domain(g,t):
+   if t==0:return whole() if g>0 else empty()
+   boundary=g/t
+   if t>0:return empty() if boundary<=0 else dict(empty=False,lower=Q(0),lower_closed=True,upper=boundary,upper_closed=False)
+   return whole() if boundary<0 else dict(empty=False,lower=boundary,lower_closed=False,upper=None,upper_closed=False)
+  def decode(d):
+   self.check(set(d)==set(empty()) and all(type(d[x]) is bool for x in ('empty','lower_closed','upper_closed')),'Noncanonical sensitivity price domain')
+   return {k:Q(v) if k in ('lower','upper') and v is not None else v for k,v in d.items()}
+  def intersect(x,y):
+   if x['empty'] or y['empty']:return empty()
+   lo=max(x['lower'],y['lower']);lc=all(d['lower_closed'] for d in (x,y) if d['lower']==lo);finite=[d['upper'] for d in (x,y) if d['upper'] is not None];hi=min(finite) if finite else None;hc=all(d['upper_closed'] for d in (x,y) if d['upper']==hi) if hi is not None else False
+   return empty() if hi is not None and (lo>hi or lo==hi and not(lc and hc)) else dict(empty=False,lower=lo,lower_closed=lc,upper=hi,upper_closed=hc)
+  candidates={k for k in cells() if k[2]=='relu'};pairs={(k,b) for k in candidates for b in cells() if b[0]==k[0] and b[2]!='relu'}
+  constraints=self.unique(self.rows(p/'OLD_COMPLETE_CLOCK_PRICE_CONSTRAINTS122.jsonl'),lambda r:(r['volume'],cell(r['candidate']),cell(r['comparator'])),'sensitivity old constraint')
+  self.check(set(constraints)=={(n,k,b) for n in VOLUMES for k,b in pairs},'All7200 old-clock pair constraints required')
+  means={};menus={}
+  for (n,k,b),r in constraints.items():
+   if (k,b) not in means:
+    interval=[]
+    for j in range(16):
+     x=self.independent_data[(k[0],j,*k[1:])];y=self.independent_data[(b[0],j,*b[1:])]
+     interval.append((Q(0),Q(0)) if x['final_key_id']==y['final_key_id'] else (max(-TAU,Q(y['independent_policy_lower'])-Q(x['independent_policy_upper'])),min(TAU,Q(y['independent_policy_upper'])-Q(x['independent_policy_lower']))))
+    means[k,b]=(sum((z[0] for z in interval),Q(0))/16,sum((z[1] for z in interval),Q(0))/16)
+   lo,hi=means[k,b];extra=Q(volumes[n,k]['seconds_per_decision'])-Q(volumes[n,b]['seconds_per_decision']);lower,upper=domain(lo,extra),domain(hi,extra)
+   self.check(Q(r['sample_gain_lower'])==lo and Q(r['sample_gain_upper'])==hi and Q(r['extra_seconds_per_decision'])==extra and r['scenario']==scenario and r['economic_state_units']==16,'Old-clock pair uses different policy economics or costs')
+   self.check(decode(r['sufficient_price_domain'])==lower and decode(r['upper_not_ruled_out_domain'])==upper and r['statistical_adoption_claim'] is False and r['post_restart_descriptive_sensitivity'] is True,'Additional saved-clock strict inequality/scope differs')
+   x,y=menus.get((n,k),(whole(),whole()));menus[n,k]=(intersect(x,lower),intersect(y,upper))
+  saved=self.unique(self.rows(p/'OLD_COMPLETE_CLOCK_PRICE_MENUS122.jsonl'),lambda r:(r['volume'],cell(r)),'old full menu')
+  three=self.unique(self.rows(a.report/'ALL_THREE_CLOCK_INTERSECTIONS122.jsonl'),lambda r:(r['volume'],cell(r)),'current three-clock domain')
+  four=self.unique(self.rows(p/'ALL_FOUR_CLOCK_INTERSECTIONS122.jsonl'),lambda r:(r['volume'],cell(r)),'all-four-clock domain')
+  self.check(set(saved)==set(three)==set(four)==set(menus),'All96 old/full-four-clock domains required')
+  changed={'sufficient':0,'upper_not_ruled_out':0}
+  for k,(lo,hi) in menus.items():
+   r=saved[k];self.check(decode(r['sufficient_price_domain'])==lo and decode(r['upper_not_ruled_out_domain'])==hi and r['comparators']==75 and r['standalone_earlier_clock_not_a_replacement'] is True,'Old full-menu domain omitted a conventional comparator')
+   x,y=decode(three[k]['sufficient_price_domain']),decode(three[k]['upper_not_ruled_out_domain']);lower,upper=intersect(x,lo),intersect(y,hi);z=four[k]
+   self.check(decode(z['sufficient_price_domain'])==lower and decode(z['upper_not_ruled_out_domain'])==upper and intersect(lower,x)==lower and intersect(upper,y)==upper,'Four-clock sensitivity enlarged the current three-clock region')
+   self.check(decode(z['current_three_sufficient_price_domain'])==x and decode(z['current_three_upper_not_ruled_out_domain'])==y and decode(z['earlier_complete_clock_sufficient_price_domain'])==lo and decode(z['earlier_complete_clock_upper_not_ruled_out_domain'])==hi,'Four-clock sensitivity changed its input domains')
+   self.check(z['clock_scenarios']==list(SCENARIOS[1:])+[scenario] and z['new_population_observations']==0 and z['statistical_adoption_claim'] is False,'Four-clock sensitivity claims a different clock/population scope')
+   changed['sufficient']+=lower!=x;changed['upper_not_ruled_out']+=upper!=y
+  counts=dict(old_clock_cohorts=174,old_clock_timed_decisions=2784,old_clock_volume_rows=696,old_clock_price_constraints=7200,old_clock_menu_rows=96,all_four_clock_menu_rows=96,
+   old_clock_nonempty_sufficient=sum(not r['sufficient_price_domain']['empty'] for r in saved.values()),old_clock_nonempty_upper_not_ruled_out=sum(not r['upper_not_ruled_out_domain']['empty'] for r in saved.values()),
+   current_three_nonempty_sufficient=sum(not r['sufficient_price_domain']['empty'] for r in three.values()),current_three_nonempty_upper_not_ruled_out=sum(not r['upper_not_ruled_out_domain']['empty'] for r in three.values()),
+   all_four_nonempty_sufficient=sum(not r['sufficient_price_domain']['empty'] for r in four.values()),all_four_nonempty_upper_not_ruled_out=sum(not r['upper_not_ruled_out_domain']['empty'] for r in four.values()),strictly_restricted_current_domains=changed)
+  for name,value in counts.items():self.check(summary[name]==receipt[name]==value,'Sensitivity count differs: '+name)
+  for name,value in [('old_clock_full_outer_seconds',elapsed),('old_clock_cohort_seconds',subtotal),('old_clock_shared_process_residual_seconds',residual)]:self.check(Q(summary[name])==Q(receipt[name])==value,'Sensitivity actual clock amount differs')
+  self.counts['restrictive_interrupted_clock_sensitivity']=counts
  def cost_ledger(self):
   a=self.a;ledger=self.read(a.cost_ledger);inputs=self.read(a.cost_ledger.parent/'INPUTS_COST_LEDGER122.json')
   self.check(ledger['status']=='saved_receipt_cost_census' and ledger['source_commit']==a.source_commit and ledger['state_commit']==a.state_commit,'Whole-study cost ledger identity differs')
@@ -420,7 +536,9 @@ class Verification:
    total+=amount;categories[r['category']]+=amount
    if r['clock_fields']==[['outer_seconds']]:outerhashes.add(r['source_sha256'])
   self.check({k:str(v) for k,v in categories.items()}==ledger['category_sums_seconds_exact'] and total==Q(ledger['recorded_nonoverlapping_job_seconds_sum']),'Research clock exact aggregation differs')
-  for p in [a.states,a.primary,a.independent,a.stats,a.report,a.original_report]:
+  outer_paths=[a.states,a.primary,a.independent,a.original_independent,a.stats,a.report,a.original_report]
+  if a.clock_sensitivity:outer_paths.append(a.clock_sensitivity)
+  for p in outer_paths:
    self.check(sha(p/'OUTER_EXECUTION122.json') in outerhashes,'Whole-study ledger omitted a completed scientific/reporting success or failure')
   lower=Q(ledger['interrupted_completed_cohort_seconds_lower']);self.check(lower==self.interruption_cost_lower,'Interrupted work lower bound omitted or misrepresented')
   self.check(Q(ledger['recorded_job_sum_plus_interruption_lower'])==total+lower and Q(ledger['observed_research_and_publication_job_seconds_lower_including_this_census'])==total+lower+Q(ledger['census_elapsed_seconds']),'Whole-study observed lower bound arithmetic differs')
@@ -482,6 +600,7 @@ class Verification:
    del self.corrected_price_constraints,self.corrected_price_menus
  def package(self):
   a=self.a;self.check(a.build_receipt is not None,'Package verification requires actual --build-receipt');self.check(a.cost_ledger is not None,'Package verification requires the actual supplementary --cost-ledger')
+  self.check(a.clock_sensitivity is not None,'Package verification requires saved restrictive --clock-sensitivity from the published restart protocol')
   receipt=self.read(a.build_receipt);self.check(receipt['status']=='compiled_clean' and not receipt['issues'] and not receipt['placeholders'],'Actual four-document build is not clean')
   self.check(receipt['scientific_execution'] is False,'Typesetting mislabeled as science')
   documents={'ECTA','supp','appendix','RESPONSE_TO_REFEREE'}
@@ -507,11 +626,15 @@ class Verification:
     p=self.bind(REPO/r['path']);self.check(p.is_relative_to(REPO) and p.stat().st_size==r['bytes'] and sha(p)==r['sha256'],'Package byte manifest mismatch: '+r['path'])
    package_paths={r['path'] for r in manifest['files']}
    self.check(set(self.manifest['scientific_files'])<=package_paths,'Package omits a frozen transitive source dependency')
-   required=[ROOT/'SOURCE_FREEZE122.json',a.states/'entropy122.bin',a.primary/'records122.jsonl',a.independent/'COMPARISONS122.jsonl',a.stats/'STATS122.jsonl',a.report/'SUMMARY_REPORT122.json',a.report/'REPORTING_ADAPTER122.json',a.report/'REPORTING_PROTOCOL_ADAPTER122.json',a.original_report/'FAILURE122.json',a.original_report/'OUTER_EXECUTION122.json',ROOT/'provenance122/REPORTING_AMENDMENT122.md',a.cost_ledger,a.cost_ledger.parent/'INPUTS_COST_LEDGER122.json']
+   required=[ROOT/'SOURCE_FREEZE122.json',a.states/'entropy122.bin',a.primary/'records122.jsonl',a.independent/'COMPARISONS122.jsonl',a.independent/'INDEPENDENT_SCHEMA_ADAPTER122.json',a.original_independent/'FAILURE122.json',a.original_independent/'OUTER_EXECUTION122.json',ROOT/'provenance122/INDEPENDENT_SCHEMA_AMENDMENT122.md',ROOT/'provenance122/INDEPENDENT_SCHEMA_PUBLICATION122.json',a.stats/'STATS122.jsonl',a.report/'SUMMARY_REPORT122.json',a.report/'REPORTING_ADAPTER122.json',a.report/'REPORTING_PROTOCOL_ADAPTER122.json',a.original_report/'FAILURE122.json',a.original_report/'OUTER_EXECUTION122.json',ROOT/'provenance122/REPORTING_AMENDMENT122.md',a.cost_ledger,a.cost_ledger.parent/'INPUTS_COST_LEDGER122.json']
    if a.interrupted_primary:
     required.extend([ROOT/'RESTART_PROTOCOL122.json',a.interrupted_primary/'INTERRUPTION_FORENSIC122.json',a.primary/'RESTART_COMPARISON122.json'])
     forensic=self.read(a.interrupted_primary/'INTERRUPTION_FORENSIC122.json')
     required.extend(a.interrupted_primary/r['path'] for r in forensic['files'])
+   if a.clock_sensitivity:
+    required.extend([a.clock_sensitivity/'EXECUTION_SENSITIVITY122.json',a.clock_sensitivity/'OUTER_EXECUTION122.json',a.clock_sensitivity/'OUTPUT_MANIFEST_SENSITIVITY122.json'])
+    sensitivity_manifest=self.read(a.clock_sensitivity/'OUTPUT_MANIFEST_SENSITIVITY122.json')
+    required.extend(a.clock_sensitivity/r['path'] for r in sensitivity_manifest['files'])
    for q in required:
     self.check(str(q.relative_to(REPO)) in package_paths,'Package omits a required current/failure artifact: '+str(q))
   if a.transport_registry:self.transport()
@@ -548,11 +671,12 @@ class Verification:
 
 def main():
  p=argparse.ArgumentParser();p.add_argument('--source-commit',required=True);p.add_argument('--state-commit',required=True);p.add_argument('--through',choices=STAGES,default='report')
- defaults={'states':'states-attempt01','primary':'primary-attempt02','independent':'independent-attempt01','stats':'statistics-attempt01','report':'report-attempt02'}
+ defaults={'states':'states-attempt01','primary':'primary-attempt02','independent':'independent-attempt02','stats':'statistics-attempt01','report':'report-attempt02'}
  for stage,name in defaults.items():p.add_argument('--'+stage,type=Path,default=ROOT/'results122'/name)
  p.add_argument('--interrupted-primary',type=Path,default=ROOT/'results122/primary-attempt01');p.add_argument('--original-report',type=Path,default=ROOT/'results122/report-attempt01')
- p.add_argument('--cost-ledger',type=Path);p.add_argument('--transport-registry',type=Path);p.add_argument('--build-receipt',type=Path);p.add_argument('--pdf-manifest',type=Path);p.add_argument('--package-manifest',type=Path);p.add_argument('--output',required=True,type=Path);a=p.parse_args()
- for name in ('states','primary','independent','stats','report','interrupted_primary','original_report','cost_ledger','transport_registry','build_receipt','pdf_manifest','package_manifest','output'):
+ p.add_argument('--original-independent',type=Path,default=ROOT/'results122/independent-attempt01')
+ p.add_argument('--clock-sensitivity',type=Path);p.add_argument('--cost-ledger',type=Path);p.add_argument('--transport-registry',type=Path);p.add_argument('--build-receipt',type=Path);p.add_argument('--pdf-manifest',type=Path);p.add_argument('--package-manifest',type=Path);p.add_argument('--output',required=True,type=Path);a=p.parse_args()
+ for name in ('states','primary','independent','stats','report','interrupted_primary','original_report','original_independent','clock_sensitivity','cost_ledger','transport_registry','build_receipt','pdf_manifest','package_manifest','output'):
   if getattr(a,name) is not None:setattr(a,name,getattr(a,name).resolve())
  a.output.mkdir(parents=True,exist_ok=False);started=time.perf_counter();v=Verification(a)
  write(a.output/'START_VERIFICATION122.json',dict(argv=sys.argv,started_utc=dt.datetime.now(dt.timezone.utc).isoformat(),source_commit=a.source_commit,state_commit=a.state_commit,through=a.through,verifier_sha256=sha(Path(__file__)),scope='Saved-evidence, exact algebra/probability/cost and optional PDF custody validation only; zero new states, training, economic evaluations or clocks.'))

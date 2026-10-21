@@ -1,0 +1,511 @@
+# Reconstructed 2026-10-21 from retained source fragments and the published
+# restart/reporting specifications after workspace loss; this has a NEW SHA.
+# The old 674e93c7 review is not a verification of these reconstructed bytes.
+"""Restrictive saved-clock sensitivity required by the published R122 restart.
+
+This additive publication reader uses the interrupted attempt's one completed
+timing clock0, its complete 174 cohorts, F-bound acquisition allocations, and
+the adapted report's fixed first-16 economic contrasts.  It imports no
+production module, evaluates no economic primitive, and runs no timer again.
+It never treats the interrupted parent or partial timing clock1 as a complete
+scenario.  The new four-clock domains may only restrict the existing three.
+"""
+from __future__ import annotations
+
+import argparse
+from datetime import datetime, timezone
+from fractions import Fraction as Q
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+import time
+import traceback
+
+ROOT = Path(__file__).resolve().parents[1]
+REPO = ROOT.parents[1]
+F = "2f483615c8bc0037e43ec01a16cce05c724f8c60"
+D = "a3323b6f557315ea91b536637419ef6fd7984b61"
+M = "796c5f2badf68b051ac6c144884c0e61b87faf5e"
+RESTART = "56cff43b088c7d6b1cee352d27fc9de8573c46ed"
+ADAPTER = "af73f9bca8f2249da1601208a1921f50ea8fd074"
+ARMS = ("quadratic", "relu", "hinge", "spline", "poly2", "poly3", "grid")
+SERVICES = ("control", "recycled", "adaptive")
+CLOCKS = ("timing00", "timing01", "timing02")
+OLD_SCENARIO = "interrupted_attempt01_complete_timing00"
+VOLUMES = (32, 256, 4096, 65536)
+FIELDS = ("index", "budget", "arm", "loss", "service")
+TAU = Q(1, 256)
+
+
+def require(condition, message):
+    if not condition:
+        raise ValueError(message)
+
+
+def digest(path):
+    h = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
+def encode(value):
+    if isinstance(value, Q):
+        return str(value)
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, dict):
+        return {k: encode(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [encode(v) for v in value]
+    return value
+
+
+def write(path, value):
+    with Path(path).open("x") as stream:
+        json.dump(encode(value), stream, indent=2, sort_keys=True, allow_nan=False)
+        stream.write("\n")
+
+
+def table(path, values):
+    with Path(path).open("x") as stream:
+        for value in values:
+            stream.write(json.dumps(encode(value), sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n")
+
+
+def catalog():
+    return [(i, 0, "online", "online") for i in range(2)] + [
+        (i, b, arm, loss) for i in range(2) for b in (5, 9)
+        for arm in ARMS for loss in ("value", "marginal")]
+
+
+def key(row):
+    return tuple(row[f] for f in FIELDS)
+
+
+def cell(k):
+    return dict(zip(FIELDS, k))
+
+
+def unique(rows, keyfn, label):
+    result = {}
+    for row in rows:
+        k = keyfn(row)
+        require(k not in result, "Duplicate " + label)
+        result[k] = row
+    return result
+
+
+def empty():
+    return {"empty": True, "lower": None, "lower_closed": False,
+            "upper": None, "upper_closed": False}
+
+
+def whole():
+    return {"empty": False, "lower": Q(0), "lower_closed": True,
+            "upper": None, "upper_closed": False}
+
+
+def strict_price(gain, extra):
+    """All nonnegative prices p satisfying gain - p * extra > 0."""
+    gain, extra = Q(gain), Q(extra)
+    if extra == 0:
+        return whole() if gain > 0 else empty()
+    boundary = gain / extra
+    if extra > 0:
+        return empty() if boundary <= 0 else {
+            "empty": False, "lower": Q(0), "lower_closed": True,
+            "upper": boundary, "upper_closed": False}
+    if boundary < 0:
+        return whole()
+    return {"empty": False, "lower": boundary, "lower_closed": False,
+            "upper": None, "upper_closed": False}
+
+
+def intersect(a, b):
+    if a["empty"] or b["empty"]:
+        return empty()
+    lo = max(a["lower"], b["lower"])
+    lc = all(d["lower_closed"] for d in (a, b) if d["lower"] == lo)
+    finite = [d["upper"] for d in (a, b) if d["upper"] is not None]
+    hi = min(finite) if finite else None
+    hc = all(d["upper_closed"] for d in (a, b) if d["upper"] == hi) if hi is not None else False
+    if hi is not None and (lo > hi or (lo == hi and not (lc and hc))):
+        return empty()
+    return {"empty": False, "lower": lo, "lower_closed": lc, "upper": hi, "upper_closed": hc}
+
+
+def decode(raw):
+    require(set(raw) == {"empty", "lower", "lower_closed", "upper", "upper_closed"}, "Unknown domain schema")
+    require(all(isinstance(raw[k], bool) for k in ("empty", "lower_closed", "upper_closed")), "Non-Boolean domain endpoints")
+    if raw["empty"]:
+        require(raw == empty(), "Noncanonical empty domain")
+        return empty()
+    lo = Q(raw["lower"])
+    hi = None if raw["upper"] is None else Q(raw["upper"])
+    require(lo >= 0 and (hi is None or hi >= lo), "Invalid nonnegative-price domain")
+    require(hi is not None or raw["upper_closed"] is False, "Infinity cannot be a closed endpoint")
+    require(hi != lo or (raw["lower_closed"] and raw["upper_closed"]), "Unmarked empty singleton")
+    return dict(raw, lower=lo, upper=hi)
+
+
+def subset(inner, outer):
+    return intersect(inner, outer) == inner
+
+
+class Inputs:
+    def __init__(self):
+        self.files = {}
+
+    def bind(self, path):
+        p = Path(path).resolve()
+        require(p.is_relative_to(REPO), "Sensitivity input lies outside repository")
+        record = {"path": p.relative_to(REPO).as_posix(),
+                  "bytes": p.stat().st_size, "sha256": digest(p)}
+        if record["path"] in self.files:
+            require(self.files[record["path"]] == record, "Input changed between reads")
+        self.files[record["path"]] = record
+        return p
+
+    def read(self, path):
+        return json.loads(self.bind(path).read_text())
+
+    def rows(self, path):
+        p = self.bind(path)
+        opener = gzip.open if p.suffix == ".gz" else open
+        with opener(p, "rt", encoding="utf-8") as stream:
+            return [json.loads(line) for line in stream if line.strip()]
+
+    def unchanged(self):
+        for record in self.files.values():
+            p = REPO / record["path"]
+            require(p.stat().st_size == record["bytes"] and digest(p) == record["sha256"],
+                    "Input changed during sensitivity calculation: " + record["path"])
+
+
+def argument(argv, name):
+    require(argv.count(name) == 1, "Missing/duplicate original argument: " + name)
+    return argv[argv.index(name) + 1]
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--report", type=Path, default=ROOT / "results122/report-attempt02")
+    parser.add_argument("--interrupted-primary", type=Path, default=ROOT / "results122/primary-attempt01")
+    parser.add_argument("--restart-primary", type=Path, default=ROOT / "results122/primary-attempt02")
+    parser.add_argument("--output", required=True, type=Path)
+    args = parser.parse_args()
+    report = args.report.resolve()
+    old = args.interrupted_primary.resolve()
+    restart_primary = args.restart_primary.resolve()
+    out = args.output.resolve()
+    require(out.is_relative_to(ROOT), "Sensitivity output must be a new R122 directory")
+    out.mkdir(parents=True, exist_ok=False)
+    tick = time.perf_counter()
+    started = datetime.now(timezone.utc).isoformat()
+    reader_sha = digest(Path(__file__))
+    inputs = Inputs()
+    write(out / "START_SENSITIVITY122.json", {
+        "started_utc": started, "reader_sha256": reader_sha,
+        "source_commit_F": F, "state_commit_D": D,
+        "reporting_adapter_commit": ADAPTER, "restart_protocol_commit": RESTART,
+        "reader_reconstructed_utc_date": "2026-10-21",
+        "lost_predecessor_source_sha256": "674e93c7400bdfe6caa0fb9b973f8b7981ed6d041dff454f8fc56946f5756830",
+        "predecessor_review_applies_to_current_bytes": False,
+        "scope": "Read-only saved-evidence sensitivity. No science, samples, service retiming, or original input mutation."})
+    try:
+        inputs.bind(Path(__file__))
+        freeze_path = inputs.bind(ROOT / "SOURCE_FREEZE122.json")
+        frozen = inputs.read(freeze_path)
+        require(len(frozen["scientific_files"]) == 243, "Frozen closure must contain exactly243 files")
+        require(digest(freeze_path) == "eba26439a799392b7553d06fea5f17828c8988b9f72f4e049058771985ac8b0f"
+                and subprocess.check_output(["git", "show", F + ":" + freeze_path.relative_to(REPO).as_posix()], cwd=REPO)
+                == freeze_path.read_bytes(), "Frozen manifest differs from F")
+        for name, expected in frozen["scientific_files"].items():
+            require(digest(inputs.bind(REPO / name)) == expected, "Frozen native input changed: " + name)
+        protocol_path = inputs.bind(ROOT / "RESTART_PROTOCOL122.json")
+        protocol = inputs.read(protocol_path)
+        require(subprocess.check_output(["git", "show", RESTART + ":" + protocol_path.relative_to(REPO).as_posix()], cwd=REPO)
+                == protocol_path.read_bytes(), "Restart protocol differs from its publication")
+        require(protocol["source_commit"] == F and protocol["state_commit"] == D
+                and protocol["new_population_draws"] == 0, "Restart altered the scientific source or sample")
+        require(protocol["original_attempt"] == old.relative_to(ROOT).as_posix()
+                and protocol["new_attempt"] == restart_primary.relative_to(ROOT).as_posix(),
+                "Supplied old/restart directories differ from the published administrative protocol")
+        forensic_path = inputs.bind(old / "INTERRUPTION_FORENSIC122.json")
+        forensic = inputs.read(forensic_path)
+        require(digest(forensic_path) == protocol["forensic_sha256"], "Interrupted evidence differs from published protocol")
+        require(forensic["source_commit"] == F and forensic["state_commit"] == D
+                and forensic["actual_full_external_wall_seconds"] is None and forensic["exit_code"] is None,
+                "Unknown original parent clock or exit status was replaced")
+        require(all(not (old / name).exists() for name in
+                    ("EXECUTION122.json", "FAILURE122.json", "OUTER_EXECUTION122.json")),
+                "Original interrupted parent has an unexpected terminal receipt")
+        forensic_files = unique(forensic["files"], lambda r: r["path"], "forensic member")
+        binding = inputs.read(old / "STATES_USED122.json")
+        require(binding["source_commit"] == F and binding["state_commit"] == D and binding["actor_commit"] == M,
+                "Interrupted source/state/actor identity differs")
+        require(inputs.read(restart_primary / "STATES_USED122.json") == binding
+                and inputs.read(old / "timing/attempt00/STATES_USED122.json") == binding,
+                "Original/restarted complete clocks use different states or actors")
+        identity = inputs.read(restart_primary / "RESTART_COMPARISON122.json")
+        require(identity["status"] == "identical" and identity["source_commit"] == F
+                and identity["state_commit"] == D and identity["actor_commit"] == M
+                and identity["restart_protocol_commit"] == RESTART,
+                "Saved original/retry policy identity did not pass")
+        require(identity["original_forensic_sha256"] == digest(forensic_path)
+                and identity["protocol_sha256"] == digest(protocol_path)
+                and identity["economic_calls"] == identity["new_population_observations"] == identity["new_timing_processes"] == 0,
+                "Saved identity comparison binds another protocol/evidence or introduces science")
+        current_primary_records = inputs.bind(restart_primary / "records122.jsonl")
+        require(identity["primary02_sha256"] == digest(current_primary_records),
+                "Saved restart identity does not bind the actual complete current primary records")
+        old_identity = [r for r in identity["datasets"] if r["name"] == "timing0"]
+        require(len(old_identity) == 1 and old_identity[0]["rows"] == 2784 and old_identity[0]["status"] == "identical",
+                "Old complete timing policy identity is absent")
+        require(old_identity[0]["path"] == (old / "timing/attempt00/records122.jsonl").relative_to(REPO).as_posix()
+                and old_identity[0]["sha256"] == forensic_files["timing/attempt00/records122.jsonl"]["sha256"],
+                "Old timing policy identity binds different preserved records")
+        old_timing_records = inputs.bind(old / "timing/attempt00/records122.jsonl")
+        require(old_timing_records.stat().st_size == forensic_files["timing/attempt00/records122.jsonl"]["bytes"]
+                and digest(old_timing_records) == forensic_files["timing/attempt00/records122.jsonl"]["sha256"],
+                "Actual old complete timing records differ from the preserved forensic identity")
+
+        old_paths = ("timing/launcher00.json", "timing/attempt00/cohorts122.jsonl",
+                     "timing/attempt00/EXECUTION122.json", "timing/attempt00/VERIFIED_SOURCE122.json")
+        for name in old_paths:
+            p = inputs.bind(old / name)
+            require(name in forensic_files and p.stat().st_size == forensic_files[name]["bytes"]
+                    and digest(p) == forensic_files[name]["sha256"], "Complete old clock differs from preserved evidence")
+        launcher = inputs.read(old / old_paths[0])
+        execution = inputs.read(old / old_paths[2])
+        source = inputs.read(old / old_paths[3])
+        require(launcher["exit_code"] == 0 and launcher["repeat"] == 0 and execution["status"] == "executed"
+                and execution["exit_code"] == 0 and execution["timing_rows"] == 2784, "Only actually completed old clock0 is admissible")
+        require(source["source_commit"] == F and source["manifest_sha256"] == digest(ROOT / "SOURCE_FREEZE122.json"), "Old clock F differs")
+        command = launcher["command"]
+        require(argument(command, "--source-commit") == F and argument(command, "--state-commit") == D
+                and argument(command, "--repeat") == "0", "Old completed launcher identity differs")
+        require(Path(argument(command, "--output")).parts[-3:] == ("primary-attempt01", "timing", "attempt00"),
+                "Old completed launcher output is not the declared clock0")
+        outer = Q(launcher["outer_seconds"])
+        require(outer >= Q(execution["seconds"]) >= 0, "Old outer clock does not enclose its actual child")
+        allkeys = [actor + (s,) for actor in catalog() for s in SERVICES]
+        cohorts = unique(inputs.rows(old / old_paths[1]), key, "old cohort")
+        require(set(cohorts) == set(allkeys) and len(cohorts) == 174, "Complete 174-cohort old clock is required")
+        for row in cohorts.values():
+            require(row["n"] == 16 and row["repeat"] == 0 and
+                    Q(row["complete_cohort_seconds"]) >= Q(row["cold_load_seconds"]) >= 0, "Old cohort scope/cost differs")
+        cohort_total = sum((Q(r["complete_cohort_seconds"]) for r in cohorts.values()), Q(0))
+        residual = outer - cohort_total
+        require(residual >= 0, "Old complete process residual is negative")
+
+        # All current reporting inputs are required to be from the successful
+        # explicitly published protocol adapter, not original nonconforming tables.
+        report_execution = inputs.read(report / "EXECUTION122.json")
+        report_outer = inputs.read(report / "OUTER_EXECUTION122.json")
+        adapted = inputs.read(report / "REPORTING_PROTOCOL_ADAPTER122.json")
+        summary = inputs.read(report / "SUMMARY_REPORT122.json")
+        require(all(r["status"] == "executed" and r["exit_code"] == 0 for r in (report_execution, report_outer)), "Adapted report did not complete")
+        child = report_outer["child_output"]
+        marker = "revisions/2026-10-20-r122/"
+        child_path = ROOT / child.split(marker, 1)[1] if marker in child else Path(child)
+        require(child_path.resolve() == report,
+                "Completed report outer receipt belongs to another output")
+        require(Q(report_outer["outer_seconds"]) >= Q(report_execution["seconds"]) >= 0,
+                "Report outer clock does not enclose its saved reader")
+        require(adapted["status"] == "executed" and adapted["source_commit_F"] == F
+                and adapted["reporting_adapter_commit"] == ADAPTER and adapted["protocol_checks"]["matched_state_units"] == 16,
+                "Wrong final reporting protocol identity")
+        adapter_source = inputs.bind(REPO / adapted["adapter_path"])
+        require(digest(adapter_source) == adapted["adapter_sha256"] and
+                subprocess.check_output(["git", "show", ADAPTER + ":" + adapter_source.relative_to(REPO).as_posix()], cwd=REPO)
+                == adapter_source.read_bytes(), "Executed adapter source differs from its published identity")
+        require(summary["source_commit"] == F and summary["state_commit"] == D and summary["independent_state_units"] == 32,
+                "Report population/source identity differs")
+        output_manifest = inputs.read(report / "OUTPUT_MANIFEST122.json")
+        report_members = {r["path"]: r for r in output_manifest["files"]}
+        report_tables = ("PRICE_CONSTRAINTS122.jsonl.gz", "PRICE_MENUS122.jsonl", "ALL_THREE_CLOCK_INTERSECTIONS122.jsonl", "ACQUISITION_ALLOCATIONS122.jsonl")
+        for name in report_tables:
+            p = inputs.bind(report / name)
+            require(name in report_members and digest(p) == report_members[name]["sha256"]
+                    and p.stat().st_size == report_members[name]["bytes"], "Report table differs from its output manifest")
+        historical_path = ROOT.parent / "2026-10-20-r121/results121/report-attempt01/tables121/fit_and_acquisition121.jsonl"
+        require(frozen["scientific_files"][historical_path.relative_to(REPO).as_posix()] == digest(historical_path), "Acquisition is not the F-bound allocation")
+        history = unique(inputs.rows(historical_path), lambda r: tuple(r[f] for f in FIELDS[:-1]), "acquisition")
+        saved_acq = unique(inputs.rows(report / report_tables[3]), lambda r: tuple(r[f] for f in FIELDS[:-1]), "report acquisition")
+        require(set(history) == {k for k in catalog() if k[2] != "online"} and set(saved_acq) == set(catalog()), "Full acquisition census differs")
+        acquisition = {}
+        for actor in catalog():
+            amount = Q(0) if actor[2] == "online" else Q(history[actor]["complete_allocated_acquisition_seconds"])
+            require(amount >= 0 and Q(saved_acq[actor]["complete_allocated_acquisition_seconds"]) == amount, "Report altered inherited acquisition cost")
+            acquisition[actor] = amount
+            for s in SERVICES:
+                require(cohorts[actor + (s,)]["actor_sha256"] == (None if actor[2] == "online" else history[actor]["model_sha256"]), "Old clock model differs from charged actor")
+
+        candidates = [k for k in allkeys if k[2] == "relu"]
+        pairs = [(k, b) for k in candidates for b in allkeys if b[0] == k[0] and b[2] != "relu"]
+        require(len(pairs) == 1800 and len(candidates) == 24, "Full conventional comparison menu differs")
+        constraints = unique(inputs.rows(report / report_tables[0]),
+            lambda r: (r["scenario"], r["volume"], key(r["candidate"]), key(r["comparator"])), "report constraint")
+        require(set(constraints) == {(s, n, k, b) for s in ("primary32",) + CLOCKS for n in VOLUMES for k, b in pairs}, "Full 28,800-constraint report required")
+        means = {}
+        current_rebuilt = {}
+        for s in CLOCKS:
+            for n in VOLUMES:
+                for k, b in pairs:
+                    row = constraints[s, n, k, b]
+                    require(row["policy_means_conditional_on_first_16_saved_states"] is True
+                            and row["policy_means_conditional_on_32_saved_states"] is False
+                            and row["statistical_adoption_claim"] is False,
+                            "Timed economic comparison is not the fixed first16 subset")
+                    lo, hi = Q(row["sample_gain_lower"]), Q(row["sample_gain_upper"])
+                    require(-TAU <= lo <= hi <= TAU, "Timed economic interval violates the original support")
+                    if (k, b) in means:
+                        require(means[k, b] == (lo, hi), "Timed clocks or volumes change the fixed economic means")
+                    else:
+                        means[k, b] = lo, hi
+                    low = strict_price(lo, Q(row["extra_seconds_per_decision"]))
+                    high = strict_price(hi, Q(row["extra_seconds_per_decision"]))
+                    require(decode(row["sufficient_price_domain"]) == low
+                            and decode(row["upper_not_ruled_out_domain"]) == high,
+                            "Current strict price constraint differs from saved gain and cost")
+                    oldlo, oldhi = current_rebuilt.get((s, n, k), (whole(), whole()))
+                    current_rebuilt[s, n, k] = intersect(oldlo, low), intersect(oldhi, high)
+        current_menus = unique(inputs.rows(report / report_tables[1]),
+            lambda r: (r["scenario"], r["volume"], key(r)), "report menu")
+        require(set(current_menus) == {(s, n, k) for s in ("primary32",) + CLOCKS
+                for n in VOLUMES for k in candidates}, "All384 current report menus required")
+        for (s, n, k), (low, high) in current_rebuilt.items():
+            row = current_menus[s, n, k]
+            require(row["comparators"] == 75 and row["statistical_adoption_claim"] is False
+                    and decode(row["sufficient_price_domain"]) == low
+                    and decode(row["upper_not_ruled_out_domain"]) == high,
+                    "Current complete timing menu differs from all75 constraints")
+        current_three = unique(inputs.rows(report / report_tables[2]),
+            lambda r: (r["volume"], key(r)), "three-clock intersection")
+        require(set(current_three) == {(n, k) for n in VOLUMES for k in candidates},
+                "All96 current three-clock intersections required")
+        for (n, k), row in current_three.items():
+            low, high = whole(), whole()
+            for s in CLOCKS:
+                low = intersect(low, current_rebuilt[s, n, k][0])
+                high = intersect(high, current_rebuilt[s, n, k][1])
+            require(decode(row["sufficient_price_domain"]) == low and decode(row["upper_not_ruled_out_domain"]) == high
+                    and row["clock_scenarios"] == list(CLOCKS), "Published three-clock intersection differs")
+            require(subset(low, high), "Sufficient three-clock region exceeds its upper region")
+
+        cost_cells, volumes, costs = [], [], {}
+        for k in allkeys:
+            r = cohorts[k]
+            A, T, L = acquisition[k[:4]], Q(r["complete_cohort_seconds"]), Q(r["cold_load_seconds"])
+            cost_cells.append({**cell(k), "scenario": OLD_SCENARIO, "n": 16,
+                "acquisition_seconds": A, "complete_cohort_seconds": T, "cold_load_seconds": L,
+                "shared_process_residual_seconds": residual, "complete_old_outer_seconds": outer})
+            for n in VOLUMES:
+                total = A + residual + L + Q(n, 16) * (T - L)
+                costs[n, k] = total
+                volumes.append({**cell(k), "scenario": OLD_SCENARIO, "volume": n,
+                    "economic_state_units": 16, "original_population_units": 32,
+                    "total_allocated_seconds": total, "seconds_per_decision": total / n,
+                    "actual_observed_cohort_volume": 16, "unexecuted_reuse_scenario": True})
+        old_constraints, old_menus, rebuilt = [], [], {}
+        for n in VOLUMES:
+            for k, b in pairs:
+                lo, hi = means[k, b]
+                extra = (costs[n, k] - costs[n, b]) / n
+                low, high = strict_price(lo, extra), strict_price(hi, extra)
+                old_constraints.append({"candidate": cell(k), "comparator": cell(b), "scenario": OLD_SCENARIO,
+                    "volume": n, "sample_gain_lower": lo, "sample_gain_upper": hi,
+                    "extra_seconds_per_decision": extra, "sufficient_price_domain": low,
+                    "upper_not_ruled_out_domain": high, "economic_state_units": 16,
+                    "statistical_adoption_claim": False, "post_restart_descriptive_sensitivity": True})
+                oldlo, oldhi = rebuilt.get((n, k), (whole(), whole()))
+                rebuilt[n, k] = intersect(oldlo, low), intersect(oldhi, high)
+            for k in candidates:
+                low, high = rebuilt[n, k]
+                require(subset(low, high), "Sufficient old-clock domain exceeds upper domain")
+                old_menus.append({**cell(k), "scenario": OLD_SCENARIO, "volume": n, "comparators": 75,
+                    "sufficient_price_domain": low, "upper_not_ruled_out_domain": high,
+                    "statistical_adoption_claim": False, "standalone_earlier_clock_not_a_replacement": True})
+        four, restrictions = [], {"sufficient": 0, "upper_not_ruled_out": 0}
+        for n in VOLUMES:
+            for k in candidates:
+                row = current_three[n, k]
+                three_low, three_high = decode(row["sufficient_price_domain"]), decode(row["upper_not_ruled_out_domain"])
+                old_low, old_high = rebuilt[n, k]
+                low, high = intersect(three_low, old_low), intersect(three_high, old_high)
+                require(subset(low, three_low) and subset(high, three_high), "Sensitivity enlarged a current three-clock domain")
+                require(subset(low, old_low) and subset(high, old_high), "Fourth-clock constraint omitted")
+                for s in CLOCKS:
+                    require(subset(low, current_rebuilt[s, n, k][0]) and subset(high, current_rebuilt[s, n, k][1]),
+                            "Four-clock domain exceeds an individual current clock")
+                restrictions["sufficient"] += low != three_low
+                restrictions["upper_not_ruled_out"] += high != three_high
+                four.append({**cell(k), "volume": n, "clock_scenarios": list(CLOCKS) + [OLD_SCENARIO],
+                    "sufficient_price_domain": low, "upper_not_ruled_out_domain": high,
+                    "current_three_sufficient_price_domain": three_low,
+                    "current_three_upper_not_ruled_out_domain": three_high,
+                    "earlier_complete_clock_sufficient_price_domain": old_low,
+                    "earlier_complete_clock_upper_not_ruled_out_domain": old_high,
+                    "subset_of_current_three_and_each_complete_clock_verified": True,
+                    "original_population_units": 32, "economic_state_units": 16,
+                    "new_population_observations": 0, "statistical_adoption_claim": False})
+        require(len(old_constraints) == 7200 and len(old_menus) == len(four) == 96,
+                "Complete old/four-clock sensitivity census differs")
+        for name, values in (("OLD_COMPLETE_CLOCK_CELLS122", cost_cells), ("OLD_COMPLETE_CLOCK_VOLUMES122", volumes),
+                ("OLD_COMPLETE_CLOCK_PRICE_CONSTRAINTS122", old_constraints), ("OLD_COMPLETE_CLOCK_PRICE_MENUS122", old_menus),
+                ("ALL_FOUR_CLOCK_INTERSECTIONS122", four)):
+            table(out / (name + ".jsonl"), values)
+        inputs.unchanged()
+        write(out / "INPUTS_INTERRUPTED_CLOCK_SENSITIVITY122.json", {"files": sorted(inputs.files.values(), key=lambda r: r["path"]),
+            "scope": "Original saved receipts, complete old clock0, frozen acquisition and final protocol-adapted report; no partial clock1 economic scenario."})
+        counts = {
+            "old_clock_cohorts": 174, "old_clock_timed_decisions": 2784,
+            "old_clock_full_outer_seconds": outer, "old_clock_cohort_seconds": cohort_total,
+            "old_clock_shared_process_residual_seconds": residual,
+            "old_clock_volume_rows": len(volumes), "old_clock_price_constraints": 7200,
+            "old_clock_menu_rows": 96, "all_four_clock_menu_rows": 96,
+            "old_clock_nonempty_sufficient": sum(not r["sufficient_price_domain"]["empty"] for r in old_menus),
+            "old_clock_nonempty_upper_not_ruled_out": sum(not r["upper_not_ruled_out_domain"]["empty"] for r in old_menus),
+            "current_three_nonempty_sufficient": sum(not r["sufficient_price_domain"]["empty"] for r in current_three.values()),
+            "current_three_nonempty_upper_not_ruled_out": sum(not r["upper_not_ruled_out_domain"]["empty"] for r in current_three.values()),
+            "all_four_nonempty_sufficient": sum(not r["sufficient_price_domain"]["empty"] for r in four),
+            "all_four_nonempty_upper_not_ruled_out": sum(not r["upper_not_ruled_out_domain"]["empty"] for r in four),
+            "strictly_restricted_current_domains": restrictions,
+        }
+        write(out / "SUMMARY_INTERRUPTED_CLOCK_SENSITIVITY122.json", {"status": "computed_from_saved_evidence",
+            "source_commit_F": F, "state_commit_D": D, "reporting_adapter_commit": ADAPTER,
+            "restart_protocol_commit": RESTART, "reader_sha256": reader_sha, **counts,
+            "original_independent_population_units": 32, "fixed_economic_subset_units": 16,
+            "new_population_observations": 0, "new_training": 0, "new_economic_evaluations": 0, "new_service_timing_processes": 0,
+            "partial_old_clock1_used_as_complete_scenario": False, "unknown_interrupted_parent_clock_inferred": False,
+            "unknown_interrupted_parent_outer_seconds": None,
+            "current_three_clock_outputs_unchanged": True,
+            "every_four_clock_domain_subset_of_current_three_verified": True,
+            "clock_selection_or_retiming": False,
+            "scope": "Post-restart restrictive descriptive sensitivity required by the published restart. Earlier complete clock0 is additional evidence, never a favorable replacement. Full-study interruption cost and unknown parent time remain separate. No population/neural-exclusive adoption claim."})
+        write(out / "OUTPUT_MANIFEST_SENSITIVITY122.json", {"files": [
+            {"path": p.name, "bytes": p.stat().st_size, "sha256": digest(p)}
+            for p in sorted(out.iterdir()) if p.is_file()], "self_and_later_execution_receipt_excluded": True})
+        receipt = {"status": "executed", "exit_code": 0, "started_utc": started,
+            "finished_utc": datetime.now(timezone.utc).isoformat(), "seconds": time.perf_counter() - tick,
+            "reader_sha256": reader_sha, "source_commit_F": F, "state_commit_D": D,
+            "reporting_adapter_commit": ADAPTER, "frozen_files_checked": 243,
+            "clock_scope": "Actual reader after exclusive output-directory creation through final receipt preparation; argument parsing, interpreter/import startup and this receipt write excluded. External launcher records enclosing actual work. Not a new economic service clock.",
+            "original_economic_queries": 0, "new_population_observations": 0, "new_service_timing_processes": 0,
+            **counts}
+        write(out / "EXECUTION_SENSITIVITY122.json", receipt)
+        print(json.dumps(encode(receipt), indent=2, sort_keys=True))
+    except BaseException:
+        write(out / "FAILURE_SENSITIVITY122.json", {"status": "failed", "seconds": time.perf_counter() - tick,
+            "reader_sha256": reader_sha, "traceback": traceback.format_exc(), "partial_outputs_retained": True,
+            "reader_did_not_mutate_inputs": True, "original_economic_queries": 0})
+        raise
+
+
+if __name__ == "__main__":
+    main()

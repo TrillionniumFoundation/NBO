@@ -76,7 +76,7 @@ def main():
     save()
     try:
         primary = 'results122/primary-attempt02'
-        independent = 'results122/independent-attempt01'
+        independent = 'results122/independent-attempt02'
         original_stats = ROOT / 'results122/statistics-attempt01'
         original_report = ROOT / 'results122/report-attempt02'
         stats = output / 'statistics-replay01'

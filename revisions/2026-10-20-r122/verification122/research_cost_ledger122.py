@@ -68,7 +68,8 @@ def main():
             name=p.parent.name
             if obj.get('status') not in ('executed','failed') or 'exit_code' not in obj:
                 raise ValueError('Nonterminal launch presented as complete: '+str(p))
-            category='scientific_stage_outer' if any(s in name for s in ('states-','primary-','independent-','statistics-')) else 'reporting_stage_outer' if 'report-' in name else 'administrative_or_qa_outer'
+            stage_name=name.removeprefix('launch-').split('-attempt',1)[0]
+            category='scientific_stage_outer' if stage_name in ('states','primary','independent','statistics') else 'reporting_stage_outer' if stage_name=='report' else 'administrative_or_qa_outer'
             add(p,obj,category,[['outer_seconds']],obj.get('clock_scope','Saved external child spawn-to-exit clock'))
             if obj.get('child_output'):outer_roots.append(local_path(obj['child_output']).resolve())
         elif 'seconds' in obj:
@@ -102,10 +103,11 @@ def main():
                 if enclosed(p):excluded.append({'path':str(p.relative_to(REPO)),'reason':'Verifier inner clock enclosed by a counted outer launch'})
                 else:add(p,obj,'saved_evidence_verification',[['elapsed_seconds']],'Recorded read-only verifier inner elapsed clock; process startup and final receipt serialization excluded',True)
     review=ROOT/'provenance122/review'
-    for name in ('REPORTER_COMPLETE_SCHEMA_ORIGINAL_FAILURE122.json','REPORTER_COMPLETE_SCHEMA_ADAPTED_EXECUTION122.json','REPORTER_COMPLETE_SCHEMA_STATISTICS_EXECUTION122.json'):
+    counted_fixture_stages=('REPORTER_COMPLETE_SCHEMA_ORIGINAL_FAILURE122.json','REPORTER_COMPLETE_SCHEMA_ADAPTED_EXECUTION122.json','REPORTER_COMPLETE_SCHEMA_STATISTICS_EXECUTION122.json')
+    for name in counted_fixture_stages:
         p=review/name;obj=read(p)
         add(p,obj,'artificial_reporter_qa_inner',[['seconds']],'Recorded inner stage of the artificial complete-schema fixture; zero original economic calls, no enclosing fixture clock retained',True)
-    unclocked=set(review.glob('*_QA*.json')) | set(review.glob('REPORTER*RESULT122.json')) | set(review.glob('INFERENCE_PROOF122.json')) | set((review/'prefreeze-synthetic122').rglob('FAILURE122.json'))
+    unclocked=(set(review.glob('*.json')) - {review/name for name in counted_fixture_stages}) | set((review/'prefreeze-synthetic122').rglob('FAILURE122.json'))
     for p in sorted(unclocked):
         obj=read(p)
         if 'elapsed_seconds' in obj:add(p,obj,'source_or_artificial_qa_inner',[['elapsed_seconds']],'Saved source/artificial QA inner elapsed clock',True)
@@ -139,7 +141,8 @@ def main():
     # Additional native custody receipts must declare exactly which numerical
     # fields form nonoverlapping clocks. This accommodates partial publication
     # API readback records without fabricating coverage of all historical pushes.
-    for p in a.additional_receipts:
+    additional=set(p.resolve() for p in a.additional_receipts) | set((ROOT/'provenance122').glob('*PUBLICATION122.json'))
+    for p in sorted(additional):
         obj=read(p)
         for r in obj.get('cost_clock_components',[]):
             if r.get('overlaps_counted_parent',False):

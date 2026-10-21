@@ -1,0 +1,316 @@
+% Reconstructed author proof on 2026-10-21 after workspace loss.
+% This is newly written source, not a byte-identical recovery of the lost
+% 54d3814d603f95ce3f2b1ec3238cf1bb05bfa47fd35218ec0ed56fb368ebb3cc.
+% The frozen inference program and its prospective rules are unchanged.
+\section{Joint inference for the fixed original policies}
+\label{sec:inference122}
+
+This section gives the probability argument implemented by
+\texttt{code122/stats122.py}. It concerns costs of the original investment
+problem and the exact fixed catalogue. It does not provide a population
+adoption theorem for a neural representation. All statements condition on
+the information available before the new state acquisition, including the
+inherited actors, the frozen source, and its deterministic rules. They do
+not condition on the realized values of the subsequently acquired states.
+
+\paragraph{Population, numerical premises, and the economic random variables.}
+Let
+\[
+ {\cal X}_{40}=
+ \left\{0,2^{-40},\ldots,(2^{40}-1)2^{-40}\right\}^{2},
+ \qquad P_{40}=\operatorname{Unif}({\cal X}_{40}).
+\]
+Assume the prescribed entropy acquisition supplies independent uniform
+40-bit coordinates, independently of the pre-acquisition information.
+The sample is then \(X_1,\ldots,X_n\) independently distributed according
+to \(P_{40}\), with \(n=32\). Sampling is with replacement; no state is
+excluded or replaced because of its economic outcome. Both risk levels
+and all methods use these same state units. The original economic
+innovations remain continuously uniform on their declared interval.
+Discretization of the initial-state sampling law does not replace that
+continuous innovation law.
+
+For a fixed risk index and state \(x\), let \(V(x)\) denote the optimal
+value of the original problem and let \(J_m(x)\) be the original complete
+policy cost delivered by method \(m\), including its prescribed future
+policy. The statistical premises are that these policies are
+well-defined measurable state functions and, uniformly on
+\({\cal X}_{40}\),
+\begin{equation}
+ V(x)\le J_m(x)\le V(x)+\tau,\qquad \tau=2^{-8}.
+ \label{eq:inference-support122}
+\end{equation}
+Every policy uses the same original objective, information set, feasible
+decisions, and interpretation of its future-policy cost. In particular,
+agreement of first actions can be used as a cost identity only because
+the compared methods also use the same prescribed future policy.
+
+For each of the 58 actor/risk cells, denote its separately paid control
+by \(m0\), and its recycled and adaptive services by \(me\).
+The support-to-action safeguards prove, state by state,
+\begin{equation}
+ 0\le c_{me}(x)\le
+ G_{me}(x):=J_{m0}(x)-J_{me}(x)\le\tau.
+ \label{eq:inference-safe-gain122}
+\end{equation}
+Here \(c_{me}\) is the reported accumulated certified gain; on retention
+of the incumbent it is zero. The upper bound follows from
+\eqref{eq:inference-support122}, not from an actor fitting loss.
+For any two qualified methods \(m,b\) at the same risk index,
+\begin{equation}
+ H_{mb}(x):=J_b(x)-J_m(x)\in[-\tau,\tau].
+ \label{eq:inference-signed-support122}
+\end{equation}
+Consequently the support for signed comparisons has twice the width of
+the support for guaranteed own-control improvement.
+
+The independent evaluator supplies valid outward enclosures of the
+same original complete-policy costs and their paired differences.
+Writing its raw safe-gain interval as
+\([\underline g^{\,I}_{mj},\overline g^{\,I}_{mj}]\), the interval used by
+the frozen statistics program is
+\begin{equation}
+ \ell_{mj}=
+ \max\{0,c_m(X_j),\underline g^{\,I}_{mj}\},\qquad
+ u_{mj}=\min\{\tau,\overline g^{\,I}_{mj}\}.
+ \label{eq:inference-intersection122}
+\end{equation}
+Under the stated numerical premises,
+\(\ell_{mj}\le G_m(X_j)\le u_{mj}\). The raw independent interval and the
+proof-supported intersection are distinct objects and are both
+reported. Taking their intersection does not independently validate the
+proof-derived endpoint. A conflicting or missing enclosure is a failure
+to satisfy the numerical premises; it cannot be repaired by deleting a
+sample or by relabelling an unresolved independent comparison as a
+confirmation.
+
+For a signed comparison, subtract the independent policy enclosures in
+the cost-difference direction and intersect with \([-\tau,\tau]\).
+If the saved exact action identity and the common future-policy rule
+prove equality on a sampled state, its paired interval is \([0,0]\).
+This equality for finitely many sampled states does not make the
+population difference of two distinct methods identically zero.
+The frozen program uses the exact population interval \([0,0]\) only
+when the full method key equals the comparator key.
+
+\paragraph{Computational domain of the uniform premise.}
+The all-state premises here concern the dyadic initial-state support
+\({\cal X}_{40}\). The finite exact-rational service argument in
+Section~\ref{sec:proofs96}, together with the original feasible fallback
+and policy qualification, is a mathematical totalization on that
+domain. It is not an observed uniform wall-time or memory bound.
+Infrastructure failures and incomplete attempts remain recorded; no
+operational failure is silently converted to an extra accepted
+observation. A transfer from \(P_{40}\) to a continuously uniform
+initial-state population would require an independently justified
+modulus for the actual implemented policy cost, or a separate acquisition
+and rounding argument. Branching, acceptance, and stopping decisions can
+make the implemented policy discontinuous, so continuity of the original
+primitive alone does not supply this transfer. These qualifications do
+not change the continuous economic innovation distribution.
+
+\begin{lemma}[A bounded-mean inequality with interval observations]
+\label{lem:bounded-mean122}
+Let \(Y_1,\ldots,Y_n\) be independent copies of \(Y\in[a,b]\), \(a<b\),
+and put \(\mu=\mathbb E Y\). For \(r>0\),
+\[
+ \mathbb P\{|\overline Y-\mu|>r\}
+ \le 2\exp\{-2nr^2/(b-a)^2\}.
+\]
+If data-dependent outward endpoints obey
+\(\ell_j\le Y_j\le u_j\) for every sample, then, with at least the same
+coverage, \(\mu\) belongs to
+\[
+ [\,\max\{a,\overline\ell-r\},
+       \min\{b,\overline u+r\}\,].
+\]
+No independence of the endpoints from their own observations is needed.
+\end{lemma}
+
+\begin{proof}
+For any bounded random variable \(Z\) on \([a,b]\), under any probability
+law on that interval,
+\[
+ \operatorname{Var}(Z)
+ \le \mathbb E\bigl(Z-(a+b)/2\bigr)^2
+ \le (b-a)^2/4.
+\]
+For real \(t\), set
+\(\psi(t)=\log\mathbb E\exp(t(Y-\mu))\). Boundedness permits
+differentiation under the expectation. The second derivative is the
+variance of \(Y\) under the exponentially tilted probability law, hence
+\(0\le\psi''(t)\le(b-a)^2/4\). Since
+\(\psi(0)=\psi'(0)=0\), the integral remainder formula gives, also for
+negative \(t\),
+\[
+ \psi(t)=t^2\int_0^1(1-s)\psi''(st)\,ds
+ \le t^2(b-a)^2/8.
+\]
+Independence and Markov's inequality therefore imply, for \(\lambda>0\),
+\[
+ \mathbb P\{\overline Y-\mu\ge r\}
+ \le \exp\{-\lambda nr+n\lambda^2(b-a)^2/8\}.
+\]
+Choosing \(\lambda=4r/(b-a)^2\) gives the upper-tail bound; replacing
+\(Y\) by \(-Y\) gives the lower-tail bound. Their union gives the
+displayed two-sided inequality (and also controls strict failure).
+Finally \(\overline\ell\le\overline Y\le\overline u\). On the event
+\(|\overline Y-\mu|\le r\), the mean lies between
+\(\overline\ell-r\) and \(\overline u+r\); the known support justifies
+clipping to \([a,b]\).
+\end{proof}
+
+\begin{lemma}[Exact one-sided event inversion]
+\label{lem:binomial-inversion122}
+Let \(K\sim\operatorname{Bin}(n,p)\), fix \(0<\delta<1\), and define
+\(L_0=0\). For \(1\le k\le n\), let \(L_k\) be the unique root in
+\((0,1)\) of
+\[
+ B_k(v):=\sum_{j=k}^n {n\choose j}v^j(1-v)^{n-j}=\delta.
+\]
+Then \(\mathbb P_p\{L_K>p\}\le\delta\). Replacing every \(L_k\) by a
+smaller nonnegative number preserves the bound.
+\end{lemma}
+
+\begin{proof}
+For \(1\le k\le n\), \(B_k(0)=0\), \(B_k(1)=1\), and differentiation
+and cancellation give
+\[
+ B_k'(v)=n{n-1\choose k-1}v^{k-1}(1-v)^{n-k}>0
+ \quad(0<v<1).
+\]
+Thus the root exists and is unique. Since \(B_{k+1}(v)\le B_k(v)\),
+the sequence \(L_k\) is nondecreasing. For \(p\in(0,1)\), if there is
+any \(k\) with \(L_k>p\), let \(k_0\) be the smallest such index.
+Then \(\{L_K>p\}=\{K\ge k_0\}\), whose probability is
+\(B_{k_0}(p)<\delta\). If no such \(k\) exists the probability is zero.
+At \(p=0\), \(K=0\); at \(p=1\), no \(L_k\) exceeds \(p\).
+Decreasing the endpoints only decreases the failure event.
+\end{proof}
+
+\paragraph{Rational implementation of the event endpoints.}
+The frozen program uses \(\delta=1/23200\) and 48 bisections. For
+\(k\ge1\), initialize \(l=0,h=1\). At a rational midpoint \(v=c/d\),
+test the exact integer inequality
+\begin{equation}
+ 23200\sum_{j=k}^{32}{32\choose j}c^j(d-c)^{32-j}
+ \le d^{32}.
+ \label{eq:binomial-integer122}
+\end{equation}
+If it holds, replace \(l\) by \(v\); otherwise replace \(h\) by \(v\).
+The invariant \(B_k(l)\le\delta<B_k(h)\) holds initially and after every
+step. At completion \(h-l=2^{-48}\) and
+\(l\le L_k<h\). The reported endpoint is \(l\), an outward lower
+bound, rather than a floating-point approximation to the root. For
+\(k=0\) the reported lower endpoint is zero.
+
+For each safe-improvement method and each of the two fixed thresholds
+\(t\in\{2^{-24},2^{-20}\}\), set
+\[
+ I_{mj}(t)=\mathbf 1\{c_m(X_j)\ge t\},\qquad
+ K_m(t)=\sum_{j=1}^{32} I_{mj}(t),\qquad
+ p_m(t)=P_{40}\{c_m(X)\ge t\}.
+\]
+These are independent Bernoulli observations across state units,
+although the 232 event series may be mutually dependent.
+Equation~\eqref{eq:inference-safe-gain122} gives
+\[
+ \mathbb E_{40}G_m(X)\ge t\,p_m(t).
+\]
+Lemma~\ref{lem:binomial-inversion122} and the outward bisection
+therefore justify \(t\,l_{K_m(t)}\) as a one-sided lower bound for
+the original mean policy gain. An adaptive numerical refinement within
+one state does not create another Bernoulli observation.
+
+\begin{proposition}[Joint 95 percent conditional coverage]
+\label{prop:joint-inference122}
+Under the population and uniform numerical premises above, define
+\[
+ r_G=\frac{13\tau}{32},\qquad r_H=\frac{13\tau}{16}.
+\]
+For each of the 116 safe-improvement methods, use
+\begin{align}
+ \underline\mu_m
+ &=\max\left\{0,\overline\ell_m-r_G,
+                2^{-24}l_{K_m(2^{-24})},
+                2^{-20}l_{K_m(2^{-20})}\right\},\\
+ \overline\mu_m&=\min\{\tau,\overline u_m+r_G\}.
+ \label{eq:joint-safe-interval122}
+\end{align}
+For each of the 348 prespecified signed comparisons, with paired sample
+endpoints \(\ell^H_{mj},u^H_{mj}\), use
+\begin{equation}
+ [\,\max\{-\tau,\overline\ell^H_m-r_H\},
+       \min\{\tau,\overline u^H_m+r_H\}\,],
+ \label{eq:joint-signed-interval122}
+\end{equation}
+with \([0,0]\) for an exactly identical method key. With probability
+at least \(19/20\), simultaneously all 116 intervals in
+\eqref{eq:joint-safe-interval122}, all 232 event-probability lower
+bounds, and all 348 signed intervals cover their stated population
+quantities. The probability is conditional on the fixed
+pre-acquisition information and is over the 32 independent initial
+states, with no additional state units supplied by repeated clocks.
+\end{proposition}
+
+\begin{proof}
+The normalized exponents in Lemma~\ref{lem:bounded-mean122} agree:
+\[
+ 2(32)\left(\frac{r_G}{\tau}\right)^2
+ =2(32)\left(\frac{r_H}{2\tau}\right)^2
+ =\frac{169}{16}=:z.
+\]
+No numerical logarithm is needed to certify the family allocations.
+The positive Taylor terms give
+\[
+ e^z>\sum_{j=0}^{30}\frac{z^j}{j!}=:T_{30}.
+\]
+For an independently checkable rational witness, the integer floors of
+the first twelve terms, in increasing order of \(j\), are
+\[
+ 1,\ 10,\ 55,\ 196,\ 518,\ 1095,\ 1928,\ 2910,\
+ 3842,\ 4509,\ 4763,\ 4573.
+\]
+Their sum is \(24400>23200\). Hence \(T_{30}>23200\), with all
+comparisons obtainable by integer arithmetic. The union bound for the
+116 two-sided safe mean bounds is at most
+\[
+ 116\cdot2e^{-z}<232/T_{30}<1/100.
+\]
+For the 348 two-sided signed bounds it is at most
+\[
+ 348\cdot2e^{-z}<696/T_{30}<3/100.
+\]
+The event inversions have total failure probability at most
+\(232/23200=1/100\). The sum of these three family bounds is
+\(1/20\). No independence between methods, comparisons, or event
+thresholds is used.
+
+On the joint event, each safe mean exceeds both its bounded-mean lower
+endpoint and both of its threshold-derived lower endpoints, and is
+below its bounded-mean upper endpoint. Their intersection therefore
+retains coverage. The signed intervals follow directly from
+\eqref{eq:inference-signed-support122} and
+Lemma~\ref{lem:bounded-mean122}; an identical method has zero difference
+at every state. This proves the proposition.
+\end{proof}
+
+\paragraph{Meaning and limits of the statement.}
+The family covers fixed original-policy costs, with numerical endpoint
+uncertainty retained. It neither proves a stronger claim than the
+uniform qualification premises nor promotes empirical compatibility
+to independent confirmation. The inherited actors are conditioned on;
+no result here concerns their retraining on an unseen sample or their
+optimization error under a different Bellman objective.
+
+The complete-menu price domains use saved paired original-policy
+intervals and recorded resource costs. They are descriptive conditional
+scenarios, not additional confidence statements supplied by this
+proposition. In particular, the timed scenarios use the fixed first
+16 states for their economic means, whereas the simultaneous inference
+above uses all 32 states. The three clocks, any restrictive additional
+complete-clock sensitivity, reuse-volume scenarios, and repeated
+administrative or statistical readers add zero independent population
+observations. An own-incumbent improvement also does not identify a
+neural-specific advantage over a traditional representation with the
+same information, features, feasible policies, and resources.
