@@ -81,8 +81,16 @@ def main():
         independent_path = (ROOT / independent).resolve()
         if not independent_path.is_relative_to(ROOT / 'results122'):
             raise ValueError('Published independent stage must be inside results122')
-        original_stats = ROOT / 'results122/statistics-attempt01'
-        original_report = ROOT / 'results122/report-attempt02'
+        def saved_stage(key, default):
+            value = publication.get(key, default)
+            if not isinstance(value, str) or Path(value).is_absolute():
+                raise ValueError('Saved stage path must be revision-relative: ' + key)
+            path = (ROOT / value).resolve()
+            if not path.is_relative_to(ROOT / 'results122') or not path.is_dir():
+                raise ValueError('Saved stage path escapes results122 or is missing: ' + key)
+            return path
+        original_stats = saved_stage('stats_directory', 'results122/statistics-attempt01')
+        original_report = saved_stage('report_directory', 'results122/report-attempt02')
         stats = output / 'statistics-replay01'
         report = output / 'report-replay01'
         run([sys.executable, 'code122/launch122.py', '--receipt', str(output / 'launch-statistics-replay01'), '--',

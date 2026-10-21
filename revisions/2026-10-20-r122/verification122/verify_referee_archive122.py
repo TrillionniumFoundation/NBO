@@ -55,6 +55,18 @@ INDEPENDENT_SOURCE_PATHS = (
     "revisions/2026-10-20-r122/verification122/independent_schema_adapter122.py",
     "revisions/2026-10-20-r122/verification122/test_independent_schema_adapter122.py",
 )
+RESUME = "0fe0f2bbf76529201a1890db0fc2a94b0be44418"
+RESUME_TREE = "e9325eb847d018e444b3c04cf2056740fd0a1989"
+RESUME_PREFIX = "revisions/2026-10-20-r122/"
+RESUME_PUBLICATION = RESUME_PREFIX + "provenance122/RESUME_INDEPENDENT_PUBLICATION122.json"
+RESUME_PUBLICATION_SHA256 = "95cbeb89293df0202aed02a927b05e5a373f86d5f0d242e8fc87619b2006a03b"
+RESUME_SOURCE_ROWS = [
+    {"path": RESUME_PREFIX + "provenance122/RESUME_INDEPENDENT_PROTOCOL122.md", "bytes": 9503, "sha256": "1c288e36a240e1389955baf9b7eece506b49bc687ab3ae6e35e11fe272971e4c", "git_blob": "2375f5e4d0d454c490d47624fc3441fe5558f116"},
+    {"path": RESUME_PREFIX + "verification122/resume_independent122.py", "bytes": 21573, "sha256": "32b7582c4f459851407bde3df24ae82a6c87f5ceaff34d606bba282b48b0d3a4", "git_blob": "5371ebc0768be62b3f5875cdd1b35dfaf7f0c110"},
+    {"path": RESUME_PREFIX + "verification122/test_resume_independent122.py", "bytes": 8376, "sha256": "157c01d46dcbced69e71347b6330427c1383cffc96b52e66b5302e6e03489a03", "git_blob": "0df1e0dac336ee06d654122f313613f61e6208de"},
+    {"path": RESUME_PREFIX + "verification122/validate_cached_witness122.py", "bytes": 9643, "sha256": "ff4eade48c8f04f737a4c44847d0f801a267a2a7f4bb330b8defe070dc05585f", "git_blob": "f90e9e99a056a5607a3abf6c3e3fa5e5b1ae80a4"},
+]
+
 PART_BYTES = 8 * 1024 * 1024
 BLOCK_BYTES = 1024 * 1024
 STAMP = (1980, 1, 1, 0, 0, 0)
@@ -121,6 +133,9 @@ def identities(value):
     check(value.get("independent_adapter_commit") == INDEPENDENT
           and value.get("independent_adapter_git_membership_verified") is True,
           "Independent repair I122 identity or Git-membership attestation differs")
+    check(value.get("resume_adapter_commit") == RESUME and value.get("resume_adapter_tree") == RESUME_TREE
+          and value.get("resume_adapter_git_membership_verified") is True,
+          "R122 continuation source identity or membership attestation differs")
     check(value.get("independent_initial_state_units") == 32, "Packaging cannot change the original scientific n")
     for name in ("new_population_observations", "new_training", "new_economic_evaluations", "new_service_timing_processes"):
         check(value.get(name) == 0, "Publication package must not claim new science: " + name)
@@ -165,6 +180,36 @@ def independent_publication_binding(value, members, zipped):
         "independent_adapter_commit", "independent_adapter_tree",
         "independent_adapter_publication", "independent_adapter_source_files",
         "independent_adapter_git_membership_verified")}
+
+
+def resume_publication_binding(value, members, zipped):
+    """Verify R122 against independently pinned receipt and source Git identities."""
+    publication_record = value.get("resume_adapter_publication")
+    checked = record_map([publication_record], "resume publication")
+    check(set(checked) == {RESUME_PUBLICATION} and members.get(RESUME_PUBLICATION) == publication_record
+          and publication_record["sha256"] == RESUME_PUBLICATION_SHA256,
+          "R122 receipt is not the exact independently observed native member")
+    data = zipped.read(RESUME_PUBLICATION)
+    check(hashlib.sha256(data).hexdigest() == RESUME_PUBLICATION_SHA256, "Archived R122 receipt changed")
+    publication = json.loads(data)
+    check(publication.get("status") == "executed" and publication.get("source_commit_F") == SOURCE_F
+          and publication.get("commit") == publication.get("resume_adapter_commit") == RESUME
+          and publication.get("tree") == publication.get("resume_adapter_tree") == RESUME_TREE,
+          "Archived R122 receipt commit/tree differs")
+    rows = value.get("resume_adapter_source_files")
+    check(rows == RESUME_SOURCE_ROWS, "R122 source records differ from independent pins")
+    normalized = sorted([dict(row, path=RESUME_PREFIX + row["path"]) for row in publication["source_files"]], key=lambda row: row["path"])
+    check(normalized == rows, "Archived R122 receipt source census differs")
+    for row in rows:
+        native_record = {key: row[key] for key in ("path", "bytes", "sha256")}
+        record_map([native_record], "continuation source")
+        check(members.get(row["path"]) == native_record, "R122 continuation source omitted or altered")
+        data = zipped.read(row["path"])
+        blob = hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+        check(len(data) == row["bytes"] and hashlib.sha256(data).hexdigest() == row["sha256"]
+              and blob == row["git_blob"], "Archived R122 source bytes/Git blob differ")
+    return {name: value[name] for name in ("resume_adapter_commit", "resume_adapter_tree",
+            "resume_adapter_publication", "resume_adapter_source_files", "resume_adapter_git_membership_verified")}
 
 
 def main():
@@ -269,6 +314,9 @@ def main():
             manifest_binding = independent_publication_binding(manifest, members, zipped)
             check(manifest_binding == transport_binding,
                   "Manifest and transport differ on the actual independent repair binding")
+            check(resume_publication_binding(manifest, members, zipped)
+                  == resume_publication_binding(transport, members, zipped),
+                  "Manifest and transport differ on actual R122 continuation binding")
 
     receipt = {"status": "verified", "scope": "Independent publication transport and native-byte verification; no scientific execution or archive extraction into the repository.",
         "source_commit_F": SOURCE_F, "state_commit_D": STATE_D,
@@ -278,6 +326,10 @@ def main():
         "independent_adapter_published_source_identities_pinned": True,
         "independent_adapter_publication_sha256": transport["independent_adapter_publication"]["sha256"],
         "independent_adapter_sources_checked": len(INDEPENDENT_SOURCE_PATHS),
+        "resume_adapter_commit": RESUME, "resume_adapter_tree": RESUME_TREE,
+        "resume_adapter_publication_sha256": RESUME_PUBLICATION_SHA256,
+        "resume_adapter_sources_checked": len(RESUME_SOURCE_ROWS),
+        "resume_adapter_published_source_identities_pinned": True,
         "transport_sha256": hashlib.sha256(raw).hexdigest(),
         "archive_sha256": transport["archive_sha256"], "archive_bytes": transport["archive_bytes"],
         "manifest_path": manifest_name, "manifest_sha256": transport["manifest_sha256"],

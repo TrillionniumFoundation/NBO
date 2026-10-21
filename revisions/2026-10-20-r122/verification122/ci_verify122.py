@@ -137,6 +137,14 @@ def main():
             '--transport-registry', str(local(publication['transport_registry'])),
             '--pdf-manifest', str(local(publication['source_pdf_manifest'])),
             '--output', 'ci122/delivered-package-verification']
+        for key, flag in (('stats_directory', '--stats'),
+                          ('report_directory', '--report'),
+                          ('original_report_directory', '--original-report')):
+            if publication.get(key):
+                stage_path = local(publication[key])
+                if not stage_path.is_relative_to(ROOT / 'results122'):
+                    raise ValueError('Published scientific stage must be inside results122: ' + key)
+                verifier.extend([flag, str(stage_path)])
         if publication.get('package_manifest'):
             verifier.extend(['--package-manifest', str(local(publication['package_manifest']))])
         # Verify the delivered PDF bytes before compiling fresh CI PDFs.

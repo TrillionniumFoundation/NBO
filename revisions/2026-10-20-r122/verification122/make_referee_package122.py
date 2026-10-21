@@ -4,7 +4,8 @@
 directory expansion or implicit historical selection is performed.  The only
 automatically added archive member is the newly written native-file manifest.
 The explicit inputs must include the actual I122 publication receipt and its
-three repair sources; their bytes are checked against Git I122 before packaging.
+three repair sources and the actual R122 receipt/four continuation sources;
+all native source bytes are checked against their immutable Git commits.
 The manifest, archive and parts directory must all be new.  Failure preserves
 partial outputs; retry with distinct publication-attempt paths.
 
@@ -39,6 +40,18 @@ INDEPENDENT_SOURCE_PATHS = (
     "revisions/2026-10-20-r122/verification122/independent_schema_adapter122.py",
     "revisions/2026-10-20-r122/verification122/test_independent_schema_adapter122.py",
 )
+RESUME = "0fe0f2bbf76529201a1890db0fc2a94b0be44418"
+RESUME_TREE = "e9325eb847d018e444b3c04cf2056740fd0a1989"
+RESUME_PREFIX = "revisions/2026-10-20-r122/"
+RESUME_PUBLICATION = RESUME_PREFIX + "provenance122/RESUME_INDEPENDENT_PUBLICATION122.json"
+RESUME_PUBLICATION_SHA256 = "95cbeb89293df0202aed02a927b05e5a373f86d5f0d242e8fc87619b2006a03b"
+RESUME_SOURCE_ROWS = [
+    {"path": RESUME_PREFIX + "provenance122/RESUME_INDEPENDENT_PROTOCOL122.md", "bytes": 9503, "sha256": "1c288e36a240e1389955baf9b7eece506b49bc687ab3ae6e35e11fe272971e4c", "git_blob": "2375f5e4d0d454c490d47624fc3441fe5558f116"},
+    {"path": RESUME_PREFIX + "verification122/resume_independent122.py", "bytes": 21573, "sha256": "32b7582c4f459851407bde3df24ae82a6c87f5ceaff34d606bba282b48b0d3a4", "git_blob": "5371ebc0768be62b3f5875cdd1b35dfaf7f0c110"},
+    {"path": RESUME_PREFIX + "verification122/test_resume_independent122.py", "bytes": 8376, "sha256": "157c01d46dcbced69e71347b6330427c1383cffc96b52e66b5302e6e03489a03", "git_blob": "0df1e0dac336ee06d654122f313613f61e6208de"},
+    {"path": RESUME_PREFIX + "verification122/validate_cached_witness122.py", "bytes": 9643, "sha256": "ff4eade48c8f04f737a4c44847d0f801a267a2a7f4bb330b8defe070dc05585f", "git_blob": "f90e9e99a056a5607a3abf6c3e3fa5e5b1ae80a4"},
+]
+
 PART_BYTES = 8 * 1024 * 1024
 BLOCK_BYTES = 1024 * 1024
 STAMP = (1980, 1, 1, 0, 0, 0)
@@ -147,6 +160,37 @@ def independent_publication_binding(native):
     }
 
 
+def resume_publication_binding(native):
+    """Bind the actual R122 continuation receipt and four source bytes to Git R."""
+    by_path = {row["path"]: row for row in native}
+    required = {RESUME_PUBLICATION, *(row["path"] for row in RESUME_SOURCE_ROWS)}
+    require(required <= set(by_path), "Explicit package omits actual R122 receipt or continuation source")
+    publication_bytes = ordinary_file(REPOSITORY, RESUME_PUBLICATION).read_bytes()
+    require(hashlib.sha256(publication_bytes).hexdigest() == RESUME_PUBLICATION_SHA256,
+            "R122 continuation publication receipt differs from observed immutable receipt")
+    publication = json.loads(publication_bytes)
+    tree = subprocess.check_output(["git", "rev-parse", RESUME + "^{tree}"], cwd=REPOSITORY, text=True).strip()
+    require(publication.get("status") == "executed" and publication.get("source_commit_F") == SOURCE_F
+            and publication.get("commit") == publication.get("resume_adapter_commit") == RESUME
+            and publication.get("tree") == publication.get("resume_adapter_tree") == tree == RESUME_TREE,
+            "Actual R122 continuation publication commit/tree differs")
+    normalized = sorted([dict(row, path=RESUME_PREFIX + row["path"]) for row in publication["source_files"]], key=lambda row: row["path"])
+    require(normalized == RESUME_SOURCE_ROWS, "R122 continuation receipt source census differs")
+    for row in RESUME_SOURCE_ROWS:
+        native_row = {key: row[key] for key in ("path", "bytes", "sha256")}
+        require(by_path[row["path"]] == native_row, "R122 continuation source differs from explicit native list")
+        data = ordinary_file(REPOSITORY, row["path"]).read_bytes()
+        published = subprocess.check_output(["git", "show", RESUME + ":" + row["path"]], cwd=REPOSITORY)
+        blob = hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest()
+        require(data == published and len(data) == row["bytes"]
+                and hashlib.sha256(data).hexdigest() == row["sha256"] and blob == row["git_blob"],
+                "R122 native continuation source is not its actual published Git blob")
+    return {"resume_adapter_commit": RESUME, "resume_adapter_tree": tree,
+            "resume_adapter_publication": dict(by_path[RESUME_PUBLICATION]),
+            "resume_adapter_source_files": RESUME_SOURCE_ROWS,
+            "resume_adapter_git_membership_verified": True}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--paths", type=Path, required=True)
@@ -189,6 +233,7 @@ def main():
         require(size == p.stat().st_size, "Input size changed while hashing: " + name)
         native.append({"path": name, "bytes": size, "sha256": sha})
     independent_binding = independent_publication_binding(native)
+    independent_binding.update(resume_publication_binding(native))
     manifest_value = {
         "schema": "nbo.r122.referee-package.native.v1",
         "path_root": "repository", "self_excluded": True,
