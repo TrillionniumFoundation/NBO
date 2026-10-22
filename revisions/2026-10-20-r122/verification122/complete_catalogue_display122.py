@@ -13,6 +13,7 @@ def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('--figures',type=Path,required=True);ap.add_argument('--output',type=Path,required=True);a=ap.parse_args()
     start=time.perf_counter();src=a.figures.resolve();out=a.output.resolve()
+    source_receipt_sha=sha(src/'FIGURES_RECEIPT122.json')
     rec=json.loads((src/'FIGURES_RECEIPT122.json').read_text())
     assert rec['all_intervention_contrasts']==116 and rec['all_timing_contrast_points']==348
     bound={}
@@ -83,6 +84,9 @@ def main():
     (out/'PLOTTED_COMPLETE_DATA122.json').write_bytes((src/'PLOTTED_COMPLETE_DATA122.json').read_bytes())
     assert sha(out/'PLOTTED_COMPLETE_DATA122.json')==bound['PLOTTED_COMPLETE_DATA122.json']['sha256']
     (out/'DISPLAY_PAGES122.json').write_text(json.dumps(pages_map,indent=2)+'\n')
+    for name,b in bound.items():
+        p=src/name;assert p.stat().st_size==b['bytes'] and sha(p)==b['sha256']
+    assert sha(src/'FIGURES_RECEIPT122.json')==source_receipt_sha
     receipt={'kind':'Complete same-data, same-scale eight-page author display','created_utc':datetime.now(timezone.utc).isoformat(),'source_figure_directory':str(src),'source_figure_receipt_sha256':sha(src/'FIGURES_RECEIPT122.json'),'source_data_sha256':bound['PLOTTED_COMPLETE_DATA122.json']['sha256'],'source_layout_sha256':bound['PANELS_LAYOUT122.json']['sha256'],'builder_sha256':sha(__file__),'all_contrasts':116,'all_original_timing_points':348,'fixed_split':[[0,14],[14,29]],'pages':8,'original_economic_queries':0,'new_population_observations':0,'new_service_clocks':0,'seconds':time.perf_counter()-start,'matplotlib_version':matplotlib.__version__,'cost_clock_components':[{'category':'reporting','clock_fields':[['seconds']],'scope':'Actual read-validation and eight-page rendering; no earlier figure stage, scientific execution, or semantic review is included.','partial_lower_bound_only':False,'overlaps_counted_parent':False}],'output_files':[{'path':p.name,'bytes':p.stat().st_size,'sha256':sha(p)} for p in sorted(out.iterdir()) if p.is_file()]}
     (out/'DISPLAY_RECEIPT122.json').write_text(json.dumps(receipt,indent=2)+'\n')
     print(json.dumps({'receipt':str(out/'DISPLAY_RECEIPT122.json'),'sha256':sha(out/'DISPLAY_RECEIPT122.json'),'pages':8,'contrasts':116,'seconds':receipt['seconds']}))

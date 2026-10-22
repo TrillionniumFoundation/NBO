@@ -71,8 +71,13 @@ def main():
     for receipt in (stage, outer):
         require(receipt.get("status") == "executed" and receipt.get("exit_code") == 0,
                 "A complete actually executed adapted report is required")
-    require(Path(outer["child_output"]).resolve() == source,
-            "Outer receipt belongs to a different report directory")
+    # The immutable outer receipt retains its original runner path. Authenticate
+    # the full revision-relative suffix; never rewrite the historical receipt.
+    revision = Path(__file__).resolve().parents[1]
+    relative_source = source.relative_to(revision)
+    identity_tail = ("revisions", revision.name) + relative_source.parts
+    require(tuple(Path(outer["child_output"]).parts[-len(identity_tail):]) == identity_tail,
+            "Outer receipt belongs to a different revision-relative report directory")
     verified = load("VERIFIED_SOURCE122.json")
     require(verified.get("source_commit") == F_COMMIT and verified.get("files") == 243,
             "Wrong frozen scientific source identity")
@@ -229,6 +234,10 @@ def main():
 
     (output / "PLOTTED_COMPLETE_DATA122.json").write_text(json.dumps(plotted, indent=2) + "\n")
     (output / "PANELS_LAYOUT122.json").write_text(json.dumps(layouts, indent=2) + "\n")
+    for name, expected_hash in bound_inputs.items():
+        p = source / name
+        require(p.stat().st_size == expected_hash["bytes"] and sha(p) == expected_hash["sha256"],
+                "Bound report input changed during rendering: " + name)
     receipt = {"kind": "complete saved-evidence publication figures",
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "source_freeze_commit": F_COMMIT, "source_report": str(source),
@@ -241,6 +250,10 @@ def main():
         "scope": "Separate descriptive mean-gain and paired-work panels; no new price-domain or population computation.",
         "seconds": time.perf_counter() - tick,
         "matplotlib_version": matplotlib.__version__,
+        "relocation_check": "Full original revision-relative path and report table hashes; historical runner receipts preserved",
+        "cost_clock_components": [{"category": "reporting", "clock_fields": [["seconds"]],
+            "scope": "This four-page read-only figure rendering only; no scientific work or earlier reporting is recharged.",
+            "partial_lower_bound_only": False, "overlaps_counted_parent": False}],
         "output_files": [{"path": p.name, "bytes": p.stat().st_size, "sha256": sha(p)}
                          for p in sorted(output.iterdir()) if p.is_file()]}
     (output / "FIGURES_RECEIPT122.json").write_text(json.dumps(receipt, indent=2) + "\n")
