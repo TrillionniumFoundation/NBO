@@ -1,0 +1,45 @@
+name: NBO R122 completed recovery artifact custody
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r122-action-information-2026-10-20
+    paths:
+      - revisions/2026-10-20-r122/ARTIFACT_CUSTODY_TRIGGER122.json
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: nbo-r122-completed-artifact-custody
+  cancel-in-progress: false
+jobs:
+  custody:
+    if: github.repository == 'TrillionniumFoundation/NBO' && github.ref == 'refs/heads/revision/econometrica-nbo-r122-action-information-2026-10-20'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 64
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-20-r122/verification122/extract_recovery_artifact122.py
+            /revisions/2026-10-20-r122/provenance122/ARTIFACT_CUSTODY_PROTOCOL122.md
+            /revisions/2026-10-20-r122/ARTIFACT_CUSTODY_TRIGGER122.json
+            /.github/workflows/nbo-r122-artifact-custody.yml
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Authenticate existing artifact and preserve complete final admin snapshot
+        working-directory: revisions/2026-10-20-r122
+        run: python verification122/extract_recovery_artifact122.py
+      - name: Preserve actual terminal custody receipts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nbo-r122-terminal-custody-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 90
+          if-no-files-found: error
+          path: revisions/2026-10-20-r122/provenance122/artifact-custody-*/
