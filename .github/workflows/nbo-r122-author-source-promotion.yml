@@ -1,0 +1,36 @@
+name: NBO R122 exact author source promotion
+on:
+  push:
+    branches: [revision/econometrica-nbo-r122-action-information-2026-10-20]
+    paths: [revisions/2026-10-20-r122/AUTHOR_SOURCE_PROMOTION_TRIGGER122.json]
+permissions:
+  contents: write
+jobs:
+  promote:
+    if: github.repository == 'TrillionniumFoundation/NBO'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out the exact triggering source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            revisions/2026-10-20-r122
+            .github/workflows
+      - name: Use the declared Python runtime
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Authenticate, reconstruct, and publish exact ordinary author sources
+        run: python revisions/2026-10-20-r122/verification122/promote_author_source122.py
+      - name: Preserve actual promotion status and closed administrative receipts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nbo-r122-author-source-promotion-${{ github.run_id }}-${{ github.run_attempt }}
+          path: revisions/2026-10-20-r122/provenance122/author-source-promotion-${{ github.run_id }}-${{ github.run_attempt }}/
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 90
