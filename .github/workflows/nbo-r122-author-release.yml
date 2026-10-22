@@ -1,0 +1,81 @@
+name: NBO R122 actual author publication
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r122-action-information-2026-10-20
+    paths:
+      - revisions/2026-10-20-r122/AUTHOR_RELEASE_TRIGGER122.json
+permissions:
+  contents: write
+concurrency:
+  group: nbo-r122-author-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'TrillionniumFoundation/NBO' && github.ref == 'refs/heads/revision/econometrica-nbo-r122-action-information-2026-10-20'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 256
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-20-r122/
+            /.github/workflows/
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Install pinned readers and actual document rendering dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
+          python -m pip install numpy==2.3.5 scipy==1.17.0 matplotlib==3.10.8 PyMuPDF==1.26.6 Pillow==12.3.0
+      - name: Verify saved science, build actual PDFs, inspect all eight catalogue pages and publish package
+        id: release
+        working-directory: revisions/2026-10-20-r122
+        run: python verification122/release_author_package122.py
+      - name: Preserve actual source, build, verification and publication status
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nbo-r122-author-release-status-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            revisions/2026-10-20-r122/provenance122/author-release-*/
+            revisions/2026-10-20-r122/build_receipts122_release/
+            revisions/2026-10-20-r122/referee_ready122/author-release-*/cost-ledger/
+            revisions/2026-10-20-r122/referee_ready122/author-release-*/SOURCE_PDF_MANIFEST122.json
+            revisions/2026-10-20-r122/referee_ready122/author-release-*/NATIVE_MANIFEST122.json
+            revisions/2026-10-20-r122/referee_ready122/author-release-*/parts/PACKAGE_TRANSPORT122.json
+            revisions/2026-10-20-r122/PUBLICATION_INPUTS122.json
+      - name: Deliver the four actual publication PDFs and their source manifest
+        if: ${{ always() && steps.release.outcome == 'success' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nbo-r122-author-publication-pdfs-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            revisions/2026-10-20-r122/build/ECTA.pdf
+            revisions/2026-10-20-r122/build/supp.pdf
+            revisions/2026-10-20-r122/build/appendix.pdf
+            revisions/2026-10-20-r122/build/RESPONSE_TO_REFEREE.pdf
+            revisions/2026-10-20-r122/referee_ready122/author-release-${{ github.run_id }}-${{ github.run_attempt }}/SOURCE_PDF_MANIFEST122.json
+      - name: Deliver the complete offline verified referee ZIP
+        if: ${{ always() && steps.release.outcome == 'success' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nbo-r122-referee-package-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 90
+          if-no-files-found: error
+          compression-level: 0
+          path: ${{ runner.temp }}/author-release-${{ github.run_id }}-${{ github.run_attempt }}.zip
