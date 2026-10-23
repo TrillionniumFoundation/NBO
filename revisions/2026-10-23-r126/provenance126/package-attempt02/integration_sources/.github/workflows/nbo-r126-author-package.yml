@@ -1,0 +1,84 @@
+name: NBO R126 author package
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r126-certified-decision-stopping-2026-10-23
+    paths:
+      - revisions/2026-10-23-r126/CI_TRIGGER126.json
+      - .github/workflows/nbo-r126-author-package.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-author-package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+    steps:
+      - name: Read the isolated R126 author revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-23-r126/
+            /.github/workflows/nbo-r126-author-package.yml
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Install pinned numerical readers and native document tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
+          python -m pip install -r revisions/2026-10-23-r126/requirements126.txt
+      - name: Verify delivered source, evidence and PDF identities
+        working-directory: revisions/2026-10-23-r126
+        run: python verification126/verify_package126.py --require-archive --output ci126/package
+      - name: Verify the offline immutable source witness and unchanged fitting gate
+        working-directory: revisions/2026-10-23-r126
+        run: |
+          mkdir -p ci126/offline
+          python offline_git126/bootstrap126.py > ci126/offline/bootstrap.json
+          python - <<'PYCODE'
+          import json
+          from pathlib import Path
+          from code126.independent_fit126 import source_gate
+          result = source_gate('769e3eb3ac08beaa7bb6778c1676f15e1f8d6d2b')
+          Path('ci126/offline/frozen_gate.json').write_text(json.dumps(result, indent=2) + '\n')
+          print('Verified frozen Git file identities:', len(result['verified_files']))
+          PYCODE
+      - name: Recheck exact mathematical fixtures
+        working-directory: revisions/2026-10-23-r126
+        run: |
+          python code126/independent_support126.py --fixtures --output ci126/support-fixtures.json
+      - name: Replay saved decision certificates and all timed scientific identities
+        working-directory: revisions/2026-10-23-r126
+        run: python code126/verify126.py --primary results126/primary01 --timing results126/timing0 --timing results126/timing1 --timing results126/timing2 --output ci126/decision-replay
+      - name: Independently verify every finite support certificate
+        working-directory: revisions/2026-10-23-r126
+        run: python verification126/audit_support126.py --primary results126/primary01 --support results126/support01 --output ci126/support-replay
+      - name: Replay all paired cached-algorithm scientific identities
+        working-directory: revisions/2026-10-23-r126
+        run: python code126c/verify126c.py --primary results126c/primary01 --timing results126c/timing0 --timing results126c/timing1 --timing results126c/timing2 --output ci126/cache-replay
+      - name: Build all four native author documents
+        working-directory: revisions/2026-10-23-r126
+        run: python build126.py --receipt-dir ci126/native-build --passes 4
+      - name: Preserve actual receipts and PDFs including failed attempts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nbo-r126-author-package-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 90
+          path: |
+            revisions/2026-10-23-r126/ci126/
+            revisions/2026-10-23-r126/build/ECTA.pdf
+            revisions/2026-10-23-r126/build/supp.pdf
+            revisions/2026-10-23-r126/build/appendix.pdf
+            revisions/2026-10-23-r126/build/RESPONSE_TO_REFEREE.pdf

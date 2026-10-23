@@ -1,0 +1,399 @@
+\section{Proofs for the complete paid-support calculation}
+\label{supp:memory123}
+
+\subsection{Derivative transport, integration and the optimal upper-model proposal}
+
+\begin{proof}[Proof of Theorem~\ref{thm:memorycontrast123}]
+For $s<t$, differentiable strong convexity implies
+$q'(t)-q'(s)\ge\mu(t-s)$: apply its first-order inequality in both
+directions and add. Derivative Lipschitzness gives
+$q'(t)-q'(s)\le L(t-s)$. At an anchor $a_i$, transporting the
+lower endpoint to the right therefore uses $\mu$, whereas transporting
+it to the left uses $L$. The upper endpoint uses $L$ to the right
+and $\mu$ to the left. This gives
+$\lambda_i(t)\le q'(t)\le\upsilon_i(t)$ and hence the first
+inequality in \eqref{eq:memoryvalid123}. Integrating it over the
+oriented interval from $a$ to $b$ proves its second inequality,
+including the reversal for a negative displacement.
+
+For $b\ge a$, pointwise
+$\upsilon\le\upsilon_i$ and $\lambda\ge\lambda_i$ give
+$C^+\le C_i^+$ and $C^-\ge C_i^-$. For $b<a$, the integrals
+acquire a minus sign and the two envelope roles exchange; the same
+two conclusions follow. Taking the extrema over all $i$ proves
+\eqref{eq:memorydominance123}. Adding a sound anchor increases
+$\lambda$ and decreases $\upsilon$ pointwise, which proves
+monotonicity of the contrast bounds. It is not necessary to assume
+that the new anchor was an accepted policy.
+
+Every function $\lambda_i$ and $\upsilon_i$ is continuous. For
+$s<t$ its increment lies in $[\mu(t-s),L(t-s)]$, also when its
+kink lies between $s$ and $t$. Maxima and minima preserve these
+increment inequalities. For example, an index maximizing
+$\lambda_i(s)$ gives the lower increment inequality for
+$\lambda$, while an index maximizing $\lambda_i(t)$ gives its
+upper inequality. For a minimum choose the minimizing index at
+$t$ for the lower inequality and at $s$ for the upper inequality.
+Thus both global envelopes are continuous, strictly increasing,
+and $L$-Lipschitz.
+
+For $b<a$, the derivative of $C^+(a,b)$ in $b$ is
+$\lambda(b)$; for $b>a$ it is $\upsilon(b)$. The one-sided
+derivatives at $a$ are $\lambda(a)$ and $\upsilon(a)$, in that
+order, and are ordered because they enclose $q'(a)$. On each
+side subtracting $\mu b$ from these derivatives produces a
+nondecreasing function, and their jump at $a$ is nonnegative.
+Integration proves that $C^+(a,b)-\mu b^2/2$ is convex.
+Therefore $C^+$ is $\mu$-strongly convex and has a unique minimizer
+on the compact interval. The subgradient condition at $a$, the
+strict increase of both envelopes, and the constrained endpoint
+conditions give exactly the stated three cases. If an endpoint
+derivative equals zero, that endpoint is the unique minimizer.
+The proof also covers $a=0$, $a=A$, repeated anchors and $L=\mu$.
+\end{proof}
+
+The theorem does not infer a derivative bound on the missing side of
+a boundary support. It starts only after every anchor interval has
+been validly obtained, using the boundary convention of
+Theorem~\ref{thm:supportgradient122} or other proved original
+information. If a missing-side bound is infinite, it may be retained
+in the relevant envelope algebra, but the finite rational algorithm
+below presumes finite supplied intervals. The original investment
+gradient cap supplies finite intervals where applicable.
+
+\subsection{Exact finite arithmetic and robust lower supports}
+
+Suppose the anchors, all interval endpoints, $A$, $\mu$ and $L$
+are rational. Split $[0,A]$ first at every anchor. On each resulting
+interval, each local derivative bound is affine. Include every
+intersection of every pair of these affine functions which lies in
+that interval. There are finitely many, and all are rational; an
+identical pair contributes no new point. Between consecutive
+partition points, a rational midpoint determines an active maximum
+and minimum. Any fixed index order resolves an exact tie without
+changing its value. Integrating the active affine expression gives
+the exact envelope integral over that piece. A zero in an active
+piece is rational because its slope is at least $\mu>0$.
+
+Equivalently, retain the at most two affine pieces from each anchor,
+each with its applicable interval, and generate only pairwise
+intersections whose piece domains overlap. This gives at most a
+quadratic number of candidate breakpoints in $m$; sorting and testing
+all candidates is one finite algorithm. No particular optimized
+operation count is claimed for an implementation that instead
+loops over all pieces on all intervals. It must record its actual
+arithmetic and time costs.
+
+At $L=\mu$, every derivative piece has the same slope. The envelopes
+are the largest and smallest corresponding intercepts plus $\mu t$.
+There is no division by $L-\mu$. At $A=0$ the only feasible action is
+retention and every contrast is exactly zero; the nontrivial
+statements above are used only for $A>0$.
+
+For the robust support calculation, fix a piece on one side of every
+anchor. Subtract $\mu b^2/2$ from \eqref{eq:rawsupport123}. The result
+is affine on that piece:
+\[
+ s_i(b)-\frac\mu2 b^2
+   =(p_i^\diamond-\mu a_i)b
+     +W_i-p_i^\diamond a_i+\frac\mu2a_i^2,
+\]
+where $p_i^\diamond=p_i^+$ on $b<a_i$ and
+$p_i^\diamond=p_i^-$ on $b>a_i$. Add the pairwise intersections
+of these affine functions within their applicable intervals.
+On each resulting piece, $\max_i s_i(b)$ is a single quadratic
+with curvature $\mu$. Evaluate it at both endpoints and at its
+stationary point if that point lies inside the piece. The least of
+these finitely many rational values is the exact global minimum.
+The endpoint evaluations include every downward derivative jump.
+This procedure proves existence and computes the required minimum
+without incorrectly calling the whole robust envelope convex.
+
+With exact slopes, $p_i^-=p_i^+$, the robust supports really are
+convex quadratics with common curvature and their maximum is
+$\mu$-strongly convex. That useful special case does not justify
+the same assertion for interval slopes.
+
+\begin{proof}[Proof of Theorem~\ref{thm:memorypolicy123}]
+The support hypothesis says that there is an actual
+$p_i\in[p_i^-,p_i^+]$ with
+\[
+ q(b)\ge W_i+p_i(b-a_i)+\mu(b-a_i)^2/2.
+\]
+Minimizing the linear term over its interval gives
+$q(b)\ge s_i(b)$ for every feasible $b$. Equation
+\eqref{eq:memoryvalid123}, together with the value bounds at $a_i$,
+also gives
+$W_i+C^-(a_i,b)\le q(b)\le U_i+C^+(a_i,b)$.
+Taking the indicated maximum and minimum proves
+$\underline q\le q\le\overline q$. Minimizing the global
+support inequality gives
+$\min_b\max_i s_i(b)\le\min_b q(b)$, and taking a maximum
+with another valid optimum lower bound preserves that order.
+
+For distinct actions, $\eta(b)-\eta(a)\in[-\delta,\delta]$.
+Adding this interval to the original $q$ contrast proves the first
+line of \eqref{eq:memorypolicy123}. Since $0\le\eta(b)\le\delta$,
+the absolute bounds on $q(b)$ imply the stated bounds on $J(b)$.
+The original implemented future is feasible and has nonnegative
+error, so $J(b)\ge q(b)\ge\min q$. Subtracting the lower optimum
+bound proves the regret upper bound. Subtracting the absolute
+policy bounds at $a,b$ gives the additional signed interval; both
+contain the same true contrast, so their intersection is valid.
+
+For $b=a$, the actually implemented action and future policy coincide
+and subtraction is identically zero. An allowance $\delta$ is
+not charged to this identity. For an actual change, the three
+acceptance inequalities respectively certify strict original-policy
+improvement, original regret qualification, and original objective
+width qualification. Rounding an ideal proposal changes the
+argument of every bound; the proof applies to its actual rounded
+feasible value because the bounds hold for every such value.
+For a finite accepted sequence, summing the original-policy contrast
+inequalities telescopes. This proves all statements.
+\end{proof}
+
+If a prospective implementation adds anchors after observing earlier
+certificate outcomes, these deterministic inequalities remain valid
+for every sound realized collection. They do not establish a
+probabilistic claim for adaptively acquired labels; a stochastic
+oracle needs simultaneous coverage for every retained adaptive
+query. Nor does a retrospective reanalysis become a prospectively
+frozen experiment by applying deterministic bounds to it.
+
+\subsection{Sharpness at the explicitly reduced derivative interface}
+
+Fix $A>0$, $0<\mu\le L$, and finitely many pairs
+$(a_i,[\ell_i,u_i])$. Let $\mathcal Q_D$ be the set of all
+continuously differentiable, $\mu$-strongly convex functions on
+$[0,A]$ with $L$-Lipschitz derivative satisfying all these derivative
+intervals. No value, support, gradient-cap or investment-formula
+information beyond these intervals is imposed. Assume
+$\mathcal Q_D\ne\varnothing$. Fix a feasible incumbent $a$.
+
+\begin{proposition}[Sharp deterministic and randomized gain guarantees]
+\label{prop:memoryminimax123}
+For each feasible $b$,
+\[
+ \sup_{q\in\mathcal Q_D}\{q(b)-q(a)\}=C^+(a,b),\qquad
+ \inf_{q\in\mathcal Q_D}\{q(b)-q(a)\}=C^-(a,b).
+\]
+Both extrema are attained. Put
+$\Gamma=-\min_{b\in[0,A]} C^+(a,b)\ge0$.
+An admissible method receives only this fixed information and
+chooses any Borel probability law $\nu$ for $B\in[0,A]$ without
+new queries. The adverse function knows $\nu$ before $B$ is drawn.
+Then
+\[
+ \inf_\nu\sup_{q\in\mathcal Q_D}
+      \mathbb E_\nu[q(B)-q(a)]=-\Gamma.
+\]
+If $J=q+\eta$ and $\eta$ ranges over all Borel functions from
+$[0,A]$ to $[0,\delta]$, then
+\[
+ \inf_\nu\sup_{q,\eta}
+      \mathbb E_\nu[J(B)-J(a)]
+       =\min\{0,-\Gamma+\delta\}.
+\]
+Retention or the deterministic minimizer of $C^+(a,\cdot)$ attains
+the latter value. This is the exact guarantee
+\eqref{eq:memoryminimax123} at the stated interface.
+\end{proposition}
+
+\begin{proof}
+Choose any $q_0\in\mathcal Q_D$. The derivative-envelope proof
+gives $\lambda\le q_0'\le\upsilon$ pointwise. At every $a_i$,
+$\lambda(a_i)\ge\ell_i$ and
+$\upsilon(a_i)\le u_i$ by the terms carrying that very anchor.
+Together these facts imply
+\[
+ \ell_i\le\lambda(a_i)\le u_i,
+ \qquad \ell_i\le\upsilon(a_i)\le u_i.
+\]
+The preceding increment proof shows that each envelope is
+continuous and has all secants in $[\mu,L]$. Its indefinite
+integral is therefore continuously differentiable, has
+$L$-Lipschitz derivative, and is $\mu$-strongly convex. It also
+satisfies every anchor interval. Thus, for any constant $c$,
+\[
+ q_\lambda(t)=c+\int_a^t\lambda(s)\,ds,
+ \qquad
+ q_\upsilon(t)=c+\int_a^t\upsilon(s)\,ds
+\]
+belong to $\mathcal Q_D$. If $b\ge a$, the second function
+attains $C^+$ and the first $C^-$; if $b<a$, their roles exchange.
+The general bounds were already proved, so this establishes
+both sharp equalities without asserting independent choices of
+a worst derivative at each point.
+
+For any law $\nu$, convexity of each admissible $q$ and Jensen's
+inequality give
+\[
+ \mathbb E_\nu[q(B)-q(a)]
+   \ge q(\mathbb E_\nu B)-q(a).
+\]
+All expectations are finite because $q$ is continuous on a compact
+interval. Taking the supremum and using the just-proved sharp
+fixed-action bound gives a value at least
+$C^+(a,\mathbb E_\nu B)\ge-\Gamma$. The deterministic minimizer
+attains $-\Gamma$, proving the first minimax equality.
+
+For the implemented error put $r=\Pr_\nu(B\ne a)$. If $r=0$,
+the contrast is exactly zero. If $r>0$, set
+$b_*=\mathbb E_\nu[B\mid B\ne a]\in[0,A]$. Conditional Jensen
+gives, for every admissible $q$,
+\[
+ \mathbb E_\nu[q(B)-q(a)]
+ \ge r\{q(b_*)-q(a)\}.
+\]
+The single Borel function which is zero at $a$ and $\delta$
+elsewhere gives expected error difference $\delta r$.
+It may be chosen together with a function attaining the
+fixed-action supremum at $b_*$. Consequently
+\[
+ \sup_{q,\eta}\mathbb E_\nu[J(B)-J(a)]
+ \ge r\{C^+(a,b_*)+\delta\}
+ \ge r(-\Gamma+\delta)
+ \ge\min\{0,-\Gamma+\delta\}.
+\]
+This also covers $b_*=a$ when the conditional law straddles the
+incumbent. Retention attains zero. If $\Gamma>\delta$, its
+positive value implies that the minimizing action differs from
+$a$, and the sharp fixed-action contrast plus an error difference
+$\delta$ attains $-\Gamma+\delta$. At equality both choices are
+optimal when distinct, and the zero case is covered by retention.
+No adversary observes the realized random action. This proves
+the second equality.
+\end{proof}
+
+This proposition is deliberately stated for $\mathcal Q_D$.
+Integrating the extremal derivative may fail additional absolute
+value constraints or the algebraic restrictions of the investment
+model. Soundness and dominance of the envelope calculation persist
+after those restrictions, but its sharpness and minimax claims
+are not transferred to that narrower class. No numerical adoption
+or representation-specific conclusion follows from the proposition.
+
+\subsection{An exact rational strict-information witness}
+\label{supp:memorywitness123}
+
+Let $A=3/2$, $\mu=1$, $L=4$, incumbent $a=1/4$, and derivative
+anchors
+\[
+ a_1=1/4,\quad \ell_1=u_1=-2,
+ \qquad a_2=5/4,\quad\ell_2=u_2=-1/2.
+\]
+Write $x=t-1/4$. Between the two anchors the upper envelope is
+\[
+ \upsilon(t)=\min\{-2+4x,\ x-3/2\}.
+\]
+The first term is active for $0\le x\le1/6$ and the second
+for $1/6\le x\le1$. To the right of the second anchor,
+$\upsilon(t)=4x-9/2$. Its zero is $x=9/8$, hence the joint
+robust proposal is $b=11/8$. Its exact upper contrast is
+\begin{align*}
+ C^+(a,11/8)
+ &=\int_0^{1/6}(-2+4x)\,dx
+   +\int_{1/6}^{1}(x-3/2)\,dx
+   +\int_1^{9/8}(4x-9/2)\,dx\\
+ &=-\frac5{18}-\frac{55}{72}-\frac1{32}
+  =-\frac{103}{96}.
+\end{align*}
+Using only the first anchor gives minimizer $x=1/2$ and guaranteed
+gain $1/2$. Using only the second gives minimizer $x=9/8$ and
+upper contrast
+\[
+ \int_0^1(x-3/2)\,dx+
+ \int_1^{9/8}(4x-9/2)\,dx=-\frac{33}{32}.
+\]
+The joint guaranteed gain therefore exceeds the better individual
+guarantee by $103/96-33/32=1/24$. The admissible function
+$q(t)=\int_{1/4}^t\upsilon(s)\,ds$ attains the joint upper
+contrast. Its derivative is continuous with slopes either one
+or four, and it satisfies both exact anchor derivatives.
+Thus the example verifies a realizable smooth-convex information
+improvement, not an intersection of mutually incompatible derivatives.
+
+At the two anchors this witness has levels $q(a_1)=0$ and
+$q(a_2)=-25/24$. Exact touching $\mu$-quadratic supports at these
+interior anchors are valid for this function. If those exact
+levels are additionally disclosed, an algorithm can exploit the
+known cross-anchor value difference as well; the reduced-interface
+lower bound is not a lower bound for that stronger information
+set. The example is therefore not advertised as proving a strict
+advantage over every possible full-payload algorithm.
+
+The example is algebraic validation. It is not an experimental
+state from the investment application, a new population sample,
+or evidence of a uniquely neural advantage. An independently
+implemented rational calculation can reproduce every number
+without importing an economic or envelope production module.
+
+\subsection{Optimizer brackets and paid action-directed precision}
+
+\begin{proof}[Proof of \eqref{eq:bracket123} and Proposition~\ref{prop:midpoint123}]
+The continuously differentiable strongly convex function $q$ has a
+unique minimum on the compact interval. Its constrained first-order
+conditions give $a_q^*=z(q')$, with the endpoint conventions stated
+in the main text. If two continuous strictly increasing functions
+satisfy $g\le h$, then $z(h)\le z(g)$. To verify this directly,
+consider an interior zero of either function and use their sign
+on either side; if either constrained zero is an endpoint the
+same sign argument gives the weak inequality. Applying this
+order property to $\lambda\le q'\le\upsilon$ proves
+\eqref{eq:bracket123}.
+
+An additional anchor increases $\lambda$ and decreases
+$\upsilon$, so $z(\lambda)$ can only decrease and
+$z(\upsilon)$ can only increase. Thus the new bracket is a
+subset of the old one. This gives the first bound $w_{\rm new}\le w$.
+
+Write the newly purchased derivative interval as $[d_-,d_+]$,
+with $d_+-d_-\le\epsilon$. If $d_-\ge0$, the new lower
+envelope is nonnegative at $c$, so its constrained zero is at most
+$c$. The new bracket is contained in
+$[\underline a,\min\{\overline a,c\}]$ and has width at most
+$w/2+r$. If $d_+\le0$, its upper envelope is nonpositive at $c$;
+the same argument gives containment in
+$[\max\{\underline a,c\},\overline a]$ and the same width bound.
+These assertions also hold when the new interval has a zero
+endpoint, because $\mu>0$ makes both envelopes strictly increasing.
+
+In the remaining case $d_-<0<d_+$, the new upper anchor cone
+on the left of $c$ is $d_++\mu(t-c)$. Its constrained zero
+cannot be less than $c-d_+/\mu$, clipped at zero. The new
+lower anchor cone on the right is $d_-+\mu(t-c)$, whose
+constrained zero cannot exceed $c-d_-/\mu$, clipped at $A$.
+Since the fused envelope is at least as informative as this
+single new interval, its bracket is contained in
+\[
+ [c-d_+/\mu,\ c-d_-/\mu]\cap[0,A].
+\]
+This has width at most $(d_+-d_-)/\mu\le\epsilon/\mu$.
+Combining the three cases and the nested-bracket bound proves
+\eqref{eq:bracketcontraction123}. It makes no assumption about
+which sign the purchased interval will have. Applying the stated
+relative precision and rounding conditions recursively proves
+$w_k\le\gamma^k w_0$.
+
+For the potential ceiling, the true optimizer belongs to the
+bracket and the lower contrast bound gives
+$q(a)-q(a_q^*)\le-C^-(a,a_q^*)$. Maximizing over the entire
+bracket and taking the maximum with zero proves
+\eqref{eq:bracketpotential123}. For every other feasible $b$,
+$J(a)-J(b)\le q(a)-\min q+\delta\le K_q(a)+\delta$.
+The original incumbent's regret bound is another valid ceiling;
+their minimum is therefore valid. The same proof as
+Proposition~\ref{prop:pricedstop122} establishes the stated
+single-decision cost dominance when a compulsory incremental
+query price exceeds that ceiling.
+\end{proof}
+
+The midpoint does not have to be an unrounded real number. The
+geometric loss caused by its actual feasible representation is
+the explicit $r$ term. If the prescribed midpoint equals a paid
+anchor and the protocol declines to buy it again, no contraction
+is asserted. If the prescribed query returns a broad interval,
+the exact new bracket may be unchanged. Both cases have their
+original status and cost rather than being counted as successful
+action resolution.

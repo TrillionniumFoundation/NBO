@@ -1,0 +1,61 @@
+\subsection{Statistical unit and numerical allowance}
+For two complete policies that share the terminal controller and differ only in their first action, the stage-action difference is at most $5/64$. Since $\sum_j b_j=3d/8$ and the largest feasible action difference is $1/4$, \eqref{eq:lipschitz95} gives a future-value difference of at most $45/32$. Terminal-controller errors take values in $[0,\varepsilon_1]$, so their difference is at most $\varepsilon_1$, not twice that allowance. Monotonicity and cash invariance give the deterministic paired support
+\[
+ |J^A(x)-J^B(x)|\leq B:=5/64+\beta(45/32+\varepsilon_1).
+\]
+This support is established before observing a workload. It is not replaced by an observed sample range.
+
+For $n$ independently sampled initial states and paired cost intervals $[D_i^-,D_i^+]$, intersect each interval with $[-B,B]$. For any fixed center $c$ computed from these intervals,
+\[
+ \frac1{n-1}\sum_i(D_i-\overline D)^2
+ \leq\frac1{n-1}\sum_i\max\{|D_i^--c|,|D_i^+-c|\}^2=:\overline s^2.
+\]
+Applying the two-sided empirical Bernstein inequality \citep{maurer2009} to each of twelve fixed contrasts, followed by a union bound, is conservative with $\log(960)<7$. A simultaneous sampling radius is
+\[
+ r_n=\sqrt{14\overline s^2/n}+\frac{98B}{3(n-1)}.
+\]
+The resulting interval is $[n^{-1}\sum_iD_i^- -r_n,n^{-1}\sum_iD_i^+ +r_n]$, evaluated outwards. The calibration selector is fixed independently of these rows, and all pairwise contrasts are retained. Innovation bins, fitting labels, repeated sorting trials and repeated executions of an unchanged stream are not additional independent observations.
+
+\subsection{Proof of the horizon-uniform construction}
+\begin{proof}[Proof of Proposition~\ref{prop:horizon95}]
+The primitive state cost has $\ell^1$ Lipschitz modulus at most $8/d$. The transition's state Jacobian has nonnegative entries with every column sum at most $11/16$. Each control exposure column has $\ell^1$ norm $3d/8$. On the outer action rectangle $[0,1/4]^m$, each component of the action-cost gradient is at most $13/16$. The scalar and vector transitions remain in the cube on that rectangle: for the vector case their range is contained in $[1/64,59/64]^d$. These bounds therefore remain applicable during the state and action comparisons even when an intermediate action is not feasible at an intermediate capacity.
+
+Capacity intervals and capacity simplexes have Hausdorff modulus $1/(8d)$ in the action $\ell^1$ norm. In the vector case, when capacity decreases, scale an action radially to the smaller capacity; the required total action displacement is no larger than the capacity change. Monotonicity and cash invariance make AVaR nonexpansive in the supremum norm. It follows that any continuation with state modulus $L$ gives a Bellman value modulus at most
+\begin{align*}
+ \frac8d+\beta\frac{11}{16}L
+  +\frac1{8d}\left(\frac{13}{16}+\beta\frac{3d}{8}L\right)
+ &=\frac{1037}{128d}+\beta\frac{47}{64}L.
+\end{align*}
+Substitution of $L=27/d$ gives $\{1037/128+705\cdot27/1024\}/d<27/d$. The terminal cost has modulus $10/d$. This proves the uniform value modulus by backward induction. The same calculation applies to an arbitrary Lipschitz fitted continuation; convexity of that fit is not required. Consequently every own-future cone may be constructed with the common primitive modulus $27/d$.
+
+For convexity of the original values, assume inductively that $V_{t+1}$ is convex and its coordinate subgradients have absolute value at most $27/d$. For a smooth such function, the negative contribution from the bilinear state transition is at worst $27\|v\|_2^2/(8d)$; the Jacobian--Hessian--Jacobian term is positive semidefinite in the full state-action direction. Adding stage curvature yields
+\[
+ \frac1d\left(4-\beta\frac{27}{8}\right)\|v\|_2^2
+       +\frac74\|w\|_2^2
+ =\frac{107}{128d}\|v\|_2^2+\frac74\|w\|_2^2.
+\]
+The action bound includes the vector cost interaction, whose off-diagonal Hessian entries equal $1/4$. For a nonsmooth convex continuation, mollify on a neighborhood of the transition image, which is a fixed positive distance from the cube boundary. Mollification preserves convexity and coordinate Lipschitz bounds there. The preceding uniform curvature inequality passes to the limit. Integration under any fixed feasible innovation density and the supremum over those densities preserve it. Partial minimization over the convex capacity graph proves convexity of $V_t$. This establishes the induction without assuming differentiability of the resulting risk-averse values.
+
+The tensor state cover has $\ell^1$ covering radius at most $d/(2n_x)$. Hence the two-sided cone term is at most $27/n_x$, including the terminal cone formed from exact terminal labels. The action objective modulus is bounded by
+\[
+ D_a\leq\frac{13}{16}+\beta\frac{3d}{8}\frac{27}{d}
+      =\frac{1319}{128}.
+\]
+The scalar feasible net has radius no larger than $A(x)/(2m)$. The vector simplex lattice has $\ell^1$ radius at most $A(x)/m\leq1/(4m)$. To verify the latter, scale by $m/A(x)$, take the coordinate floors, and, when they do not exhaust the integer capacity, compare the two points obtained by rounding one coordinate up. One of their $\ell^1$ errors is at most one. If the floors exhaust capacity, the point is already a lattice point. Thus the common action-net contribution is at most $1319/(512m)$.
+
+On one innovation rectangle, the maximal $\ell^1$ displacement from its midpoint under the vector transition is
+$d(1/(32n_z)+1/(64n_z))$. A $27/d$-Lipschitz continuation therefore varies by at most $81/(64n_z)$. Applying the original risk's nonexpansiveness and then discounting bounds the objective integration error by $e\leq1215/(1024n_z)$. The scalar case is covered by the same bound. Exact AVaR of the midpoint step function is computed by sorting the $n_z^s$ equally weighted values; $4\mid n_z$ ensures integral tail counts for both risk levels. The innovation law remains continuous: the bound on $e$ is the explicit difference between its risk and the step-function risk.
+
+The cone proof also applies to the present risk recursion. Indeed, for any bounded $u,v$ and scalar $c$, monotonicity and cash invariance give $\|\rho(u)-\rho(v)\|_\infty\leq\|u-v\|_\infty$ and $\rho(u+c)=\rho(u)+c$. Feasible-action minima preserve order and this bound. Thus label, action-net and continuation-cover errors propagate by the same discounted subsolution and supersolution induction; no linear expectation or frozen maximizing density is used in that induction. The graph and action moduli established above verify its primitive hypotheses for every own-future continuation. Theorem~\ref{thm:construct49}, with exact feasible repair and no additional label-arithmetic error, now bounds each nonterminal residual sum by
+\[
+ b:=27/n_x+1319/(512m)+1215/(512n_z).
+\]
+The terminal cone contributes at most $27/n_x$. Thus the finite-horizon bound is
+$\sum_{t<T}\beta^t b+\beta^T27/n_x\leq b/(1-\beta)$,
+which is \eqref{eq:uniformhorizon95}. The displayed sufficient resolutions divide the approximation allowance into three equal discounted shares. With the same uniform moduli, the sensor, repair and action-rounding coefficients in \eqref{eq:acquire49} are bounded independently of the horizon; their discounted sum is at most sixteen times the one-date allowance. Finite sensor and action precision can therefore fill a separately reserved positive share of the target.
+\end{proof}
+
+\paragraph{Work, storage, and exact-number growth.}
+Every date uses $S$ targets, at most $A_m$ feasible actions per target and $n_z^s$ midpoint queries per action. A dense cone query scans $S$ labels in $O(dS)$ rational operations, giving the stated dense count. The original-owner transform costs $O(dS)$ per date; cell location and the exact off-grid owner query give the compiled count. Sorting costs $O(TSA_mn_z^s\log(n_z^s))$ comparisons and is charged in addition, not absorbed into an unmeasured primitive oracle. Stored labels and witnesses occupy $O(TSd)$ rational words, with their bit lengths charged separately.
+
+All fixed meshes, costs, transition coefficients, risk weights and cone moduli in this construction are rational. Their finitely many primitive denominators divide a fixed integer $D$ whose logarithm is $O(\log(d n_x m n_z))$. At a new date, a stored label is combined with fixed-denominator primitive values, cone distances, tail averages and the rational discount. A common-denominator implementation therefore increases the denominator exponent by only a fixed amount per date. Maxima, minima, comparisons and exact feasible repairs do not increase it exponentially. Bounded discounted stage costs and the fixed cone modulus also bound label magnitudes uniformly in the horizon. The resulting numerator and denominator bit lengths are $O((T+1)\log D)$. Arithmetic on these integers is not assigned constant bit cost. The statement is a fixed-accuracy constructive horizon bound with an explicit state and innovation curse, not a measured arithmetic crossover or a full implementation benchmark.

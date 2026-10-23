@@ -1,0 +1,191 @@
+% Author theory draft for R126. No empirical result is asserted by this file.
+\section{Computing the decision content of paid Bellman information}
+\label{sec:computed126}
+
+The complete-support characterization identifies the information in a
+Bellman calculation, but an unverified convex-program output does not yet
+give an economic certificate. We now give a finite calculation which can
+stop at any resource limit with a valid original-action bound. It combines
+tangents taken at different points, verifies their aggregate by rational
+arithmetic, and retains the stronger of this calculation and the already
+available conventional bounds. Cutting-plane optimization is classical
+\citep{Kelley1960Cuts126}; smooth-convex interpolation and information-based
+worst-case calculations also have an established literature
+\citep{THG2017Interpolation122,FloreaNesterov2024Oracle125}. The contribution
+here is the explicit passage from the original, globally valid Bellman
+support record to a finitely verified action and regret calculation. Its
+economic information and certification rights are identical for a neural
+critic, a matched ordinary hinge, a polynomial, a spline, or an online
+solver supplied with that record.
+
+\subsection{A finite certificate from numerical cut proposals}
+
+Fix the state, risk law, feasible interval, original optimal-future
+objective, and paid record of Section~\ref{sec:fullsupport125}. Write its
+nonempty finite-dimensional compatibility set as
+\[
+ P=\{z\in\mathcal B:c_i(z)\le0,
+                \ i=1,\ldots,m\},\qquad
+ \mathcal B=\prod_k[\underline z_k,\overline z_k].
+\]
+The box is finite and rational. Linear restrictions, including equalities
+written in both directions, are among the $c_i$. For a requested original
+contrast $q(b)-q(a)$, let $H(z)=h_0+h^\top z=q(a)-q(b)$.
+At arbitrary rational points $v_r$, choose valid rational subgradients
+$s_r\in\partial c_{i_r}(v_r)$ and store the exact affine cuts
+\[
+ A_r=s_r^\top,\qquad b_r=s_r^\top v_r-c_{i_r}(v_r),
+ \qquad A_rz\le b_r.
+\]
+The points need not be feasible, need not coincide, and need not be the
+solutions of an optimization problem. All nonlinear support constraints
+have explicit rational subgradients; the supplement gives the formulas.
+
+\begin{theorem}[A finite verified bound from a shared cut record]
+\label{thm:cuts126}
+For any nonnegative rational weights $y_r$, define
+\begin{equation}\label{eq:cutbound126}
+ R=h+A^\top y,\qquad
+ B=h_0-y^\top b+
+       \sum_k\min\{R_k\underline z_k,R_k\overline z_k\}.
+\end{equation}
+Then every compatible original objective satisfies
+$q(b)-q(a)\le-B$. Neither primal feasibility, stationarity, strong
+duality, nor a successful solver exit is required. A numerical linear
+program may propose the weights; sign checks, rationalization, reconstruction
+of each exact cut, and evaluation of \eqref{eq:cutbound126} determine
+whether a certificate is accepted.
+
+If a rational point $z^{\rm f}\in P$ is independently verified, then
+\begin{equation}\label{eq:cutgap126}
+ -H(z^{\rm f})\le U_{\rm full}(a,b)\le-B,
+ \qquad
+ 0\le -B-U_{\rm full}(a,b)\le H(z^{\rm f})-B.
+\end{equation}
+Thus a checked gap can certify accuracy relative to the exact declared
+information bound. Without such a gap, the returned upper bound is valid
+but is not certified to be the sharp information bound.
+
+Intersecting each accepted bound with all earlier valid bounds for the
+same original contrast gives a nonincreasing sequence of upper bounds.
+The cut record may be reused for several linear contrasts on one common
+node set, provided all arithmetic and optimization work is charged.
+\end{theorem}
+
+The zero-weight choice supplies a valid, possibly weak box bound. A failed
+optimization, an unhelpful rationalized dual, or the imposed cut limit
+therefore cannot invalidate the incumbent certificate. Feasibility of
+the original information class is a scientific premise established by
+the original calculation; it is not inferred from a numerical solver's
+message. If an exact constraint check detects inconsistency in a supplied
+record, the record is rejected rather than used to prove a favorable
+decision.
+
+The finite computation differs from an asymptotic convergence claim.
+With exact linear subproblem solutions, bounded subgradients, and a cut
+for every convex constraint at every current minimizer, the nested outer
+relaxations converge in value to the exact compatibility program. A proof
+is supplied in the supplement. A capped floating-point implementation
+uses only \eqref{eq:cutbound126}; it does not inherit that limiting
+statement as a finite accuracy certificate.
+
+The information boundary also governs comparisons. The cheap conventional
+calculation clips transported derivative envelopes by the same original
+cap $[-M,M]$ and uses every available original-optimum lower bound
+in its endpoint enclosure. If such an optimum bound has not been encoded
+as a constraint of $P$, intersecting with it remains valid for the
+actual original objective, but is not a tighter numerical solution of
+$U_{\rm full}$. The raw cut bound and the final original-policy
+intersection are reported separately. No information omitted from a
+comparator is attributed to the convex solver or to neural architecture.
+
+\subsection{From pairwise contrasts to original-policy regret}
+
+The same record can answer a stronger economic question: how much
+original value could still be lost by returning a particular action?
+Define its information-compatible regret by
+\begin{equation}\label{eq:inforegret126}
+ \Gamma(a)=\sup_{q\in\mathcal Q_{\rm full}}
+               \{q(a)-\min_{x\in[0,A]}q(x)\}.
+\end{equation}
+It is a property of the declared original information. It is not a
+fitting loss, a posterior mean, or a claim about a different recursive
+preference. Introduce an action grid
+$0=x_0<\cdots<x_n=A$ containing $a$, with maximum spacing $h$.
+These are additional unknown interpolation nodes, not newly purchased
+economic observations. Theorem~\ref{thm:fullinterpolation125} ensures
+that the augmented finite program represents the same function class.
+
+\begin{theorem}[Finite decision resolution under unchanged information]
+\label{thm:gridregret126}
+Put $u_j=U_{\rm full}(x_j,a)$. Then
+\begin{equation}\label{eq:gridsandwich126}
+ \max_j u_j\le\Gamma(a)
+        \le\max_j u_j+\frac{Lh^2}{8}.
+\end{equation}
+The constant $1/8$ is sharp, even for a compatible class consisting of
+one rational quadratic. Both endpoints must be in the grid; a constrained
+boundary optimum is then represented exactly.
+
+More generally, let $\widehat u_j\ge u_j$ be any verified upper
+contrasts, setting $\widehat u_j=0$ at $x_j=a$. For a cell of length
+$d_j=x_{j+1}-x_j$, put
+\begin{align}
+ G_j(a)&=\max_{0\le t\le1}
+   \left\{(1-t)\widehat u_j+t\widehat u_{j+1}
+          +\frac{Ld_j^2}{2}t(1-t)\right\},\nonumber\\
+ G(a)&=\max_jG_j(a).
+ \label{eq:cellregret126}
+\end{align}
+Then $0\le\Gamma(a)\le G(a)$. For rational inputs $G(a)$ is
+an exact rational number: with $k_j=Ld_j^2/2$, the maximizing
+argument is
+\begin{equation}\label{eq:cellmax126}
+ t_j^*={\rm proj}_{[0,1]}
+       \frac{\widehat u_{j+1}-\widehat u_j+k_j}{2k_j}.
+\end{equation}
+If every $\widehat u_j-u_j\le\epsilon$, then
+\begin{equation}\label{eq:gridaccuracy126}
+ 0\le G(a)-\Gamma(a)\le \epsilon+\frac{Lh^2}{8}.
+\end{equation}
+Every quantity here concerns the same original objective and the same
+paid record. Refining the computational grid requires additional
+certificate work, but no new risk or continuation-value evaluation.
+\end{theorem}
+
+For the unchanged implemented future $J(a)=q(a)+\eta(a)$,
+$0\le\eta(a)\le\delta$, the returned action consequently has
+original-policy regret at most $G(a)+\delta$. Intersect this with
+every earlier valid regret bound. An absolute original-value interval
+at $a$ is still required separately: grid resolution cannot identify a
+free additive value level. If a policy is changed, a strictly negative
+upper bound on the actual contrast $J(b)-J(a)$ is still required.
+A reduction in worst compatible regret by itself does not prove a
+strict gain for the realized economy.
+
+There is also a finite robust-action implication. The function
+$\Gamma$ is $M$-Lipschitz and $\mu$-strongly convex. If the same grid
+is used for candidate actions, and the verified pairwise accuracy is
+at most $\epsilon$ for every candidate, a minimizer $\widehat a$
+of the computed $G$ satisfies
+\begin{equation}\label{eq:robustaction126}
+ \Gamma(\widehat a)-\min_{a\in[0,A]}\Gamma(a)
+       \le\frac{Mh}{2}+\frac{Lh^2}{8}+\epsilon.
+\end{equation}
+This is an information-compatible minimax regret guarantee, not
+identification of the actual optimal action and not an advantage due
+to a neural encoding. The supplement states its proof and scope.
+
+Finally, suppose any further computation for this one decision must
+first cost at least $c_*>0$ resource units, priced at $\lambda$ units
+of original objective, and exclude reuse for other decisions. Stopping
+is weakly optimal against all such continuations whenever
+\[
+ \lambda c_*\ge
+ \min\{K_{\rm old},G(a)+\delta\},
+\]
+where $K_{\rm old}$ is a previously valid original-policy regret
+bound. This is a dominance conclusion conditional on an actual
+compulsory cost and the declared original objective. It does not turn
+observed host clocks into a deployment probability or an estimated
+economic price.

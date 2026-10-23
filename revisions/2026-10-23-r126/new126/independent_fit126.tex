@@ -1,0 +1,144 @@
+\section{Independent finite-design acquisition verification}
+\label{sec:independentfit126}
+
+The independent acquisition audit operates on the four immutable R121 label
+files and all 56 stored actors.  It changes neither the original Bellman
+objective nor a deployed coefficient.  Forty-eight numerical problems were
+originally fitted; the other eight representations are the exactly matched
+ordinary-hinge encodings of paid ReLU fits.  The audit reconstructs the
+pre-label feature specification, every value row and required one-sided
+original-action derivative row, the coefficient box, rounding rule and stored
+serialization.  It configures BVLS rather than TRF within the same SciPy
+library.  Four actual VALUE solves execute its distinct active-set iterations;
+the other 20 return the feasible unconstrained solution through the shared
+initial numerical path.  The four VALUE hinge readouts copy the paid ReLU
+solutions.  Its independently formulated marginal
+program still uses the HiGHS library.  Thus independence here concerns the
+implemented feature, problem-assembly, candidate-generation and exact-checking
+paths; it does not assert independent authorship or an independently written
+linear-programming solver.
+
+The following familiar convex and weak-duality calculations make the checking
+path independent of floating solver status.  They are verification lemmas, not
+claims that convex duality is a new neural result.  Let
+$B=\prod_{j=1}^p[\underline b_j,\overline b_j]$ be a finite rational box,
+$a_i,d_i\in\mathbb Q^p$, and $y_i,\ell_i,u_i\in\mathbb Q$, with
+$\ell_i\leq u_i$.  The exact finite-design objectives are
+\begin{equation}
+ F(\theta)=\sum_i(a_i^{\mathsf T}\theta-y_i)^2,
+ \qquad
+ R(\theta)=\max_i\{d_i^{\mathsf T}\theta-\ell_i,
+                         u_i-d_i^{\mathsf T}\theta\}.
+\end{equation}
+In particular, $R(\theta)\geq0$.  These objectives are conditional on the
+original acquired interval labels.  They are not whole-domain approximation
+errors or original-policy regret.
+
+\begin{proposition}[Exact finite-box checking bounds]
+\label{prop:finitefit126}
+For any rational feasible readout $\widehat\theta\in B$, set
+$g=\nabla F(\widehat\theta)$ and
+\[
+ L_F=\max\!\left\{0,F(\widehat\theta)-g^{\mathsf T}\widehat\theta
+       +\sum_{j=1}^p\min\{g_j\underline b_j,g_j\overline b_j\}\right\}.
+\]
+Then $L_F\leq\min_{\theta\in B}F(\theta)\leq F(\widehat\theta)$.
+For arbitrary rational weights $w_i^+,w_i^-\geq0$ satisfying
+$\sum_i(w_i^++w_i^-)=1$, define
+\[
+ c=\sum_i(w_i^+-w_i^-)d_i,
+ \quad
+ L_R=\max\!\left\{0,-\sum_iw_i^+\ell_i+\sum_iw_i^-u_i
+        +\sum_{j=1}^p\min\{c_j\underline b_j,c_j\overline b_j\}\right\}.
+\]
+Then $L_R\leq\min_{\theta\in B}R(\theta)\leq R(\widehat\theta)$.
+The conclusions require no numerical stationarity, floating solver success,
+strict convexity or uniqueness of the minimizing readout.
+\end{proposition}
+
+\begin{proof}
+Convexity gives
+$F(\theta)\geq F(\widehat\theta)+g^{\mathsf T}(\theta-\widehat\theta)$.
+Minimizing this affine function independently over each coordinate of $B$
+gives the stated affine lower bound.  The squared loss is nonnegative, so
+replacing the lower bound by its maximum with zero preserves validity.
+Evaluating the objective at the feasible readout gives the upper bound.
+
+For the marginal problem, the maximum of the $2m$ displayed affine
+expressions is at least any convex combination of them.  Therefore, for every
+$\theta\in B$,
+\[
+ R(\theta)\geq
+ \sum_iw_i^+(d_i^{\mathsf T}\theta-\ell_i)
+ +\sum_iw_i^-(u_i-d_i^{\mathsf T}\theta)
+ =c^{\mathsf T}\theta-\sum_iw_i^+\ell_i+\sum_iw_i^-u_i.
+\]
+Minimizing the affine expression over $B$ yields its coordinatewise box
+minimum.  Since at least one of
+$d_i^{\mathsf T}\theta-\ell_i$ and $u_i-d_i^{\mathsf T}\theta$ is
+nonnegative for every $i$, $R$ is nonnegative.  The maximum with zero is thus
+valid.  Feasibility of $\widehat\theta$ gives the upper bound.  Every operation
+uses finite rational arithmetic; approximate multipliers enter only as
+candidates for the subsequently checked nonnegative unit-mass weights.
+\end{proof}
+
+The audit converts a recorded binary64 multiplier to its exact binary
+rational value, takes the nonnegative part of its negative, and divides by the
+resulting total mass.  If the mass is zero, it uses the predeclared uniform
+weights.  Both constructions satisfy Proposition~\ref{prop:finitefit126}
+exactly.  Weak witnesses remain weak and are reported without selecting a
+more favorable normalization after inspection.  The exact difference between
+the two rounded readout objectives is reported separately from the two
+optimality-gap upper bounds.
+
+\begin{proposition}[Rounding and what its bound controls]
+\label{prop:roundfit126}
+Suppose every box endpoint belongs to the lattice $h\mathbb Z$, and let
+$P_B$ denote coordinatewise projection onto $B$.  Round a finite raw readout
+to the nearest lattice point, with ties to even, and project the result onto
+$B$ to obtain $\widehat\theta$.  Then
+$\|\widehat\theta-P_B\theta^{\rm raw}\|_\infty\leq h/2$.
+For any two feasible readouts $\theta,\theta+\delta\in B$,
+\[
+ |R(\theta+\delta)-R(\theta)|
+       \leq\max_i\|d_i\|_1\,\|\delta\|_\infty,
+\]
+and, writing $A$ for the matrix with rows $a_i^{\mathsf T}$,
+\[
+ |F(\theta+\delta)-F(\theta)|
+ \leq2\|A\theta-y\|_2\|A\delta\|_2+\|A\delta\|_2^2.
+\]
+These are finite-design bounds.  They do not supply a continuous-state or
+original-policy certificate.
+\end{proposition}
+
+\begin{proof}
+For a coordinate inside its box interval, nearest-lattice rounding has error
+at most $h/2$, and clipping to lattice-valued endpoints cannot increase the
+distance to that coordinate.  For a coordinate outside the interval,
+monotonicity of nearest-lattice rounding and lattice-valued endpoints imply
+that subsequent clipping gives that endpoint.  Its distance from the
+projected raw coordinate is zero.  This proves the first assertion,
+including the case where a numerical solver slightly violates a box bound.
+
+Each affine expression defining $R$ changes by either
+$d_i^{\mathsf T}\delta$ or its negative.  The difference between two finite
+maxima is bounded by the largest absolute change in their entries, which is
+at most $\max_i\|d_i\|_1\|\delta\|_\infty$.  Finally,
+\[
+ F(\theta+\delta)-F(\theta)
+ =2(A\theta-y)^{\mathsf T}A\delta+\|A\delta\|_2^2.
+\]
+Taking absolute values and applying Cauchy--Schwarz gives the second bound.
+Neither argument takes a supremum outside the declared design.
+\end{proof}
+
+The audit implementation uses $h=2^{-30}$, records the actual exact rounded
+objectives, and checks their serialized numerator, denominator, binary64 and
+hexadecimal identities.  A different coefficient vector can arise from a
+nonunique optimization problem; coefficient equality is therefore recorded,
+not imposed as a scientific success criterion.  A successful finite-design
+audit does not independently reacquire the original labels, verify fitted
+error throughout the state--action cube, or create economic observations for
+the new readouts.  These remaining limits stay attached to the response to
+R97 B8/M9.

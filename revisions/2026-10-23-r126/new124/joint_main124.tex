@@ -1,0 +1,314 @@
+% R124 author addition. Derived independently of the pending R123 outcomes.
+% This file is self-contained mathematical material for integration by the root.
+% The joint interface is levels + derivatives + curvature, NOT every raw support.
+\section{Joint action information from paid continuation values}
+\label{sec:joint124}
+
+A continuation calculation returns both a value enclosure and action
+information. Keeping the value enclosures only as separate endpoint bounds
+can discard restrictions on the derivative between endpoints. We use those
+restrictions to bound the original action contrast. The economic object
+remains the original optimal-future objective $q=Q_x$ on $[0,A]$;
+the implemented controller has cost $J=q+\eta$ with
+$0\le\eta\le\delta$. All data below concern this one state, preference,
+innovation law and future target. A different representation receives the
+same data and the same feasible actions, and is charged for the same
+acquisition. The new calculation does not identify a neural-specific
+approximation capability.
+
+Smooth convex interpolation and its use in performance estimation are
+established ideas \citep{THG2017Interpolation122}. The interpolation
+lemma below is a scalar constructive specialization. Its role here is to
+use the joint information in an original Bellman service and to separate
+an optimizer's numerical proposal from an independently checkable economic
+certificate. Neither a generic interpolation principle nor numerical
+conic optimization is claimed as a new mathematical discovery.
+
+Assume $A>0$, $0<\mu\le L$, and that $q$ is continuously differentiable,
+$\mu$-strongly convex, and has $L$-Lipschitz derivative. At finitely many
+paid anchors $a_i$ retain
+\begin{equation}\label{eq:jointdata124}
+ W_i\le q(a_i)\le U_i,\qquad
+ \ell_i\le q'(a_i)\le u_i.
+\end{equation}
+Repeated anchors impose all their constraints at the same node. At least
+one finite value interval and one finite derivative interval are available.
+Every derivative interval must be justified for the original $q$, rather
+than inferred from a fitted derivative. A verified global derivative cap
+$|q'|\le M$ can be added. If no sharper cap is known, a finite one follows
+from any derivative anchor and the bound $L$: one may take
+$M=\max\{|\ell_i|,|u_i|\}+LA$.
+
+Let $\mathcal Q_I$ denote exactly this class of functions satisfying the
+supplied levels, derivative intervals and declared derivative cap. Assume
+it is nonempty; a sound original calculation provides one member. Raw
+quadratic supports, additional formulas of the investment model, or an
+actor's representation can restrict the class further. Unless explicitly
+encoded, those restrictions are not part of $\mathcal Q_I$ and no
+sharpness statement below includes them.
+
+\subsection{A finite exact interpolation problem}
+
+For a fixed pair of realized feasible actions $a,b$, form the sorted
+distinct nodes $0=x_0<x_1<\cdots<x_n=A$ from both endpoints, every
+anchor, and $a,b$. Let $f_i,g_i$ denote unknown value and derivative
+at node $x_i$. Put $K=L-\mu$ and, for adjacent nodes, set
+\begin{align}
+ d_i&=x_{i+1}-x_i,\qquad
+ s_i=g_{i+1}-g_i-\mu d_i,\nonumber\\
+ w_i&=f_{i+1}-f_i-g_i d_i-\frac\mu2d_i^2.
+ \label{eq:interpolationcoordinates124}
+\end{align}
+For $K>0$ impose
+\begin{equation}\label{eq:adjacentinterpolation124}
+ 0\le s_i\le Kd_i,
+ \qquad
+ s_i^2\le2K w_i,
+ \qquad
+ s_i^2\le2K(s_i d_i-w_i).
+\end{equation}
+Add the paid bounds \eqref{eq:jointdata124} at their nodes and
+$-M\le g_i\le M$. Finite value boxes can be supplied without
+additional oracle calls:
+\begin{equation}\label{eq:valueboxes124}
+ \max_j\{W_j-M|x_i-a_j|\}\le f_i\le
+ \min_j\{U_j+M|x_i-a_j|\}.
+\end{equation}
+When $K=0$, replace \eqref{eq:adjacentinterpolation124} by the linear
+equalities $s_i=w_i=0$. Let $\mathcal P_I(a,b)$ be the resulting
+finite feasible set. Every inequality has at most quadratic degree;
+the two quadratic inequalities are convex and have a rotated-cone
+representation. Only a linear number of adjacent interpolation
+constraints is required after sorting the nodes.
+
+\begin{theorem}[Exact scalar interpolation with joint levels and marginals]
+\label{thm:jointinterpolation124}
+A list $(f_i,g_i)$ belongs to $\mathcal P_I(a,b)$ if and only if
+it is the restriction of a function in $\mathcal Q_I$ to these nodes.
+Such a function can be constructed with a continuous piecewise-affine
+derivative. Consequently
+\begin{align}
+ U_I(a,b)&:=\max_{\mathcal P_I(a,b)}(f_b-f_a)
+          =\max_{q\in\mathcal Q_I}\{q(b)-q(a)\},\nonumber\\
+ L_I(a,b)&:=\min_{\mathcal P_I(a,b)}(f_b-f_a)
+          =-U_I(b,a).
+ \label{eq:exactcontrast124}
+\end{align}
+Here subscripts $a,b$ refer to their nodes. These extrema are attained.
+The result includes boundary actions and repeated measurements. At
+$A=0$ the only action contrast is zero and no interpolation problem is
+needed.
+\end{theorem}
+
+For clarity, consider the derivative-envelope bound made from the same
+derivative intervals. At $t\in[0,A]$ define
+\begin{align*}
+ \lambda(t)&=\max_i\{\ell_i+\mu(t-a_i)
+                        +(L-\mu)\min(t-a_i,0)\},\\
+ \upsilon(t)&=\min_i\{u_i+\mu(t-a_i)
+                        +(L-\mu)\max(t-a_i,0)\}.
+\end{align*}
+One may intersect these with the global derivative cap. Integrating
+$\upsilon$ for rightward moves and $-\lambda$ for leftward moves gives
+the upper contrast $C_D^+$; reversing the endpoints gives the lower
+contrast $C_D^-$. Put
+\[
+ \overline q_D(t)=\min_i\{U_i+C_D^+(a_i,t)\},\qquad
+ \underline q_D(t)=\max_i\{W_i+C_D^-(a_i,t)\}.
+\]
+Every member of $\mathcal Q_I$ satisfies these inequalities. Therefore
+\begin{equation}\label{eq:jointdominance124}
+ U_I(a,b)\le
+ \min\{C_D^+(a,b),\overline q_D(b)-\underline q_D(a)\}.
+\end{equation}
+The inequality can be strict. It does not assert dominance over a
+different bound using raw supports absent from $\mathcal Q_I$.
+An implementation can always intersect the new valid bound with every
+previously verified same-objective bound. Thus adding the new calculation
+cannot weaken the returned certificate, although its computational cost
+can make the resulting service less attractive.
+
+\subsection{A rational certificate that does not trust solver convergence}
+
+Computing a floating point optimum of
+\eqref{eq:exactcontrast124} does not give a verified upper contrast.
+Write its minimization form as
+\[
+ \min_{z\in[\underline z,\overline z]}
+       H(z),\qquad c_j(z)\le0\quad(j=1,\ldots,m),
+\]
+where $z=(f,g)$, $H=f_a-f_b$, the $c_j$ are differentiable convex
+linear or quadratic constraints, and the finite rational box contains
+the values and derivatives of every original function under consideration.
+The box may be obtained from \eqref{eq:valueboxes124}, derivative
+transport, and their outward intersections. Equality constraints may be
+represented by a pair of affine inequalities. Empty intersections or an
+inconsistent original payload must be reported, rather than repaired by
+discarding an inconvenient observation.
+
+\begin{theorem}[Exact residual correction for an action certificate]
+\label{thm:dualcertificate124}
+Choose any rational point $z_0$ and any nonnegative rational multipliers
+$y_j$. No primal feasibility or stationarity of $z_0$ is required.
+Define
+\begin{align}
+ \mathcal L(z)&=H(z)+\sum_j y_jc_j(z),\nonumber\\
+ r&=\nabla\mathcal L(z_0),\nonumber\\
+ B&=\mathcal L(z_0)+
+   \sum_k\min\{r_k(\underline z_k-z_{0k}),
+                    r_k(\overline z_k-z_{0k})\}.
+ \label{eq:rationaldual124}
+\end{align}
+Then every original compatible function satisfies
+\begin{equation}\label{eq:verifiedcontrast124}
+                    q(b)-q(a)\le -B.
+\end{equation}
+All quantities in \eqref{eq:rationaldual124} are rational when the
+input positions, bounds and curvature constants are rational. The same
+construction with $H=f_b-f_a$, $H=f_b$, or $H=-f_b$ gives respectively
+a lower contrast, a lower absolute value, or an upper absolute value.
+A solver may propose $z_0,y$, but an independent implementation must
+verify their finite values, nonnegative multipliers, exact constraint
+identity, enclosing box and the final rational expression.
+\end{theorem}
+
+This certificate charges any lack of numerical stationarity through
+the box residual. It remains sound when the solver fails to converge,
+although it may then be too wide to permit a policy change. Arbitrary
+nonnegative multipliers, including zero, are valid; a success flag is
+neither necessary nor sufficient for a useful certificate. Floating
+primal residuals are diagnostics, not replacements for
+\eqref{eq:rationaldual124}.
+
+For the original investment model, the derivative cap used here is
+independently justified by the retained value modulus. Since
+$\|\nabla V_1\|_\infty\le15/d$ and
+$\sum_j b_j=3d/8$, the original continuation term is action-Lipschitz
+with constant $45\beta/8$. Also $0\le h'(a)\le3/4$ on
+$[0,1/4]$. Thus
+\[
+ |q_x'(a)|\le \frac34+\frac{45\beta}{8}
+      =\frac{771}{128}<7
+ \qquad(\beta=15/16).
+\]
+This supplies the conservative cap $M=7$ without fitting it to outcomes.
+It bounds the derivative of the original optimal-future objective, not
+the derivative of the possibly discontinuous deployed-policy error.
+
+\subsection{The same original-policy gain, regret and value requirements}
+
+Let independently verified bounds satisfy
+$\widehat L(a,b)\le q(b)-q(a)\le\widehat U(a,b)$, and
+$\underline v_b\le q(b)\le\overline v_b$. These can intersect the
+new joint certificates with retained original-value and support bounds.
+Let $B_*\le\min_{[0,A]}q$ be any verified original-optimum lower bound.
+For distinct realized feasible actions,
+\begin{align}
+ J(b)-J(a)&\in
+ [\widehat L(a,b)-\delta,\widehat U(a,b)+\delta],\nonumber\\
+ \underline v_b&\le J(b)\le\overline v_b+\delta,
+ \qquad
+ J(b)-\min q\le\overline v_b+\delta-B_*.
+ \label{eq:jointpolicy124}
+\end{align}
+For $b=a$ the actual contrast is exactly zero. In particular, any
+strictly negative contrast upper endpoint certifies improvement of the
+same implemented economic objective. Applying the declared regret
+tolerance and objective-width tolerance to the same absolute enclosures
+preserves those requirements. All inequalities are evaluated at the
+actually rounded feasible action, and every rejected candidate remains
+in the work account.
+
+There is also a useful consequence when an incumbent already has
+original regret at most $K_a$. If $u$ is a valid upper bound on
+$J(b)-J(a)$, then
+\begin{equation}\label{eq:regrettransport124}
+                   J(b)-\min q\le K_a+u.
+\end{equation}
+Strict improvement therefore preserves an incumbent's regret
+qualification without a fresh global lower-bound solve. The absolute
+objective-width requirement is a separate checked condition. One must
+not infer that width from a gain inequality alone.
+
+Applied at a finite set of candidates, this is a certified candidate
+selection rule. The exact continuous-action optimization in
+\eqref{eq:exactcontrast124}, a finite implemented menu, and a numerical
+search for a useful dual witness are different operations and are
+reported separately. Repeated accepted updates telescope their verified
+original-policy gains. Their extension through several Bellman dates
+uses the retained centered lower-gain recursion with the same incumbent
+future, rather than replacing a nonlinear risk evaluation by a physical
+expectation.
+
+\subsection{A matching information bound and an economic stopping ceiling}
+
+Let
+\[
+ \Gamma_I=-\min_{b\in[0,A]}U_I(a,b)\ge0.
+\]
+The function minimized here is continuous and $\mu$-strongly convex.
+Its minimizer is an ideal information benchmark; the finite numerical
+menu is not assumed to attain it.
+
+\begin{proposition}[The exact gain at the joint information interface]
+\label{prop:jointminimax124}
+An admissible method receives only $I$ and chooses a probability law
+$\nu$ on the same feasible interval without further original queries.
+The adverse $q$ is chosen knowing this law before the action is drawn.
+Then
+\begin{align}
+ \inf_\nu\sup_{q\in\mathcal Q_I}
+       \mathbb E_\nu[q(B)-q(a)]&=-\Gamma_I,\nonumber\\
+ \inf_\nu\sup_{\substack{q\in\mathcal Q_I\\0\le\eta\le\delta}}
+       \mathbb E_\nu[J(B)-J(a)]
+       &=\min\{0,-\Gamma_I+\delta\},
+ \label{eq:jointminimax124}
+\end{align}
+where $\eta$ ranges over Borel functions. The robust deterministic
+minimizer, or retention when $\Gamma_I\le\delta$, attains the
+corresponding bound. It applies equally to all representation labels
+at this same interface. It is not a lower bound for free access to the
+full investment formulas, additional raw supports or new acquisitions.
+\end{proposition}
+
+To turn possible remaining gain into a priced stopping test, let a finite
+action set $\mathcal B$ cover $[0,A]$ with radius $h$ and suppose
+$k_b$ is a verified upper bound on $q(a)-q(b)$ at each $b\in\mathcal B$.
+The cap $|q'|\le M$ gives
+\begin{equation}\label{eq:jointceiling124}
+ q(a)-\min q\le
+ K_I:=\max\{0,\max_{b\in\mathcal B}k_b+Mh\}.
+\end{equation}
+The complete incumbent's regret bound $K_a$ and the future allowance
+therefore give the possible implemented-gain ceiling
+$\min\{K_a,K_I+\delta\}$. If every allowed continuation of a
+single-decision solver must first pay at least $c_*>0$ additional work
+units at economic price $\lambda$, and information reuse is excluded,
+then
+\[
+ \lambda c_*\ge\min\{K_a,K_I+\delta\}
+\]
+certifies that stopping weakly dominates every such continuation.
+The work to build the action cover and its certificates has already
+been charged. This conditional stopping region does not presume a
+forecast of future solver gains or convert shared-host elapsed times
+into a universal economic price.
+
+The rational residual formula also provides exact refinement credits.
+Hold $\mathcal L,z_0,r$ fixed and replace its enclosing box by a
+valid nested box $[\underline z',\overline z']$. The bound improves by
+exactly
+\begin{equation}\label{eq:refinementcredit124}
+ B'-B=\sum_{r_k\ge0}r_k(\underline z'_k-\underline z_k)
+        +\sum_{r_k<0}(-r_k)(\overline z_k-\overline z'_k)\ge0.
+\end{equation}
+Likewise a paid inequality $f_i-U_i\le0$ with multiplier $y_i^+$
+and $W_i-f_i\le0$ with multiplier $y_i^-$ contributes the additional
+credit
+$y_i^+(U_i-U_i')+y_i^-(W_i'-W_i)$ when only those endpoints tighten.
+These are action-certificate sensitivities in original objective units.
+They can prioritize a declared refinement menu and quantify the margin
+actually purchased. They are not a prior guarantee that a noisy future
+query will achieve the proposed endpoint changes; each realized query
+and its cost must still be recorded and verified.
+

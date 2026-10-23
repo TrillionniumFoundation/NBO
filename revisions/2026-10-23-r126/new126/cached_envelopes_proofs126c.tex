@@ -1,0 +1,302 @@
+\section{Exact reuse of Bellman certificate geometry}
+\label{supp:cachedgeometry126c}
+
+The following results concern the separately frozen within-service cache.
+They apply to a finite nonempty collection of rational observations with
+$A>0$ and $0<\mu\le L$.  Every observation anchor, requested action and integration endpoint
+is feasible.  A case and its payload entries are immutable throughout its
+lifetime inside one service.  The normalized cases have a fixed number of scalar fields outside their
+finite payload list.  The implementation retains a strong reference
+to every case used for an object-identity binding; thus a discarded temporary
+case cannot have its identifier reassigned to a different case while the
+binding exists.  Mutating a bound case is outside these assumptions.
+
+Let $s$ be the number of retained derivative observations, including repeated
+anchors.  The two transported functions of observation $j$ are
+\begin{align*}
+ \lambda_j(t)&=g_j^-+
+  \begin{cases}L(t-a_j),&t<a_j,\\\mu(t-a_j),&t\ge a_j,\end{cases}\\
+ \upsilon_j(t)&=g_j^++
+  \begin{cases}\mu(t-a_j),&t<a_j,\\L(t-a_j),&t\ge a_j.\end{cases}
+\end{align*}
+Write $e_-(t)=\max_j\lambda_j(t)$ and
+$e_+(t)=\min_j\upsilon_j(t)$.  These are precisely the inherited
+transported envelopes, without adding an unrecorded information constraint.
+Their geometry key is
+\[
+ \kappa_D=(A,\mu,L,((a_j,g_j^-,g_j^+))_{j=1}^s).
+\]
+The observation order is retained.  A subset request uses the corresponding
+ordered subset in this key.  The inherited algorithm first partitions the
+domain at all observation anchors.  On each resulting open interval it
+retains every strict interior intersection of nonparallel transported lines,
+even when those lines do not form the active envelope.  On each subinterval
+it chooses the extremizing line at the midpoint, with the original fixed
+lexicographic rule for ties.  No segments are coalesced by the cache.
+
+For either envelope, write its full ordered partition as
+\[
+ (x_i,x_{i+1},m_i,c_i)_{i=0}^{P-1},\qquad
+ 0=x_0<\cdots<x_P=A,
+ \qquad e(t)=m_it+c_i\quad(x_i<t<x_{i+1}).
+\]
+At endpoints use the continuous extension.  Define exact prefixes
+\[
+ I_0=0,\qquad
+ I_{i+1}=I_i+\frac{m_i}{2}(x_{i+1}^2-x_i^2)
+                              +c_i(x_{i+1}-x_i).
+\]
+For $t\in[x_i,x_{i+1}]$ the stored primitive evaluates
+\begin{equation}\label{eq:cacheprimitive126c}
+ F(t)=I_i+\frac{m_i}{2}(t^2-x_i^2)+c_i(t-x_i).
+\end{equation}
+The values at $0$ and $A$ are explicitly initialized.  Binary search on the
+ordered starts chooses the interval for every other new endpoint; a boundary
+can be assigned to either adjacent interval because the two formulas agree.
+
+\begin{proposition}[Exact geometry and service identity]
+\label{prop:cacheidentity126c}
+Under the stated assumptions, the cache returns exactly the same rational
+result as the inherited implementation for each of the following operations:
+full or partial envelope partition; both directed contrast endpoints, including
+the best-single-record mode; derivative-envelope value; constrained envelope
+zero; and raw-support minimum with its selected minimizing action.
+
+The raw-support minimum is keyed separately by
+\[
+ \kappa_S=(A,\mu,((a_j,W_j,p_j^-,p_j^+))_{j=1}^s).
+\]
+The original incumbent, future allowance, original-optimum floor and upper
+value levels are not arguments of that raw minimum.  They remain arguments
+of the separately recalculated policy certificate.  In particular, a cached
+raw minimum is not a cached value of the final original-optimum lower bound.
+
+Suppose the original oracle and actor return the same outputs on the same
+inputs, and the frozen service's control decisions depend only on scientific
+values and declared discrete budgets, not on elapsed time.  Replacing the
+listed geometry operations by their cached versions then leaves the complete
+sequence of economic calls, candidate decisions and scientific certificates
+unchanged whenever both executions complete their required arithmetic.  The
+new cache counters and clocks may differ.  Resetting the cache at each paid
+decision preserves this conclusion without transferring acquired information
+between services.
+\end{proposition}
+
+\begin{proof}
+First consider a partial interval $[u,v]\subseteq[0,A]$ with $u<v$.
+Its old partition has the endpoints $u,v$, every observation anchor in its
+interior, and every pairwise line crossing in the interior of each resulting
+anchor interval.  These are exactly the full-domain breakpoints strictly
+between $u$ and $v$, together with $u,v$.  To see this, restrict any full
+anchor interval to $[u,v]$.  Each observation still has the same transported
+line on that restriction.  Its intersection with any other nonparallel line
+is the same rational number; it is retained precisely when it lies inside
+the restriction.  A crossing at an anchor or at $u,v$ is already an endpoint.
+Parallel equal lines create no extra crossing in either calculation.
+
+The relative order of distinct affine lines is constant on each open
+subinterval between all crossings.  Thus its active envelope line cannot
+change when a subinterval is truncated at $u$ or $v$.  If several lines
+agree there, their slope and intercept agree throughout that open interval,
+so the fixed tie rule also gives the same coefficients.  Clipping the full
+list therefore gives exactly the old partial list, including the retained
+inactive-line crossings and coefficient pairs.  If $u=v$, both routines
+return the empty list.  The same argument applies to a declared subset.
+
+Induction on $i$ shows $I_i=\int_0^{x_i}e(t)\,dt$.  Integrating the
+selected affine line on the final partial segment proves
+\eqref{eq:cacheprimitive126c}.  Consequently its differences are the exact
+integrals returned by summing the old partial partition.  Rational addition
+introduces no order-dependent rounding.  For $a<b$, the lower contrast uses
+$F_-(b)-F_-(a)$ and the upper one uses $F_+(b)-F_+(a)$.  For $a>b$,
+reversing the integration direction reverses the two bounds.  For $a=b$,
+both routines return zero.  The best-single-record mode applies this identity
+to each singleton record and then takes the same maximum of lower endpoints
+and minimum of upper endpoints.
+
+Each envelope is continuous, because it is a finite maximum or minimum of
+continuous transported functions.  Evaluating the selected affine piece at
+an interior point, a crossing, an anchor or either domain endpoint therefore
+gives the same value as direct evaluation of every observation.  All slopes
+are at least $\mu>0$, so the envelope is strictly increasing.  The two
+endpoint sign tests and, when needed, the first feasible zero $-c_i/m_i$
+therefore return its identical constrained zero.  Saving an already computed
+value or zero cannot change it.
+
+The raw-support routine minimizes
+\[
+ S(t)=\max_j\left\{W_j+
+        \min[p_j^-(t-a_j),p_j^+(t-a_j)]
+                              +\frac\mu2(t-a_j)^2\right\}
+ \quad(0\le t\le A).
+\]
+Every argument of this function is contained in $\kappa_S$; the omitted
+fields do not enter it.  The cache executes the unchanged exact routine on
+the first occurrence of this complete key, retains its value and original
+tie-selected action, and returns that same pair thereafter.  Equality of
+$\kappa_D$ likewise implies equality of every argument of the transported
+geometry.  The object-identity binding is sound by immutability and its
+strong references.  This proves all individual identities.
+
+For the service conclusion, induct on the ordered external calls and
+scientific control decisions.  At the first call the frozen inputs agree.
+An original economic or actor call with the same inputs has the same output
+by the stated premise.  A substituted geometry call has the same output by
+the identities just proved.  A scientific branch or discrete-budget update
+therefore takes the same branch in both executions.  The induction preserves
+all subsequent oracle arguments, certificates, candidate refusals, accepted
+changes and stopping decisions.  Cache-table accesses are certificate work;
+they neither call an economic primitive nor replace a paid economic record.
+Each complete service starts with an empty cache and the context restores the
+original functions and clears its bindings on exit, including exceptional
+exit.  A failure caused by unavailable machine resources is not ruled out by
+an algebraic identity, and a failed execution is not asserted to complete.
+\end{proof}
+
+\begin{lemma}[Size and construction cost of the inherited partitions]
+\label{lem:cachepieces126c}
+For one sign of a derivative ledger with $s\ge1$ observations, the number
+of retained full-domain pieces obeys
+\begin{equation}\label{eq:cachepieces126c}
+ P\le 1+s+\binom{s}{2}.
+\end{equation}
+The inherited all-crossing construction, followed by its prefix calculation,
+uses $O(s^3)$ exact scalar arithmetic, ordering and item-inspection operations
+and stores $O(s^2)$ piece data.  These are operation counts, not bounds on
+the bit cost of rational numerators and denominators.
+
+A first exact raw-support minimum for a key with $s$ supports also has an
+$O(s^3)$ bound in this operation model.  It need not be a convex function,
+and its minimum is not obtained by assuming convexity of its slope-interval
+envelope.
+\end{lemma}
+
+\begin{proof}
+There are at most $s$ distinct internal observation anchors.  Consider two
+anchors $a_j\le a_k$ and the difference of their lower transported functions.
+It is constant on each exterior region $t<a_j$ and $t>a_k$, because both
+functions have the same slope there.  On $(a_j,a_k)$ its slope is
+$\mu-L\le0$.  For the upper transported functions the middle slope is
+$L-\mu\ge0$.  Thus a pair of either kind has at most one isolated interior
+crossing not already an anchor.  If $L=\mu$ it has none.  Coincident lines
+on an interval contribute no isolated crossing.  Counting all pairs proves
+\eqref{eq:cachepieces126c}, even though the algorithm retains crossings of
+inactive lines and repeated anchors.
+
+There are at most $s+1$ anchor intervals.  Forming their $s$ lines and
+checking every pair costs $O(s^3)$ operations.  Let $P$ be the actual
+number of pieces.  Sorting the retained crossings costs at most
+$O((P+s)\log(s+2))$, and selecting the extremizing line on each piece
+costs $O(sP)$.  With \eqref{eq:cachepieces126c}, both are $O(s^3)$.
+The prefixes add $O(P)$ operations and storage.  These statements describe
+the inherited enumeration; no optimal lower-envelope construction algorithm
+is being substituted in the complexity calculation.
+
+For the support minimum subtract the common quadratic $\mu t^2/2$.
+Each remaining support is a continuous piecewise-affine function with one
+break at its own anchor.  A pair has at most three affine regions, hence
+at most three isolated crossings.  There are consequently at most
+$1+s+3\binom{s}{2}$ resulting pieces before selecting their maximum.
+The inherited routine enumerates all pairwise crossings on every anchor
+interval and selects the maximal line on each piece.  It retains all
+piece endpoints and the feasible stationary point of the common quadratic
+plus its selected affine line.  These candidates include a minimizer on
+every closed piece.  Evaluating the original support maximum at the
+candidates and choosing its minimum requires $O(s)$ work per candidate.
+There are $O(s^2)$ candidates and $O(s^3)$ pair-enumeration work, yielding
+the asserted bound.  Downward slope-interval kinks cause no gap in this
+piecewise argument.
+\end{proof}
+
+\begin{proposition}[Finite operation and storage account for geometry reuse]
+\label{prop:cachework126c}
+Within one paid service let $\mathcal D$ be the distinct derivative keys and
+$\mathcal S$ the distinct raw-support keys.  Write $s_\kappa$ for the
+support count at a key and $P_\kappa$ for the total number of its derivative
+pieces actually built across both signs.  For a derivative key let
+$e_\kappa$ count previously unseen primitive arguments,
+$v_\kappa$ previously unseen gradient arguments, and $l_\kappa$
+nondegenerate requests for a clipped partition.  Let $Q$ count all requests
+to the cache routines, including calls made by another cache routine, and
+let $C$ count the total clipped pieces returned.  Let $B$ count formations
+of a derivative key, and $R$ count requests for a raw-support minimum;
+write $s_b,s_r$ for their respective record lengths.
+
+There are at most $2|\mathcal D|$ full derivative-partition builds,
+$2|\mathcal D|$ initial constrained-root calculations, and
+$|\mathcal S|$ executions of the original raw-support-minimum routine.
+The explicit geometry arithmetic, comparisons and key-entry inspections
+are bounded by
+\begin{align}
+ O\Bigg(&\sum_{\kappa\in\mathcal D}
+   \left[s_\kappa^3+P_\kappa+
+    (e_\kappa+v_\kappa+l_\kappa)\log(2+P_\kappa)\right]
+   +\sum_{\sigma\in\mathcal S}s_\sigma^3 \nonumber\\
+ &\hspace{12mm}+Q+C+\sum_{b=1}^{B}s_b+\sum_{r=1}^{R}s_r\Bigg).
+ \label{eq:cachework126c}
+\end{align}
+In particular, if every record has at most $S$ entries and each built
+geometry at most $P$ pieces, this is
+\[
+ O\big((|\mathcal D|+|\mathcal S|)S^3
+                   +Q[S+\log(2+P)]+C\big).
+\]
+The routines also make $O(Q)$ cache-table operations.  This counts the
+operations requested of the tables and does not assume a constant bound
+on their internal hashing, collision handling or allocation time.  Rational
+bit arithmetic and those table costs are additional machine work, included
+in the measured complete service.
+
+Cached geometry, memoized arguments, exact keys and retained immutable
+case references require at most
+$O(\sum_{\kappa\in\mathcal D}P_\kappa+QS)$ stored scalar or reference
+entries under the same bound $S$.  This memory is confined to one service.
+The result establishes neither a lower bound for the uncached computation
+nor a uniform complete-time advantage for the cached one.
+\end{proposition}
+
+\begin{proof}
+Each derivative key has two possible sign entries and each entry is built
+only on its first request.  Lemma~\ref{lem:cachepieces126c} pays for those
+builds and the prefix sums.  The first gradient or primitive evaluation at
+an argument uses binary search on ordered rational starts, requiring
+$O(\log(2+P_\kappa))$ comparisons, followed by a constant number of
+exact scalar operations.  Repeated arguments retrieve the exact saved
+value.  A clipped partition pays for a binary search and one iteration per
+returned piece.  Each initial root scans at most its stored partition;
+there are only two roots per key, so these scans are covered by the
+$P_\kappa$ term.  The four primitive evaluations and endpoint reversal
+in a fused contrast are included among the requests.  Recursive
+best-single contrasts also enter the request count rather than being
+charged as one constant-cost operation.
+
+The raw-support routine runs once per distinct complete support key.
+Importantly, its current implementation forms that key on every request,
+including a cache hit.  Its $s_r$ entry inspections therefore remain in
+\eqref{eq:cachework126c}; they are not replaced by an unproved constant
+cost.  A previously bound immutable case avoids rebuilding its derivative
+key, whereas each fresh binding or explicit subset forms all $s_b$ entries.
+Every request performs only a fixed number of additional table operations,
+apart from recursive requests already counted in $Q$.  Summing these costs
+proves the displayed bound.  Since key formations and minimum requests are
+included among the calls, replacing their lengths by $S$ gives the simpler
+bound.
+
+Each built piece stores a fixed number of rational entries and a prefix.
+The number of memoized arguments, roots, bindings and support keys is at
+most a constant multiple of the request count.  A mathematical key or a
+retained case contains at most $O(S)$ scalar or reference entries.  These
+facts prove the storage bound.  Clearing the caches on context exit prevents
+these retained cases or evaluations from becoming an uncharged initial state
+for the next service.
+
+The upper bound counts the stated calculations.  An uncached partial
+interval can contain fewer pieces than the full domain, or a service may
+never request the same geometry twice.  Its work therefore has no matching
+lower bound merely because the cached algorithm has the displayed upper
+bound.  Growing rational bit lengths, table operations, extra retained
+objects and cache setup or cleanup can also affect actual cost.  The paired
+experiment measures all those costs while requiring identical original
+economic work and policies.  It supplies any empirical speed comparison;
+the algebra alone supplies none.
+\end{proof}

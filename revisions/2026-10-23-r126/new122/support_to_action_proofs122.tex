@@ -1,0 +1,263 @@
+\section{Proofs for the paid-support policy safeguard}
+\label{supp:supportaction122}
+
+All claims below are deterministic statements about the original economic
+operator. Conditional sampling and population inference, if used in an
+experiment, require a separately frozen protocol. None of the proofs changes
+the current information filtration or the terminal controller.
+
+\subsection{Original-gradient cap and the producer's support semantics}
+
+The original state Lipschitz bound \eqref{eq:lipschitz95}, specialized to
+$d=2$, and the action exposure $\boldsymbol b=(1/2,1/4)$ give
+\[
+ |V_1(F(x,a,z))-V_1(F(x,b,z))|
+ \le \frac{15}{2}\frac34|a-b|=\frac{45}{8}|a-b|.
+\]
+Monotonicity and cash invariance imply the sup-norm Lipschitz bound
+$|\rho(U)-\rho(V)|\le\|U-V\|_\infty$ for the original AVaR.
+Since $0\le h'(a)=2a+16a^3\le3/4$ on $[0,1/4]$, it follows that
+\[
+ |Q_x(a)-Q_x(b)|\le
+ \left(\frac34+\frac{15}{16}\frac{45}{8}\right)|a-b|
+ =\frac{771}{128}|a-b|<7|a-b|.
+\]
+The established differentiability of the original $Q_x$ therefore gives
+$|Q_x'|\le771/128<7$, including inward endpoint derivatives.
+This argument holds for both declared risk levels and every original state;
+it does not estimate a derivative cap from sample gradients.
+
+Here is why the existing original-risk payload supplies
+\eqref{eq:paidinformation122}. Freeze any feasible risk density constant
+on the original innovation cells $B_i$, with exact masses $w_i$ and
+midpoints $z_i$. At $y_i=F(x,a,z_i)$, retain a global affine terminal
+minorant $V_1(y)\ge\ell_i+p_i^{\mathsf T}(y-y_i)$.
+Within a cell, the original transition satisfies
+\[
+ F(x,b,z)-F(x,a,z_i)
+      =\boldsymbol b(b-a)+\boldsymbol s(z-z_i).
+\]
+The integral of $z-z_i$ under its constant density is zero.
+Thus the same fixed feasible risk witness, evaluated at an arbitrary
+feasible action $b$, gives
+\[
+ Q_x(b)\ge S(x)+h(b)+
+  \beta\sum_iw_i\{\ell_i+p_i^{\mathsf T}\boldsymbol b(b-a)\}.
+\]
+Using $h(b)\ge h(a)+h'(a)(b-a)+(b-a)^2$ proves the global quadratic
+support with
+\[
+ W=S(x)+h(a)+\beta\sum_iw_i\ell_i,\qquad
+ p=h'(a)+\beta\sum_iw_i\boldsymbol b^{\mathsf T}p_i.
+\]
+An outward lower $W$ and an interval enclosing the actual $p$ preserve it.
+The witness may have been selected by sorting lower midpoint values at $a$;
+its weights are held fixed in the displayed comparison. It is not
+implicitly differentiated as an optimizing density at another action.
+The same proof covers a feasible active-tail density.
+
+The original upper $U$ comes from the convex-order endpoint-mixture
+calculation for $V_1$ under the original continuous law. The implementation
+exposes its separately recomputed upper
+\texttt{(base + BETA * upper\_risk).hi} before the terminal-controller
+allowance. It preserves the actual lower witness separately from the
+reported policy-interval lower endpoint; they need not have identical
+rounding. This avoids treating a generic policy upper bound as an exact
+optimal-future value or subtracting an unidentified error term.
+
+\begin{proof}[Proof of Theorem~\ref{thm:supportgradient122}]
+For $0<h\le A-a$, derivative Lipschitzness and the lower support give
+\[
+ W+ph+\frac\mu2h^2
+ \le q(a+h)
+ \le q(a)+q'(a)h+\frac L2h^2
+ \le U+q'(a)h+\frac L2h^2.
+\]
+Rearranging gives $q'(a)\ge p-e/h-ch$ and therefore the lower
+inequality after $p\ge p_-$ and minimization in $h$.
+For $0<h\le a$ use $a-h$ in the same calculation. Dividing by the
+negative displacement gives $q'(a)\le p+e/h+ch\le p_++e/h+ch$.
+This proves the upper inequality. Integrating the continuous derivative
+proves the smooth upper Taylor inequality used here; strong convexity
+supplies the lower quadratic term. One-sided boundary derivatives have
+the indicated inward interpretation.
+
+For $e,c>0$, $e/h+ch$ decreases until $h=\sqrt{e/c}$ and increases
+thereafter, which proves \eqref{eq:psi122}. At $e=0$ its infimum on
+$(0,r]$ is zero. If $c=0$, the infimum is $e/r$, including zero.
+When $r=0$ there is no admissible displacement in that derivation and
+no finite inference on that side.
+
+We next show sharpness, which concerns the stated information rather than
+the particular investment formula. Keep an exact slope $p$, the support
+level $W$, the upper level $U$, and the action interval fixed. Consider
+\[
+ q_g(a+d)=U+gd+\frac L2d^2.
+\]
+This function has $L$-Lipschitz derivative and is $\mu$-strongly convex
+because $L\ge\mu$. Its difference from the supplied support is
+\[
+ q_g(a+d)-\{W+pd+\tfrac\mu2d^2\}
+       =e+(g-p)d+cd^2.
+\]
+For all positive feasible $d$, nonnegativity of this expression is
+exactly $g-p\ge-\inf_{0<d\le A-a}(e/d+cd)$.
+For all negative feasible $d$ it is exactly
+$g-p\le\inf_{0<-d\le a}(e/(-d)+c(-d))$.
+At $d=0$ it is $e\ge0$. Thus every derivative in
+\[
+ [p-\Psi(e,c,A-a),\ p+\Psi(e,c,a)]
+\]
+is realized by this quadratic with the same supplied information,
+and neither side can be tightened. At $a=0$, arbitrarily large positive
+$g$ remain feasible, and at $a=A$, arbitrarily negative $g$ do so.
+If an extra original-gradient bound is intersected, validity persists;
+sharpness after additional model-specific restrictions is not asserted.
+
+For a concrete boundary warning, set $A=1/4$, $a=0$, $\mu=2$,
+$L=10$, $W=U=0$, and $p=-1$. Both
+$q_-(b)=-b+5b^2$ and $q_+(b)=b+5b^2$ lie above the common support
+$-b+b^2$ on $[0,1/4]$. Their inward derivatives at zero have opposite
+signs. Treating the touching boundary support slope as the actual
+derivative would falsely certify descent for $q_+$.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:payloadsafeguard122}]
+Integration of the derivative inequalities, or the defining strong
+convexity and smoothness inequalities, gives for every feasible $d$
+\[
+ q'(a)d+\tfrac\mu2d^2
+ \le q(a+d)-q(a)
+ \le q'(a)d+\tfrac L2d^2.
+\]
+Taking the extrema over the valid derivative interval proves
+$\underline m(d)\le q(a+d)-q(a)\le\overline m(d)$.
+The future-policy difference belongs to $[-\delta,\delta]$,
+so addition proves \eqref{eq:actualcontrast122}. This step uses no
+convexity, continuity, or differentiability of the implemented future
+policy's error.
+
+The saved upper value gives
+$J_x(a+d)\le U+\overline m(d)+\delta=U_b$.
+The quadratic lower support and $J_x\ge q$ give the lower endpoint
+$L_b$. For every feasible action, the saved support minorizes $q$.
+Its infimum for the actual unknown slope is at least the smaller of
+the infima for $p_-$ and $p_+$, since for each displacement the affine
+function of $p$ is bounded below by its endpoint minimum. Thus
+$B\le\min_{b\in[0,A]}q(b)=V_0(x)$. Taking the maximum with another
+valid original-optimum lower bound preserves this inequality.
+Subtracting proves the regret bound. A feasible implemented policy
+cannot beat $V_0$, by the monotone original recursion and its feasible
+last-date controller, which gives the nonnegative side.
+
+On $d\ge0$, the robust upper model equals
+$g_+d+Ld^2/2$; on $d\le0$ it equals
+$g_-d+Ld^2/2$. Each is convex. If the interval straddles zero, both
+pieces are nonnegative and $d=0$ minimizes them. If $g_->0$, the
+nonpositive part has its unconstrained minimizer $-g_-/L$, clipped
+to $[-a,0]$; the positive part cannot improve on zero.
+The negative-gradient case is symmetric. This proves the displayed
+proposal formula. The three actual acceptance checks concern only the
+realized feasible action, so a rounded action is valid when its newly
+computed inequalities pass. No bound for a different action is reused.
+
+A strict negative upper contrast proves actual improvement. The two
+absolute tests prove qualification. At an accepted sequence, sum the
+statewise inequalities $J(a_{j-1})-J(a_j)\ge
+-\overline m_j(d_j)-\delta$; the actual costs telescope. Retention
+steps add zero. Every accepted action is feasible and qualified by its
+own three tests, completing the induction. A finite measurable rule
+with fixed tie and failure conventions supplies an economic policy.
+The test is valid even when the proposal was produced by a nonconvex
+critic, since the premises concern the original $q$.
+
+For the claimed information sharpness only, take an interior anchor,
+an exact supplied support slope, and the exact untruncated interval
+\eqref{eq:gradientinterval122}, before imposing any further original-model
+restriction. Use the quadratic $q_g$ in the preceding proof with the endpoint
+of that exact feasible gradient interval maximizing $gd$. It gives
+$q_g(a+d)-q_g(a)=\overline m(d)$.
+There is no representation-dependent slack to remove under those data.
+The additional future-policy floor can also be attained within the
+interface $0\le\eta\le\delta$ at two distinct actions by setting
+$\eta(a)=0,\eta(a+d)=\delta$. This reproduces the retained R120
+future-information limitation and is not a new claim about what the
+particular terminal controller must realize.
+\end{proof}
+
+\begin{proposition}[A checkable interior precision ladder]
+\label{prop:precisionladder122}
+Let $a\in(0,A)$, $L>\mu$, and suppose level $k$ supplies the information
+in \eqref{eq:paidinformation122}, with $e_k\le e_0 4^{-k}$ and
+$p_{k,+}-p_{k,-}\le w_0 2^{-k}$. At every level satisfying
+$e_0 4^{-k}\le (L-\mu)\min\{a,A-a\}^2/2$, the exact derivative
+interval has width at most $D2^{-k}$, where
+$D=w_0+2\sqrt{2(L-\mu)e_0}$.
+Let $\Gamma_k=-\min_d\overline m_k(d)$ be the unrounded robust
+smooth-model gain. Then
+\[
+ 0\le G_L(a,q'(a))-\Gamma_k\le AD2^{-k}.
+\]
+With a realized rounding displacement error at most $\rho$, an additional
+conservative loss allowance $(G+LA)\rho$ is valid whenever the gradient
+interval used in the robust model lies in $[-G,G]$.
+\end{proposition}
+
+\begin{proof}
+The interior condition permits the minimizing positive $h$ on both
+sides. The uncertainty on each side is
+$\sqrt{2(L-\mu)e_k}$, which yields the width bound.
+Let $I=[l,u]$ be that interval and let $g=q'(a)\in I$.
+Here $I$ is the exact-infimum interval; a larger finite-radius numerical
+interval requires its actual width in this argument. The scalar $g_0$ in
+$I$ closest to zero is $l$ if $l>0$, $u$ if
+$u<0$, and zero otherwise. The formula for the robust proposal shows
+$\Gamma_k=G_L(a,g_0)$. One may also see this by separating the
+positive and negative displacement domains.
+If $g_0=0$, the robust gain is zero; otherwise it uses the same
+sign as every $g\in I$ and the smallest magnitude.
+Therefore $G_L(a,g_0)\le G_L(a,g)$.
+The maximum of the functions $-gd-Ld^2/2$ is $A$-Lipschitz in $g$,
+since every feasible $d$ satisfies $|d|\le A$.
+Also $|g-g_0|\le u-l\le D2^{-k}$. These prove the assertion.
+
+For rounding, on the feasible displacement interval each piece of
+$\overline m$ has derivative of magnitude at most $G+LA$.
+The pieces meet continuously at zero, so the same bound is global.
+A displacement perturbation of at most $\rho$ therefore increases
+the robust upper model by at most $(G+LA)\rho$.
+In actual code it is preferable to reevaluate the outward model at
+the realized action, rather than to spend this extra allowance.
+\end{proof}
+
+This proposition gives a finite gain stopping bound under explicit
+oracle guarantees and a strict margin. Its scope must be kept separate
+from the qualification-width test: as $e$ and slope uncertainty tend
+to zero, \eqref{eq:candidateinterval122} can still have width
+$(L-\mu)d^2/2+\delta$. Additional candidate information is necessary
+when that curvature width exceeds the prescribed requirement.
+The $L=\mu$ case has $\Psi(e,0,r)=e/r$ and admits the corresponding
+faster algebraic bound, but no nonzero-capacity or interior room can
+be inferred at a boundary.
+
+\begin{proposition}[A priced stopping region]
+\label{prop:pricedstop122}
+Suppose an implemented incumbent has certified original regret at most
+$K\ge0$. Suppose every admissible continuation of a single-decision
+solver incurs at least $c_*$ extra computation units before it can
+change the decision, these units cost $\lambda\ge0$ per unit in
+original-objective units, and no benefits on other decisions or later
+reuse are included. If $\lambda c_*\ge K$, stopping weakly dominates
+every such continuation in original objective plus computation cost.
+\end{proposition}
+
+\begin{proof}
+Let $J$ be the incumbent's original cost and $J'$ the final cost of
+any feasible continuation. Feasibility gives $J'\ge V_0$, so
+$J-J'\le J-V_0\le K$. The continuation's incremental computation
+cost is at least $\lambda c_*$, which is no smaller than that maximum
+possible saving. Its total cost cannot be lower than stopping.
+Sunk computation cancels from the comparison. The conclusion fails to
+cover reuse benefits by construction; those require their own economic
+account and cannot be added to a single-decision calculation afterwards.
+\end{proof}

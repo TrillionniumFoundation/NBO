@@ -1,0 +1,224 @@
+% R119 author addition.  Classical AVaR and convex-integration ingredients
+% are explicitly credited; the tail-uniform information account and its
+% original-investment outward implementation are proved in the companion.
+\section{Resolving the active innovation tails}\label{sec:activetail119}
+The original continuous innovation law supplies information that an NBO
+must share with its strongest conventional competitors.  Convexity of a
+continuation along that innovation implies that the adverse outcomes occupy
+at most two endpoint intervals.  Locating these intervals before quadrature
+changes which continuation values must be acquired.  In particular, the
+upper information bound need not pay a factor $(1-\alpha)^{-1}$ for resolving
+the entire innovation support when only a fraction $1-\alpha$ is adverse.
+The result below is a deterministic point-information theorem and an
+outward Bellman implementation.  It does not assert a neural representation
+separation, a randomized optimum, or multivariate tractability.
+
+\subsection{A tail-uniform point-information account}
+Let $f:[-R,R]\to\mathbb R$ be convex and $K$-Lipschitz, where $R,K>0$;
+the information consists of exact point values, the original uniform law,
+and these class restrictions.  The formula of $f$, its derivatives, and
+its integrals are not supplied.  Write $t=1-\alpha$ and $L=2R\alpha$ for
+$0<\alpha<1$, and let $I=[-R,R-L]$.  For $u\in I$ put
+\begin{align}
+ H(u)&=\int_u^{u+L} f(z)\,dz,&
+ D(u)&=f(u+L)-f(u),\label{eq:tailcenter119}\\
+ R_u(f)&=\frac{\int_{-R}^{u}f(z)\,dz+
+                         \int_{u+L}^{R}f(z)\,dz}{2Rt}.
+ \label{eq:tailwitness119}
+\end{align}
+Every $R_u$ is a feasible original-law AVaR witness: its density relative
+to the original uniform law is $t^{-1}$ on the two displayed intervals
+and zero elsewhere.  Its feasibility does not require $u$ to be optimal.
+
+\begin{theorem}[Active-tail information with uniform risk-level constants]
+\label{thm:tailinformation119}
+The function $H$ is convex and continuously differentiable, $H'=D$, and
+$D$ is nondecreasing and $2K$-Lipschitz.  Moreover,
+\begin{equation}\label{eq:exacttail119}
+ \operatorname{AVaR}_{\alpha}(f)=\max_{u\in I} R_u(f).
+\end{equation}
+If $D(-R)\ge0$, the left endpoint is a maximizer in
+\eqref{eq:exacttail119}; if $D(R-L)\le0$, the right endpoint is one.
+Otherwise a zero of $D$ lies in the interior.  After $m$ sign bisections,
+choose the midpoint $u_m$ of the retained zero bracket, terminating early
+at any exact zero.  Then
+\begin{equation}\label{eq:taillocalization119}
+ 0\le\operatorname{AVaR}_{\alpha}(f)-R_{u_m}(f)
+       \le\frac{KRt}{2}\,4^{-m}.
+\end{equation}
+The right side is replaced by zero after an endpoint or exact-zero exit.
+
+For an integer $n\ge1$, partition each of the two selected tails into
+equal cells within that tail, with every cell length at most $2Rt/n$.
+At most $n+1$ nonempty cells are required.  Midpoint values give a lower
+bound $\underline R$ for $R_{u_m}(f)$; endpoint secants give an upper
+bound $\overline R$.  The resulting interval
+\begin{equation}\label{eq:tailinterval119}
+ \left[\underline R,\,
+       \overline R+\frac{KRt}{2}4^{-m}\right]
+\end{equation}
+contains the original AVaR and has width at most
+\begin{equation}\label{eq:tailwidth119}
+ KRt\left(n^{-2}+\tfrac12 4^{-m}\right).
+\end{equation}
+With $m=\lceil\log_2 n\rceil$, the width is at most
+$3KRt/(2n^2)$ and at most $2n+2\lceil\log_2 n\rceil+8$ distinct
+point values are acquired, including tail localization.
+
+Conversely, every deterministic adaptive interval algorithm using at
+most $N$ exact point values and sound for all consistent convex
+$K$-Lipschitz functions has an input on which its reported width is at
+least
+\begin{equation}\label{eq:tailinformationlower119}
+ \frac{KRt}{6(N+1)^2}.
+\end{equation}
+Thus, for $N\ge32$, the optimal worst-case width is of order
+$KR(1-\alpha)N^{-2}$ with constants independent of $\alpha\in[0,1)$,
+under this exact point-information convention.  At $\alpha=0$ the
+construction uses ordinary midpoint--secant integration on the full
+interval and no localization; the same order and lower bound hold.
+\end{theorem}
+
+The lower bound is the retained indistinguishable-tail argument, with
+its complete proof restated in the supplement.  The addition is an upper
+algorithm that locates the adverse interval and pays for that localization,
+so that the same linear tail-length factor appears on both sides.  The
+AVaR variational principle and midpoint--secant inequalities are classical
+\citep{rockafellaruryasev2002,Novak2015Integration97}.  This result does
+not make a point-value oracle equivalent to formula access.  As
+$\alpha$ approaches one, representing the shrinking intervals, resolving
+nearby function values, and enforcing outward arithmetic may require
+additional bits and numerical work.  Those costs are outside an
+exact-real point-query count and are charged in the implementation.
+
+\subsection{An outward implementation for the original investment economy}
+Fix the original investment state $x$, a feasible realized proposal $a$,
+the same $\alpha$, and the unchanged implemented terminal controller.
+Let
+\[
+ f_a(z)=V_1(F(x,a,z)),\qquad
+ Q(a)=S(x)+h(a)+\beta\operatorname{AVaR}_\alpha(f_a).
+\]
+Here $Q$ uses the original optimal last-date continuation.  Its relation
+to the actual complete-policy cost $J(a)$ is
+\begin{equation}\label{eq:future119}
+ Q(a)\le J(a)\le Q(a)+\beta\varepsilon_1,
+ \qquad \varepsilon_1=2^{-20}.
+\end{equation}
+This allowance is inherited from the actually implemented controller;
+it is not inferred from the newly chosen quadrature nodes.
+
+The primitive curvature in Proposition~\ref{prop:curvature95} implies
+that $V_1$ is $m_x$-strongly convex, with
+$m_x=(4-5\beta/4)/d$.  Since the original innovation direction has
+squared Euclidean length $d$, $f_a$ is $m_z$-strongly convex, where
+\begin{equation}\label{eq:tailcurvature119}
+ m_z=4-5\beta/4=181/64.
+\end{equation}
+Its Lipschitz constant in $z$ is at most $15$.  Consequently the
+integrated central loss $H_a$ is $m_zL$-strongly convex.  These are
+original-primitive constants, not fitted shape estimates.
+
+Let any feasible $u\in I$ be supplied, with a verified interval
+$[d_-,d_+]$ containing $f_a(u+L)-f_a(u)$.  Define
+\begin{equation}\label{eq:taildefect119}
+ \kappa(u)=\frac{1}{2Rt}
+ \max_{d\in\{d_-,d_+\}}
+ \left[-\min_{v\in I}
+       \{d(v-u)+\tfrac12m_zL(v-u)^2\}\right].
+\end{equation}
+The inner minimum is attained at
+$v=\operatorname{proj}_I(u-d/(m_zL))$; an outward lower bound on
+that minimum is sufficient.  Thus inaccurate endpoint comparisons
+enlarge a retained defect instead of granting false tail optimality.
+
+Partition the selected tails into cells $B_i=[l_i,r_i]$ with midpoint
+$z_i$ and positive weight $w_i=(r_i-l_i)/(2Rt)$.  Their weights sum to
+one.  At each successor $y_i=F(x,a,z_i)$, obtain a valid global affine
+minorant
+\[
+ V_1(y)\ge \ell_i+p_i^{\mathsf T}(y-y_i).
+\]
+The vector $p_i$ may itself be enclosed, provided the uncertainty is
+retained in the final slope.  Obtain upper values $u_i^-$ and $u_i^+$
+for $V_1(F(x,a,l_i))$ and $V_1(F(x,a,r_i))$.  Put
+\begin{align}
+ r_-&=\sum_i w_i\ell_i,&
+ r_+&=\sum_i w_i(u_i^-+u_i^+)/2,\label{eq:tailquadrature119}\\
+ W&=S(x)+h(a)+\beta r_-,&
+ s&=h'(a)+\beta\sum_iw_i\,b^{\mathsf T}p_i,
+ \label{eq:tailactionsupport119}
+\end{align}
+where $b$ is the original investment action-exposure vector.  All sums
+and products must be outward enclosures of these exact weighted objects.
+
+\begin{theorem}[Original-policy qualification from a feasible active tail]
+\label{thm:investmenttail119}
+Suppose the displayed supports, value intervals, derivative interval,
+and scalar minimizations are valid outward bounds.  Then
+\begin{align}
+ S(x)+h(a)+\beta r_-
+ &\le J(a)\le
+ S(x)+h(a)+\beta\{r_++\kappa(u)+\varepsilon_1\},
+ \label{eq:tailpolicyinterval119}\\
+ V_0(x)&\ge
+ \inf_{0\le v\le A(x)}\{W+s(v-a)+(v-a)^2\}.
+ \label{eq:tailoptimum119}
+\end{align}
+If $s\in[s_-,s_+]$ is uncertain, taking the smaller of the two minima
+at $s_-$ and $s_+$ gives a valid lower bound in
+\eqref{eq:tailoptimum119}.  Subtracting this lower bound from the
+policy upper endpoint therefore bounds complete-policy regret relative
+to the original optimal policy.  The original loss target $1/256$ and
+policy-width target $1/8192$ retain their original meanings.
+
+The conclusion applies to boundary proposals, a one-sided tail, a
+nonoptimal tail cut, a rounded action, and an imperfect stored
+continuation used only to generate the proposal.  It requires neither
+convexity of the implemented policy value nor differentiation through
+the rounded terminal actor.  With the same proposal and the same future
+policy, a different valid certificate changes information about cost,
+not the cost itself.
+\end{theorem}
+
+A cut obtained from the stored critic can be a useful proposal, but the
+tail defect in \eqref{eq:taildefect119} must concern the original $V_1$.
+The same fixed feasible tail density supplies the all-action minorant;
+it is never differentiated as though it were an exact optimizer.  The
+new service and the uniform-support conventional service both pay for
+tail proposals, original terminal evaluations, refused certificates,
+refinement, and fallback.  Operation savings and actual returned-policy
+contrasts are reported separately.
+
+\subsection{Paid precision and recursive use}
+For any finite list of attempted resolutions, accepting at the first
+resolution whose outward intervals meet both original targets preserves
+qualification.  Every unsuccessful earlier attempt remains part of the
+service cost.  A geometric ladder alone gives no promise that a rejected
+action ever qualifies: its limiting supporting quadratic may remain too
+loose, or the action itself may be too costly.  The unchanged fallback
+therefore remains part of the delivered policy.
+
+For a declared fixed graph with exact-value quadrature allowance
+$A/n^2$, tail-localization allowance $B4^{-m}$, $A,B>0$, positive costs
+$c_qn+c_bm$, and usable tolerance $\epsilon>0$ after all other errors
+have been charged, an interior continuous optimum satisfies
+\begin{equation}\label{eq:tailallocation119}
+ e_b=\frac{2c_b}{c_q\sqrt A\log4}
+                    (\epsilon-e_b)^{3/2},\qquad
+ n=\sqrt{A/(\epsilon-e_b)},\qquad
+ m=\frac{\log(B/e_b)}{\log4}.
+\end{equation}
+The equation has one root in $(0,\epsilon)$.  Domain boundaries such
+as $n\ge1$ or $m\ge0$ are checked separately; upward integer rounding
+preserves the allowance and adds less than $c_q+c_b$.  This is an
+allocation for the stated work model, not an empirical compute price
+or a globally optimal discovery policy.  Its proof is in the supplement.
+
+At earlier dates the same witness construction can be used whenever the
+original continuation along the innovation has the required convexity
+and supplies global supports.  Its local original-action gaps enter the
+retained dated policy account; constant certified continuation allowances
+propagate by discounting and cash invariance.  Convexity is not asserted
+for an arbitrary learned network, an arbitrary nonlinear transition, or
+an unexecuted longer-horizon controller.

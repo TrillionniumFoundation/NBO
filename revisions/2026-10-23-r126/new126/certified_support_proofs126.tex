@@ -1,0 +1,305 @@
+\section{Finite cut certificates and action regret}
+\label{supp:computed126}
+
+\subsection{Exact constraints and their rational tangents}
+
+Use the notation $K=L-\mu$,
+$h=q-\mu x^2/2$, $f_i=h(x_i)$, and $g_i=h'(x_i)$ from
+Theorem~\ref{thm:fullinterpolation125}. Every item of information
+claimed for the compatibility class must be encoded before computing a
+cut. Additional original-model bounds are kept separately as described
+below. In particular, an uncertain
+supporting slope has one variable $p_j$ shared by every node. A
+different slope chosen for each node would describe a different
+information class.
+
+Suppose first $K>0$. On an adjacent interval, let
+$d=x_{i+1}-x_i$, $s=g_{i+1}-g_i$, and
+$w=f_{i+1}-f_i-g_id$. In addition to the affine restrictions
+$-s\le0$ and $s-Kd\le0$, the two nonlinear restrictions are
+\[
+ c_3=s^2-2Kw\le0,\qquad
+ c_4=s^2-2K(sd-w)\le0.
+\]
+In the coordinate order $(f_i,f_{i+1},g_i,g_{i+1})$, their gradients are
+\begin{align*}
+ \nabla c_3&=(2K,-2K,-2s+2Kd,2s),\\
+ \nabla c_4&=(-2K,2K,-2s,2s-2Kd).
+\end{align*}
+The Hessian of each is twice the outer product of the linear
+coefficient vector of $s$ with itself. The remaining terms are affine.
+Thus these are convex quadratics and their displayed tangents are
+global affine minorants.
+
+For a support at $a_j$ with level $W_j$, its node restriction is
+\begin{align*}
+ c_{ij}
+ &=\ell_j(x_i;p_j)+\Phi_K(v;-x_i,A-x_i)-f_i\le0,\\
+ v&=p_j-\mu a_j-g_i,\qquad
+ t={\rm proj}_{[-x_i,A-x_i]}(v/K).
+\end{align*}
+Its only nonzero gradient coordinates are
+\[
+ \partial_{f_i}c_{ij}=-1,\qquad
+ \partial_{g_i}c_{ij}=-t,\qquad
+ \partial_{p_j}c_{ij}=x_i-a_j+t.
+\]
+The formula follows by differentiating
+$\Phi_K(v;\ell,r)=vt-Kt^2/2$. The maximizer is unique when
+$K>0$, including at the clipping thresholds, and the derivative with
+respect to $v$ is $t$. Every evaluation is rational for rational
+inputs. The function is convex because $\Phi_K$ is a pointwise
+maximum of affine functions of $v$; subtracting $f_i$ and adding
+$\ell_j$ preserves convexity.
+
+When $K=0$, impose $s=w=0$ as affine equalities. The support
+function is $\Phi_0(v;\ell,r)=\max\{v\ell,vr\}$.
+Choose either maximizing endpoint $t\in\{\ell,r\}$, including
+either one in a tie. The same three displayed coordinates are a valid
+rational subgradient. This handles the constant-curvature case
+without division by $K$ or an unstated limiting argument.
+
+Observed value and derivative intervals, slope intervals, the cap
+$|g_i+\mu x_i|\le M$, and the integrated value boxes are affine
+restrictions. They can be retained as exact rows from the outset.
+No fitted derivative, altered preference, or support from another
+state may enter this set without its own declared transport theorem
+and complete charge.
+
+\subsection{Proof of Theorem~\ref{thm:cuts126}}
+
+For every convex constraint, the subgradient inequality gives
+\[
+ c_{i_r}(z)\ge c_{i_r}(v_r)+s_r^\top(z-v_r)
+                  =A_rz-b_r.
+\]
+If $z\in P$, its right side is nonpositive. Therefore, for
+nonnegative $y$, $H(z)+y^\top(Az-b)\le H(z)$ on $P$.
+The expression on the left is affine in $z$, and its exact minimum
+on the finite product box is
+\[
+ h_0-y^\top b+\sum_k
+       \min\{(h+A^\top y)_k\underline z_k,
+              (h+A^\top y)_k\overline z_k\}=B.
+\]
+Thus $B\le\inf_{z\in P}H(z)$. The exact interpolation theorem
+identifies the latter infimum as $-U_{\rm full}(a,b)$. This proves
+the first assertion without any optimization assumption on the cut
+points or weights.
+
+If $z^{\rm f}\in P$, then
+$B\le\min_PH\le H(z^{\rm f})$. Reversing signs gives
+\eqref{eq:cutgap126}. In particular, the only accuracy assertion
+licensed by the two witnesses is the actual checked gap. A favorable
+floating-point objective, a small printed stationarity residual, or
+an approximate primal feasibility flag does not replace either witness.
+
+An upper bound remains valid after taking its minimum with other
+valid upper bounds on the same number. The common node set represents
+the same function class for each requested contrast; hence the same
+valid cuts may be reused with a different linear $H$. Their generation,
+storage, rational checks, and all numerical optimization calls remain
+part of the service's work. If common acquisition is supplied to
+different services, its allocation must be fixed and charged equally.
+This proves all remaining assertions.\hfill$\square$
+
+The assertion about the exact compatibility extremum applies to the
+raw bound $-B$ and to intersections with bounds valid throughout that
+same compatibility class. A separately licensed original-model bound
+may describe a smaller class. In particular, the saved number
+$B_{\rm old}\le\min q$ implies $q(a)\ge B_{\rm old}$ for the
+actual original objective. The implemented cheap comparator uses this
+fact even when the global restriction $q(x)\ge B_{\rm old}$ has
+not been encoded in $P$. Its intersection with $-B$ certifies the
+actual original action contrast, but need not dominate the supremum
+over the larger $P$. Its economic validity does not by itself prove
+the sharpness or numerical accuracy of the complete-support program.
+The full-class regret sandwich uses full-class upper contrasts;
+an original-policy regret upper bound may instead use any bounds
+valid for that same actual $q$.
+
+\paragraph{Numerical dual proposals.}
+For a minimization linear program with rows $Az\le b$, a library may
+report nonpositive objective derivatives with respect to the right-hand
+sides. Under that convention the proposed nonnegative weights are
+the negatives of those reported values. This is an implementation
+convention to be verified, not a premise of the theorem. An independent
+checker reconstructs $A,b$ from the original constraint identifiers
+and rational cut points, rejects negative weights, and recomputes $B$.
+Any rationalized nonnegative weights are valid, whether or not they
+are close to a numerical optimum. Exact box minimization pays for all
+stationarity error introduced by that rationalization. Retaining the
+largest certified $B$ prevents a poorer later proposal from weakening
+the certificate. Numerical linear-program infeasibility is never
+treated as proof that the original economic record is impossible.
+
+\subsection{The limiting calculation and its precise assumptions}
+
+\begin{proposition}[Convergence of exact nested outer relaxations]
+\label{prop:outerlimit126}
+Let $\mathcal B$ be a compact convex box, $P\ne\varnothing$, and
+let each convex $c_i$ be finite and continuous on a neighborhood of
+$\mathcal B$, with bounded selected subgradients there. Start with
+any finite valid cut set. At iteration $n$, minimize the affine
+$H$ exactly on the current outer polytope $P_n\supseteq P$,
+obtaining $z_n$. Add a tangent cut for every $c_i$ at $z_n$,
+without discarding earlier cuts. Then
+\[
+ \min_{P_n}H\uparrow\min_PH,
+\]
+and every cluster point of $z_n$ belongs to $P$ and attains its
+minimum. The conclusion also holds when cuts are taken at points
+$v_n$ with $\|v_n-z_n\|\to0$, under the same bounded-subgradient
+condition.
+\end{proposition}
+
+\begin{proof}
+Each tangent is valid on $P$, so the nonempty compact outer
+polytopes are nested. Their minima increase and are bounded above
+by $\min_PH$; write their limit as $\ell$. Take any convergent
+subsequence $z_{n_k}\to z_*$. For every fixed iteration $r$,
+all sufficiently late points belong to the closed $P_r$, so
+$z_*\in P_r$. In particular, the cut added at any $v_{n_k}$
+is satisfied at $z_*$. Hence
+\[
+ c_i(v_{n_k})+s_{i,n_k}^\top(z_*-v_{n_k})\le0.
+\]
+Continuity, $v_{n_k}\to z_*$, and bounded subgradients imply
+$c_i(z_*)\le0$ for every $i$. Thus $z_*\in P$.
+Continuity of $H$ gives $H(z_*)=\ell$, which, combined with
+$\ell\le\min_PH$, proves equality and optimality. The same
+argument applies to every convergent subsequence.
+\end{proof}
+
+No interior point or constraint qualification is required for this
+limiting statement. It gives no finite iteration count and no
+convergence certificate for an arbitrary capped numerical solve.
+Deleting cuts, adding cuts for only a selected subset of constraints,
+or accepting a numerical subproblem solution without its required
+control changes its hypotheses. The implemented economic guarantee
+must therefore remain the finite rational bound of
+Theorem~\ref{thm:cuts126}. When no exact primal witness is available,
+the distance to the sharp information bound remains uncertified.
+
+\subsection{Proof of Theorem~\ref{thm:gridregret126}}
+
+For any fixed original objective in the information class,
+\[
+ q(a)-\min_xq(x)=\max_x\{q(a)-q(x)\}.
+\]
+Taking a supremum over the class and restricting the inner maximization
+to the finite grid gives
+\[
+ \Gamma(a)\ge\max_j\sup_q\{q(a)-q(x_j)\}
+                  =\max_j u_j.
+\]
+The maximum and supremum commute because the grid is finite. There
+is no interchange of an infimum and a supremum in this argument.
+
+For the upper bound, let $x_q^*$ minimize $q$. If it is a boundary
+point, it is already a grid node. Otherwise $q'(x_q^*)=0$.
+There is a grid node $x_j$ at distance at most $h/2$, and smoothness
+gives
+\[
+ q(x_j)-q(x_q^*)\le\frac L2|x_j-x_q^*|^2
+                                      \le\frac{Lh^2}{8}.
+\]
+It follows that
+$q(a)-q(x_q^*)\le\max_j u_j+Lh^2/8$, uniformly in $q$.
+Taking the supremum proves \eqref{eq:gridsandwich126}.
+
+To verify sharpness, take the domain $[0,h]$, the grid $\{0,h\}$,
+$a=0$, and the singleton class
+$q(x)=L(x-h/2)^2/2$. All parameters can be positive rational
+numbers and $0<\mu\le L$. Exact endpoint values and endpoint
+derivatives with total derivative increment $Lh$ identify this
+quadratic within the $L$-smooth class: for every intermediate $x$,
+the upper Lipschitz bound from zero and the lower bound from $h$
+coincide. Then $u_0=u_1=0$ and $\Gamma(a)=Lh^2/8$.
+
+For the cell calculation, the function
+$x\mapsto q(x)-Lx^2/2$ is concave on $[0,A]$. For
+$x=(1-t)x_j+t x_{j+1}$ this gives the lower secant bound
+\[
+ q(x)\ge (1-t)q(x_j)+tq(x_{j+1})
+                     -\frac{Ld_j^2}{2}t(1-t).
+\]
+After subtracting from $q(a)$ and applying the two verified
+contrast bounds, the right side of \eqref{eq:cellregret126}
+dominates $q(a)-q(x)$ on the entire cell. Maximizing over all cells
+and then all compatible $q$ proves $\Gamma(a)\le G(a)$.
+Because $a$ is a grid node, one adjacent cell endpoint evaluates
+to zero; hence $G(a)\ge0$.
+
+For a cell, write $k_j=Ld_j^2/2>0$. Its objective is
+\[
+ \widehat u_j+
+  (\widehat u_{j+1}-\widehat u_j+k_j)t-k_jt^2.
+\]
+This concave quadratic is maximized at the clipped rational point
+in \eqref{eq:cellmax126}. Finally its value is at most
+$\max\{\widehat u_j,\widehat u_{j+1}\}+Ld_j^2/8$.
+Under the uniform accuracy premise it follows that
+\[
+ G(a)\le\max_j u_j+\epsilon+Lh^2/8
+       \le\Gamma(a)+\epsilon+Lh^2/8.
+\]
+This proves the accuracy statement. None of these arguments uses a
+new value observation at a computational grid node. The exact
+interpolation theorem applies to any enlarged finite node set,
+so introducing the corresponding unknown values and derivatives
+preserves the same compatible original functions.\hfill$\square$
+
+\subsection{Robust action selection, original-policy gain and paid stopping}
+
+For every compatible $q$, the function
+$a\mapsto q(a)-\min q$ is $M$-Lipschitz. Taking suprema proves
+the same Lipschitz bound for $\Gamma$. Also
+$q(a)-\min q-\mu a^2/2$ is convex; its supremum is convex.
+Thus $\Gamma$ is $\mu$-strongly convex. Compactness supplies a
+unique minimizing action $a^{\rm r}$, which is the robust action
+for this information class, not necessarily the actual optimum
+$a_q^*$. Choose a grid node $a_j$ within $h/2$ of $a^{\rm r}$.
+For a minimizer $\widehat a$ of the computed $G$ over the grid,
+\[
+ \Gamma(\widehat a)\le G(\widehat a)\le G(a_j)
+ \le\Gamma(a_j)+\epsilon+Lh^2/8
+ \le\Gamma(a^{\rm r})+Mh/2+\epsilon+Lh^2/8.
+\]
+This proves \eqref{eq:robustaction126}. The accuracy premise
+requires a verified gap for every used pairwise calculation; a
+solver's nominal tolerance is insufficient. Without that premise,
+the selected action retains its finite regret certificate $G$,
+but the displayed near-minimax guarantee is not asserted.
+
+For the actual unchanged future controller,
+$J(a)=q(a)+\eta(a)$ with $0\le\eta(a)\le\delta$,
+\[
+ 0\le J(a)-\min q\le\Gamma(a)+\delta\le G(a)+\delta.
+\]
+If there is a separately certified original-value interval
+$[W_a,U_a]$, the implemented policy interval is
+$[W_a,U_a+\delta]$. The separate width gate is therefore
+$U_a-W_a+\delta\le\omega$; it cannot be deduced from the
+level-invariant regret calculation.
+
+For two distinct realized actions,
+$J(b)-J(a)\le U_{\rm full}(a,b)+\delta$.
+Replacing $U_{\rm full}$ by any of its verified upper bounds
+and requiring a strictly negative result proves actual gain for
+every compatible original objective and allowed future error.
+At identical actions, the unchanged implemented policy has exactly
+zero contrast; it must not be assigned a positive gain by charging
+two different future-error allowances. A finite sequence of
+strictly accepted replacements telescopes its actual gains.
+
+Finally, every feasible alternative original policy has cost at
+least the original optimum. Starting from the qualified incumbent,
+its possible economic saving is at most
+$\min\{K_{\rm old},G(a)+\delta\}$. Under the stated compulsory
+cost and no-reuse premise, its resource bill is at least
+$\lambda c_*$. The stopping inequality therefore makes every
+allowed continuation weakly more expensive in total objective.
+Equality licenses weak dominance only. Reuse across future decisions,
+an additional uncharged oracle, or another preference changes that
+comparison and is excluded from the assertion.
