@@ -1,0 +1,9 @@
+# R122 source-preserving rebuild attempts during R125
+
+The baseline is the unchanged R122 source tree `94057fee7a8feebafc1b61008a51ab9a85b53e2a`, present both at author head `a4c22b50087430cdd42d07b161d696ebce54a858` and new-revision parent `51cc45d33f0ecb4ce7aebcdcdd9c5ff6a34637ec`.
+
+1. The first local launch supplied a receipt directory outside the builder's expected root. Its path-relative calculation raised `ValueError` before compilation. This is a launch/path failure, not evidence that the source manuscript fails to build.
+2. The next attempt reached LaTeX compilation but the sparse local extraction lacked `figures122/runtime03-display/complete_catalogue_display122.pdf`. The appendix therefore failed to compile. The exact pinned graphic was subsequently read back; its SHA256 is `16f159d23f5fd6cad054b0b9081b4600307f1b6047d74e51647af64036df62ff`.
+3. With that declared dependency available, all four unchanged documents compiled cleanly. The actual receipt, commands, final source/graphic hashes, per-command logs, and output PDF metadata are in `baseline_build/`. The completed build has 29 main-text pages, 107 supplement pages, 926 development-companion pages, and 42 response pages. Its final diagnostics have no unresolved labels, citations, or overfull boxes.
+
+The attempt descriptions above are the coordinating author's contemporaneous execution account. This short record does not invent missing per-attempt durations or recreate unavailable failure logs. The clean run's 19 original command logs are retained and their hashes independently checked by the baseline binding. No mathematics, scientific code, economic primitive, numerical outcome, or preregistered protocol was changed by these local dependency repairs. Typesetting success is not scientific experiment success.

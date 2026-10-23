@@ -1,0 +1,288 @@
+\section{Active-tail localization, information, and original-policy bounds}
+\label{supp:activetail119}
+
+\subsection{Proof of Theorem~\ref{thm:tailinformation119}}
+\begin{proof}
+Because $f$ is continuous, the fundamental theorem of calculus gives
+$H'(u)=f(u+L)-f(u)=D(u)$.  For convex $f$, its increment over a fixed
+positive length is nondecreasing.  One direct proof is to use the
+almost-everywhere derivative of a Lipschitz convex function:
+\[
+ D(v)-D(u)=\int_u^v\{f'(s+L)-f'(s)\}\,ds\ge0
+ \quad(u<v).
+\]
+The derivative is monotone wherever defined, and changing its values on
+a null set does not change the integral.  Also,
+\[
+ |D(v)-D(u)|\le |f(v+L)-f(u+L)|+|f(v)-f(u)|
+                  \le2K|v-u|.
+\]
+Thus $H$ is convex with a $2K$-Lipschitz derivative.  Compactness
+gives a minimizer on $I$, and the derivative signs give the asserted
+endpoint rules.
+
+We prove that a minimizing central interval discards precisely a lower
+$\alpha$ fraction of the outcomes, allowing equality at the threshold.
+At an interior minimizer $u^*$, $f(u^*)=f(u^*+L)=\eta$.  Convexity
+gives $f\le\eta$ between these endpoints and $f\ge\eta$ outside.
+The outside set has original probability $t$.  The feasible density
+$q=t^{-1}\boldsymbol1_{[-R,u^*]\cup[u^*+L,R]}$ therefore has
+\[
+ \int fq\,dP=\eta+t^{-1}\mathbb E(f-\eta)_+.
+\]
+The equality is unaffected by any flat portion at level $\eta$.
+For an arbitrary feasible AVaR density $\widetilde q$, the constraints
+$0\le\widetilde q\le t^{-1}$ and $\int\widetilde q\,dP=1$ give
+\[
+ \int f\widetilde q\,dP
+ =\eta+\int(f-\eta)\widetilde q\,dP
+ \le\eta+t^{-1}\mathbb E(f-\eta)_+.
+\]
+Consequently this selected $q$ is optimal.
+
+At the left endpoint, $f(-R+L)\ge f(-R)$.  Convexity implies that
+the maximum on $[-R,-R+L]$ is $f(-R+L)$ and that $f$ is
+nondecreasing to the right of $-R+L$; hence the same threshold
+argument applies with $\eta=f(-R+L)$.  At the right endpoint, the
+inequality is reversed and its reflected argument applies.  These
+arguments include equal endpoint values and constant functions.
+They establish \eqref{eq:exacttail119} without a density for the
+distribution of $f(Z)$ or a no-atom assumption.
+
+When neither endpoint rule holds, continuity of $D$ gives an interior
+zero.  Sign bisection maintains a bracket containing at least one zero,
+whose width after $m$ halvings is $2Rt\,2^{-m}$ because $|I|=2Rt$.
+Let $u^*$ be a zero in that bracket.  Integrating the $2K$-Lipschitz
+derivative from $u^*$ to its midpoint $u_m$ gives
+\[
+ 0\le H(u_m)-H(u^*)
+ \le K|u_m-u^*|^2
+ \le KR^2t^2\,4^{-m}.
+\]
+The total integral of $f$ is constant in $u$, so
+$\operatorname{AVaR}_\alpha(f)-R_{u_m}(f)
+ =[H(u_m)-H(u^*)]/(2Rt)$.
+This proves \eqref{eq:taillocalization119}.  An endpoint or exact-zero
+exit has zero loss, so no smoothness-boundary term is omitted.
+
+For a nonempty cell $[l,r]$ of length $h$ and midpoint $z$, convexity
+gives the pointwise secant upper bound and Jensen's lower bound,
+\[
+ h f(z)\le\int_l^r f(s)\,ds
+       \le\tfrac h2\{f(l)+f(r)\}.
+\]
+Their difference is
+\[
+ \frac{h^2}{4}\left\{
+       \frac{f(r)-f(z)}{r-z}-\frac{f(z)-f(l)}{z-l}\right\}.
+\]
+The braces are nonnegative.  When all cells are ordered from left
+to right, convexity orders every successive secant slope, including
+across the omitted central interval.  The sum of the bracketed slope
+differences is therefore at most the difference between the largest
+and smallest of these slopes, hence at most $2K$.  With maximal
+cell length $h_{\max}$, summation and normalization by $2Rt$ give
+\[
+ \overline R-\underline R
+ \le\frac{K h_{\max}^2}{4Rt}
+ \le\frac{KRt}{n^2}.
+\]
+This proves the interval and its width bound.
+
+If the selected tail lengths are $b_1,b_2\ge0$, then
+$b_1+b_2=2Rt$.  Use $\lceil nb_j/(2Rt)\rceil$ cells in each
+nonempty tail.  Since the two unrounded counts sum to the integer
+$n$, their ceilings sum to at most $n+1$.  Midpoints and distinct
+endpoints require at most $2(n+1)+2=2n+4$ values, allowing two
+nonempty components.  The two endpoint sign checks require at most
+four values, and $m$ bisections require at most $2m$ more.  Reusing
+duplicates can only reduce this count.  The query bound follows.
+Putting $m=\lceil\log_2n\rceil$ gives $4^{-m}\le n^{-2}$.
+
+For completeness, the lower bound preserves its original deterministic
+adaptive quantifiers.  Let $q=-R+2R\alpha$ and $b=R-q=2Rt$,
+and run the algorithm on
+\[
+ f_0(z)=\frac{K}{2b}(z-q)_+^2.
+\]
+This function is convex, nondecreasing, and $K$-Lipschitz.  Insert
+the $N$ queried locations lying strictly between $q$ and $R$, together
+with the two endpoints.  Their distinct consecutive interval lengths
+are $h_1,\ldots,h_s$, where $s\le N+1$ and $\sum_i h_i=b$.
+Define $f_1$ to equal $f_0$ to the left of $q$ and its chord on each
+of these intervals.  The chord slopes are nondecreasing in $[0,K]$;
+thus $f_1$ belongs to the same class and agrees with every query
+answer.  Induction on the adaptive transcript shows that the algorithm
+cannot distinguish $f_0$ and $f_1$.
+
+Since both functions are nondecreasing, their AVaRs are their averages
+over $[q,R]$.  The integral of the chord error on an interval of
+length $h_i$ is $K h_i^3/(12b)$.  Jensen's inequality gives
+\[
+ \operatorname{AVaR}_\alpha(f_1)-\operatorname{AVaR}_\alpha(f_0)
+ =\frac{K}{12b^2}\sum_i h_i^3
+ \ge\frac{Kb}{12(N+1)^2}
+ =\frac{KRt}{6(N+1)^2}.
+\]
+A sound common interval contains both values.  This proves the lower
+bound.  With $\alpha=0$, the same construction uses $q=-R$ and
+the upper algorithm simply partitions the full interval; no central
+interval or tail sign search is necessary.  For example, for every
+$N\ge32$ one may take $n=\lfloor N/4\rfloor$ in the upper
+algorithm; its stated query bound is at most $N$ and its width is at
+most $(75/2)KRt/N^2$.  Together with the lower bound this proves the
+claimed uniform order, without concealing a logarithmic factor in the
+error rate.
+\end{proof}
+
+\subsection{Primitive curvature and inexact tail localization}
+\begin{proof}
+Write $\mu_x=(4-5\beta/4)/d$.  The inherited primitive curvature
+bound says that the jointly convex last-date objective satisfies the
+strong-convexity inequality with terms
+$\mu_x\|x-y\|_2^2/2$ and $|a-b|^2$.
+For any $x,y$, select their optimal actions $a_x,a_y$.
+The capacity $A$ is affine, so
+$(1-\theta)a_x+\theta a_y$ is feasible at
+$(1-\theta)x+\theta y$ for $0\le\theta\le1$.
+Evaluate the strong-convexity inequality at this feasible interpolated
+action and then take the value infimum.  Dropping the nonnegative
+action-distance term proves
+\[
+ V_1((1-\theta)x+\theta y)
+ \le(1-\theta)V_1(x)+\theta V_1(y)
+       -\tfrac12\mu_x\theta(1-\theta)\|x-y\|_2^2.
+\]
+Thus $V_1$ is $\mu_x$-strongly convex.  For fixed original $x,a$,
+the successor map is affine in $z$ with direction
+$s=(1,-1,\ldots,1,-1)$ and $\|s\|_2^2=d$.
+Composition yields $m_z=\mu_xd=181/64$.  The inherited state
+modulus $15/d$ in the $\ell^1$ norm gives
+$|f_a(z)-f_a(z')|\le15|z-z'|$.
+
+For $u<v$, strong convexity of $f_a$ gives monotonicity of
+$f_a'(z)-m_zz$ at its almost-everywhere derivative points.  Therefore
+\[
+ D_a(v)-D_a(u)
+ =\int_u^v\{f_a'(s+L)-f_a'(s)\}\,ds
+ \ge m_zL(v-u).
+\]
+This is precisely $m_zL$-strong convexity of $H_a$.  For the true
+$d=D_a(u)$ it follows that
+\[
+ H_a(v)\ge H_a(u)+d(v-u)+\tfrac12m_zL(v-u)^2
+ \quad(v\in I).
+\]
+Taking the infimum proves that the normalized tail deficit is at most
+the expression in \eqref{eq:taildefect119} at the true $d$.
+The negative of an infimum of affine functions of $d$ is convex;
+its maximum over $[d_-,d_+]$ is bounded by the larger endpoint
+value.  Completing the square gives the projected minimizer.  These
+facts prove \eqref{eq:taildefect119} for outward derivative intervals,
+including both constrained endpoints and $d=0$.
+\end{proof}
+
+\subsection{Proof of Theorem~\ref{thm:investmenttail119}}
+\begin{proof}
+The selected density is exactly feasible under the original law.
+Integrating the midpoint affine supports over their symmetric cells
+cancels the term proportional to $z-z_i$, yielding
+$R_u(f_a)\ge r_-$.  Convexity of $f_a$ and its endpoint upper
+values give $R_u(f_a)\le r_+$.  By the tail-defect bound,
+\[
+ r_-\le\operatorname{AVaR}_\alpha(f_a)
+                 \le r_++\kappa(u).
+\]
+The complete terminal policy has
+$V_1\le J_1\le V_1+\varepsilon_1$ throughout the original state
+domain.  Monotonicity and cash invariance, for the same original
+risk primitive, imply
+\[
+ \operatorname{AVaR}_\alpha(f_a)
+ \le\operatorname{AVaR}_\alpha(J_1\circ F_a)
+ \le\operatorname{AVaR}_\alpha(f_a)+\varepsilon_1.
+\]
+Adding unchanged stage cost and discounting proves
+\eqref{eq:tailpolicyinterval119}.  No convexity of $J_1$ has been used.
+
+For another original feasible action $v$, the transition satisfies
+$F(x,v,z)=F(x,a,z)+b(v-a)$.  Therefore each global support gives
+\[
+ V_1(F(x,v,z))
+ \ge\ell_i+p_i^{\mathsf T}\{b(v-a)+s(z-z_i)\}
+ \quad(z\in B_i).
+\]
+Integrating over the \emph{same fixed} feasible density removes the
+last term.  The original stage cost satisfies
+$h(v)\ge h(a)+h'(a)(v-a)+(v-a)^2$ because $h''\ge2$.
+Combining these inequalities yields
+\[
+ Q(v)\ge W+s(v-a)+(v-a)^2
+ \quad(0\le v\le A(x)).
+\]
+Taking the infimum gives \eqref{eq:tailoptimum119}; the true
+$V_0$ is this original optimal-future infimum.  For uncertain slope,
+the constrained quadratic minimum is concave as a function of its
+slope, so its minimum over an interval is bounded below by the
+smaller endpoint minimum.  Taking outward endpoints preserves every
+direction of inequality.  A smaller exact feasible action domain can
+be enlarged when constructing a lower bound, but may never be shrunk
+to obtain a favorable minimum.
+
+Since $V_0\le J(a)$, the policy upper minus the optimum lower is
+a valid nonnegative regret allowance.  The same inference holds at
+$a=0$ and $a=A(x)$: no first-order condition for an interior actor
+has been assumed.  Tail search need not succeed, a fitted critic
+need not equal $V_1$, and a numerical candidate optimizer need not
+return an optimum, provided the displayed outward witnesses remain
+valid and the realized action remains feasible.
+\end{proof}
+
+\subsection{Paid precision and conditional allocation}
+\begin{proof}
+Qualification at a chosen stage of a finite sequence follows from its
+own verified inequalities; no monotonicity of earlier reported widths
+is needed.  Summing the actual cost of every attempted stage is the
+complete cost.  If a deterministic ladder has work $cn_j$ per stage
+with $n_j=2^jn_0$, its total work through $n_J$ is less than
+$2cn_J$.  Such a bound requires this work model and does not remove
+fixed costs, descendant solves, refused trials, or rational fallback.
+
+For the allocation formula write $e_b=B4^{-m}$ and
+$e_q=A/n^2$.  At a nonboundary continuous optimum the positive
+constraint binds, hence $e_q=\epsilon-e_b$ and the objective is
+\[
+ F(e_b)=c_q\sqrt{\frac A{\epsilon-e_b}}
+             +\frac{c_b}{\log4}\log\frac B{e_b}.
+\]
+Its second derivative is positive for $0<e_b<\epsilon$.
+Its derivative tends to negative infinity at zero and positive
+infinity at $\epsilon$.  It therefore has exactly one minimizer,
+and setting its derivative equal to zero gives
+\eqref{eq:tailallocation119}.  If this point violates $n\ge1$ or
+$m\ge0$, the convex problem in $(n,m)$ is minimized on the
+corresponding boundary or at the remaining feasible stationary point;
+the constraints $A/n^2+B4^{-m}\le\epsilon$ form a convex set.
+Increasing either resolution decreases its allowance, so rounding
+both upward preserves feasibility and adds less than $c_q+c_b$.
+All coefficients must be fixed properties of the declared graph and
+cost model.  Estimating them after observing a favorable outcome does
+not turn the resulting allocation into a prospective experiment.
+\end{proof}
+
+\subsection{Recursive interpretation}
+Suppose at each date the constructed certificate supplies a uniform
+original-optimal-continuation action gap $\gamma_t\ge0$ for a
+feasible deployed policy.  If its next-date policy loss is at most
+$e_{t+1}$, the unchanged Bellman preference gives
+\[
+ J_t^\pi\le Q_t(V_{t+1}^*;x,\pi_t(x))+\beta_te_{t+1}
+          \le V_t^*+\gamma_t+\beta_te_{t+1}.
+\]
+Backward induction from the declared terminal discrepancy gives the
+dated discounted sum.  A support of an NBO's own fitted continuation
+instead requires the retained one-sided or reference-centered
+continuation-error account.  It cannot be silently promoted to a
+support of $V_{t+1}^*$.  The currently executed original two-date
+construction obtains the needed $V_1$ supports from the primitive
+last-date oracle, and retains its actual terminal-controller allowance.

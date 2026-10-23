@@ -1,0 +1,55 @@
+name: NBO R125 author package
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r125-bellman-decision-service-2026-10-23
+    paths:
+      - revisions/2026-10-23-r125/CI_TRIGGER125.json
+      - .github/workflows/nbo-r125-author-package.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-author-package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+    steps:
+      - name: Read only the isolated R125 author package
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-23-r125/
+            /.github/workflows/nbo-r125-author-package.yml
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Install the declared numerical reader and native TeX dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y texlive-latex-extra texlive-fonts-recommended texlive-science poppler-utils
+          python -m pip install -r revisions/2026-10-23-r125/requirements125.txt
+      - name: Verify delivered evidence and rebuild the four author documents
+        working-directory: revisions/2026-10-23-r125
+        run: python verification125/ci_verify125.py
+      - name: Retain actual CI receipts and rebuilt PDFs, including failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nbo-r125-author-package-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 90
+          path: |
+            revisions/2026-10-23-r125/ci125/
+            revisions/2026-10-23-r125/build/ECTA.pdf
+            revisions/2026-10-23-r125/build/supp.pdf
+            revisions/2026-10-23-r125/build/appendix.pdf
+            revisions/2026-10-23-r125/build/RESPONSE_TO_REFEREE.pdf
