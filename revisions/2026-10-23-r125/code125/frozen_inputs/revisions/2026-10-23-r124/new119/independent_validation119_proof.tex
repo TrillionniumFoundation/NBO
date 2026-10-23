@@ -1,0 +1,319 @@
+\section{Independent finite enclosures for the original policy catalogue}
+\label{supp:independentvalidation119}
+
+This section supplies the mathematical justification for validation D.  It is
+a finite verification procedure for the original investment objective, using
+classical convexity and the AVaR threshold representation
+\citep{rockafellaruryasev2002,boyd2004}.  It is not a new optimization theorem,
+an independent population experiment, or a claim of neural exclusivity.
+The implementation reconstructs the original economic primitives separately
+from the production terminal compiler.  Its mathematical guarantee still
+uses the original domain, continuation-convexity, and implemented-terminal-policy
+bounds; software independence does not remove these assumptions.
+
+\subsection{Original objective and precise validation statement}
+Fix $d=2$, $X=[0,1]^2$, $R=1/32$, $\beta=15/16$, and
+$\alpha\in\{1/2,3/4\}$.  Put $t=1-\alpha$ and let $P$ be the
+uniform law on $[-R,R]$.  Indices below are cyclic.  The original primitives are
+\begin{align*}
+ A(x)&=\frac18+\frac{x_1+x_2}{16},\qquad h(a)=a^2+4a^4,\\
+ F_j(x,a,z)&=\frac1{16}+\frac{x_j}{2}+\frac{x_{j+1}}8\\
+       &\quad+\frac{x_j(1-x_{j+1})}{16}+b_ja+s_jz,\\
+ b&=(1/2,1/4),\quad s=(1,-1),\\
+ S(x)&=\sum_{j=1}^2(x_j-5/8)^2
+       +\frac18\sum_{j=1}^2(x_j-x_{j+1})^2\\
+       &\quad+2(1/2-x_1-x_2)_+^2,\\
+ S_T(x)&=2\sum_{j=1}^2(x_j-5/8)^2
+       +\frac18\sum_{j=1}^2(x_j-x_{j+1})^2\\
+       &\quad+2(1/2-x_1-x_2)_+^2.
+\end{align*}
+For bounded $w$, write
+\[
+ \rho_\alpha(w)=\inf_{\eta\in\mathbb R}
+       \left\{\eta+\frac1t\mathbb E_P(w-\eta)_+\right\}.
+\]
+The last-date optimal value and the two root fixed-action objectives are
+\begin{align*}
+ G_y(v)&=S(y)+h(v)+\beta\rho_\alpha(S_T(F(y,v,\cdot))),\\
+ V_1(y)&=\min_{0\le v\le A(y)}G_y(v),\\
+ Q_x(a)&=S(x)+h(a)+\beta\rho_\alpha(V_1(F(x,a,\cdot))),\\
+ J_x(a)&=S(x)+h(a)+\beta\rho_\alpha(J_1(F(x,a,\cdot))).
+\end{align*}
+Here $J_1$ is the unchanged implemented terminal policy, not a newly
+optimized or independently reconstructed controller.  The original results
+in Proposition~\ref{prop:investmentfoundations119} establish domain
+invariance, existence, and strong state convexity of $V_1$ with modulus
+$(4-5\beta/4)/2$.  The implemented terminal guarantee is
+\begin{equation}\label{eq:independentterminalallowance119}
+  V_1(y)\le J_1(y)\le V_1(y)+\varepsilon_1,
+  \qquad y\in X,\qquad \varepsilon_1=2^{-20}.
+\end{equation}
+The validation below relies on this proved uniform guarantee and makes no
+convexity assumption about $J_1$.
+
+\begin{proposition}[Finite original-policy validation enclosure]
+\label{prop:independentvalidation119}
+Fix an original state $x\in X$ and feasible action $a\in[0,A(x)]$.
+Let $M\ge1$ be an integer and put
+\[
+ z_k=-R+\frac{Rk}{M},\qquad y_k=F(x,a,z_k),
+       \qquad k=0,\ldots,2M.
+\]
+At each $y_k$, choose any feasible $v_k$ and an exactly maximizing AVaR
+density $q_k$ for $S_T(F(y_k,v_k,\cdot))$.  Define
+\begin{align*}
+ g_k&=h'(v_k)+\beta\mathbb E_P
+                [q_k\,\partial_v S_T(F(y_k,v_k,Z))],\\
+ \delta_k&=\operatorname{proj}_{[-v_k,A(y_k)-v_k]}(-g_k/2),\\
+ \ell_k&=G_{y_k}(v_k)+g_k\delta_k+\delta_k^2,
+       &u_k&=G_{y_k}(v_k).
+\end{align*}
+These are valid bounds $\ell_k\le V_1(y_k)\le u_k$, including
+boundary actions.  For an $n$-vector $w$, let $\rho_\alpha^{[n]}(w)$
+denote AVaR under equal atom weights $1/n$.  Form the vectors
+\[
+ \ell^{\mathrm{mid}}=(\ell_1,\ell_3,\ldots,\ell_{2M-1}),
+ \qquad
+ u^{\mathrm{end}}=(u_0,u_2,u_2,u_4,\ldots,u_{2M-2},u_{2M}).
+\]
+Thus each cell contributes both endpoints to $u^{\mathrm{end}}$;
+its interior endpoints occur twice.  With $c=S(x)+h(a)$, define
+\begin{align}
+ L_Q&=c+\beta\rho_\alpha^{[M]}(\ell^{\mathrm{mid}}),&
+ U_Q&=c+\beta\rho_\alpha^{[2M]}(u^{\mathrm{end}}).
+ \label{eq:independentQ119}
+\end{align}
+Then the original objectives satisfy
+\begin{equation}\label{eq:independentJ119}
+ L_Q\le Q_x(a)\le U_Q,
+ \qquad L_Q\le J_x(a)\le U_Q+\beta\varepsilon_1.
+\end{equation}
+Every quantity in the construction is rational when the original state,
+action, and primitive-node actions are rational.  A finite terminal search
+affects the widths, not the validity, of these inequalities.
+\end{proposition}
+
+\subsection{Proof: exact original primitives and boundary-safe node bounds}
+\begin{proof}
+We first verify that all evaluations concern the original feasible economy.
+For $p,q\in[0,1]$, the state part
+$p/2+q/8+p(1-q)/16$ is increasing in both arguments and lies in
+$[0,5/8]$.  Since $A(x)\in[1/8,1/4]$, $0\le b_ja\le1/8$,
+and $|s_jz|\le1/32$, every successor belongs to
+$[1/32,27/32]^2\subset X$.  This applies both to a root action and to
+each feasible terminal action.  The continuous terminal objective attains its
+minimum on the compact feasible interval.
+
+Fix a terminal state $y$ and feasible $v$.  Write
+$F(y,v,z)=(w_1+z,w_2-z)$.  The aggregate-state squared hinge in
+$S_T$ is constant in $z$ because the two shock loadings sum to zero.
+The first two squared deviations contribute $4z^2$ and the cyclic
+coupling term contributes $z^2$.  Consequently
+\[
+ p(z):=S_T(F(y,v,z))=p_0+p_1z+5z^2.
+\]
+This is a primitive identity.  Its evaluation at $-R,0,R$ determines
+the polynomial exactly; three-point interpolation would not identify a
+general nonlinear function.  At rational inputs, all three coefficients
+are rational.
+
+Here is an explicit exact maximizing density.  Set $L=2R\alpha$ and
+\[
+ u=\operatorname{proj}_{[-R,R-L]}
+             \left(-\frac{p_1}{2p_2}-\frac L2\right),
+ \quad p_2=5,\qquad
+ q(z)=t^{-1}\boldsymbol1_{[-R,u]\,\cup\,[u+L,R]}(z).
+\]
+The central interval has length $L$, so $0\le q\le t^{-1}$ and
+$\mathbb E_Pq=1$.  To verify maximality directly, let
+$\eta=\max\{p(u),p(u+L)\}$.  An interior cut is centered on the
+quadratic's vertex, so its endpoint values coincide and $p\le\eta$
+inside the central interval and $p\ge\eta$ on its two tails.  At the
+left boundary the clipped vertex lies weakly to the left of the central
+midpoint, $p(u+L)\ge p(u)$, and the only nonempty tail is to the
+right of $u+L$; it again has $p\ge\eta$.  The right-boundary case
+is symmetric.  Thus, up to endpoints of probability zero,
+\[
+ \eta+t^{-1}\mathbb E_P(p-\eta)_+=\mathbb E_P(qp).
+\]
+For any feasible density $\widetilde q$ and any threshold $e$,
+\[
+ \mathbb E_P(\widetilde q p)
+ =e+\mathbb E_P[\widetilde q(p-e)]
+ \le e+t^{-1}\mathbb E_P(p-e)_+.
+\]
+Taking an infimum in $e$ proves weak duality; the displayed equality
+proves that $q$ attains the original AVaR.  Integrating the quadratic
+over its two rational tail intervals gives the exact rational risk.
+This proof includes clipped cuts and does not differentiate a moving cut.
+
+The function $S_T$ is convex and continuously differentiable, including
+at the squared-hinge junction.  For any other feasible terminal action $w$,
+its supporting inequality along the affine action direction gives
+\[
+ S_T(F(y,w,z))\ge S_T(F(y,v,z))
+           +\partial_vS_T(F(y,v,z))(w-v).
+\]
+Use the same fixed feasible density $q$ at every $w$.  Weak duality
+and its equality at $v$, followed by integration of this support, show
+\[
+ \rho_\alpha(S_T(F(y,w,\cdot)))
+ \ge\rho_\alpha(S_T(F(y,v,\cdot)))
+       +\mathbb E_P[q\,\partial_vS_T(F(y,v,Z))](w-v).
+\]
+Since $h''\ge2$, adding the original stage term proves the global
+action minorant
+\begin{equation}\label{eq:independentnodeminorant119}
+ G_y(w)\ge G_y(v)+g(w-v)+(w-v)^2,
+ \qquad 0\le w\le A(y).
+\end{equation}
+The action derivative inside the expectation is affine in $z$:
+the quadratic parts of $S_T$ have affine gradients, while the
+squared-hinge gradient is constant in $z$ along the zero-aggregate
+shock.  Evaluations at $0,R$ therefore reconstruct this affine
+derivative exactly.  No derivative of the optimal tail endpoints is used.
+
+The minimum of $g\delta+\delta^2$ over the full feasible displacement
+interval is attained at
+$\delta=\operatorname{proj}_{[-v,A(y)-v]}(-g/2)$.
+Minimizing the minorant gives the stated lower bound; evaluating the
+feasible action $v$ gives the upper bound.  This reasoning applies if
+$v=0$, $v=A(y)$, or an imperfect interior search iterate.  In
+particular, a nonnegative support slope at zero certifies that endpoint
+and a nonpositive support slope at capacity certifies that endpoint.
+At an interior point, a negative support slope rules out a minimizer
+to its left, and a positive support slope rules out one to its right.
+Thus rational bisection is legitimate, but the support bound remains
+sound after any finite number of steps.  The separately recorded check
+$u_k-\ell_k\le2^{-20}$ is a width check; it is not the justification
+of the lower bound.
+
+\medskip\noindent
+\emph{The continuous-risk outer enclosure.}
+The original strong state convexity of $V_1$ implies convexity of
+$f(z)=V_1(F(x,a,z))$, because the root transition is affine in $z$.
+For every real threshold $\eta$, the function
+$\phi_\eta(z)=(f(z)-\eta)_+$ is convex.  On the cell
+$[z_{2j},z_{2j+2}]$, Jensen's inequality and convex secant domination
+give, with cell length $\Delta=2R/M$,
+\begin{align*}
+ (\ell_{2j+1}-\eta)_+
+ &\le\phi_\eta(z_{2j+1})
+ \le\frac1\Delta\int_{z_{2j}}^{z_{2j+2}}\phi_\eta(z)\,dz,\\
+ \frac1\Delta\int_{z_{2j}}^{z_{2j+2}}\phi_\eta(z)\,dz
+ &\le\frac{\phi_\eta(z_{2j})+\phi_\eta(z_{2j+2})}{2}
+ \le\frac{(u_{2j}-\eta)_++(u_{2j+2}-\eta)_+}{2}.
+\end{align*}
+Summing cells with weights $1/M$ and adding the threshold yields
+\begin{align*}
+ \eta+\frac1{Mt}\sum_{j=0}^{M-1}(\ell_{2j+1}-\eta)_+
+ &\le\eta+t^{-1}\mathbb E_P(f-\eta)_+,\\
+ \eta+t^{-1}\mathbb E_P(f-\eta)_+
+ &\le\eta+\frac1{2Mt}\sum_{j=0}^{M-1}
+             \{(u_{2j}-\eta)_++(u_{2j+2}-\eta)_+\}.
+\end{align*}
+These hold at every common threshold.  Taking infima over all real
+thresholds preserves each inequality and proves
+\[
+ \rho_\alpha^{[M]}(\ell^{\mathrm{mid}})
+ \le\rho_\alpha(f)
+ \le\rho_\alpha^{[2M]}(u^{\mathrm{end}}).
+\]
+Neither the lower nor the upper node array has to be convex.  The
+required convexity is that of the original optimal continuation along
+the innovation.  A bound only on the ordinary integral of $f$ would
+not prove this risk enclosure.  Adding $c$ and multiplying by the
+positive $\beta$ gives~\eqref{eq:independentQ119}.
+
+Finally, the threshold formula is monotone in its random argument,
+and replacing its threshold by $\eta-c_0$ proves
+$\rho_\alpha(w+c_0)=\rho_\alpha(w)+c_0$ for every constant
+$c_0$.  Apply these facts to~\eqref{eq:independentterminalallowance119}
+at the original successors to obtain
+\[
+ Q_x(a)\le J_x(a)\le Q_x(a)+\beta\varepsilon_1.
+\]
+Combining with the $Q$ bounds proves~\eqref{eq:independentJ119}.
+The node-optimization uncertainty is already contained in $\ell_k,u_k$.
+The distinct implemented-future allowance $\beta\varepsilon_1$ is
+added exactly once at the root.  No convexity or differentiability of
+the rounded deployed future controller is asserted.
+\end{proof}
+
+\subsection{Exact atom handling and finite policy comparisons}
+For completeness, the equal-mass risk in the proposition can be computed
+without floating cutoffs.  Sort $w_{(1)}\ge\cdots\ge w_{(n)}$,
+put $r=n(1-\alpha)>0$, $k=\lfloor r\rfloor$, and
+$\theta=r-k$.  Then
+\begin{equation}\label{eq:independentatoms119}
+ \rho_\alpha^{[n]}(w)
+ =\frac{\displaystyle\sum_{i=1}^k w_{(i)}
+                  +\theta w_{(k+1)}}{r},
+\end{equation}
+where the final term is omitted if $\theta=0$, including $k=n$.
+Indeed, assign masses $\lambda_i\in[0,1]$ with
+$\sum_i\lambda_i=r$.  The threshold inequality in the proof gives
+$r^{-1}\sum_i\lambda_iw_i\le\rho_\alpha^{[n]}(w)$.
+The assignment of unit mass to the $k$ largest values and mass
+$\theta$ to the next value attains the threshold expression at the
+cutoff value.  This proves the formula, including ties and split atoms.
+At $\alpha=0$ it reduces to the ordinary mean; $\alpha=1$ is
+outside this definition.  At the two frozen risks and the frozen
+$M=64$, both atom counts are integral.  The implementation nevertheless
+uses exact rational masses and preserves the repeated endpoints.
+
+Suppose a fixed catalogue contains $n_0$ original states and each complete
+policy $r$ has a valid interval $[L_{jr},U_{jr}]$ at state $j$.
+Summing its pointwise inequalities gives the deterministic mean bound
+\[
+ \frac1{n_0}\sum_jL_{jr}
+ \le\frac1{n_0}\sum_jJ_{jr}
+ \le\frac1{n_0}\sum_jU_{jr}.
+\]
+For two policies $r,s$, use the interval
+$[L_{jr}-U_{js},U_{jr}-L_{js}]$ for their difference at state $j$.
+If they have the same exact action, the same original state and risk,
+and the identical future controller, the two original defining objectives
+are equal, and that state's difference is exactly zero.  Replacing its
+subtraction interval by $[0,0]$ is then an identity, not an independence
+assumption.  Summing these statewise difference intervals proves the
+reported mean-contrast interval.  A strictly negative upper endpoint
+certifies a lower cost for the left policy; a strictly positive lower
+endpoint certifies a higher cost.  An interval containing zero remains
+unresolved, except that $[0,0]$ certifies equality.  No statistical or
+population inference follows from these deterministic sums.
+
+In D, exact stored binary64 identities are converted to their precise
+rational values.  The input binding checks the common state across every
+action and service and the unchanged future-controller identity.  The
+frozen catalogue has 144 states per risk, 983 distinct state/action/risk
+keys, and 13,824 primary policy records.  The prescribed output includes
+all 96 arm/service/risk means, all 56 unordered arm contrasts with the
+fixed compiled-service labels, and all 240 within-arm service-pair
+identity cells.  These are declared coverage requirements, not assertions
+that execution succeeded.  No favorable sign is a pass condition.
+
+\subsection{What interval compatibility does and does not establish}
+Let $I$ be an independently justified interval for an original policy
+value and $P_0$ a recorded service or fine-reference interval.  If they
+are disjoint, both cannot enclose the same value: at least one enclosure
+argument, arithmetic step, input identity, or model premise requires
+investigation.  The case must be retained.  If they intersect, their
+intersection alone does not establish correctness of $P_0$; for example,
+$I=[0,2]$ and $P_0=[1,3]$ overlap although a true value $1/2$ lies
+outside $P_0$.  The stronger inclusion $I\subseteq P_0$ would transfer
+coverage from $I$ to $P_0$, conditional on validity of $I$.
+The reverse inclusion does not.  D records overlap and both inclusion
+directions separately and uses overlap only as a compatibility diagnostic.
+It does not thereby verify every endpoint of the old 1,024-cell reference,
+which shares the production terminal compiler.
+
+The lower bound $L_Q$ in~\eqref{eq:independentQ119} concerns the
+specified action.  It does not by itself provide a valid lower bound on
+$\inf_aQ_x(a)$ and therefore creates no new global regret or
+action-distance certificate.
+The procedure leaves all original A/B/C policies, observations, timing
+records, negative results, and qualification proofs unchanged.  Its full
+actual work is additional author-side validation cost.  The subsequent
+execution receipt, rather than this mathematical proposition, determines
+whether every fixed case was actually completed and passed.
