@@ -1,0 +1,175 @@
+% R124B prospective mathematics, formulated after R124A and before B's draw.
+\section{Paid values and certified policy improvement}
+\label{sec:valuebridge124b}
+
+The first experiment distinguishes two failures of the proposed
+information calculation: a saturated one-anchor certificate and a
+two-anchor menu that never presents a distinct action. The latter
+problem requires a change in action generation. We therefore formulate
+a second, separately frozen experiment. Its state draw is independent
+of the first experiment, and its inference is conditional on this new
+preparation.
+All information still comes from paid evaluations of the original
+Bellman objective; the actor, future controller, information filtration,
+capacity and economic objective remain the same.
+
+The additional baseline is a cheap conventional calculation from paid
+values and original curvature. Its interpolation inequality is classical.
+The methodological question is whether generating actions from these
+levels changes the economic decision, and whether the more expensive
+joint value--marginal certificate improves upon this baseline after all
+costs are charged. A neural encoding has no exclusive access to either
+calculation.
+
+\subsection{A strong-convexity bound from two paid values}
+
+Fix the original state and write $q=Q_x$, with curvature $\mu>0$ on
+$[0,A]$. For two distinct paid actions $s<t$, retain
+$W_s\le q(s)\le U_s$ and $W_t\le q(t)\le U_t$. Put $d=t-s$.
+For $b=s+ud$, $u\in[0,1]$, define
+\begin{equation}\label{eq:valuebridge124b}
+ C_{st}(b)=(1-u)U_s+uU_t-\frac\mu2u(1-u)d^2.
+\end{equation}
+
+\begin{proposition}[A paid-value action bound]
+\label{prop:valuebridge124b}
+Throughout $[s,t]$, $q(b)\le C_{st}(b)$. Over the information class
+containing only these two level intervals and curvature between
+$\mu$ and $L\ge\mu$, this is the exact pointwise upper bound.
+The minimizer of this upper bound on the bracket is
+\begin{equation}\label{eq:bridgeproposal124b}
+ u_{st}^*=\operatorname{clip}_{[0,1]}
+       \left(\frac12-\frac{U_t-U_s}{\mu(t-s)^2}\right),
+ \qquad b_{st}^*=s+(t-s)u_{st}^*.
+\end{equation}
+The midpoint is another explicitly feasible proposal. All formulas
+are rational for rational inputs; neither a risk query nor a nonlinear
+optimization is required. The upper bound is evaluated at the
+\emph{realized} action. It may only be used for a pair that brackets
+that action.
+\end{proposition}
+
+The sharpness assertion is for the specified two-level information,
+not for all derivative intervals, raw supports and original formulas.
+Those additional data can reduce its upper bound. The bridge supplies
+a strong conventional comparator precisely because it uses the known
+curvature and all available pairs, without a representation restriction.
+
+\subsection{The common action menu and complete certificates}
+
+Let $a_F$ be the completed fused service's feasible action, and retain
+its entire original paid ledger. If that ledger contains at least two
+distinct actions, the new fixed menu contains the rounded pairwise
+minimizers \eqref{eq:bridgeproposal124b}, the pairwise midpoints, and
+the six neighbors
+\[
+ a_F\pm A/16,\qquad a_F\pm A/64,\qquad a_F\pm A/256,
+\]
+clipped to the original interval. The prescribed feasible rounding
+and duplicate convention are applied before certification. This menu
+is generated once, using $a_F$ and the original paid ledger, and is
+identical for the bridge and joint comparisons. The later selection
+of a bridge action does not regenerate the menu. Retention at the
+current incumbent is always available.
+
+No interpolation upper is used outside its paid pair. In particular,
+if rounding moves a proposed action outside one pair, that pair is
+omitted when evaluating the actual action. The existing fused upper
+remains available. When the paid endpoints lie on the same downward
+rounding grid, rounding any point between them remains between them,
+but correctness does not rely on this extra property.
+
+Write $\underline q(b)$ and $U_F(b)$ for the original-q lower and
+upper bounds furnished by the paid supports and fused derivative
+envelopes. Let $B\le\min q$ be the common original-optimum lower
+bound, and let $C_F(a,b)$ be the fused upper bound on $q(b)-q(a)$.
+All these quantities use the original paid information, including
+the same raw-support bounds as before. Set
+\begin{align}
+ U_B(b)&=\min\left\{U_F(b),\,
+                  \min_{s\le b\le t} C_{st}(b)\right\},\notag\\
+ C_B(a,b)&=\min\{C_F(a,b),U_B(b)-\underline q(a)\},
+                      \qquad b\ne a ,\notag\\
+ U_B^q(a,b)&=\min\{U_B(b),U_B(a)+C_B(a,b)\}.
+ \label{eq:bridgecertificate124b}
+\end{align}
+An empty inner minimum is $+\infty$. For $b=a$ set the contrast
+to zero by identity. The incumbent lower in this expression must
+minorize $q(a)$; an arbitrary lower bound on $J(a)$ is not silently
+treated as a lower bound on $q(a)$.
+
+For the joint stage, insert its current incumbent $a_B$ and the same
+candidate $b$ as unobserved nodes in the joint interpolation program.
+This does not purchase a value at either point. Let $D(a_B,b)$ be
+the rational dual upper contrast from
+Theorem~\ref{thm:dualcertificate124}, using the unchanged paid
+ledger and its valid finite boxes. Put
+\begin{align}
+ C_J(a_B,b)&=\min\{C_B(a_B,b),D(a_B,b)\},\notag\\
+ U_J^q(a_B,b)&=\min\{U_B(b),U_B(a_B)+C_J(a_B,b)\}.
+ \label{eq:jointbridgecertificate124b}
+\end{align}
+Thus the more expensive stage also receives the cheap value bound.
+It does not compare itself with a conventional baseline deprived of
+the same paid levels or feasible actions.
+
+\begin{theorem}[Original-policy improvement through the two stages]
+\label{thm:stagedpolicy124b}
+Suppose the original future controller is unchanged and satisfies
+$J(b)=q(b)+\eta(b)$ with $0\le\eta\le\delta$. No smoothness or
+convexity of $\eta$ is required. For either stage choose a valid
+original-q contrast upper $C(a,b)$ and candidate upper $U^q(b)$
+from \eqref{eq:bridgecertificate124b} or
+\eqref{eq:jointbridgecertificate124b}. At every distinct candidate,
+\begin{align}
+ J(b)-J(a)&\le C(a,b)+\delta,\notag\\
+ \underline q(b)&\le J(b)\le U^q(b)+\delta,\notag\\
+ 0\le J(b)-\min q&\le U^q(b)+\delta-B.
+ \label{eq:stagedqualification124b}
+\end{align}
+Accept only if the first upper bound is strictly negative, the
+last upper bound is at most $\tau$, and the absolute interval width
+is at most $\omega$, after all outward conversions at the realized
+feasible action. Select the largest certified gain with the fixed
+action/index tie rule; otherwise retain the current qualified policy.
+Then every original state has
+\begin{equation}\label{eq:stagedorder124b}
+ V_0\le J(a_J)\le J(a_B)\le J(a_F)\le V_0+\tau,
+\end{equation}
+and each returned policy retains the required objective-width
+qualification. The sum of the accepted stage gain lower bounds
+minorizes $J(a_F)-J(a_J)$. A recoverable failure in the joint stage
+retains $a_B$; it does not discard a previously certified bridge gain.
+\end{theorem}
+
+All numerical lower, upper, contrast and optimum bounds in this
+theorem must concern the same original state, risk and continuation.
+The future allowance is added once to a changed-action comparison
+and once to its absolute policy upper, serving different predicates;
+it is never subtracted from an unidentified policy upper. Retention
+has exactly zero gain. A gain certificate alone does not establish
+the objective-width condition.
+
+The second experiment's restriction to at least two paid anchors is
+a declared menu design. If a fused service has moved away from its
+sole paid anchor, that anchor need no longer equal its incumbent;
+the single-anchor saturation theorem does not automatically apply
+to the new origin. This design therefore makes no claim that every
+one-anchor continuation is information-optimal.
+
+\paragraph{Information and complete work.}
+The new stages add no original-risk query. They do add pair enumeration,
+rounding, full candidate certification, rejected candidates, and
+possibly joint optimization and rational verification. With $p$ paid
+records, the unmerged extra menu has at most $2\binom p2+6$ entries;
+equal-anchor pairs are omitted. Direct evaluation of the pair bounds
+at $m$ candidates takes at most $m\binom p2$ scalar evaluations.
+The implemented stage also recomputes the origin bound for each
+candidate, giving at most $2m\binom p2$ pair evaluations per stage,
+in addition to the retained fused and raw-support work. Each
+standalone service independently incurs its whole acquisition and
+incumbent-service bill. Mathematical dominance in
+\eqref{eq:stagedorder124b} is not dominance in original objective
+plus computation cost, and it is not a neural-specific approximation
+theorem. Both questions require the separately frozen complete-cost
+comparison with every conventional representation.

@@ -1,0 +1,113 @@
+\section{Active-region Bellman compiler: complete proof}\label{supp:compiler109}
+\begin{proof}[Proof of Theorem~\ref{thm:compiler109}]
+Let $v_j=r_j+b_ja$. Since $d$ is even, $\sum_js_j=0$, $s_{j+1}=-s_j$, $\sum_jb_j=3d/8$, and $\sum_js_jb_j=d/8$. Expansion of the original terminal cost gives
+\[
+ g(v+sz)=D_x(a)+2(H_x-3a/4)_+^2+k(a)z+5z^2,
+\]
+where
+\[
+ D_x(a)=\frac4d\sum_j(v_j-5/8)^2+\frac1{4d}\sum_j(v_j-v_{j+1})^2,
+ \qquad k(a)=k_x+5a/4.
+\]
+The first sum contributes $4z^2$ and the cyclic-difference sum contributes $z^2$. Their linear coefficients are respectively $8d^{-1}\sum_js_jv_j$ and $2d^{-1}\sum_js_jv_j$. The positive-part term has no innovation argument because the innovation has zero coordinate mean. Also
+\[
+ D'_x(a)=C_x+\left\{\frac8d\sum_jb_j^2+\frac1{2d}\sum_j(b_j-b_{j+1})^2\right\}a
+ =C_x+\frac{41}{32}a,
+\]
+since the two sums in braces equal $5/4$ and $1/32$. These identities derive the coefficients from the economic primitives rather than fitting them to data.
+
+For the tail integral complete the square:
+$5z^2+kz=5(z+k/10)^2-k^2/20$. When $|k|\le10R(1-\alpha)$, the lower-cost interval of probability $\alpha$ is
+$[-k/10-R\alpha,-k/10+R\alpha]$, contained in the innovation support. Its conditional mean cost is $-k^2/20+5R^2\alpha^2/3$. The unconditional mean is $5R^2/3$. Subtracting the lower interval's contribution and dividing by $t=1-\alpha$ gives the first line of \eqref{eq:tailpoly109}. When $k\ge10Rt$, the upper-cost set of probability $t$ is $[R(2\alpha-1),R]$. Indeed, the lower interval touches the left boundary at the transition, and the convex quadratic thereafter ranks this right interval above its complement. Its first and second moments are $\alpha R$ and $R^2(4\alpha^2-2\alpha+1)/3$. This yields the second expression. Reflection $z\mapsto-z$ treats negative $k$. Endpoint equality affects a set of probability zero. Substitution at $k=\pm10Rt$ verifies agreement of values and derivatives, and therefore
+\[
+ \mathcal R'_\alpha(k)=\operatorname{clip}\{\alpha k/(10t),-\alpha R,\alpha R\}.
+\]
+
+Cash invariance permits the deterministic $D_x(a)$ and hinge terms to be taken outside risk. Differentiating the resulting $S(x)+h(a)+\beta$ times terminal risk yields \eqref{eq:cubic109}. In a region with hinge indicator $I_h$ and central-tail indicator $I_c$, its linear coefficient is
+\[
+ p=2+\beta\left\{\frac{41}{32}+\frac94 I_h+\frac{25}{16}\frac{\alpha}{10t}I_c\right\}\ge2.
+\]
+The three listed breakpoints exhaust changes in those indicators. Sorting them with the two feasible endpoints, clipping to the original interval and discarding duplicates leaves at most four nonempty regions. The derivative is continuous, and on each open region its slope is $48a^2+p\ge2$. Integrating this piecewise inequality shows strict monotonicity on the entire interval. The intermediate value theorem and the constrained endpoint conditions prove existence and uniqueness, including a zero derivative exactly at a breakpoint or boundary.
+
+For the interior root, write $a=-2u\sinh y$ with $u^2=p/48$. The identity $\sinh(3y)=3\sinh y+4\sinh^3y$ gives
+$16a^3+pa=-32u^3\sinh(3y)$. Setting $y=\operatorname{arsinh}(q/(32u^3))/3$ proves the formula. A scan of a fixed number of regions follows $O(d)$ coefficient sums. Transcendental accuracy and finite-number arithmetic remain separately charged, as claimed.
+\end{proof}
+
+\begin{proof}[Value gradients, boundaries and implementation authority]
+The expanded $Q_1$ is continuously differentiable in $(x,a)$; its positive-part square and the tail function are $C^1$ at their junctions. Set $a=A(x)u$ with $u\in[0,1]$. The transformed objective has a unique minimizing $u$ because $A(x)>0$ and the action objective is strictly convex. Continuity of this minimizer follows directly by taking convergent subsequences in the compact interval and passing the minimizing inequality to the limit; uniqueness makes every subsequential limit the same. For a state increment $h$, compare values using the old optimizer for an upper bound and the new optimizer for a lower bound. Differentiability of the objective and continuity of the optimizer squeeze the value increment to
+$[\nabla_xQ_1+u\partial_aQ_1\nabla A]^{\mathsf T}h+o(\|h\|)$.
+At an interior optimum $\partial_aQ_1=0$; at zero $u=0$; and at capacity $u=1$ with $\partial_aQ_1\le0$. This proves \eqref{eq:envelope109}, its continuity and its one-sided boundary version. Inside a smooth region with strict interiority, differentiating the zero action derivative and using $\partial_{aa}Q_1\ge2$ proves the implicit actor derivative. The strict endpoint regions have the stated actor formulas. At junctions the value argument still holds, but no actor derivative is required.
+
+The implementation does not claim exact evaluation of this symbolic root. It rounds a floating proposal to the inherited action quantum, verifies feasibility and evaluates the same original feasible risk witness as in Proposition~\ref{prop:curvature95}. Its lower bound pays the full multiplier residual and interval uncertainty, and its upper bound encloses the original objective. If its gap fails the inherited threshold, the old certified oracle is called and charged. Each branch therefore returns an original-value bracket and a valid global state support. The context manager changes bindings for optimal-continuation calls only and restores them on exceptions. It does not replace the actual terminal controller or its error allowance in complete-policy evaluation. Thus all original-policy enclosures remain those of Theorem~\ref{thm:continuous95}; an unverified cubic evaluation never enters them as an exact value. This proves certificate invariance independently of any claim about the speed or bitwise identity of the two optimal-continuation oracles.
+\end{proof}
+
+\section{Tail-switch accuracy and its economic meaning}\label{supp:tail109}
+\begin{proof}[Proof of Theorem~\ref{thm:tail109}]
+We first justify the derivatives rather than differentiating a sorting permutation. For an outcome $Y_a$, write
+$\operatorname{AVaR}_\alpha(Y_a)=\min_\eta\{\eta+t^{-1}\E(Y_a-\eta)_+\}$.
+The unique quantile minimizes this expression. At the anchor, absence of mass at that quantile and dominated action derivatives give the action derivative of the minimized expression, with the quantile held fixed, as
+$t^{-1}\E[\boldsymbol1_{\{Y_a>\eta_Y\}}\nabla_aY_a]$.
+To verify the envelope step, local $L^1$ continuity bounds the relevant minimizing quantiles in a compact interval. Any convergent subsequence of minimizers has to minimize the limiting continuous objective; uniqueness forces convergence to the anchor quantile. Comparing the two minimized objectives at each other's minimizers then gives the derivative formula by dominated convergence. Equivalently the unique tail density gives the same supporting derivative. The domination and uniqueness hypotheses in the statement are used at precisely these steps.
+
+Let $\widetilde H=H_a+c$ and denote its quantile by $\widetilde\eta$. The almost-sure inequalities
+$\widetilde H-\epsilon\le Z_a\le\widetilde H+\epsilon$
+imply $|\eta-\widetilde\eta|\le\epsilon$ by the monotonicity and translation rule of the generalized quantile. Put $E=\{Z_a>\eta\}$ and $F=\{\widetilde H>\widetilde\eta\}$. Both have probability $t$. If $Z_a>\eta+2\epsilon$, then $\widetilde H>\eta+\epsilon\ge\widetilde\eta$, so the point lies in both upper tails. If $Z_a<\eta-2\epsilon$, then $\widetilde H<\eta-\epsilon\le\widetilde\eta$, so it lies in neither. Hence $E\mathbin\triangle F\subseteq B_\epsilon$ up to null sets. Since $P(E)=P(F)=t$, its mass is at most $2\min(t,1-t)$ as well as $P(B_\epsilon)$.
+
+Using the derivative formula and adding and subtracting the surrogate gradient on $E$ gives
+\begin{align*}
+ t(\nabla\rho(Z_a)-\nabla\rho(H_a))
+ &=\E[\boldsymbol1_E(\nabla Z_a-\nabla H_a)]
+   +\E[(\boldsymbol1_E-\boldsymbol1_F)(\nabla H_a-v_0)].
+\end{align*}
+The subtraction of $v_0$ is legitimate because $P(E)-P(F)=0$. The first term has norm at most $t\delta$; the second is at most $G_\epsilon m_\epsilon$. This proves \eqref{eq:tailgradient109}. The two margin consequences follow by substituting $P(B_\epsilon)\le C(2\epsilon)^\kappa$ and, in the stronger case, $G_\epsilon\le2L\epsilon$. If the band has zero probability, the second expectation vanishes regardless of its representative values.
+
+The common stage cost cancels in the original versus surrogate action-gradient difference, leaving a bound $D=\beta(\delta+G_\epsilon m_\epsilon/t)$. For every feasible $b$, strong convexity gives
+\[
+ Q(b)\ge Q(a)+\nabla Q(a)^{\mathsf T}(b-a)+\frac\mu2\|b-a\|^2.
+\]
+By the normal-cone convention, $n^{\mathsf T}(b-a)\le0$. Thus the right side is at least
+$Q(a)-(r_a+D)\|b-a\|+\mu\|b-a\|^2/2$.
+Completing the square and minimizing over the nonnegative distance proves \eqref{eq:tailaction109}, including boundary actions.
+\end{proof}
+
+\begin{proof}[Exact counterexample]
+For $z$ uniform on $[-1,1]$, its upper half-tail mean is $1/2$ and its lower half-tail mean is $-1/2$. Consequently $\operatorname{AVaR}_{1/2}(kz)=|k|/2$. On the stated action interval the true objective is $a^2+(a+1)/2$ and the surrogate is $a^2+(1-a)/2$. Each is strictly convex, with derivatives $2a+1/2$ and $2a-1/2$, respectively. Their feasible minimizers are $-1/4$ and $1/4$. Completing the first square gives a loss $(1/4+1/4)^2=1/4$. Direct integration of the two affine tails gives the same values. Nevertheless $\partial_aZ_a=\partial_aH_a=z$. The different maximizing densities, not a pointwise derivative error, produce the wrong decision.
+\end{proof}
+
+\section{Complete-incumbent and recursive improvement}\label{supp:improve109}
+\begin{proof}[Proof of Proposition~\ref{prop:safe109}]
+The interval premises imply $J-J'\ge l-u'>0$ at every accepted gate. If a trial is refused, the complete incumbent action and future policy are retained exactly. Induction over the finite trace gives weak decrease from the completed starting policy, with a strict decrease whenever a gate is accepted. The added qualification predicate holds for the starting policy and for each accepted replacement, so induction also preserves both original targets. This reasoning uses actual policy costs, not their regret upper bounds. It supplies no comparison to an unexecuted baseline or to a controller with a different future policy.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:improve109}]
+For $\|v-w\|_\infty\le h$, order preservation and cash invariance imply
+$\rho(w)-h\le\rho(v)\le\rho(w)+h$.
+It follows that $\|T_\pi v-T_\pi w\|_\infty\le\beta\|v-w\|_\infty$; taking infima over the same actions proves the identical bound for $T$. The space of bounded measurable functions with the supremum norm is complete, and the assumed preservation properties let Banach's fixed-point argument apply. Iteration is Cauchy by a geometric bound on successive differences, its uniform limit is a fixed point by continuity, and contraction proves uniqueness. The fixed points are the declared recursive values: finite-horizon iterates with any bounded terminal function converge to them, with terminal differences vanishing as $\beta^n$. Each fixed policy dominates the Bellman fixed point by order comparison. Conversely a measurable $\eta$-greedy selector for $V^*$ has $J^\pi\le V^*+\eta/(1-\beta)$ by contraction and comparison. Letting $\eta$ decrease to zero identifies $V^*$ as the original infimum value. The same finite-horizon recursion treats adapted policies under the stipulated Markov conditional criterion.
+
+The inequality $T_{\pi'}J^\pi\le J^\pi$ and monotonicity show that $T_{\pi'}^nJ^\pi$ decreases to $J^{\pi'}$. In particular $D=J^\pi-J^{\pi'}\ge0$. For any two continuations $v,w$ at the same $(x,\pi'(x))$, the common dual set and penalty give
+\[
+ \inf_q\int(v-w)\,dq\le\rho(v)-\rho(w)
+       \le\sup_q\int(v-w)\,dq.
+\]
+For example, every affine dual value at $v$ is at most its value at $w$ plus the rightmost supremum, and taking the supremum proves the upper inequality; exchange $v,w$ for the lower one. No optimizing density needs to be attained, and no $\inf_a\sup_q$ order is exchanged. Subtracting the two policy equations now gives
+\[
+ d+\beta P^-D\le D\le e+\beta P^+D.
+\]
+The maps $P^\pm$ are monotone, preserve constants, and are nonexpansive; hence the two gain maps are contractions. Iterating each comparison at $D$ and passing to its fixed point proves $D^-\le D\le D^+$. Iterating the lower gain map from zero proves $D^-\ge0$. These are robust discounted gain accounts; identifying them with physical occupation measures would discard the original risk envelope.
+
+For the successive policies, safe improvement gives $J^{\pi_{k+1}}\le J^{\pi_k}$ and, more precisely, $J^{\pi_{k+1}}\le T_{\pi_{k+1}}J^{\pi_k}$. The additional greedy inequality and contraction of $T$ imply
+\[
+ 0\le J^{\pi_{k+1}}-V^*\le
+ TJ^{\pi_k}-TV^*+\varepsilon_k
+ \le\beta\|J^{\pi_k}-V^*\|_\infty+\varepsilon_k.
+\]
+Unrolling yields $\beta^k\|J^{\pi_0}-V^*\|+\sum_{j<k}\beta^{k-1-j}\varepsilon_j$. If $\varepsilon_j\to0$, split this sum into a finite prefix, which vanishes geometrically, and a tail bounded by $\sup_{j\ge m}\varepsilon_j/(1-\beta)$. Let $m$ then increase to infinity. Finally
+$\|J^\pi-V^*\|\le\|J^\pi-TJ^\pi\|+\beta\|J^\pi-V^*\|$
+proves the stopping statement. All these premises are uniform; checking a finite catalogue does not supply them.
+\end{proof}
+
+\begin{proof}[Paid interval resolution and the stopping dominance rule]
+Containment and the width bounds give $l_n\ge J-A/n^2$ and $u'_n\le J'+A'/n^2$, proving \eqref{eq:precisiongate109}. For a positive gap let $s=\sqrt{(A+A')/\Delta}$. The first dyadic resolution strictly above $s$ is at most $2s$ if $s\ge1$, and is one if $s<1$. The sum of all dyadic resolutions through $n$ is $2n-1$. The stated work bound follows. When intervals overlap, choose any common point as both true costs; this is an admissible pair under the interval information alone, with no strict improvement. Thus sound strict separation cannot be asserted for every consistent pair. A zero gap remains undecidable for a strict gate, even with a valid non-strict policy comparison.
+
+For the stopping rule, every feasible replacement has cost at least $V^*(x)\ge b$, while the incumbent costs at most $u$. Hence the largest possible cost saving is at most $u-b$. Subtracting an unavoidable expense of at least that amount leaves nonpositive net gain. This argument is pointwise in the declared economic units. It does not price unmeasured information, calibrate a workload, or determine the optimum of a different exploration problem.
+\end{proof}
