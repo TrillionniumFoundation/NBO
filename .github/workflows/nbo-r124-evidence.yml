@@ -1,0 +1,49 @@
+name: NBO R124 saved evidence verification
+on:
+  push:
+    branches:
+      - revision/econometrica-nbo-r124-author-revision-2026-10-23
+    paths:
+      - revisions/2026-10-23-r124/CI_EVIDENCE_TRIGGER124.json
+      - .github/workflows/nbo-r124-evidence.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  exact-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
+    steps:
+      - name: Check out the triggering isolated author revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /revisions/2026-10-23-r124/
+            /revisions/2026-10-22-r123/
+            /.github/workflows/nbo-r124-evidence.yml
+      - name: Use the declared verification runtime
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Fetch immutable source, state, and acquired-actor identities
+        run: |
+          git fetch --filter=blob:none --depth=1 origin 2f0485174e7f518909ab73311e00251647ed6b47 a78ee67f386b2b547ecfb5f1986119c199c4fd68 796c5f2badf68b051ac6c144884c0e61b87faf5e
+      - name: Reconstruct and independently verify saved exact evidence
+        run: python revisions/2026-10-23-r124/verification124/ci_evidence124.py
+      - name: Preserve actual receipts including any failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nbo-r124-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: revisions/2026-10-23-r124/ci124/
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 90
