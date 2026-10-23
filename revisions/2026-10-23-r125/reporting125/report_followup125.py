@@ -129,12 +129,15 @@ def run(output):
         for rel in ('postfreeze-terminal-diagnostic/EXECUTION125.json',
                     'BALANCED_WEIGHTING125.json',
                     'SAVED_CLOCK_PROFILE125.json',
+                    'ADOPTION_SUPPORT_DIAGNOSTIC125.json',
                     'presentation-clockprofile/INTEGRATION125.json',
                     'presentation-attempt01/PRESENTATION125.json',
                     'presentation-directed/PRESENTATION125.json',
                     'independent_transport/TRANSPORT_SPLIT125.json',
                     'independent_transport/STATIC_TRANSPORT_CHECK125.json',
-                    'independent_transport/STATIC_CACHE_TIMER_CHECK125.json'):
+                    'independent_transport/STATIC_CACHE_TIMER_CHECK125.json',
+                    'independent-followup512_transport/TRANSPORT_SPLIT125.json',
+                    'independent-followup512_transport/RECONSTRUCTION125.json'):
             d = read(p / rel)
             extra_rows.append(dict(path='results125/' + rel, seconds=d['seconds'],
                                    sha256=digest(p / rel), economic_evaluations=0))
@@ -154,6 +157,7 @@ def run(output):
                           'reporting125/PRESENTATION_ATTEMPT02_FAILURE.json',
                           'results125/reporting_failures/BALANCED_WEIGHTING_ATTEMPT01_FAILURE.json'],
                       unmeasured_costs=['Historical interrupted parent clocks were not recorded.',
+                                       'The initial 4,080-support theory diagnostic has no separately recorded elapsed time.',
                                        'Two oversized connector upload rejections have no separate execution clock.',
                                        'A reporting-only FileExistsError attempt has no separate clock.',
                                        'Interactive analysis, publication, and document builds are outside these scientific process clocks.'],

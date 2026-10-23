@@ -22,7 +22,7 @@ The current author baseline is R122 at `a4c22b50087430cdd42d07b161d696ebce54a858
 <!-- R125-RECORDER-SNAPSHOT-BEGIN -->
 ## Recorded build dependency snapshot
 
-The JSON closure snapshot is taken from the strict successful build completed at `2026-10-23T08:03:21.654959+00:00`, receipt `build_receipts125/20261023T080233.237370Z/BUILD_RECEIPT125.json` (SHA256 `1d3419346b9d2c66d022722d57fc7a66414d2a35ca7b5bcc2a14efe09e36ebe7`). It records the project inputs actually read by TeX for all four documents. Generated auxiliary files, bibliography output and installed system inputs are identified separately in that receipt. All 307 retained file records, their source hashes and their reader routes remain unchanged. Every recorded project input still matches the current bytes at this refresh.
+The JSON closure snapshot is taken from the strict successful build completed at `2026-10-23T08:30:59.278467+00:00`, receipt `build_receipts125/20261023T083014.262834Z/BUILD_RECEIPT125.json` (SHA256 `a0dc8a95c2120e95344d0095360d5cf1ab3a52c9c00678813f14db98e76b01f0`). It records the project inputs actually read by TeX for all four documents. Generated auxiliary files, bibliography output and installed system inputs are identified separately in that receipt. All 307 retained file records, their source hashes and their reader routes remain unchanged. Every recorded project input still matches the current bytes at this refresh.
 
 Refresh only the build metadata after a later successful build with `python provenance/refresh_retention_closure125.py --receipt <receipt-relative-to-r125>`.
 <!-- R125-RECORDER-SNAPSHOT-END -->

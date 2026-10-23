@@ -23,6 +23,8 @@ def main():
     tick = time.perf_counter()
     receipt = {'started_utc': stamp, 'github_sha': os.environ.get('GITHUB_SHA'),
                'github_run_id': os.environ.get('GITHUB_RUN_ID'),
+               'execution_location': 'github-actions' if os.environ.get('GITHUB_ACTIONS') == 'true' else 'local',
+               'delivery_manifest_sha256': hashlib.sha256((ROOT / 'DELIVERY_MANIFEST125.json').read_bytes()).hexdigest(),
                'scope': 'package hashes, source gate, saved-certificate replay, exact mathematical fixtures and four-document compilation',
                'fresh_original_economy_experiment': False, 'commands': [], 'status': 'running'}
 

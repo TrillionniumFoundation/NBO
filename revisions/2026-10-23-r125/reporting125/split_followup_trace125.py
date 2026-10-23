@@ -21,7 +21,7 @@ def main():
     execution = ROOT/'results125/independent-followup512/EXECUTION125.json'
     assert json.loads(execution.read_text())['exit_code'] == 0
     original_sha = sha(source)
-    out = ROOT/'results125/independent_followup_transport'
+    out = ROOT/'results125/independent-followup512_transport'
     out.mkdir(exist_ok=False)
     parts = []
     digest = hashlib.sha256()
@@ -38,14 +38,14 @@ def main():
     assert digest.hexdigest() == original_sha
     assert sum(p['bytes'] for p in parts) == source.stat().st_size
     result = dict(created_utc=datetime.now(timezone.utc).isoformat(),
-                  original_path=str(source.relative_to(ROOT)),
+                  logical_path=str(source.relative_to(ROOT)),
                   original_sha256=original_sha, original_bytes=source.stat().st_size,
                   original_file_modified=False, parts=parts,
                   maximum_part_bytes=PART_BYTES, economic_evaluations=0,
                   role='Lossless publication transport; concatenate ordered parts to recover exact original gzip.',
                   execution_receipt_sha256=sha(execution),
                   source_script_sha256=sha(Path(__file__)), seconds=time.perf_counter()-tick)
-    (out/'TRANSPORT125.json').write_text(json.dumps(result, indent=2, sort_keys=True)+'\n')
+    (out/'TRANSPORT_SPLIT125.json').write_text(json.dumps(result, indent=2, sort_keys=True)+'\n')
     print(json.dumps(result, sort_keys=True))
 
 

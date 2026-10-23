@@ -5,9 +5,9 @@ import hashlib, json
 
 def materialize(root):
     root = Path(root)
-    m = json.loads((root/'results125/independent_followup_transport/TRANSPORT125.json').read_text())
-    assert m['original_path'] == 'results125/independent-followup512/terminal_witnesses125.jsonl.gz'
-    target = root/m['original_path']
+    m = json.loads((root/'results125/independent-followup512_transport/TRANSPORT_SPLIT125.json').read_text())
+    assert m['logical_path'] == 'results125/independent-followup512/terminal_witnesses125.jsonl.gz'
+    target = root/m['logical_path']
     digest = hashlib.sha256()
     total = 0
     for part in m['parts']:

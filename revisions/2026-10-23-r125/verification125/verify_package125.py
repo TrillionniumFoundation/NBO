@@ -51,6 +51,11 @@ def main():
         for row in retained:
             assert sha(ROOT / row['retained_path']) == row['sha256'], row['retained_path']
         receipt['checks']['unchanged_R122_objects'] = len(retained)
+        complete_retention = json.loads((ROOT / 'CONTENT_RETENTION125.json').read_text())['records']
+        assert len(complete_retention) == 307
+        for row in complete_retention:
+            assert sha(ROOT / row['retained_path']) == row['sha256'], row['retained_path']
+        receipt['checks']['all_retained_original_objects'] = len(complete_retention)
         primary = json.loads((ROOT / 'results125/primary/EXECUTION125.json').read_text())
         assert primary['status'] == 'executed' and primary['decisions'] == 936
         for i in range(3):
@@ -71,6 +76,12 @@ def main():
             followup = json.loads((ROOT / 'results125/independent-followup512/SUMMARY125.json').read_text())
             execution = json.loads((ROOT / 'results125/independent-followup512/EXECUTION125.json').read_text())
             boundary = json.loads((ROOT / 'POSTFREEZE_AUDIT_BOUNDARY125.json').read_text())
+            frozen_path = ROOT / 'POSTFREEZE_AUDIT_FREEZE125.json'
+            assert sha(frozen_path) == 'd6c2009754e36e288662974f4f53eeea31d22dba8a4440e324e55c348e6faad9'
+            frozen_followup = json.loads(frozen_path.read_text())
+            for relative, expected in frozen_followup['files'].items():
+                assert sha(ROOT / relative) == expected, relative
+            receipt['checks']['frozen_followup_files'] = len(frozen_followup['files'])
             assert execution['status'] == 'executed'
             assert boundary['source_commit'] == 'a5f2047222751217b9660b241b9e63f36d87c53a'
             assert boundary['remote_readback_before_new_economics'] is True

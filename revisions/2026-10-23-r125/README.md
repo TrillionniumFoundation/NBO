@@ -39,6 +39,8 @@ Read the executed results in `results125/report/RESULTS125.md`, its exact `SUMMA
 
 First-state adoption regions combine first-state economic values with first-state complete timing. Their compute price and amortization volumes are declared sensitivity scenarios, not calibrated demand. Matched hinge identities, traditional winners and empty certified neural adoption regions remain reportable results. No complete all-history research time is fabricated where interrupted historical parent clocks are missing.
 
+A separately labeled post-execution diagnostic exploits exact policy identity. Within each risk, all 116 learned/online services return the same first-state action and implemented future controller, so their true original economic values coincide. Every one of the 128 neural-service/amortization scenarios has an explicit conventional same-policy cost blocker under the recorded acquisition allocations and timing ranges. Positive computation prices therefore exclude those neural services in that conditional scenario; zero price supplies a tie with the blocker, not a victory over other policies. The original 128 nonempty optimistic interval-only regions and 128 empty sufficient regions remain unchanged. The blocker routes are 64 online and 64 degree-two polynomial services, not a matched-feature architectural comparison. Full assumptions and proof are in supplement Proposition `prop:policyidentity125`; exact witnesses are in `results125/ADOPTION_SUPPORT_DIAGNOSTIC125.json`.
+
 ## Reproduce and verify
 
 Use Python 3.12 and install `requirements125.txt`. The current experiment's executable dependencies and actor bytes are vendored and hashed; no download from a moving branch is needed. Use a new output directory for every attempt. Existing evidence directories are exclusive and must not be overwritten.
@@ -72,7 +74,9 @@ The independent evaluator uses its declared 8/32/128 bin ladder, terminal bisect
 
 The original audit completed with 850/936 interval containments and 193/251 accepted-gain confirmations, with zero contradictions and explicitly unresolved remaining checks. A separate follow-up was designed after those results and frozen at `a5f2047222751217b9660b241b9e63f36d87c53a`; all 20 published entries were read back before its first new economic evaluation at 07:52:25 UTC on 23 October 2026. Its protocol includes all 110 distinct final/prefix action keys from every unresolved record, exactly 512 bins per key, and a cap of 112,750 requested contexts. Exact previously computed terminal witnesses can be reused only at identical state/risk/support identities, with the entire prior audit still charged. This follow-up is not the original prospective experiment or an independent policy sample.
 
-The `primary-checkpoint` delivery manifest contains the completed original study and the separate follow-up's source boundary; it excludes ongoing follow-up outputs. A `complete` delivery manifest is emitted only after the follow-up's actual completion receipt exists. The final manuscript and release receipt identify the resulting status. Neither submitting the job nor publishing this checkpoint implies successful follow-up verification.
+The follow-up actually completed all 110 keys. Together with the unchanged original audit it confirms 934/936 production interval containments and all 251/251 accepted gain bounds, with zero contradictions. Two grid-control containments remain unresolved at the frozen 512-bin cap. It requests 112,750 terminal contexts, reuses 28,270 exact original witnesses and computes 84,480 new contexts with 2,586,336 bisection iterations. The complete parent process takes 1459.236044 seconds, charged in addition to the original audit's 798.515007 seconds. These are verification costs, not production-service times or an independent policy sample. The original 850/936 and 193/251 results remain separately reported. `results125/followup-presentation/RECONCILIATION125.json` reconciles every saved trace row and the phase-cost ledger.
+
+The earlier `primary-checkpoint` manifest at `bac6f997b98cb03c37b81663738b90589cec907b` excluded then-ongoing follow-up outputs. The final `complete` manifest includes the actual completed follow-up and its independent chronology. Neither workflow submission nor an archive's existence is evidence of successful remote CI.
 
 Large witness files use lossless binary transport parts to stay below publication request limits. `verification125/verify_package125.py` reconstructs exact original bytes, verifies all part and logical-file hashes, and refuses to overwrite differing evidence. This transport operation is not a new economic evaluation.
 
@@ -83,6 +87,18 @@ python build125.py --passes 4
 ```
 
 The build records all commands, tool versions, actual TeX input closures, bibliography inputs, graphic hashes, final PDF hashes and layout/reference diagnostics. It does not execute the economy or regenerate result tables. `verification125/ci_verify125.py` runs the package gate, exact algebra and fixture replays, and all four document builds. It does not claim a fresh original-economy experiment. Actual remote CI state is recorded after the run, never inferred from workflow submission.
+
+### Referee-ready archive
+
+The final release records its exact published author commit, delivery-manifest hash, four PDF hashes, archive hash and the dated actual CI status. `verification125/package_release125.py` builds and verifies the full archive from the complete manifest; the two large logical witness files are represented by their exact transport parts. The archive contains all current source files, full retained source, protocols, response maps and executed numerical evidence. A separately recorded release receipt prevents source/PDF/archive hashes from being self-referential.
+
+When the archive itself is delivered in ordered transport parts, reconstruct it without changing its bytes:
+
+```bash
+python verification125/package_release125.py --assemble release125/referee-ready/RELEASE_ARCHIVE125.json
+```
+
+Then extract `NBO-R125-referee-ready.zip` and run the package verifier from the extracted `NBO-R125` directory. Reconstructing or checking an archive does not count as rerunning a scientific experiment.
 
 ## Preservation and research scope
 

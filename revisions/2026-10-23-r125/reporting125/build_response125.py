@@ -73,6 +73,52 @@ def load_completed_evidence():
 
 EVIDENCE=load_completed_evidence()
 
+def load_followup_and_postexecution():
+    followup_names=['POSTFREEZE_AUDIT_BOUNDARY125.json','POSTFREEZE_AUDIT_FREEZE125.json',
+        'results125/independent-followup512/SUMMARY125.json',
+        'results125/independent-followup512/EXECUTION125.json',
+        'results125/launch-independent-followup512/PROCESS125.json',
+        'provenance/FOLLOWUP_CHRONOLOGY_REVIEW125.json','provenance/FOLLOWUP_RESULT_REVIEW125.json',
+        'results125/followup-presentation/RECONCILIATION125.json',
+        'results125/followup-presentation/EXECUTION125.json',
+        'results125/followup-presentation/COMPLETION125.json']
+    post_names=['results125/ADOPTION_SUPPORT_DIAGNOSTIC125.json',
+        'results125/ADOPTION_BLOCKER_COMPARABILITY125.json',
+        'results125/BALANCED_WEIGHTING125.json','results125/SAVED_CLOCK_PROFILE125.json',
+        'provenance/IDENTITY_ADOPTION_REVIEW125.json','new125/identity_adoption125.tex']
+    if not all((ROOT/n).exists() for n in followup_names+post_names):return None,None
+    read=lambda n:json.loads((ROOT/n).read_bytes())
+    summary=read(followup_names[2]);execution=read(followup_names[3]);parent=read(followup_names[4])
+    assert execution['status']=='executed' and execution['exit_code']==parent['returncode']==0
+    assert (summary['contained'],summary['accepted_gain_confirmed'],summary['contradictions'])==(934,251,0)
+    assert (summary['initial_contained'],summary['initial_accepted_gain_confirmed'])==(850,193)
+    assert summary['initial_audit_unchanged'] and summary['new_unique_actions']==110
+    assert summary['source_boundary']==read(followup_names[0])
+    assert summary['source_boundary']['source_commit']=='a5f2047222751217b9660b241b9e63f36d87c53a'
+    assert summary['source_boundary']['manifest_sha256']==hashlib.sha256((ROOT/followup_names[1]).read_bytes()).hexdigest()
+    assert summary['counts']['terminal_contexts']+summary['counts']['reused_independent_terminal_contexts']==112750
+    followup=dict(summary,child_seconds=execution['seconds'],parent_seconds=parent['seconds'],
+        peak_rss_kib=parent['peak_child_rss_kib'],
+        inputs_sha256={n:hashlib.sha256((ROOT/n).read_bytes()).hexdigest() for n in followup_names})
+    identity=read(post_names[0]);comparability=read(post_names[1]);balance=read(post_names[2]);clocks=read(post_names[3])
+    assert identity['status']=='executed' and identity['identity_blocked_positive_price_scenarios']==128
+    assert identity['original_classifications_unchanged'] and identity['economic_evaluations']==identity['services_retimed']==0
+    assert comparability['selected_blocker_roles']=={'online':64,'poly2':64}
+    assert comparability['matching_counts']['same_acquired_training_label_digest']==32
+    assert comparability['matching_counts']['same_budget_and_fitting_loss']==16
+    assert comparability['matching_counts']['same_feature_dictionary']==0
+    for document in (identity,comparability,balance,clocks):
+        assert document['status']=='executed' and document['economic_evaluations']==0
+    for row in clocks['rows']:
+        assert sum(Fraction(row[k]) for k in ('prefix_seconds','query_and_gradient_recovery_seconds',
+            'remaining_service_seconds','cohort_and_parent_residual_seconds'))==Fraction(row['complete_primary_parent_allocated_seconds'])
+    post={'identity_diagnostic':identity,'comparability':comparability,'balanced_weighting':balance,
+          'saved_clock_profile':clocks,'scope':'Post-execution deductions from saved records, with zero new economics or re-timing; frozen experimental classifications remain unchanged.',
+          'inputs_sha256':{n:hashlib.sha256((ROOT/n).read_bytes()).hexdigest() for n in post_names}}
+    return followup,post
+
+FOLLOWUP,POSTEXEC=load_followup_and_postexecution()
+
 # Each addition is deliberately bounded to an actual mathematical amendment or
 # the published design. Outcome integration is a separate, evidence-bound step.
 A={
@@ -93,13 +139,13 @@ A={
  'This is a post-acquisition decision and information mechanism. It is not a theorem that the old span-training loss, or any newly trained neural loss, controls expected service cost. The production census tests the frozen adaptive localization service, not a conic solver implementing the new complete-support program. Any empirical claim must distinguish those objects.',
  ['sec:fullsupport125','sec:paidresolution125','sec:results125']),
 'B5':(
- 'Quadratic least squares remains the recorded R97 complete-work winner. R125 preserves all original acquisition bills and compares seven stored representations, online original-model controls and a 33-action dynamic-programming control specified for fresh original-model evaluation. Every service pays its completed strong fused prefix, rejected candidates, discarded precision levels and fallback. The reporting protocol adds load, serialization, bookkeeping and parent-clock allocation to the recorded service cost.',
+ 'Quadratic least squares remains the recorded R97 complete-work winner. R125 preserves all original acquisition bills and compares seven stored representations, online original-model controls and a 33-action dynamic-programming control specified for fresh original-model evaluation. The four prefix-based services pay their completed strong fused prefixes, rejected candidates, discarded precision levels and fallbacks; the grid control pays its full action scan, refinements and any required fallback. The reporting protocol adds load, serialization, bookkeeping and parent-clock allocation to the recorded service cost.',
  'The experimental complete-work frontier can be stated only from the completed R125 evidence. Historical interrupted parent costs remain unknown. Three shared-host timing observations are descriptive brackets, and the ideal work-bound-minimizing schedule is not the executed finite ladder. No unmeasured neural speedup or universal cost advantage is inferred.',
  ['sec:experiment125','sec:results125','sec:discussion125']),
 'B6':(
- 'The R125 design keeps the same continuous-risk investment primitives, constrained decisions and implemented future controller. Its adoption calculations use the first-state workload for which the timing observations were collected, the full traditional comparator menu, original policy-value intervals and explicit acquisition amortization. Sufficient and optimistic regions are separate. Empty regions and conventional wins remain reportable outcomes.',
+ 'The R125 design keeps the same continuous-risk investment primitives, constrained decisions and implemented future controller. Its adoption calculations use the first-state workload for which the timing observations were collected, the full traditional comparator menu, original policy-value intervals and explicit acquisition amortization. Sufficient and optimistic regions are separate. Proposition policyidentity125 proves that equality of complete realized policies implies equality of the original recursive objective; a strict complete-cost ordering then excludes positive compute prices for the more costly service, conditional on the declared timing ranges. This post-execution deduction preserves the frozen price-region classifications.',
  'Compute prices, workload volumes and willingness to pay are declared scenarios, not identified economic parameters. The four deterministic states are not a field population. A calibrated consequential application remains a substantive research obligation; conditional price regions cannot establish field adoption or neural superiority.',
- ['sec:continuous95','sec:experiment125','sec:results125','sec:discussion125']),
+ ['sec:continuous95','sec:experiment125','sec:results125','sec:policyidentity125','sec:discussion125']),
 'B7':(
  'The R97 actors retain their own identities; R96 intervals are not transferred to them. The R125 census uses four predetermined dyadic states and reports deterministic original-model bounds for those states. It makes no population-mean claim and creates no confidence interval from timing repetitions. The later R124-B experiment remains a separate protected source/state/execution identity and supplies no substitute outcome to R125.',
  'Direct population ordering for the new R97 actors remains unsupported by the R96 intervals. The R125 deterministic census also does not close that population-inference request. Any new population claim requires its own sampling law, actor freeze, prospective source and independent execution.',
@@ -137,9 +183,9 @@ A={
  'Neither favorable internal diagnostics nor a safe local replacement erase an earlier comparative failure. The new results must be interpreted against the full traditional menu and their original economic target. Negative evidence guides further algorithm design without being relabeled as completion of the neural objective.',
  ['sec:results125','sec:discussion125','dev:retained122']),
 'M6':(
- 'The investment economy remains an actual constrained recursive decision problem with continuous innovations, nested AVaR, original objective values, regret and computation bills. The new theorem explains when original information can license an economically meaningful action change, and the protocol keeps monetary computation scenarios separate from observed policy-value bounds.',
+ 'The investment economy remains an actual constrained recursive decision problem with continuous innovations, nested AVaR, original objective values, regret and computation bills. The new theorem explains when original information can license an economically meaningful action change, and the protocol keeps monetary computation scenarios separate from observed policy-value bounds. The post-execution Proposition policyidentity125 couples equal complete policies before comparing their costs, rather than treating their objective intervals as independent unknown values.',
  'No new calibrated field application is supplied by R125. Empirical identification, economically justified policy margins, market compute prices, fees and actual workload demand remain required for consequential adoption. The NBO research ambition is retained while those uncompleted claims remain explicit.',
- ['sec:continuous95','sec:experiment125','sec:discussion125']),
+ ['sec:continuous95','sec:experiment125','sec:policyidentity125','sec:discussion125']),
 'M7':(
  'The R125 study varies representation, original risk level, information budget and service precision strategy within the same economy. It records requested terminal contexts, actual operation counters, all refinement and fallback work, and the implemented stopping outcomes. The theory distinguishes scalar action information from unrestricted Bellman complexity.',
  'Horizon, number of controls and innovation dimension are not varied in this census. Amortization over deployment volumes is not a scaling experiment. Genuine multidimensional and longer-horizon competitiveness remains open and requires matched strong conventional algorithms and a new prospective design.',
@@ -185,9 +231,9 @@ A={
  'Engineering ranges, historical component allocations and unknown interrupted-process costs are not statistical intervals or measured whole-history totals.',
  ['sec:experiment125','sec:results125']),
 'Minor 8':(
- 'The zero R97 neural adoption count over quadratic least squares is retained explicitly with its original 1,800-cell sensitivity scope. R125 defines its own full-menu sufficient and optimistic comparisons on a matching first-state workload and does not transplant older regions into the new experiment.',
- 'Current counts must come from actual completed R125 outputs. A nonempty conditional scenario would not by itself identify a population or neural-specific adoption advantage, and an old zero is not a current-study result.',
- ['sec:results125','sec:discussion125','dev:retained122']),
+ 'The zero R97 neural adoption count over quadratic least squares is retained explicitly with its original 1,800-cell sensitivity scope. R125 defines its own full-menu sufficient and optimistic comparisons on a matching first-state workload and does not transplant older regions into the new experiment. The separate post-execution Proposition policyidentity125 establishes the stronger conditional exclusion available when actual complete-policy equality and strictly lower conventional complete costs are known.',
+ 'The conditional identity-cost exclusion is specific to the recorded first-state services and timing ranges. It does not establish population dominance, future-runtime guarantees or equal-feature neural representation inferiority. The original interval-only optimistic classifications remain unchanged as outer relaxations.',
+ ['sec:results125','sec:policyidentity125','sec:discussion125','dev:retained122']),
 'Minor 9':(
  'The complete-support theorem is placed in relation to smooth convex interpolation and the inherited verified Bellman/HJB literature. Its contribution is the exact finite retention of the original global support payload and its action-contrast interpretation, with a constructive proof and a rational residual correction. The stochastic-control and nonlinear-recursive bridges retain their own assumptions.',
  'The new scalar theorem does not validate arbitrary learned HJB/FBSDE residuals or transfer welfare claims between different objectives and models. A production computational comparison of the complete-support solver remains to be supplied.',
@@ -204,7 +250,7 @@ NUMERIC_ADDITIONS={
 'B3':'The operational census accepts 251 additional strict same-future action changes. The independently implemented original audit directly confirms 193 of those gain bounds; 58 remain unresolved at its frozen maximum precision, with no contradiction. The analytic support witness and these production-service outcomes remain separate forms of evidence.',
 'B4':'The frozen stronger-target count rises from 147/232 for the fully paid fused control to 231/232 for warm adaptive acquisition, at the same original service requirements. A separate post-freeze saved-support diagnosis identifies a capacity action already known to be optimal although its stored value-level regret bound misses the stronger target. That analytic diagnosis leaves the recorded 231/232 count unchanged and reports no new policy gain.',
 'B5':'The completed four-state census obtains 231/232 stronger-target successes with warm adaptive acquisition and 231/232 with warm fixed-512 acquisition, using 37,557 versus 181,425 extra requested terminal contexts. Warm adaptive requests 79.30 percent fewer contexts but makes 309 rather than 177 extra query attempts and takes 15.03145 rather than 13.37580 seconds of complete primary parent-allocated service time, 12.38 percent more. All 58 first-state prefixes already satisfy the stronger target, so the three prescribed repeats make zero enhancement queries in these modes and cannot establish acquisition-runtime superiority. All 128 full-menu sufficient neural adoption regions are empty. The new result is improved action resolution and fewer requested contexts, accompanied by a measured runtime loss against fixed precision.',
-'B6':'All 128 current sufficient neural price regions are empty; all 128 optimistic outer regions are nonempty. The latter express an unresolved possible comparison, not certified adoption. These are the completed R125 first-state results, separate from the older R97 zero count and from any population inference.',
+'B6':'All 128 originally computed sufficient neural price regions are empty; all 128 original interval-only optimistic outer regions remain nonempty. Their separate value boxes do not encode the known equality of the realized policies. These original classifications are preserved separately from the stronger post-execution identity deduction, the older R97 zero count and any population inference.',
 'B7':'The executed study retains all 936 predetermined primary decisions and all 702 timing repeats. It creates zero independent population samples. The independent evaluator audits 157 distinct realized state/risk/action keys from the final and prefix decisions; it does not make those four deterministic states into a population sample.',
 'B8':'The original independent audit completed 467 original-policy evaluations for 157 distinct state/risk/action keys, using 52,195 terminal contexts, 1,515,424 terminal bisection iterations and 419,430 assertions. It confirms 850/936 reported interval containments and 193/251 accepted gain bounds; 86 and 58 remain unresolved, respectively, at the frozen 128-bin maximum. There are zero contradictions. Completion of that capped audit is not complete confirmation of all claims and is not independent fitting.',
 'B9':'The original F125 source was remotely read back before the first economic evaluation. The complete numerical census, timing passes, exact fixtures, replay and capped independent reconstruction now have actual receipts. Their distinct roles are preserved in the active results and the development companion.',
@@ -217,7 +263,7 @@ NUMERIC_ADDITIONS={
 'M6':'The completed study provides original objective intervals, certified regret and complete first-state price comparisons, but its sufficient neural adoption regions are empty and its economic setting remains uncalibrated. The actual action-resolution improvement does not substitute for a consequential field application.',
 'M7':'The actual experiment contains 936 primary and 702 timed decisions in the same two-state, scalar-control economy. Its 375,213 extra requested terminal contexts and per-service operation ledgers document this workload; they are not observations of additional dimensions or horizons.',
 'M8':'All three prescribed timing passes completed with 234 first-state decisions each. Saved-algebra/timing replay performed 16,162 checks, and a separate exact accounting replay matches all 696 enhancement-decision counter deltas. The complete primary child ran for 69.988865 seconds and the three complete timing parents took approximately 6.5493, 6.6966 and 7.5240 seconds. Every first-state prefix already meets the stronger target, so the four prefix-based modes perform zero enhancement queries in those repeats; these timings do not measure the cost of additional localization. In the complete primary census warm adaptive instead takes 12.38 percent more parent-allocated time than fixed-512. The independent original audit cost a separate 798.411727 seconds and is charged separately from deployed services.',
-'M9':'The F125 source boundary is a94e1f43bf64d8cb90af21e4b53d07335c615576. The completed exact replay and independent original audit have separate receipts, with the latter retaining 86 unresolved containment and 58 unresolved gain checks. These actual completed checks do not grant an advance success status to CI or to any separately frozen follow-up.',
+'M9':'The F125 source boundary is a94e1f43bf64d8cb90af21e4b53d07335c615576. The completed exact replay and independent original audit have separate receipts, with the original capped audit retaining 86 unresolved containment and 58 unresolved gain checks. The separate follow-up is reported under its own actual source and execution receipts. None of these checks grants an advance success status to CI or a later experiment.',
 'M10':'The current main/supplement and separate development companion now reference the actual completed experiment and the original capped audit, including unresolved checks and the zero sufficient adoption count. The historical record is preserved in its own source-bound routes rather than used to inflate current evidence.',
 'Minor 1':'The reported 559 contractions and observed requested-context totals are finite execution statistics, not estimates of the inherited error-versus-information exponent.',
 'Minor 2':'The new executed data do not add randomized acquisition or high-dimensional evidence to the inherited lower bound; the only randomization minimax statement is the separately scoped analytic terminal-bracket result.',
@@ -226,10 +272,41 @@ NUMERIC_ADDITIONS={
 'Minor 5':'The observed singleton-capacity case is explicit: exact original-action localization implies a post-freeze analytic regret bound no larger than delta for the unchanged action, while the frozen value-level gate records a stronger-target miss. Its original recorded classification remains a miss; the sharper analytic bound is reported separately.',
 'Minor 6':'Current reports retain 251 additional accepted changes, all 936 ordinary-qualified decisions, the per-mode stronger-target misses and every paid rejected/refined query. These are original-action outcomes, not a renamed residual-span score.',
 'Minor 7':'All 702 timing decisions are preserved. The three observed complete-parent times and the per-cohort minimum/maximum brackets remain descriptive, and the four-state study produces no sampling confidence interval. Because all first-state prefixes already satisfy the stronger target, the prescribed repeats perform zero enhancement queries in the four prefix-based modes and cannot be used to claim acquisition-runtime superiority.',
-'Minor 8':'The completed R125 result is 0/128 nonempty sufficient regions and 128/128 nonempty optimistic outer regions under the declared complete traditional menu. This distinguishes lack of certified adoption from proof that adoption is impossible.',
+'Minor 8':'The original R125 classifications remain 0/128 nonempty sufficient regions and 128/128 nonempty interval-only optimistic outer regions under the declared traditional menu. Those outer classifications alone do not exclude adoption; the separate policy-identity deduction supplies a stronger conditional conclusion for this first-state workload.',
 'Minor 9':'The executed original-economy study uses the frozen localization implementation. It does not execute the newly proved conic information program, and the separate exact fixtures are not a verified HJB/FBSDE computation.',
 'Minor 10':'The completed evidence preserves exact neural/hinge identities and zero sufficient neural adoption regions. Retaining the original research title does not change that comparative result.'
 }
+
+FOLLOWUP_TEXT=(
+ 'A separately published 512-bin follow-up at source a5f2047222751217b9660b241b9e63f36d87c53a '
+ 'then evaluated every one of the 110 unresolved final/prefix keys. It confirms 934/936 interval '
+ 'containments and all 251/251 accepted gain bounds, with zero contradictions. The two remaining '
+ 'containments are the original-model grid decisions at risk 1/2 and states (3/4,1/4) and (3/4,3/4); '
+ 'they remain unresolved at the separately frozen cap. The original 850/936 and 193/251 outcomes '
+ 'remain unchanged. This follow-up changes no production policy and supplies no new population sample.')
+IDENTITY_TEXT=(
+ 'A distinct post-execution saved-record deduction applies Proposition policyidentity125. All 128 '
+ 'neural/workload scenarios have a conventional service with the exact same first action and complete '
+ 'implemented continuation policy, hence the same original objective, and with a strictly smaller '
+ 'upper complete cost than the neural lower complete cost. Conditional on the recorded timing ranges, '
+ 'each neural service is therefore strictly dominated for every positive compute price; zero price '
+ 'gives a tie with that comparator only, not global optimality against different policies. The 128 '
+ 'original nonempty optimistic outer regions remain unchanged. The selected blockers are 64 online '
+ 'and 64 degree-two polynomial services: 32 share stored acquired-training-label digests, 16 also '
+ 'match both budget and fitting-loss labels, and none shares the neural feature dictionary. '
+ 'Historical raw training-label bytes were not rehashed in this diagnostic. This is a conditional '
+ 'complete-service comparison, not a general equal-information or equal-feature representation result. '
+ 'No economic evaluation or timing repetition was added.')
+FOLLOWUP_KEYS={'B1','B3','B5','B7','B8','B9','B10','M3','M5','M8','M9','M10','Minor 6'}
+IDENTITY_KEYS={'B1','B3','B5','B6','B10','M1','M4','M5','M6','M9','M10','Minor 8','Minor 10'}
+SAVED_CLOCK_TEXT=(
+ 'A reporting-only replay of saved clocks separates warm-adaptive prefix, query/recovery, remaining '
+ 'service and cohort/parent residual times as 5.631801, 3.195700, 5.469696 and 0.734253 seconds; '
+ 'fixed-512 gives 5.745743, 5.348735, 1.563042 and 0.718276 seconds. These sum exactly to their '
+ 'complete primary allocations. The remaining-service bucket includes setup, ledger reconstruction, '
+ 'bounds, candidate selection and bookkeeping, not just algebra. This explains the observed cost '
+ 'composition without claiming a controlled causal decomposition or performing re-timing. '
+ 'The descriptive economic means use the same one-eighth weight for each risk/state cell.')
 
 def exact_request(r):
     lines=[]
@@ -251,6 +328,7 @@ def author_tex(s):
     t=t.replace('Theorem paidwork125',r'Theorem~\ref{thm:paidwork125}')
     t=t.replace('in paidwork125',r'in Theorem~\ref{thm:paidwork125}')
     t=t.replace('The terminal bracket proposition',r'Proposition~\ref{prop:terminalminimax125}')
+    t=t.replace('Proposition policyidentity125',r'Proposition~\ref{prop:policyidentity125}')
     return t
 
 report=ROOT/'provenance/review_sources/2026-10-14-econometrica-numerical-methods-r97/referee_report.md'
@@ -268,8 +346,11 @@ for old in prior['request_records']:
       'previous_r122_action':old['r122_author_action'],
       'previous_r122_remaining_requirement':old['r122_explicitly_remaining_science'],
       'closure_claim':False,
-      'status':'amended_with_completed_original_evidence_and_explicit_residual_obligation' if EVIDENCE else 'substantive_amendment_or_preservation_with_explicit_open_requirement',
+      'status':'amended_with_separately_bound_original_followup_and_postexecution_evidence_and_explicit_residual_obligation' if FOLLOWUP and POSTEXEC else 'amended_with_completed_original_evidence_and_explicit_residual_obligation' if EVIDENCE else 'substantive_amendment_or_preservation_with_explicit_open_requirement',
       'executed_r125_evidence':NUMERIC_ADDITIONS[key] if EVIDENCE else None,
+      'separately_frozen_followup_evidence':FOLLOWUP_TEXT if FOLLOWUP and key in FOLLOWUP_KEYS else None,
+      'post_execution_policy_identity_evidence':IDENTITY_TEXT if POSTEXEC and key in IDENTITY_KEYS else None,
+      'saved_work_accounting_evidence':SAVED_CLOCK_TEXT if POSTEXEC and key in {'B5','M8'} else None,
     })
 out={
  'schema':'r125-current-request-response-v1',
@@ -280,8 +361,10 @@ out={
  'controlling_report_sha256':prior['controlling_report_sha256'],
  'exact_requests_verified_against_original_report':True,
  'records':records,
- 'numerical_evidence_status_at_generation':'Original F125 experiment and its frozen capped independent audit completed; incomplete containment/gain confirmation is explicitly retained. No later follow-up replaces those initial outcomes.' if EVIDENCE else 'Prospective protocol and source freeze exist; numerical outcomes are not inferred by this response. Integrate only completed source-bound execution receipts.',
+ 'numerical_evidence_status_at_generation':'Original F125 audit remains 850/936 containments and 193/251 gains. Separately published and completed 512-bin follow-up confirms 934/936 containments and all 251 gains, with two unresolved containments and zero contradictions. Post-execution policy identity and complete-cost deductions conditionally exclude positive-price neural adoption in all 128 recorded first-state scenarios without changing the original outer-region classifications. None is a population, future-runtime, independent-refit or equal-feature representation claim.' if FOLLOWUP and POSTEXEC else 'Original F125 experiment and its frozen capped independent audit completed; incomplete containment/gain confirmation is explicitly retained. No later follow-up replaces those initial outcomes.' if EVIDENCE else 'Prospective protocol and source freeze exist; numerical outcomes are not inferred by this response. Integrate only completed source-bound execution receipts.',
  'completed_original_evidence':EVIDENCE,
+ 'completed_separately_frozen_followup':FOLLOWUP,
+ 'post_execution_saved_evidence_analysis':POSTEXEC,
  'protocol_sha256':hashlib.sha256((ROOT/'PROTOCOL125.md').read_bytes()).hexdigest(),
  'source_freeze_sha256':hashlib.sha256((ROOT/'SOURCE_FREEZE125.json').read_bytes()).hexdigest(),
  'actual_independent_mathematical_diagnostic':'provenance/OBSTACLE_INTERPOLATION_DIAGNOSTIC125.json',
@@ -366,17 +449,74 @@ At its frozen maximum of
 accepted gain bounds. The remaining 86 containments and 58 gain checks
 are unresolved; there are zero contradictions. Its 798.411727 seconds and
 52,195 terminal contexts are retained as separate research costs.
-Completion of this audit is not complete independent confirmation.
-Any subsequent source-frozen precision follow-up has its own identity and
-must preserve these original statuses.
+Completion of this original capped audit is not complete independent
+confirmation. Its outcomes are preserved unchanged alongside the separately
+published follow-up described below.
 
-All 128 sufficient first-state neural adoption regions are empty; all 128
-optimistic outer regions are nonempty. This establishes neither certified
-neural adoption nor impossibility of adoption. All 128 matched ReLU/hinge
+All 128 originally computed sufficient first-state neural adoption regions
+are empty; all 128 original interval-only optimistic outer regions remain
+nonempty. These original calculations omit the coupling implied by equal
+realized policies; the stronger post-execution deduction is reported
+separately below. All 128 matched ReLU/hinge
 identity checks pass. The four-state design is deterministic and supplies
 no population confidence interval. The post-freeze singleton-capacity
 diagnosis reports a sharper analytic regret bound for an unchanged action;
 it changes neither the recorded 231/232 warm counts nor a measured policy gain.
+
+''')
+if FOLLOWUP:
+    parts.append(r'''\subsection{Separately frozen and completed precision follow-up}
+
+The follow-up scientific source is
+\nolinkurl{a5f2047222751217b9660b241b9e63f36d87c53a}. Its distinct
+manifest was frozen before remote readback at 07:52:04 UTC and child launch
+at 07:52:25 UTC on October 23, 2026. It includes all 110 unresolved
+final/prefix keys and ends at its declared 512-bin cap. The combined
+original and refined intervals confirm 934/936 reported containments and
+all 251/251 accepted gain bounds, with zero contradictions. Two containments
+remain unresolved: the original-model grid decisions at risk $1/2$ and
+states $(3/4,1/4)$ and $(3/4,3/4)$. No production policy, success flag,
+original audit outcome or population sample was changed.
+
+The follow-up requested 112,750 contexts: 84,480 newly evaluated contexts
+and 28,270 exact reuses. It executed 2,586,336 terminal bisection iterations,
+704,552 assertions and 9,020 duplicate-cache identity checks. Its child
+time is 1,457.383213 seconds and its complete parent time is 1,459.236044
+seconds; the 5.310521 seconds of cache loading are included in the child
+time. Peak child resident memory is 229,796 KiB. These are additional
+research verification costs. This separate follow-up confirms every
+accepted gain bound while explicitly retaining the two unresolved
+containments; it does not rewrite the original 128-bin results.
+
+''')
+if POSTEXEC:
+    parts.append(r'''\subsection{Post-execution policy identity and purchase conditions}
+
+Proposition~\ref{prop:policyidentity125} uses equality of the complete
+implemented policy, on the queried state and all reachable continuation
+histories, to identify the original recursive objective exactly. This
+requires more than a common first action. The saved records establish both
+identities for every selected comparator. In all 128 neural/workload
+scenarios a conventional service has an upper complete cost strictly below
+the neural lower complete cost. Conditional on the recorded timing ranges,
+the neural priced objective is therefore strictly worse for every positive
+compute price. At zero price it ties that same-policy comparator; this is
+not a claim of global optimality against the different-policy grid control.
+
+The original 128 nonempty optimistic outer regions remain unchanged as
+uncoupled interval relaxations. The policy-identity deduction is a separate
+post-execution analysis with no new economic evaluation or re-timing. The
+128 selected blockers comprise 64 online and 64 degree-two polynomial
+services. Thirty-two share stored acquired-training-label digests with
+their neural comparators, sixteen match both acquisition budget and
+fitting-loss labels, and none shares the neural feature dictionary. The
+historical training-label byte streams were not materialized and rehashed
+in this diagnostic. Equal economic information and complete policy do not
+imply equal computational acquisition, fitting loss, features or all
+subsequent oracle information. This is a conditional complete-service
+comparison for the recorded first-state workload; no equal-feature
+representation theorem, population ordering or future timing guarantee
+is inferred.
 
 ''')
 group=None
@@ -388,6 +528,11 @@ for r in records:
     parts.append('\\noindent\\textbf{Author amendment.} '+author_tex(r['r125_author_amendment'])+'\n\n')
     if r.get('executed_r125_evidence'):
         parts.append('\\noindent\\textbf{Executed R125 evidence.} '+author_tex(r['executed_r125_evidence'])+'\n\n')
+    for field,title in [('separately_frozen_followup_evidence','Separate completed precision follow-up'),
+                        ('post_execution_policy_identity_evidence','Post-execution identity deduction'),
+                        ('saved_work_accounting_evidence','Saved-work accounting')]:
+        if r.get(field):
+            parts.append('\\noindent\\textbf{'+title+'.} '+author_tex(r[field])+'\n\n')
     parts.append('\\noindent\\textbf{Remaining requirement.} '+author_tex(r['r125_remaining_scientific_requirement'])+'\n\n')
     parts.append('\\noindent\\textbf{Current routes.} Sections '+', '.join('\\ref{'+x+'}' for x in r['current_chapter_labels'])+'.\n\n')
 parts.append(r'''\section{Earlier reports and preserved item responses}
